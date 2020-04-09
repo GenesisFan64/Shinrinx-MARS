@@ -1,7 +1,7 @@
 # Shinrinx-MARS
 A Polygon/Sprites system for the Sega 32X
 
-This is a rewrite of MdlRenderer-MARS, now it uses an special interrupt to draw the polygons
+This is a rewrite of MdlRenderer-MARS, now it uses a special interrupt to draw the polygons
 
 NTSC Systems only, untested on PAL
 
