@@ -713,7 +713,7 @@ SH2_S_HotStart:
 
 		mov	#RAM_Mars_PolyList_0,r1
 		mov	#RAM_Mars_PolyList_1,r2
-		mov	#6,r3
+		mov	#1,r3
 		mov	r3,r0
 		mov.w	r0,@(marsGbl_PolyCny_0,gbr)
 		mov.w	r0,@(marsGbl_PolyCny_1,gbr)
@@ -741,21 +741,11 @@ slave_loop:
 		mov.w	@r1,r0
 		add	#1,r0
 		mov.w	r0,@r1
-
 ; 		mov 	#RAM_Mars_Polygons_0+8,r1
-; 		mov	@r1,r0
-; 		mov	@($8,r1),r3
-; 		mov	@($10,r1),r4
-; 		mov	@($18,r1),r5
-; 		mov 	#-$100,r2
+; 		mov.w	@r1,r0
+; 		mov 	#1,r2
 ; 		add	r2,r0
-; 		add 	r2,r3
-; 		add	r2,r4
-; 		add 	r2,r5
-; 		mov	r0,@r1
-; 		mov	r3,@($8,r1)
-; 		mov	r4,@($10,r1)
-; 		mov	r5,@($18,r1)
+; 		mov.w	r0,@r1
 		
 ; 		mov	#RAM_Mars_PolyBuff_Curr,r1
 ; 		mov 	@r1,r0
@@ -774,8 +764,22 @@ slave_loop:
 
 		align 4
 polygn_test:
-		dc.w 0
-		dc.w 0
+		dc.l (PLGN_SPRITE)+472
+		dc.l Textur_Puyo
+		dc.w     0,    0	; Screen position
+		dc.w     0,    0	; X/Y material start
+		dc.w    32,   57	; width and height
+		dc.w     0,    0	; 
+		dc.w     0,    0	; Bitmap X/Y start
+		dc.w    32,   57	; Bitmap X/Y end
+		dc.w     0,    0	; X/Y Frame
+		dc.w     0,    0
+		dc.w     0,    0
+		dc.w     0,    0
+		dc.w     0,    0
+		dc.w     0,    0
+
+		dc.l PLGN_SOLID
 		dc.l $58
 		dc.l -$4000,-$6000
 		dc.l -$8000,-$6000
@@ -786,8 +790,7 @@ polygn_test:
 		dc.w 0,0
 		dc.w 0,0
 		
-		dc.w 1
-		dc.w 0
+		dc.l PLGN_SOLID|PLGN_TRI
 		dc.l $AC
 		dc.l  $1000,-$6000
 		dc.l -$3000,-$6000
@@ -798,53 +801,27 @@ polygn_test:
 		dc.w 0,0
 		dc.w 0,0
 
-		dc.w 2
-		dc.w 0
-		dc.l $C1
-		dc.l 258,16
-		dc.l 190,16
-		dc.l 190,80
-		dc.l 258,80
-		dc.w 0,0
-		dc.w 0,0
-		dc.w 0,0
-		dc.w 0,0
-
-		dc.w 4
-		dc.w 480
+		dc.l 472
 		dc.l Textur_Puyo
 		dc.l -$4000, $1000
 		dc.l -$8000, $1000
 		dc.l -$8000, $5000
 		dc.l -$4000, $5000
-		dc.w 480,  0
-		dc.w   0,  0
-		dc.w   0,360
-		dc.w 480,360
-		
-		dc.w 5
-		dc.w 480
+		dc.w 472,  0
+		dc.w 304,  0
+		dc.w 304,167
+		dc.w 472,167
+
+		dc.l (PLGN_TRI)+472
 		dc.l Textur_Puyo
 		dc.l  $1000, $1000
 		dc.l -$3000, $1000
 		dc.l -$3000, $5000
 		dc.l  $1000, $5000
-		dc.w 480,  0
-		dc.w   0,  0
-		dc.w   0,330
-		dc.w 480,330
-
-		dc.w 6
-		dc.w 480
-		dc.l Textur_Puyo
-		dc.l 258,128
-		dc.l 190,128
-		dc.l 190,192
-		dc.l 258,192
-		dc.w 480,  0
-		dc.w   0,  0
-		dc.w   0,360
-		dc.w 480,360
+		dc.w 472,  0
+		dc.w 304,  0
+		dc.w 304,167
+		dc.w 472,167
 
 polygn_test_e:
 		align 4

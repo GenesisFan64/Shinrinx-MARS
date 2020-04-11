@@ -27,6 +27,10 @@
 SCREEN_WIDTH	equ	320
 SCREEN_HEIGHT	equ	224
 
+PLGN_SOLID	equ	(%100<<29)
+PLGN_TRI	equ	(%010<<29)
+PLGN_SPRITE	equ	(%001<<29)
+
 ; ----------------------------------------
 ; Structs
 ; ----------------------------------------
@@ -58,16 +62,15 @@ plypz_src_xr_dx	ds.l 1
 plypz_src_yr	ds.l 1
 plypz_src_yr_dx	ds.l 1
 plypz_mtrl	ds.l 1
-plypz_mtrlopt	ds.l 1
+plypz_mtrlopt	ds.l 1			; Type | Option
 sizeof_plypz	ds.l 0
 		finish
 
 		struct 0
-polygn_type	ds.w 1			; Type: Polygon(3) or Quad(4)
-polygn_mtrlopt	ds.w 1			; Material Option: add $xx to solid color / texture width
-polygn_mtrl	ds.l 1			; Material Type: Color (0-255) or Texture data address
-polygn_points	ds.l 2*4		; X/Y/Z pos $000000.00
-polygn_srcpnts	ds.w 2*4		; X/Y texture points (16-bit), blank if using solidcolor
+polygn_type	ds.l 1		; %MSToooo ooooooooo | Type bits and Material option (Width or PalIncr)
+polygn_mtrl	ds.l 1		; Material Type: Color (0-255) or Texture data address
+polygn_points	ds.l 2*4	; X/Y/Z pos $000000.00
+polygn_srcpnts	ds.w 2*4	; X/Y texture points (16-bit), blank if using solidcolor
 sizeof_polygn	ds.l 0
 		finish
 
@@ -473,10 +476,11 @@ drw_task_02:
 		mov	@(plypz_xl_dx,r14),r2
 		mov	@(plypz_xr,r14),r3
 		mov	@(plypz_xr_dx,r14),r4
-		mov	@(plypz_mtrl,r14),r0
+		mov	@(plypz_mtrlopt,r14),r0
 		shlr16	r0
-		cmp/eq	#0,r0
-		bt	.solid_color
+		shlr8	r0
+		tst	#%10000000,r0
+		bf	.solid_color
 		
 ; ------------------------------------
 ; Texture
@@ -560,6 +564,8 @@ drw_task_02:
 		add 	r11,r10
 		mov	@(plypz_mtrl,r14),r11		; texture data
 		mov	@(plypz_mtrlopt,r14),r4		; texture width
+		mov	#$FFFF,r0
+		and	r0,r4
 .texloop:
 		swap.w	r7,r2				; Build row offset
 		mulu.w	r2,r4
@@ -608,6 +614,8 @@ drw_task_02:
 .solid_color:
 		mov	@(plypz_mtrl,r14),r5
 		mov	@(plypz_mtrlopt,r14),r6
+		mov	#$FFFF,r0
+		and	r0,r6
 .next_line:
 		mov	r1,r11
 		mov	r3,r12
@@ -725,9 +733,10 @@ drw_task_02:
 ; Read polygon and build pieces
 ; 
 ; Type bits:
-; %00000000 00000tsp
+; %tsp----- -------- -------- --------
+;
 ; p - Figure type: Quad (0) or Triangle (1)
-; s - Coordinate types: Center (0) or Screen (1)
+; s - Polygon type: Normal (0) or Sprite (1)
 ; t - Polygon has texture data (1):
 ;     polygn_mtrlopt: Texture width
 ;     polygn_mtrl   : Texture data address
@@ -739,45 +748,122 @@ MarsVideo_MakePolygon:
 		sts	pr,@-r15
 		mov	#CachPnts_Real,r12
 		mov	#CachPnts_Last,r13
-		mov.w	@(polygn_type,r14),r0
-		tst	#1,r0			; Bit 0 set?
+		mov	@(polygn_type,r14),r0
+		shlr16	r0
+		shlr8	r0
+		tst	#%010<<5,r0			; PLGN_TRI set?
 		bf	.tringl
 		add	#8,r13
 .tringl:
 		mov	r14,r1
 		mov	r12,r2
+		mov	#CachPnts_Src,r3
 		add	#polygn_points,r1
-		mov	#SCREEN_WIDTH/2,r5
-		mov	#SCREEN_HEIGHT/2,r6
+		tst	#%001<<5,r0			; PLGN_SPRITE set?
+		bt	.plgn_pnts
+		
+; ----------------------------------------
+; Sprite points
+; ----------------------------------------
+
+.spr_pnts:
+		mov.w	@r1+,r8		; X pos
+		mov.w	@r1+,r9		; Y pos
+
+		mov.w	@r1+,r4
+		mov.w	@r1+,r6
+		mov.w	@r1+,r5
+		mov.w	@r1+,r7
+		add	#2*2,r1
+		add	r8,r4
+		add 	r8,r5
+		add	r9,r6
+		add 	r9,r7
+		mov	r5,@r2		; TR
+		add	#4,r2
+		mov	r6,@r2
+		add	#4,r2
+		mov	r4,@r2		; TL
+		add	#4,r2
+		mov	r6,@r2
+		add	#4,r2
+		mov	r4,@r2		; BL
+		add	#4,r2
+		mov	r7,@r2
+		add	#4,r2
+		mov	r5,@r2		; BR
+		add	#4,r2
+		mov	r7,@r2
+		add	#4,r2
+
+		mov.w	@r1+,r4
+		mov.w	@r1+,r6
+		mov.w	@r1+,r5
+		mov.w	@r1+,r7
+		mov	r5,@r3		; TR
+		add	#4,r3
+		mov	r6,@r3
+		add	#4,r3
+		mov	r4,@r3		; TL
+		add	#4,r3
+		mov	r6,@r3
+		add	#4,r3
+		mov	r4,@r3		; BL
+		add	#4,r3
+		mov	r7,@r3
+		add	#4,r3
+		mov	r5,@r3		; BR
+		add	#4,r3
+		mov	r7,@r3
+		add	#4,r3
+
+; 		mov	#4*2,r0
+; .sprsrc_pnts:
+; 		mov.w	@r1+,r0
+; 		mov.w	@r1+,r4
+; 		mov	r0,@r3
+; 		mov	r4,@(4,r3)
+; 		dt	r0
+; 		bf/s	.sprsrc_pnts
+; 		add	#8,r3
+		bra	.start_math
+		nop
+
+; ----------------------------------------
+; Polygon points
+; ----------------------------------------
+
+.plgn_pnts:
 		mov	#4,r8
+		mov	#SCREEN_WIDTH/2,r6
+		mov	#SCREEN_HEIGHT/2,r7
 .setpnts:
-		mov	@r1+,r3
 		mov	@r1+,r4
-		tst	#2,r0			; Bit 1 set?
-		bf	.real_xy
-		shlr8	r3
+		mov	@r1+,r5
 		shlr8	r4
-		exts	r3,r3
+		shlr8	r5
 		exts	r4,r4
-		add	r5,r3
+		exts	r5,r5
 		add	r6,r4
-.real_xy:
-		mov	r3,@r2
-		mov	r4,@(4,r2)
+		add	r7,r5
+		mov	r4,@r2
+		mov	r5,@(4,r2)
 		dt	r8
 		bf/s	.setpnts
 		add	#8,r2
 		mov	#4,r8
-		mov	#CachPnts_Src,r10
+
 .src_pnts:
-		mov.w	@r1+,r3
 		mov.w	@r1+,r4
-		mov	r3,@r10
-		mov	r4,@(4,r10)
+		mov.w	@r1+,r5
+		mov	r4,@r3
+		mov	r5,@(4,r3)
 		dt	r8
 		bf/s	.src_pnts
-		add	#8,r10
+		add	#8,r3
 		
+.start_math:
+	; Search Y
 		mov	#$7FFFFFFF,r10
 		mov	#$FFFFFFFF,r11
 		mov 	r12,r7
@@ -1107,7 +1193,7 @@ put_piece:
 		
 		mov	@(polygn_mtrl,r14),r0
 		mov 	r0,@(plypz_mtrl,r1)
-		mov.w	@(polygn_mtrlopt,r14),r0
+		mov	@(polygn_type,r14),r0
 		mov 	r0,@(plypz_mtrlopt,r1)
 
 		mov	@r15+,r9

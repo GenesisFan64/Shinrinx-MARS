@@ -7,9 +7,9 @@
 ; perfoming a DMA ROM-to-VDP Transfer (setting RV=1)
 ; ----------------------------------------------------------------
 
-Textur_Puyo:	binclude "data/mars/textures/doremi_art.bin"
+Textur_Puyo:	binclude "data/mars/textures/testing_art.bin"
 		align 4
-Palette_Puyo:	binclude "data/mars/textures/doremi_pal.bin"
+Palette_Puyo:	binclude "data/mars/textures/testing_pal.bin"
 		align 4
 		
 WAV_LEFT:	binclude "data/mars/rom/L.wav",$2C,$180000
