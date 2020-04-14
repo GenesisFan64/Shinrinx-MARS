@@ -287,7 +287,6 @@ MarsMdl_MakeModel:
 		bt	.exit_model
 .next_face:
 		mov.w	@r11+,r4
-		mov	#0,r3
 		mov	#3,r8
 		mov	r4,r0
 		shlr8	r0
@@ -330,14 +329,21 @@ MarsMdl_MakeModel:
 		mov	@(4,r6),r0
 		or	r0,r4
 		mov	@r6,r3
+		bra	.vert_loop
+		nop
 
 ; --------------------------------
 ; Set texture material
 ; --------------------------------
 
 .solid_type:
+		mov	r4,r0
+		mov	#$E000,r5
+		and	r5,r4
+		shll16	r4
 		mov	r4,@(polygn_type,r13)
-		mov	r3,@(polygn_mtrl,r13)
+		and	#$FF,r0
+		mov	r0,@(polygn_mtrl,r13)
 		mov	r13,r1
 		add 	#polygn_points,r1
 
@@ -1182,6 +1188,9 @@ MarsVideo_MakePolygon:
 ; Sprite points
 ; ----------------------------------------
 
+; TODO: improve this
+; it sucks
+
 .spr_pnts:
 		mov.w	@r1+,r8		; X pos
 		mov.w	@r1+,r9		; Y pos
@@ -1277,12 +1286,15 @@ MarsVideo_MakePolygon:
 		add	#8,r3
 		
 .start_math:
-	; Search Y
+		mov	#3,r9
+		tst	#PLGN_TRI,r0			; PLGN_TRI set?
+		bf	.ytringl
+		add	#1,r9
+.ytringl:
 		mov	#$7FFFFFFF,r10
 		mov	#$FFFFFFFF,r11
 		mov 	r12,r7
 		mov	r12,r8
-		mov	#4,r9
 .find_top:
 		mov	@(4,r7),r0
 		cmp/gt	r11,r0
