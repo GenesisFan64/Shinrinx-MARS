@@ -711,7 +711,7 @@ SH2_S_HotStart:
 		mov	#RAM_Mars_Objects,r1
 		mov	#TEST_MODEL,r0
 		mov	r0,@(mdl_data,r1)
-		mov	#-$60000,r0
+		mov	#-$100000,r0
 		mov	r0,@(mdl_z_pos,r1)
 		
 ; --------------------------------------------------------
@@ -729,100 +729,87 @@ slave_loop:
 		add	#1,r0
 		mov.w	r0,@r1
 
-; 		mov	#-$40,r2
-		mov	#RAM_Mars_Objects,r1
-; 		mov	@(mdl_z_pos,r1),r0
-; 		add	r2,r0
-; 		mov	r0,@(mdl_z_pos,r1)
-		mov	#-$100,r2
-		mov	@(mdl_x_rot,r1),r0
-		add	r2,r0
-		mov	r0,@(mdl_x_rot,r1)
-; 		mov	@(mdl_y_rot,r1),r0
-; 		add	r2,r0
-; 		mov	r0,@(mdl_y_rot,r1)
-		
-; 		mov	#plygnytest+10,r1
-; 		mov.w	@r1,r0
-; 		add	#1,r0
-; 		mov.w	r0,@r1
-
 ; ----------------------------------------
 
-		mov	#0,r0
-		mov.w	r0,@(marsGbl_CurrNumFace,gbr)
-		mov 	#RAM_Mars_Polygons_0,r1
-		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
-		tst     #1,r0
-		bf	.go_mdl
-		mov 	#RAM_Mars_Polygons_1,r1
-.go_mdl:
-		mov	r1,r0
-		mov	r0,@(marsGbl_CurrFacePos,gbr)
-		mov	#RAM_Mars_Objects,r14
-		mov	#0,r13
-		mov	#1,r12
-.loop:
-		mov	r12,@-r15
-		bsr	MarsMdl_MakeModel
-		nop
-		mov	@r15+,r12
-		add	#sizeof_mdlobj,r14
-		dt	r12
-		bf	.loop
-.skip:
+; 		mov	#RAM_Mars_Objects,r1
+; 		mov	#-$400,r2
+; 		mov	@(mdl_x_rot,r1),r0
+; 		add	r2,r0
+; 		mov	r0,@(mdl_x_rot,r1)
+; 
+; 		mov	#0,r0
+; 		mov.w	r0,@(marsGbl_CurrNumFace,gbr)
+; 		mov 	#RAM_Mars_Polygons_0,r1
+; 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
+; 		tst     #1,r0
+; 		bf	.go_mdl
+; 		mov 	#RAM_Mars_Polygons_1,r1
+; .go_mdl:
+; 		mov	r1,r0
+; 		mov	r0,@(marsGbl_CurrFacePos,gbr)
+; 		mov	#RAM_Mars_Objects,r14
+; 		mov	#0,r13
+; 		mov	#1,r12
+; .loop:
+; 		mov	r12,@-r15
+; 		bsr	MarsMdl_MakeModel
+; 		nop
+; 		mov	@r15+,r12
+; 		add	#sizeof_mdlobj,r14
+; 		dt	r12
+; 		bf	.loop
+; .skip:
 
-; 		mov	#polygoun,r1
-; 		mov	#RAM_Mars_Polygons_0,r2
-; 		mov	#RAM_Mars_Polygons_1,r3
-; 		mov	#10,r4
-; .lelme:
-; 		mov	@r1+,r0
-; 		mov	r0,@r2
-; 		mov	r0,@r3
-; 		add	#4,r2
-; 		add	#4,r3
-; 		dt	r4
-; 		bf	.lelme
-; 		mov	#RAM_Mars_Polygons_0,r0
-; 		mov 	#RAM_Mars_PlgnList_0,r1
-; 		mov 	#RAM_Mars_PlgnList_1,r2
-; 		mov	r0,@r1
-; 		mov	r0,@r2
-; 		mov.w	#1,r0
-; 		mov.w	r0,@(marsGbl_PolyCny_0,gbr)
-; 		mov.w	r0,@(marsGbl_PolyCny_1,gbr)
-
-; ----------------------------------------
-
-.wait_pz:	mov.w	@(marsGbl_VdpListCnt,gbr),r0
-		cmp/eq	#0,r0
-		bf	.wait_pz
-		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
-		mov	r0,r1
-		tst     #1,r0
-		bt	.page_2
-		mov 	#RAM_Mars_PlgnList_0,r14
-		mov 	#RAM_Mars_Polygons_0,r13
-		bsr	.check_z
-		nop
-		mov.w	@(marsGbl_CurrNumFace,gbr),r0
+		mov	#plygnytest+14,r1
+		mov.w	@r1,r0
+		add	#1,r0
+		mov.w	r0,@r1
+		mov	#polygoun,r1
+		mov	#RAM_Mars_Polygons_0,r2
+		mov	#RAM_Mars_Polygons_1,r3
+		mov	#10,r4
+.lelme:
+		mov	@r1+,r0
+		mov	r0,@r2
+		mov	r0,@r3
+		add	#4,r2
+		add	#4,r3
+		dt	r4
+		bf	.lelme
+		mov	#RAM_Mars_Polygons_0,r0
+		mov 	#RAM_Mars_PlgnList_0,r1
+		mov 	#RAM_Mars_PlgnList_1,r2
+		mov	r0,@r1
+		mov	r0,@r2
+		mov.w	#1,r0
 		mov.w	r0,@(marsGbl_PolyCny_0,gbr)
-		bra	.swap_now
-		nop
-.page_2:
-		mov 	#RAM_Mars_PlgnList_1,r14
-		mov 	#RAM_Mars_Polygons_1,r13
-		bsr	.check_z
-		nop
-		mov.w	@(marsGbl_CurrNumFace,gbr),r0
 		mov.w	r0,@(marsGbl_PolyCny_1,gbr)
+
+; ----------------------------------------
+
+; 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
+; 		mov	r0,r1
+; 		tst     #1,r0
+; 		bt	.page_2
+; 		mov 	#RAM_Mars_PlgnList_0,r14
+; 		mov 	#RAM_Mars_Polygons_0,r13
+; 		bsr	.check_z
+; 		nop
+; 		mov.w	@(marsGbl_CurrNumFace,gbr),r0
+; 		mov.w	r0,@(marsGbl_PolyCny_0,gbr)
+; 		bra	.swap_now
+; 		nop
+; .page_2:
+; 		mov 	#RAM_Mars_PlgnList_1,r14
+; 		mov 	#RAM_Mars_Polygons_1,r13
+; 		bsr	.check_z
+; 		nop
+; 		mov.w	@(marsGbl_CurrNumFace,gbr),r0
+; 		mov.w	r0,@(marsGbl_PolyCny_1,gbr)
 		
 ; ----------------------------------------
 
 .swap_now:
-; 		mov.w	#0,r0
-; 		mov.w	r0,@(marsGbl_DrwDone,gbr)
 		mov.w	@(marsGbl_PolyBuffNum,gbr),r0
  		xor	#1,r0
  		mov.w 	r0,@(marsGbl_PolyBuffNum,gbr)
@@ -861,18 +848,18 @@ slave_loop:
 ; 		mov.w	r0,@r1
 
 ; 		align 4
-; polygoun:
-; 		dc.w $4000
-; 		dc.w 0
-; 		dc.l 8
-; plygnytest:	dc.w  48, 48
-; 		dc.w -56, 48
-; 		dc.w -48,-48
-; 		dc.w 92,-92
-; 		dc.w 0,0
-; 		dc.w 0,0
-; 		dc.w 0,0
-; 		dc.w 0,0
+polygoun:
+		dc.w $8000
+		dc.w 480
+		dc.l Textr_MagicalOjam
+plygnytest:	dc.w  80,-80
+		dc.w -80,-50
+		dc.w -80, 80
+		dc.w  80, 50
+		dc.w 480,  0
+		dc.w   0,  0
+		dc.w   0,360
+		dc.w 480,360
 
 ; ====================================================================
 ; ----------------------------------------------------------------

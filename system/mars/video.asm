@@ -369,12 +369,15 @@ MarsMdl_MakeModel:
 		mov	@(8,r4),r4
 		bsr	mdlrd_setpersp
 		nop
+		cmp/pl	r4
+		bt	.face_out
 		mov.w	r2,@r1
 		mov	r3,r0
 		mov.w	r0,@(2,r1)
 		add	#4,r1
 		dt	r8
 		bf	.vert_loop
+.face_out:
 
 ; --------------------------------
 
@@ -590,7 +593,7 @@ mdlrd_setpersp:
 		mov	r4,r0
 ; 		shlr	r0
 ; 		exts	r0,r0
-		cmp/pz	r0
+		cmp/eq	#0,r0
 		bf	.dontdiv
 		mov 	#1,r0
 .dontdiv:
@@ -607,14 +610,14 @@ mdlrd_setpersp:
 		mov 	@r5,r5
 		dmuls	r5,r3
 		sts	macl,r3		; new Y
-		cmp/pz	r4
-		bf	.dontfix
-		neg 	r3,r3
-.dontfix:
+; 		cmp/pz	r4
+; 		bf	.dontfix
+; 		neg 	r3,r3
+; .dontfix:
 
 	; X perspective
 		mov	r4,r0
-		cmp/pz	r0
+		cmp/eq	#0,r0
 		bf	.dontdiv2
 		mov 	#1,r0
 .dontdiv2:
@@ -631,10 +634,10 @@ mdlrd_setpersp:
 		mov 	@r5,r5
 		dmuls	r5,r2
 		sts	macl,r2		; new X
-		cmp/pz	r4
-		bf	.dontfix2
-		neg	r2,r2
-.dontfix2:
+; 		cmp/pz	r4
+; 		bf	.dontfix2
+; 		neg	r2,r2
+; .dontfix2:
 		shlr8	r2
 		shlr8	r3
 		exts	r2,r2
@@ -933,7 +936,6 @@ drw_task_02:
 		shlr16	r12
 		exts	r11,r11
 		exts	r12,r12
-
 		mov	r12,r0
 		sub	r11,r0
 		cmp/pl	r0
@@ -948,12 +950,14 @@ drw_task_02:
 		mov	r8,r7
 		mov	r0,r8
 .txrevers:
-
+		cmp/eq	r11,r12
+		bt	.tex_upd_line
 		mov	#SCREEN_WIDTH,r0
 		cmp/pl	r12
 		bf	.tex_upd_line
 		cmp/gt	r0,r11
 		bt	.tex_upd_line
+
 		mov	r12,r2
 		mov 	r11,r0
 		sub 	r0,r2
@@ -1210,7 +1214,7 @@ MarsVideo_MakePolygon:
 ; Sprite points
 ; ----------------------------------------
 
-; TODO: improve this
+; TODO: rework on this
 ; it sucks
 
 .spr_pnts:
@@ -1395,7 +1399,8 @@ MarsVideo_MakePolygon:
 		bsr	put_piece
 		nop
 		ldc	@r15+,sr	; Restore interrupts
-		cmp/ge	r9,r8
+
+		cmp/gt	r9,r8
 		bf	.lefth2
 		bsr	set_right
 		nop
@@ -1404,6 +1409,14 @@ MarsVideo_MakePolygon:
 .lefth2:
 		bsr	set_left
 		nop
+		
+; 		cmp/ge	r0,r1
+; 		bt	.lefth2
+		
+; 		mov	#$F0,r7
+; 		bra	*
+; 		ldc	r7,sr
+
 		bra	.next_pz
 		nop		
 .exit:
@@ -1571,10 +1584,14 @@ set_right:
 ; --------------------------------
 
 put_piece:
+		mov	@(4,r2),r8
+		mov	@(4,r3),r9
+		sub	r10,r8
+		sub	r10,r9
 		mov	@(marsGbl_VdpList_W,gbr),r0
 		mov	r0,r1
 		mov	r8,r0
-		cmp/ge	r8,r9
+		cmp/gt	r8,r9
 		bt	.lefth
 		mov	r9,r0
 .lefth:
