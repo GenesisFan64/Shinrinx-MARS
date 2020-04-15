@@ -21,6 +21,7 @@ marsGbl_VdpList_R	ds.l 1
 marsGbl_VdpList_W	ds.l 1
 marsGbl_CurrFacePos	ds.l 1
 marsGbl_CurrZList	ds.l 1
+marsGbl_DrwDone		ds.w 1
 marsGbl_CurrNumFace	ds.w 1
 marsGbl_PolyCny_0	ds.w 1
 marsGbl_PolyCny_1	ds.w 1
@@ -564,9 +565,8 @@ master_loop:
 
 	; --------------------------------------
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
-		mov	r0,r1
 		tst     #1,r0
-		bf	.page_2
+		bt	.page_2
 		mov 	#RAM_Mars_PlgnList_0,r14
 		bra	.start_plygn
 		mov.w	@(marsGbl_PolyCny_0,gbr),r0
@@ -593,6 +593,8 @@ master_loop:
 
 	; --------------------------------------
 
+; 		mov.w	#1,r0
+; 		mov.w	r0,@(marsGbl_DrwDone,gbr)
 .wait_pz:	mov.w	@(marsGbl_VdpListCnt,gbr),r0
 		cmp/eq	#0,r0
 		bf	.wait_pz
@@ -608,7 +610,10 @@ master_loop:
 		mov.w	@r1,r0
 		add	#1,r0
 		mov.w	r0,@r1
-
+; .wait_slav:	mov.w	@(marsGbl_DrwDone,gbr),r0
+; 		cmp/eq	#0,r0
+; 		bf	.wait_slav
+		
 		bra	master_loop
 		nop
 		align 4
@@ -706,7 +711,7 @@ SH2_S_HotStart:
 		mov	#RAM_Mars_Objects,r1
 		mov	#TEST_MODEL,r0
 		mov	r0,@(mdl_data,r1)
-		mov	#-$50000,r0
+		mov	#-$60000,r0
 		mov	r0,@(mdl_z_pos,r1)
 		
 ; --------------------------------------------------------
@@ -714,28 +719,28 @@ SH2_S_HotStart:
 ; --------------------------------------------------------
 
 slave_loop:
-; 		mov	#1,r0
-; 		mov.w	r0,@(marsGbl_VIntFlag_S,gbr)
-; .wait:		mov.w	@(marsGbl_VIntFlag_S,gbr),r0
-; 		cmp/eq	#1,r0
-; 		bt	.wait
-; 		mov	#_sysreg+comm4,r1
-; 		mov.w	@r1,r0
-; 		add	#1,r0
-; 		mov.w	r0,@r1
+		mov	#1,r0
+		mov.w	r0,@(marsGbl_VIntFlag_S,gbr)
+.wait:		mov.w	@(marsGbl_VIntFlag_S,gbr),r0
+		cmp/eq	#1,r0
+		bt	.wait
+		mov	#_sysreg+comm4,r1
+		mov.w	@r1,r0
+		add	#1,r0
+		mov.w	r0,@r1
 
-		mov	#-$40,r2
+; 		mov	#-$40,r2
 		mov	#RAM_Mars_Objects,r1
-		mov	@(mdl_z_pos,r1),r0
-		add	r2,r0
-		mov	r0,@(mdl_z_pos,r1)
-		mov	#-$400,r2
+; 		mov	@(mdl_z_pos,r1),r0
+; 		add	r2,r0
+; 		mov	r0,@(mdl_z_pos,r1)
+		mov	#-$100,r2
 		mov	@(mdl_x_rot,r1),r0
 		add	r2,r0
 		mov	r0,@(mdl_x_rot,r1)
-		mov	@(mdl_y_rot,r1),r0
-		add	r2,r0
-		mov	r0,@(mdl_y_rot,r1)
+; 		mov	@(mdl_y_rot,r1),r0
+; 		add	r2,r0
+; 		mov	r0,@(mdl_y_rot,r1)
 		
 ; 		mov	#plygnytest+10,r1
 ; 		mov.w	@r1,r0
@@ -790,13 +795,13 @@ slave_loop:
 
 ; ----------------------------------------
 
-		mov.w	@(marsGbl_CurrNumFace,gbr),r0
+.wait_pz:	mov.w	@(marsGbl_VdpListCnt,gbr),r0
 		cmp/eq	#0,r0
-		bt	slave_loop
+		bf	.wait_pz
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		mov	r0,r1
 		tst     #1,r0
-		bf	.page_2
+		bt	.page_2
 		mov 	#RAM_Mars_PlgnList_0,r14
 		mov 	#RAM_Mars_Polygons_0,r13
 		bsr	.check_z
@@ -816,6 +821,8 @@ slave_loop:
 ; ----------------------------------------
 
 .swap_now:
+; 		mov.w	#0,r0
+; 		mov.w	r0,@(marsGbl_DrwDone,gbr)
 		mov.w	@(marsGbl_PolyBuffNum,gbr),r0
  		xor	#1,r0
  		mov.w 	r0,@(marsGbl_PolyBuffNum,gbr)
