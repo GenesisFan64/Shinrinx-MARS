@@ -887,9 +887,7 @@ drw_task_02:
 .invld_y:
 		bra	.next_piece
 		nop
-.timeout:
-		bra	.finish_it
-		nop
+		align 4
 
 ; ------------------------------------
 
@@ -902,148 +900,7 @@ drw_task_02:
 		shlr16	r0
 		shlr8	r0
 		tst	#PLGN_TEXURE,r0
-		bt	.solid_color
-		
-; ------------------------------------
-; Texture
-; r1  - XL
-; r2  - XL DX
-; r3  - XR
-; r4  - XR DX
-; r5  - SRC XL
-; r6  - SRC XR
-; r7  - SRC YL
-; r8  - SRC YR
-; r9  - Y current
-; r10  - Y end
-; ------------------------------------
-
-		mov	@(plypz_src_xl,r14),r5
-		mov	@(plypz_src_xr,r14),r6
-		mov	@(plypz_src_yl,r14),r7
-		mov	@(plypz_src_yr,r14),r8
-.tex_next_line:
-		mov	r2,@-r15
-		mov	r4,@-r15
-		mov	r5,@-r15
-		mov	r6,@-r15		
-		mov	r7,@-r15
-		mov	r8,@-r15
-		mov	r10,@-r15
-		mov	r1,r11
-		mov	r3,r12
-		shlr16	r11
-		shlr16	r12
-		exts	r11,r11
-		exts	r12,r12
-		mov	r12,r0
-		sub	r11,r0
-		cmp/pl	r0
-		bt	.txrevers
-		mov	r12,r0
-		mov	r11,r12
-		mov	r0,r11
-		mov	r5,r0
-		mov	r6,r5
-		mov	r0,r6
-		mov	r7,r0
-		mov	r8,r7
-		mov	r0,r8
-.txrevers:
-		cmp/eq	r11,r12
-		bt	.tex_upd_line
-		mov	#SCREEN_WIDTH,r0
-		cmp/pl	r12
-		bf	.tex_upd_line
-		cmp/gt	r0,r11
-		bt	.tex_upd_line
-
-		mov	r12,r2
-		mov 	r11,r0
-		sub 	r0,r2
-		shll2	r2
-		sub	r5,r6
-		mov	#RAM_Mars_DivTable-4,r0
-		mov	@(r0,r2),r0
-		dmuls	r6,r0
-		sts	macl,r6
-		sts	mach,r0
-		xtrct   r0,r6
-		sub	r7,r8
-		mov	#RAM_Mars_DivTable-4,r0
-		mov	@(r0,r2),r0
-		dmuls	r8,r0
-		sts	macl,r8
-		sts	mach,r0
-		xtrct   r0,r8
-		mov	#SCREEN_WIDTH,r0
-		cmp/gt	r0,r12
-		bf	.tr_fix
-		mov	r0,r12
-.tr_fix:
-		cmp/pl	r11
-		bt	.tl_fix
-		neg	r11,r0
-		dmulu	r6,r0
-		sts	macl,r0
-		add	r0,r5
-		xor	r11,r11
-.tl_fix:
-		mov 	r9,r0
-		cmp/pl	r0
-		bf	.tex_upd_line
-		shll8	r0
-		shll	r0
-		sub 	r11,r12
-		cmp/pl	r12
-		bf	.tex_upd_line
-		mov 	#_overwrite+$200,r10
-		add 	r0,r10
-		add 	r11,r10
-		mov	@(plypz_mtrl,r14),r11		; texture data
-		mov	@(plypz_mtrlopt,r14),r4		; texture width
-		mov	#$FFFF,r0
-		and	r0,r4
-.texloop:
-		swap.w	r7,r2				; Build row offset
-		mulu.w	r2,r4
-		mov	r5,r2	   			; Build column index
-		sts	macl,r0
-		shlr16	r2
-		add	r2,r0
-		mov.b	@(r0,r11),r0			; Read pixel
-		mov.b	r0,@r10	   			; Write pixel
-		add 	#1,r10
-		add	r6,r5				; Update X
-		dt	r12
-		bf/s	.texloop
-		add	r8,r7				; Update Y
-
-.tex_upd_line:
-		mov	@r15+,r10
-		mov	@r15+,r8
-		mov	@r15+,r7
-		mov	@r15+,r6
-		mov	@r15+,r5
-		mov	@r15+,r4
-		mov	@r15+,r2
-		mov	@(plypz_src_xl_dx,r14),r0
-		add	r0,r5
-		mov	@(plypz_src_xr_dx,r14),r0
-		add	r0,r6	
-		mov	@(plypz_src_yl_dx,r14),r0
-		add	r0,r7
-		mov	@(plypz_src_yr_dx,r14),r0
-		add	r0,r8
-
-		add	r2,r1
-		add	r4,r3
-		dt	r10
-		bf/s	.tex_next_line
-		add	#1,r9
-
-		bra	.next_piece
-		nop
+		bf	.use_mtrl
 
 ; ------------------------------------
 ; Solid Color
@@ -1055,13 +912,17 @@ drw_task_02:
 		mov	#$FFFF,r0
 		and	r0,r6
 .next_line:
+		cmp/pl	r9
+		bf	.upd_line
+		mov	#SCREEN_HEIGHT,r0
+		cmp/ge	r0,r9
+		bt	.upd_line
 		mov	r3,r11
 		mov	r1,r12
 		shlr16	r11
 		shlr16	r12
 		exts	r11,r11
 		exts	r12,r12
-		
 		mov	r12,r0
 		sub	r11,r0
 		cmp/pl	r0
@@ -1133,6 +994,185 @@ drw_task_02:
 		dt	r10
 		bf/s	.next_line
 		add	#1,r9
+		
+		bra	.next_piece
+		nop
+		align 4
+
+; ------------------------------------
+; Texture
+; r1  - XL
+; r2  - XL DX
+; r3  - XR
+; r4  - XR DX
+; r5  - SRC XL
+; r6  - SRC XR
+; r7  - SRC YL
+; r8  - SRC YR
+; r9  - Y current
+; r10  - Y end
+; ------------------------------------
+
+.use_mtrl:
+		mov	@(plypz_src_xl,r14),r5
+		mov	@(plypz_src_xr,r14),r6
+		mov	@(plypz_src_yl,r14),r7
+		mov	@(plypz_src_yr,r14),r8
+.tex_next_line:
+		cmp/pl	r9
+		bf	.tex_skipline
+		mov	#SCREEN_HEIGHT,r0
+		cmp/gt	r0,r9
+		bt	.tex_skipline
+		mov	r2,@-r15
+		mov	r4,@-r15
+		mov	r5,@-r15
+		mov	r6,@-r15		
+		mov	r7,@-r15
+		mov	r8,@-r15
+		mov	r10,@-r15
+		mov	r1,r11
+		mov	r3,r12
+		shlr16	r11
+		shlr16	r12
+		exts	r11,r11
+		exts	r12,r12
+		mov	r12,r0
+		sub	r11,r0
+		cmp/pl	r0
+		bt	.txrevers
+		mov	r12,r0
+		mov	r11,r12
+		mov	r0,r11
+		mov	r5,r0
+		mov	r6,r5
+		mov	r0,r6
+		mov	r7,r0
+		mov	r8,r7
+		mov	r0,r8
+.txrevers:
+		cmp/eq	r11,r12
+		bt	.tex_upd_line
+		mov	#SCREEN_WIDTH,r0
+		cmp/pl	r12
+		bf	.tex_upd_line
+		cmp/gt	r0,r11
+		bt	.tex_upd_line
+
+		mov	r12,r0			; Using HW external division
+		mov 	r11,r2
+		sub 	r2,r0
+		add 	#1,r0
+		cmp/eq	#0,r0
+		bf	.nozero
+		mov 	#1,r0
+.nozero:
+		mov	#_JR,r2
+		sub	r5,r6
+		mov 	r0,@r2
+		nop
+		mov 	r6,@(4,r2)
+		nop
+		mov	#8,r2
+.waitdx:
+		dt	r2
+		bf	.waitdx
+		mov 	#_HRL,r2
+		mov 	@r2,r6
+		mov	#_JR,r2
+		sub	r7,r8
+		mov 	r0,@r2
+		nop
+		mov 	r6,@(4,r2)
+		nop
+		mov	#8,r2
+.waitdy:	dt	r2
+		bf	.waitdy
+		mov 	#_HRL,r2
+		mov 	@r2,r8
+; 		mov	r12,r2			; Divtable, doesn't work
+; 		mov 	r11,r0
+; 		sub 	r0,r2
+; 		shll2	r2
+; 		sub	r5,r6
+; 		mov	#RAM_Mars_DivTable-4,r0
+; 		mov	@(r0,r2),r0
+; 		dmuls	r6,r0
+; 		sts	macl,r6
+; 		sts	mach,r0
+; 		xtrct   r0,r6
+; 		sub	r7,r8
+; 		mov	#RAM_Mars_DivTable-4,r0
+; 		mov	@(r0,r2),r0
+; 		dmuls	r8,r0
+; 		sts	macl,r8
+; 		sts	mach,r0
+; 		xtrct   r0,r8
+
+		mov	#SCREEN_WIDTH,r0
+		cmp/gt	r0,r12
+		bf	.tr_fix
+		mov	r0,r12
+.tr_fix:
+		cmp/pl	r11
+		bt	.tl_fix
+		neg	r11,r0
+		dmulu	r6,r0
+		sts	macl,r0
+		add	r0,r5
+		xor	r11,r11
+.tl_fix:
+		mov 	r9,r0
+		shll8	r0
+		shll	r0
+		sub 	r11,r12
+		cmp/pl	r12
+		bf	.tex_upd_line
+		mov 	#_overwrite+$200,r10
+		add 	r0,r10
+		add 	r11,r10
+		mov	@(plypz_mtrl,r14),r11		; texture data
+		mov	@(plypz_mtrlopt,r14),r4		; texture width
+		mov	#$FFFF,r0
+		and	r0,r4
+.texloop:
+		swap.w	r7,r2				; Build row offset
+		mulu.w	r2,r4
+		mov	r5,r2	   			; Build column index
+		sts	macl,r0
+		shlr16	r2
+		add	r2,r0
+		mov.b	@(r0,r11),r0			; Read pixel
+		mov.b	r0,@r10	   			; Write pixel
+		add 	#1,r10
+		add	r6,r5				; Update X
+		dt	r12
+		bf/s	.texloop
+		add	r8,r7				; Update Y
+
+.tex_upd_line:
+		mov	@r15+,r10
+		mov	@r15+,r8
+		mov	@r15+,r7
+		mov	@r15+,r6
+		mov	@r15+,r5
+		mov	@r15+,r4
+		mov	@r15+,r2
+.tex_skipline:
+		mov	@(plypz_src_xl_dx,r14),r0
+		add	r0,r5
+		mov	@(plypz_src_xr_dx,r14),r0
+		add	r0,r6	
+		mov	@(plypz_src_yl_dx,r14),r0
+		add	r0,r7
+		mov	@(plypz_src_yr_dx,r14),r0
+		add	r0,r8
+		add	r2,r1
+		add	r4,r3
+		dt	r10
+		bf/s	.tex_next_line
+		add	#1,r9
+		
 .next_piece:
 		add	#sizeof_plypz,r14
 		mov	#_sysreg+comm8,r0			; DEBUG comm

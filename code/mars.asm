@@ -702,7 +702,7 @@ SH2_S_HotStart:
 		mov	#RAM_Mars_Objects,r1
 		mov	#TEST_MODEL,r0
 		mov	r0,@(mdl_data,r1)
-		mov	#-$C0000,r0
+		mov	#-$60000,r0
 		mov	r0,@(mdl_z_pos,r1)
 
 		mov.l	#$20,r0			; Interrupts ON
@@ -731,16 +731,16 @@ slave_loop:
 		add	r2,r0
 		mov	r0,@(mdl_x_rot,r1)
 ; 		mov	#-$1000,r2
-; 		mov	@(mdl_z_rot,r1),r0
+; 		mov	@(mdl_z_pos,r1),r0
 ; 		add	r2,r0
-; 		mov	r0,@(mdl_z_rot,r1)
+; 		mov	r0,@(mdl_z_pos,r1)
 		
 		mov	#0,r0
 		mov.w	r0,@(marsGbl_CurrNumFace,gbr)
 		mov 	#RAM_Mars_Polygons_0,r1
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		tst     #1,r0
-		bf	.go_mdl
+		bt	.go_mdl
 		mov 	#RAM_Mars_Polygons_1,r1
 .go_mdl:
 		mov	r1,r0
@@ -788,7 +788,7 @@ slave_loop:
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		mov	r0,r1
 		tst     #1,r0
-		bt	.page_2
+		bf	.page_2
 		mov 	#RAM_Mars_PlgnList_0,r14
 		mov 	#RAM_Mars_Polygons_0,r13
 		bsr	.check_z
