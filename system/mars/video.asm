@@ -16,7 +16,7 @@
 ; ----------------------------------------
 
 MAX_FACES		equ	512
-MAX_SVDP_PZ		equ	1000
+MAX_SVDP_PZ		equ	1024
 MAX_MODELS		equ	64
 
 ; ----------------------------------------
@@ -610,10 +610,10 @@ mdlrd_setpersp:
 		mov 	@r5,r5
 		dmuls	r5,r3
 		sts	macl,r3		; new Y
-; 		cmp/pz	r4
-; 		bf	.dontfix
-; 		neg 	r3,r3
-; .dontfix:
+		cmp/pz	r4
+		bf	.dontfix
+		neg 	r3,r3
+.dontfix:
 
 	; X perspective
 		mov	r4,r0
@@ -634,10 +634,10 @@ mdlrd_setpersp:
 		mov 	@r5,r5
 		dmuls	r5,r2
 		sts	macl,r2		; new X
-; 		cmp/pz	r4
-; 		bf	.dontfix2
-; 		neg	r2,r2
-; .dontfix2:
+		cmp/pz	r4
+		bf	.dontfix2
+		neg	r2,r2
+.dontfix2:
 		shlr8	r2
 		shlr8	r3
 		exts	r2,r2
@@ -1409,14 +1409,6 @@ MarsVideo_MakePolygon:
 .lefth2:
 		bsr	set_left
 		nop
-		
-; 		cmp/ge	r0,r1
-; 		bt	.lefth2
-		
-; 		mov	#$F0,r7
-; 		bra	*
-; 		ldc	r7,sr
-
 		bra	.next_pz
 		nop		
 .exit:

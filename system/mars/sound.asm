@@ -29,10 +29,7 @@ sizeof_sndchn	ds.l 0
 
 MarsSound_Init:
 		sts	pr,@-r15
-		stc	gbr,@-r15
 
-		mov	#_sysreg,r0
-		ldc	r0,gbr
 		mov	#((((23011361<<1)/32000+1)>>1)+1),r0	; 32000 works but the CPU must be calm
 		mov.w	r0,@(cycle,gbr)
 		mov	#$0105,r0
@@ -42,7 +39,6 @@ MarsSound_Init:
 		mov.w	r0,@(monowidth,gbr)
 		mov.w	r0,@(monowidth,gbr)
 
-		ldc	@r15+,gbr
 		lds	@r15+,pr
 		rts
 		nop
@@ -66,7 +62,7 @@ MarsSound_Run:
 ; 
 ; READ/START/END/LOOP points are floating values (xxxxxx.00)
 ; 
-; r0-r8 only
+; r0-r7 only
 ; ----------------------------------------------------------------
 
 MarsSound_PWM:
@@ -111,7 +107,7 @@ MarsSound_PWM:
 		
 		
 		and 	#$FF,r0
-; 		shll 	r0
+		shll 	r0
 		mov 	r0,r2
 		mov 	@(mchnsnd_flags,r7),r0
 		tst	#2,r0
@@ -138,18 +134,16 @@ MarsSound_PWM:
 ; Play wave
 ; ------------------------------------------------
 
-		mov	#_sysreg+monowidth,r1
 .full:
-		mov.b	@r1,r0
+  		mov.w	@(monowidth,gbr),r0
+  		shlr8	r0
  		tst	#$80,r0
  		bf	.full
  		
-		mov	#_sysreg+lchwidth,r1
-		mov	#_sysreg+rchwidth,r2
  		mov	r3,r0
- 		mov.w	r0,@r1
+ 		mov.w	r0,@(lchwidth,gbr)
  		mov	r4,r0
- 		mov.w	r0,@r2
+ 		mov.w	r0,@(rchwidth,gbr)
 		rts
 		nop
 		align 4

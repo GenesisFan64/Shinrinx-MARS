@@ -65,17 +65,33 @@ m_irq_bad:
 ; ------------------------------------------------
 
 m_irq_pwm:
+		mov	#_sysreg,r1
+		mov.b	@r1,r0
+ 		tst	#$80,r0
+ 		bf	.exit
+		mov.l	r2,@-r15
+		mov.l	r3,@-r15
+		mov.l	r4,@-r15
+		mov.l	r5,@-r15
+		mov.l	r6,@-r15
+		mov.l	r7,@-r15
+		sts	pr,@-r15
+		bsr	MarsSound_PWM
+		nop
+		lds	@r15+,pr
+		mov.l	@r15+,r7
+		mov.l	@r15+,r6
+		mov.l	@r15+,r5
+		mov.l	@r15+,r4
+		mov.l	@r15+,r3
+		mov.l	@r15+,r2
+.exit:
 		mov.l	#$FFFFFE10,r1
 		mov.b	@(7,r1),r0
 		xor	#2,r0
 		mov.b	r0,@(7,r1)
 		mov	#_sysreg+pwmintclr,r1
 		mov.w	r0,@r1
-		nop
-		nop
-		nop
-		nop
-		nop
 		rts
 		nop
 		align 4
@@ -253,7 +269,6 @@ m_irq_vres:
 		nop
 		align 4
 
-	
 		ltorg		; Save MASTER IRQ literals here
 
 ; =================================================================
@@ -272,35 +287,17 @@ s_irq_bad:
 ; ------------------------------------------------
 
 s_irq_pwm:
-		mov	#_sysreg+monowidth,r1
-		mov.b	@r1,r0
- 		tst	#$80,r0
- 		bf	.exit
-		mov.l	r2,@-r15
-		mov.l	r3,@-r15
-		mov.l	r4,@-r15
-		mov.l	r5,@-r15
-		mov.l	r6,@-r15
-		mov.l	r7,@-r15
-		mov.l	r8,@-r15
-		sts	pr,@-r15
-		bsr	MarsSound_PWM
-		nop
-		lds	@r15+,pr
-		mov.l	@r15+,r8
-		mov.l	@r15+,r7
-		mov.l	@r15+,r6
-		mov.l	@r15+,r5
-		mov.l	@r15+,r4
-		mov.l	@r15+,r3
-		mov.l	@r15+,r2
-.exit:
 		mov.l	#$FFFFFE10,r1
 		mov.b	@(7,r1),r0
 		xor	#2,r0
 		mov.b	r0,@(7,r1)
 		mov	#_sysreg+pwmintclr,r1
 		mov.w	r0,@r1
+		nop
+		nop
+		nop
+		nop
+		nop
 		rts
 		nop
 		align 4
@@ -465,10 +462,10 @@ s_irq_custom:
 		align 4
 SH2_M_Entry:
 		mov.l	#CS3|$40000,r15
-		mov.l   #$FFFFFE10,r1		; Disable FRT
+		mov.l   #$FFFFFE10,r1
 		mov     #0,r0
 		mov.b   r0,@(0,r1)
-		mov     #$FFFFFFE2,r0		; bus state controller (emulators ignore this)
+		mov     #$FFFFFFE2,r0
 		mov.b   r0,@(7,r1)
 		mov     #0,r0
 		mov.b   r0,@(4,r1)
@@ -481,8 +478,9 @@ SH2_M_Entry:
 		mov     #0,r0
 		mov.b   r0,@(3,r1)
 		mov.b   r0,@(2,r1)
-		mov.l   #$FFFFFEE2,r0		; irq priorities ($50 enables watchdog)
-		mov     #%01010000,r1
+
+		mov.l   #$FFFFFEE2,r0
+		mov     #$50,r1
 		mov.w   r1,@r0
 		mov.l   #$FFFFFEE4,r0
 		mov     #$120/4,r1		; VBR + this/4
@@ -523,11 +521,13 @@ SH2_M_HotStart:
 		mov	#$19,r0
 		mov.w	r0,@r1
 		mov	#_sysreg,r1
-		mov.l	#VIRQ_ON|CMDIRQ_ON,r0		; IRQ enable bits
+		mov.l	#VIRQ_ON|PWMIRQ_ON|CMDIRQ_ON,r0	; IRQ enable bits
     		mov.b	r0,@(intmask,r1)
 
 ; ------------------------------------------------
 
+		bsr	MarsVideo_Init			; Init video
+		nop
 		bsr	MarsSound_Init			; Init sound
 		nop
 		mov.l	#Palette_Puyo,r1
@@ -544,6 +544,24 @@ SH2_M_HotStart:
 		add 	#4,r2
 		dt	r3
 		bf	.copy
+
+; 		mov	#0,r1
+; 		mov	#WAV_LEFT,r2
+; 		mov	#WAV_LEFT_E,r3
+; 		mov	r2,r4
+; 		mov	#$100,r5
+; 		mov	#0,r6
+; 		bsr	MarsSound_SetChannel
+; 		mov	#%10,r7
+; 	
+; 		mov	#1,r1
+; 		mov	#WAV_RIGHT,r2
+; 		mov	#WAV_RIGHT_E,r3
+; 		mov	r2,r4
+; 		mov	#$100,r5
+; 		mov	#0,r6
+; 		bsr	MarsSound_SetChannel
+; 		mov	#%01,r7
 		
 ; ------------------------------------------------
 
@@ -565,13 +583,14 @@ master_loop:
 
 	; --------------------------------------
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
+		mov	r0,r1
 		tst     #1,r0
-		bt	.page_2
-		mov 	#RAM_Mars_PlgnList_0,r14
+		bf	.page_2
+		mov 	#RAM_Mars_PolyList_0,r14
 		bra	.start_plygn
 		mov.w	@(marsGbl_PolyCny_0,gbr),r0
 .page_2:
-		mov 	#RAM_Mars_PlgnList_1,r14
+		mov 	#RAM_Mars_PolyList_1,r14
 		mov.w	@(marsGbl_PolyCny_1,gbr),r0
 .start_plygn:
 		cmp/eq  #0,r0
@@ -590,11 +609,8 @@ master_loop:
 		dt	r13
 		bf	.loop
 .skip:
-
 	; --------------------------------------
 
-; 		mov.w	#1,r0
-; 		mov.w	r0,@(marsGbl_DrwDone,gbr)
 .wait_pz:	mov.w	@(marsGbl_VdpListCnt,gbr),r0
 		cmp/eq	#0,r0
 		bf	.wait_pz
@@ -610,10 +626,7 @@ master_loop:
 		mov.w	@r1,r0
 		add	#1,r0
 		mov.w	r0,@r1
-; .wait_slav:	mov.w	@(marsGbl_DrwDone,gbr),r0
-; 		cmp/eq	#0,r0
-; 		bf	.wait_slav
-		
+
 		bra	master_loop
 		nop
 		align 4
@@ -628,10 +641,11 @@ master_loop:
 SH2_S_Entry:
 		mov.l	#_sysreg,r14
 		ldc	r14,gbr
+
 		mov.l   #$FFFFFE10,r1
 		mov     #0,r0
 		mov.b   r0,@(0,r1)
-		mov     #$FFFFFFE2,r0		; bus state controller (emulators ignore this)
+		mov     #$FFFFFFE2,r0
 		mov.b   r0,@(7,r1)
 		mov     #0,r0
 		mov.b   r0,@(4,r1)
@@ -644,8 +658,8 @@ SH2_S_Entry:
 		mov     #0,r0
 		mov.b   r0,@(3,r1)
 		mov.b   r0,@(2,r1)
-		mov.l   #$FFFFFEE2,r0		; irq priorities ($50 enables watchdog)
-		mov     #%01010000,r1
+		mov.l   #$FFFFFEE2,r0
+		mov     #$50,r1
 		mov.w   r1,@r0
 		mov.l   #$FFFFFEE4,r0
 		mov     #$120/4,r1		; VBR + this/4
@@ -680,40 +694,44 @@ SH2_S_HotStart:
 		mov	#$19,r0
 		mov.w	r0,@r1
 		mov	#_sysreg,r1
-		mov.l	#VIRQ_ON|PWMIRQ_ON|CMDIRQ_ON,r0		; IRQ enable bits
+		mov.l	#VIRQ_ON|CMDIRQ_ON,r0		; IRQ enable bits
     		mov.b	r0,@(intmask,r1)	; clear IRQ ACK regs
 
 ; ------------------------------------------------
 
-		bsr	MarsVideo_Init			; Init video
-		nop
-		mov	#0,r1
-		mov	#WAV_LEFT,r2
-		mov	#WAV_LEFT_E,r3
-		mov	r2,r4
-		mov	#$100,r5
-		mov	#0,r6
-		bsr	MarsSound_SetChannel
-		mov	#%10,r7
-		mov	#1,r1
-		mov	#WAV_RIGHT,r2
-		mov	#WAV_RIGHT_E,r3
-		mov	r2,r4
-		mov	#$100,r5
-		mov	#0,r6
-		bsr	MarsSound_SetChannel
-		mov	#%01,r7
 		mov.l	#$20,r0			; Interrupts ON
 		ldc	r0,sr
 
 ; --------------------------------------------------------
+; Loop
+; --------------------------------------------------------
 
-		mov	#RAM_Mars_Objects,r1
-		mov	#TEST_MODEL,r0
-		mov	r0,@(mdl_data,r1)
-		mov	#-$100000,r0
-		mov	r0,@(mdl_z_pos,r1)
-		
+		mov 	#RAM_Mars_Polygons_0,r2
+		mov	#polygn_test,r1
+		mov	#(polygn_test_e-polygn_test)/4,r8
+.copyme:
+		mov	@r1+,r0
+		mov 	r0,@r2
+		add 	#4,r2
+		dt	r8
+		bf	.copyme
+
+		mov	#RAM_Mars_PolyList_0,r1
+		mov	#RAM_Mars_PolyList_1,r2
+		mov	#6,r3
+		mov	r3,r0
+		mov.w	r0,@(marsGbl_PolyCny_0,gbr)
+		mov.w	r0,@(marsGbl_PolyCny_1,gbr)
+		mov	#RAM_Mars_Polygons_0,r0
+.copy:
+		mov	r0,@r1
+		mov	r0,@r2
+		add	#sizeof_polygn,r0
+		add	#4,r1
+		add	#4,r2
+		dt	r3
+		bf	.copy
+
 ; --------------------------------------------------------
 ; Slave main loop
 ; --------------------------------------------------------
@@ -729,137 +747,112 @@ slave_loop:
 		add	#1,r0
 		mov.w	r0,@r1
 
-; ----------------------------------------
-
-; 		mov	#RAM_Mars_Objects,r1
-; 		mov	#-$400,r2
-; 		mov	@(mdl_x_rot,r1),r0
+; 		mov 	#RAM_Mars_Polygons_0+8,r1
+; 		mov	@r1,r0
+; 		mov	@($8,r1),r3
+; 		mov	@($10,r1),r4
+; 		mov	@($18,r1),r5
+; 		mov 	#-$100,r2
 ; 		add	r2,r0
-; 		mov	r0,@(mdl_x_rot,r1)
-; 
-; 		mov	#0,r0
-; 		mov.w	r0,@(marsGbl_CurrNumFace,gbr)
-; 		mov 	#RAM_Mars_Polygons_0,r1
-; 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
-; 		tst     #1,r0
-; 		bf	.go_mdl
-; 		mov 	#RAM_Mars_Polygons_1,r1
-; .go_mdl:
-; 		mov	r1,r0
-; 		mov	r0,@(marsGbl_CurrFacePos,gbr)
-; 		mov	#RAM_Mars_Objects,r14
-; 		mov	#0,r13
-; 		mov	#1,r12
-; .loop:
-; 		mov	r12,@-r15
-; 		bsr	MarsMdl_MakeModel
-; 		nop
-; 		mov	@r15+,r12
-; 		add	#sizeof_mdlobj,r14
-; 		dt	r12
-; 		bf	.loop
-; .skip:
-
-		mov	#plygnytest+14,r1
-		mov.w	@r1,r0
-		add	#1,r0
-		mov.w	r0,@r1
-		mov	#polygoun,r1
-		mov	#RAM_Mars_Polygons_0,r2
-		mov	#RAM_Mars_Polygons_1,r3
-		mov	#10,r4
-.lelme:
-		mov	@r1+,r0
-		mov	r0,@r2
-		mov	r0,@r3
-		add	#4,r2
-		add	#4,r3
-		dt	r4
-		bf	.lelme
-		mov	#RAM_Mars_Polygons_0,r0
-		mov 	#RAM_Mars_PlgnList_0,r1
-		mov 	#RAM_Mars_PlgnList_1,r2
-		mov	r0,@r1
-		mov	r0,@r2
-		mov.w	#1,r0
-		mov.w	r0,@(marsGbl_PolyCny_0,gbr)
-		mov.w	r0,@(marsGbl_PolyCny_1,gbr)
-
-; ----------------------------------------
-
-; 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
-; 		mov	r0,r1
-; 		tst     #1,r0
-; 		bt	.page_2
-; 		mov 	#RAM_Mars_PlgnList_0,r14
-; 		mov 	#RAM_Mars_Polygons_0,r13
-; 		bsr	.check_z
-; 		nop
-; 		mov.w	@(marsGbl_CurrNumFace,gbr),r0
-; 		mov.w	r0,@(marsGbl_PolyCny_0,gbr)
-; 		bra	.swap_now
-; 		nop
-; .page_2:
-; 		mov 	#RAM_Mars_PlgnList_1,r14
-; 		mov 	#RAM_Mars_Polygons_1,r13
-; 		bsr	.check_z
-; 		nop
-; 		mov.w	@(marsGbl_CurrNumFace,gbr),r0
-; 		mov.w	r0,@(marsGbl_PolyCny_1,gbr)
+; 		add 	r2,r3
+; 		add	r2,r4
+; 		add 	r2,r5
+; 		mov	r0,@r1
+; 		mov	r3,@($8,r1)
+; 		mov	r4,@($10,r1)
+; 		mov	r5,@($18,r1)
 		
-; ----------------------------------------
+; 		mov	#RAM_Mars_PolyBuff_Curr,r1
+; 		mov 	@r1,r0
+; 		cmp/eq	#0,r0
+; 		bt	.buff_0
+; 		mov 	#RAM_Mars_Polygons_1,r1
+; .buff_0:
 
-.swap_now:
 		mov.w	@(marsGbl_PolyBuffNum,gbr),r0
  		xor	#1,r0
  		mov.w 	r0,@(marsGbl_PolyBuffNum,gbr)
 		bra	slave_loop
 		nop
 		align 4
-		
-; ----------------------------------------
-
-.check_z:
-		mov.w	@(marsGbl_CurrNumFace,gbr),r0
-		mov	r0,r4
-.nxt_one:
-		mov	r13,@r14
-		add	#4,r14
-		add	#sizeof_polygn,r13
-		dt	r4
-		bf	.nxt_one
-		rts
-		nop
-		align 4
-
-; ----------------------------------------
-
-
 		ltorg
 
-; 		mov	#1,r0
-; 		mov.w	r0,@(marsGbl_VIntFlag_S,gbr)
-; .wait:		mov.w	@(marsGbl_VIntFlag_S,gbr),r0
-; 		cmp/eq	#1,r0
-; 		bt	.wait
-; 		mov	#_sysreg+comm4,r1
-; 		mov.w	@r1,r0
-; 		add	#1,r0
-; 		mov.w	r0,@r1
+		align 4
+polygn_test:
+		dc.w 0
+		dc.w 0
+		dc.l $58
+		dc.w -$40,-$60
+		dc.w -$80,-$60
+		dc.w -$80,-$20
+		dc.w -$40,-$20
+		dc.w 0,0
+		dc.w 0,0
+		dc.w 0,0
+		dc.w 0,0
+		
+		dc.w $4000
+		dc.w 0
+		dc.l $AC
+		dc.w  $10,-$60
+		dc.w -$30,-$60
+		dc.w -$30,-$20
+		dc.w  $10,-$20
+		dc.w 0,0
+		dc.w 0,0
+		dc.w 0,0
+		dc.w 0,0
 
-; 		align 4
-polygoun:
+; 		dc.w 0
+; 		dc.w 0
+; 		dc.l $C1
+; 		dc.w 258,16
+; 		dc.w 190,16
+; 		dc.w 190,80
+; 		dc.w 258,80
+; 		dc.w 0,0
+; 		dc.w 0,0
+; 		dc.w 0,0
+; 		dc.w 0,0
+
 		dc.w $8000
 		dc.w 480
-		dc.l Textr_MagicalOjam
-plygnytest:	dc.w  80,-80
-		dc.w -80,-50
-		dc.w -80, 80
-		dc.w  80, 50
+		dc.l Textur_Puyo
+		dc.w -$40, $10
+		dc.w -$80, $10
+		dc.w -$80, $50
+		dc.w -$40, $50
 		dc.w 480,  0
 		dc.w   0,  0
 		dc.w   0,360
 		dc.w 480,360
+		
+		dc.w $C000
+		dc.w 480
+		dc.l Textur_Puyo
+		dc.w  $10, $10
+		dc.w -$30, $10
+		dc.w -$30, $50
+		dc.w  $10, $50
+		dc.w 480,  0
+		dc.w   0,  0
+		dc.w   0,330
+		dc.w 480,330
+
+; 		dc.w $8000
+; 		dc.w 480
+; 		dc.l Textur_Puyo
+; 		dc.w 258,128
+; 		dc.w 190,128
+; 		dc.w 190,192
+; 		dc.w 258,192
+; 		dc.w 480,  0
+; 		dc.w   0,  0
+; 		dc.w   0,360
+; 		dc.w 480,360
+
+polygn_test_e:
+		align 4
 
 ; ====================================================================
 ; ----------------------------------------------------------------
@@ -926,13 +919,13 @@ sizeof_marssnd		ds.l 0
 RAM_Mars_Global		ds.l sizeof_MarsGbl
 RAM_Mars_Palette	ds.w 256
 RAM_Mars_DivTable	ds.l $800
-RAM_Mars_Objects	ds.b sizeof_mdlobj*64
-RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer
-RAM_Mars_PlgnList_1	ds.l MAX_FACES
-RAM_Mars_Plgn_ZList	ds.l MAX_FACES
-RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
-RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
-RAM_Mars_VdpDrwList	ds.b sizeof_plypz*MAX_SVDP_PZ
+; RAM_Mars_VintFlag	ds.l 1
+RAM_Mars_Objects	ds.b sizeof_mdlobj
+RAM_Mars_PolyList_0	ds.l 512
+RAM_Mars_PolyList_1	ds.l 512
+RAM_Mars_Polygons_0	ds.b sizeof_polygn*512		; Polygon list 0
+RAM_Mars_Polygons_1	ds.b sizeof_polygn*512		; Polygon list 1
+RAM_Mars_VdpDrwList	ds.b sizeof_plypz*1024		; START and END
 RAM_Mars_VdpDrwList_e	ds.l 0
 sizeof_marsvid		ds.l 0
 			finish
