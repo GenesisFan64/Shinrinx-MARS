@@ -21,7 +21,7 @@ marsGbl_VdpList_R	ds.l 1
 marsGbl_VdpList_W	ds.l 1
 marsGbl_CurrFacePos	ds.l 1
 marsGbl_CurrZList	ds.l 1
-marsGbl_DrwDone		ds.w 1
+marsGbl_DrwBreak	ds.w 1
 marsGbl_CurrNumFace	ds.w 1
 marsGbl_PolyCny_0	ds.w 1
 marsGbl_PolyCny_1	ds.w 1
@@ -586,11 +586,11 @@ master_loop:
 		mov	r0,r1
 		tst     #1,r0
 		bf	.page_2
-		mov 	#RAM_Mars_PolyList_0,r14
+		mov 	#RAM_Mars_PlgnList_0,r14
 		bra	.start_plygn
 		mov.w	@(marsGbl_PolyCny_0,gbr),r0
 .page_2:
-		mov 	#RAM_Mars_PolyList_1,r14
+		mov 	#RAM_Mars_PlgnList_1,r14
 		mov.w	@(marsGbl_PolyCny_1,gbr),r0
 .start_plygn:
 		cmp/eq  #0,r0
@@ -699,41 +699,17 @@ SH2_S_HotStart:
 
 ; ------------------------------------------------
 
+		mov	#RAM_Mars_Objects,r1
+		mov	#TEST_MODEL,r0
+		mov	r0,@(mdl_data,r1)
+		mov	#-$C0000,r0
+		mov	r0,@(mdl_z_pos,r1)
+
 		mov.l	#$20,r0			; Interrupts ON
 		ldc	r0,sr
 
 ; --------------------------------------------------------
 ; Loop
-; --------------------------------------------------------
-
-		mov 	#RAM_Mars_Polygons_0,r2
-		mov	#polygn_test,r1
-		mov	#(polygn_test_e-polygn_test)/4,r8
-.copyme:
-		mov	@r1+,r0
-		mov 	r0,@r2
-		add 	#4,r2
-		dt	r8
-		bf	.copyme
-
-		mov	#RAM_Mars_PolyList_0,r1
-		mov	#RAM_Mars_PolyList_1,r2
-		mov	#6,r3
-		mov	r3,r0
-		mov.w	r0,@(marsGbl_PolyCny_0,gbr)
-		mov.w	r0,@(marsGbl_PolyCny_1,gbr)
-		mov	#RAM_Mars_Polygons_0,r0
-.copy:
-		mov	r0,@r1
-		mov	r0,@r2
-		add	#sizeof_polygn,r0
-		add	#4,r1
-		add	#4,r2
-		dt	r3
-		bf	.copy
-
-; --------------------------------------------------------
-; Slave main loop
 ; --------------------------------------------------------
 
 slave_loop:
@@ -747,112 +723,116 @@ slave_loop:
 		add	#1,r0
 		mov.w	r0,@r1
 
-; 		mov 	#RAM_Mars_Polygons_0+8,r1
-; 		mov	@r1,r0
-; 		mov	@($8,r1),r3
-; 		mov	@($10,r1),r4
-; 		mov	@($18,r1),r5
-; 		mov 	#-$100,r2
-; 		add	r2,r0
-; 		add 	r2,r3
-; 		add	r2,r4
-; 		add 	r2,r5
-; 		mov	r0,@r1
-; 		mov	r3,@($8,r1)
-; 		mov	r4,@($10,r1)
-; 		mov	r5,@($18,r1)
-		
-; 		mov	#RAM_Mars_PolyBuff_Curr,r1
-; 		mov 	@r1,r0
-; 		cmp/eq	#0,r0
-; 		bt	.buff_0
-; 		mov 	#RAM_Mars_Polygons_1,r1
-; .buff_0:
+; ----------------------------------------
 
+		mov	#RAM_Mars_Objects,r1
+		mov	#-$400,r2
+		mov	@(mdl_x_rot,r1),r0
+		add	r2,r0
+		mov	r0,@(mdl_x_rot,r1)
+; 		mov	#-$1000,r2
+; 		mov	@(mdl_z_rot,r1),r0
+; 		add	r2,r0
+; 		mov	r0,@(mdl_z_rot,r1)
+		
+		mov	#0,r0
+		mov.w	r0,@(marsGbl_CurrNumFace,gbr)
+		mov 	#RAM_Mars_Polygons_0,r1
+		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
+		tst     #1,r0
+		bf	.go_mdl
+		mov 	#RAM_Mars_Polygons_1,r1
+.go_mdl:
+		mov	r1,r0
+		mov	r0,@(marsGbl_CurrFacePos,gbr)
+		mov	#RAM_Mars_Objects,r14
+		mov	#0,r13
+		mov	#1,r12
+.loop:
+		mov	r12,@-r15
+		bsr	MarsMdl_MakeModel
+		nop
+		mov	@r15+,r12
+		add	#sizeof_mdlobj,r14
+		dt	r12
+		bf	.loop
+.skip:
+
+; 		mov	#plygnytest+14,r1
+; 		mov.w	@r1,r0
+; 		add	#-1,r0
+; 		mov.w	r0,@r1
+; 		mov	#polygoun,r1
+; 		mov	#RAM_Mars_Polygons_0,r2
+; 		mov	#RAM_Mars_Polygons_1,r3
+; 		mov	#10,r4
+; .lelme:
+; 		mov	@r1+,r0
+; 		mov	r0,@r2
+; 		mov	r0,@r3
+; 		add	#4,r2
+; 		add	#4,r3
+; 		dt	r4
+; 		bf	.lelme
+; 		mov	#RAM_Mars_Polygons_0,r0
+; 		mov 	#RAM_Mars_PlgnList_0,r1
+; 		mov 	#RAM_Mars_PlgnList_1,r2
+; 		mov	r0,@r1
+; 		mov	r0,@r2
+; 		mov.w	#1,r0
+; 		mov.w	r0,@(marsGbl_PolyCny_0,gbr)
+; 		mov.w	r0,@(marsGbl_PolyCny_1,gbr)
+
+; ----------------------------------------
+
+		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
+		mov	r0,r1
+		tst     #1,r0
+		bt	.page_2
+		mov 	#RAM_Mars_PlgnList_0,r14
+		mov 	#RAM_Mars_Polygons_0,r13
+		bsr	.check_z
+		nop
+		mov.w	@(marsGbl_CurrNumFace,gbr),r0
+		mov.w	r0,@(marsGbl_PolyCny_0,gbr)
+		bra	.swap_now
+		nop
+.page_2:
+		mov 	#RAM_Mars_PlgnList_1,r14
+		mov 	#RAM_Mars_Polygons_1,r13
+		bsr	.check_z
+		nop
+		mov.w	@(marsGbl_CurrNumFace,gbr),r0
+		mov.w	r0,@(marsGbl_PolyCny_1,gbr)
+		
+; ----------------------------------------
+
+.swap_now:
 		mov.w	@(marsGbl_PolyBuffNum,gbr),r0
  		xor	#1,r0
  		mov.w 	r0,@(marsGbl_PolyBuffNum,gbr)
 		bra	slave_loop
 		nop
 		align 4
+		
+; ----------------------------------------
+
+.check_z:
+		mov.w	@(marsGbl_CurrNumFace,gbr),r0
+		mov	r0,r4
+.nxt_one:
+		mov	r13,@r14
+		add	#4,r14
+		add	#sizeof_polygn,r13
+		dt	r4
+		bf	.nxt_one
+		rts
+		nop
+		align 4
+
+; ----------------------------------------
+
 		ltorg
-
-		align 4
-polygn_test:
-		dc.w 0
-		dc.w 0
-		dc.l $58
-		dc.w -$40,-$60
-		dc.w -$80,-$60
-		dc.w -$80,-$20
-		dc.w -$40,-$20
-		dc.w 0,0
-		dc.w 0,0
-		dc.w 0,0
-		dc.w 0,0
-		
-		dc.w $4000
-		dc.w 0
-		dc.l $AC
-		dc.w  $10,-$60
-		dc.w -$30,-$60
-		dc.w -$30,-$20
-		dc.w  $10,-$20
-		dc.w 0,0
-		dc.w 0,0
-		dc.w 0,0
-		dc.w 0,0
-
-; 		dc.w 0
-; 		dc.w 0
-; 		dc.l $C1
-; 		dc.w 258,16
-; 		dc.w 190,16
-; 		dc.w 190,80
-; 		dc.w 258,80
-; 		dc.w 0,0
-; 		dc.w 0,0
-; 		dc.w 0,0
-; 		dc.w 0,0
-
-		dc.w $8000
-		dc.w 480
-		dc.l Textur_Puyo
-		dc.w -$40, $10
-		dc.w -$80, $10
-		dc.w -$80, $50
-		dc.w -$40, $50
-		dc.w 480,  0
-		dc.w   0,  0
-		dc.w   0,360
-		dc.w 480,360
-		
-		dc.w $C000
-		dc.w 480
-		dc.l Textur_Puyo
-		dc.w  $10, $10
-		dc.w -$30, $10
-		dc.w -$30, $50
-		dc.w  $10, $50
-		dc.w 480,  0
-		dc.w   0,  0
-		dc.w   0,330
-		dc.w 480,330
-
-; 		dc.w $8000
-; 		dc.w 480
-; 		dc.l Textur_Puyo
-; 		dc.w 258,128
-; 		dc.w 190,128
-; 		dc.w 190,192
-; 		dc.w 258,192
-; 		dc.w 480,  0
-; 		dc.w   0,  0
-; 		dc.w   0,360
-; 		dc.w 480,360
-
-polygn_test_e:
-		align 4
 
 ; ====================================================================
 ; ----------------------------------------------------------------
@@ -919,13 +899,13 @@ sizeof_marssnd		ds.l 0
 RAM_Mars_Global		ds.l sizeof_MarsGbl
 RAM_Mars_Palette	ds.w 256
 RAM_Mars_DivTable	ds.l $800
-; RAM_Mars_VintFlag	ds.l 1
-RAM_Mars_Objects	ds.b sizeof_mdlobj
-RAM_Mars_PolyList_0	ds.l 512
-RAM_Mars_PolyList_1	ds.l 512
-RAM_Mars_Polygons_0	ds.b sizeof_polygn*512		; Polygon list 0
-RAM_Mars_Polygons_1	ds.b sizeof_polygn*512		; Polygon list 1
-RAM_Mars_VdpDrwList	ds.b sizeof_plypz*1024		; START and END
+RAM_Mars_Objects	ds.b sizeof_mdlobj*64
+RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer
+RAM_Mars_PlgnList_1	ds.l MAX_FACES
+RAM_Mars_Plgn_ZList	ds.l MAX_FACES
+RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
+RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
+RAM_Mars_VdpDrwList	ds.b sizeof_plypz*MAX_SVDP_PZ
 RAM_Mars_VdpDrwList_e	ds.l 0
 sizeof_marsvid		ds.l 0
 			finish
