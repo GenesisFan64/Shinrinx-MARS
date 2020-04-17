@@ -110,20 +110,6 @@ MarsVideo_Init:
 ; ------------------------------------------------
 
 .this_fb:
-		mov.w   @($A,r4),r0
-		tst     #2,r0
-		bf      .this_fb
-		mov.w   @($A,r4), r0
-		xor     #1,r0
-		mov.w   r0,@($A,r4)
-		and     #1,r0
-		mov     r0,r1
-.wait_result:
-		mov.w   @($A,r4), r0
-		and     #1,r0
-		cmp/eq  r0,r1
-		bf      .wait_result
-		
  		mov	#_framebuffer,r1
 		mov	#$200/2,r0		; START line data
 		mov	#240,r2			; Vertical lines to set
@@ -135,12 +121,21 @@ MarsVideo_Init:
 		dt	r2
 		bf	.loop
 		
-;  		mov.b	@(framectl,r4),r0
-; 		not	r0,r0
-;  		and	#1,r0
+.fb_wait1:	mov.w   @($A,r4),r0
+		tst     #2,r0
+		bf      .fb_wait1
+		mov.w   @($A,r4), r0
+		xor     #1,r0
+		mov.w   r0,@($A,r4)
+		and     #1,r0
+		mov     r0,r1
+.wait_result:
+		mov.w   @($A,r4),r0
+		and     #1,r0
+		cmp/eq  r0,r1
+		bf      .wait_result
 		rts
 		nop
-; 		mov.b	r0,@(framectl,r4)
 		align 4
 
 ; ------------------------------------
@@ -282,17 +277,19 @@ MarsMdl_MakeModel:
 		mov 	@(8,r12),r11			; r11 - face data
 		mov 	@(4,r12),r10			; r10 - vertice data (X,Y,Z)
 		mov.w	@r12,r9				; r9 - numof_faces in model
+		mov	@(marsGbl_CurrZList,gbr),r0
+		mov	r0,r8
 		mov	#MAX_FACES,r0
 		cmp/ge	r0,r9
 		bt	.exit_model
 .next_face:
 		mov.w	@r11+,r4
-		mov	#3,r8
+		mov	#3,r7
 		mov	r4,r0
 		shlr8	r0
 		tst	#PLGN_TRI,r0
 		bf	.set_tri
-		add	#1,r8
+		add	#1,r7
 .set_tri:
 		cmp/pl	r4
 		bt	.solid_type
@@ -302,28 +299,27 @@ MarsMdl_MakeModel:
 ; --------------------------------
 
 		mov	@($C,r12),r6		; r6 - material vertex
-		mov	r13,r7
-		add 	#polygn_srcpnts,r7	; r7 - Output SRC points
-		mov	r8,r5
+		mov	r13,r5
+		add 	#polygn_srcpnts,r5	; r5 - Output SRC points
+		mov	r7,r3
 .srctri:
 		mov.w	@r11+,r0
 		shll2	r0
 		mov	@(r6,r0),r0
-		mov.w	r0,@(2,r7)
+		mov.w	r0,@(2,r5)
 		shlr16	r0
-		mov.w	r0,@r7
-		dt	r5
+		mov.w	r0,@r5
+		dt	r3
 		bf/s	.srctri
-		add	#4,r7
+		add	#4,r5
 
 		mov	r4,r0
-		mov	#$1FFF,r7
-		and	r7,r0
+		mov	#$1FFF,r5
+		and	r5,r0
 		shll2	r0
 		shll	r0
 		mov	@($10,r12),r6
 		add	r0,r6
-		
 		mov	#$E000,r0		; grab special bits
 		and	r0,r4
 		shll16	r4
@@ -355,7 +351,7 @@ MarsMdl_MakeModel:
 .go_faces:
 		mov	r13,r1
 		add 	#polygn_points,r1
-
+		mov	#$7FFFFFFF,r5
 .vert_loop:
 		mov	#0,r0
 		mov.w 	@r11+,r0
@@ -369,22 +365,27 @@ MarsMdl_MakeModel:
 		mov	@(8,r4),r4
 		bsr	mdlrd_setpersp
 		nop
-		cmp/pl	r4
-		bt	.face_out
+		cmp/ge	r5,r4
+		bt	.save_z
+		mov	r4,r5
+.save_z:
 		mov.w	r2,@r1
 		mov	r3,r0
 		mov.w	r0,@(2,r1)
+		dt	r7
+		bf/s	.vert_loop
 		add	#4,r1
-		dt	r8
-		bf	.vert_loop
-.face_out:
 
 ; --------------------------------
 
 		mov.w	@(marsGbl_CurrNumFace,gbr),r0
 		add	#1,r0
 		mov.w	r0,@(marsGbl_CurrNumFace,gbr)
-
+		mov	r5,@r8
+		add	#4,r8
+		mov	r8,r0
+		mov	r0,@(marsGbl_CurrZList,gbr)
+.face_out:
 		dt	r9
 		bf/s	.next_face
 		add	#sizeof_polygn,r13
@@ -589,10 +590,9 @@ mdlrd_setpersp:
 ;
 
 	; Y perspective
-		mov	#256*512,r8
+		mov	#512*512,r8
 		mov	r4,r0
-; 		shlr	r0
-; 		exts	r0,r0
+		exts	r0,r0
 		cmp/eq	#0,r0
 		bf	.dontdiv
 		mov 	#1,r0
@@ -844,6 +844,8 @@ drw_task_02:
 		mov	r12,@-r15
 		mov	r13,@-r15
 		mov	r14,@-r15
+		sts	macl,@-r15
+		sts	mach,@-r15
 		mov.w	@(marsGbl_DrwTask,gbr),r0
 		cmp/eq	#3,r0
 		bf	.new_piece
@@ -899,106 +901,9 @@ drw_task_02:
 		mov	@(plypz_mtrlopt,r14),r0
 		shlr16	r0
 		shlr8	r0
-		tst	#PLGN_TEXURE,r0
-		bf	.use_mtrl
-
-; ------------------------------------
-; Solid Color
-; ------------------------------------
-
-.solid_color:
-		mov	@(plypz_mtrl,r14),r5
-		mov	@(plypz_mtrlopt,r14),r6
-		mov	#$FFFF,r0
-		and	r0,r6
-.next_line:
-		cmp/pl	r9
-		bf	.upd_line
-		mov	#SCREEN_HEIGHT,r0
-		cmp/ge	r0,r9
-		bt	.upd_line
-		mov	r3,r11
-		mov	r1,r12
-		shlr16	r11
-		shlr16	r12
-		exts	r11,r11
-		exts	r12,r12
-		mov	r12,r0
-		sub	r11,r0
-		cmp/pl	r0
-		bt	.revers
-		mov	r12,r0
-		mov	r11,r12
-		mov	r0,r11
-.revers:
-		mov	#SCREEN_WIDTH,r0
-		cmp/pl	r12
-		bf	.upd_line
-		cmp/gt	r0,r11
-		bt	.upd_line
-		cmp/gt	r0,r12
-		bf	.r_fix
-		mov	r0,r12
-.r_fix:
-		cmp/pl	r11
-		bt	.l_fix
-		xor	r11,r11
-.l_fix:
-		sub	r11,r12
-		shlr	r12
-		shlr	r11
-		exts	r12,r12
-		cmp/pl	r12
-		bf	.upd_line
-		mov	r9,r0
-		add	#1,r0
-		shll8	r0
-		add 	r0,r11
-.wait:		mov.w	@(10,r13),r0
-		tst	#2,r0
-		bf	.wait
-		mov	r12,r0
-		mov.w	r0,@(4,r13)		; Set length
-		mov	r11,r0
-		mov.w	r0,@(6,r13)		; Set address
-		mov	r5,r0
-		add	r6,r0
-		mov	r0,r11
-		shll8	r11
-		or	r11,r0
-		mov.w	r0,@(8,r13)		; Set data
-; 		mov	#$28,r0			; TODO: test this later
-; 		cmp/ge	r0,r12
-; 		bf	.upd_line
-; 		mov	#3,r0
-; 		mov.w	r0,@(marsGbl_DrwTask,gbr)
-; 		mov	#Cach_LnDrw_S,r0
-; 		mov	r1,@-r0
-; 		mov	r2,@-r0
-; 		mov	r3,@-r0
-; 		mov	r4,@-r0
-; 		mov	r5,@-r0
-; 		mov	r6,@-r0
-; 		mov	r9,@-r0
-; 		mov	r10,@-r0	
-; 		mov	r13,@-r0
-; 		mov	r14,@-r0
-; 		bra	.save_later
-; 		mov	#0,r2
-
-; ------------------------------------
-
-.upd_line:
-		add	r2,r1
-		add	r4,r3
-		dt	r10
-		bf/s	.next_line
-		add	#1,r9
+ 		tst	#PLGN_TEXURE,r0
+ 		bt	.solid_color
 		
-		bra	.next_piece
-		nop
-		align 4
-
 ; ------------------------------------
 ; Texture
 ; r1  - XL
@@ -1013,17 +918,17 @@ drw_task_02:
 ; r10  - Y end
 ; ------------------------------------
 
-.use_mtrl:
 		mov	@(plypz_src_xl,r14),r5
 		mov	@(plypz_src_xr,r14),r6
 		mov	@(plypz_src_yl,r14),r7
 		mov	@(plypz_src_yr,r14),r8
 .tex_next_line:
 		cmp/pl	r9
-		bf	.tex_skipline
+		bf	.tex_skip_line
 		mov	#SCREEN_HEIGHT,r0
-		cmp/gt	r0,r9
-		bt	.tex_skipline
+		cmp/ge	r0,r9
+		bt	.tex_skip_line
+
 		mov	r2,@-r15
 		mov	r4,@-r15
 		mov	r5,@-r15
@@ -1058,57 +963,24 @@ drw_task_02:
 		bf	.tex_upd_line
 		cmp/gt	r0,r11
 		bt	.tex_upd_line
-
-		mov	r12,r0			; Using HW external division
-		mov 	r11,r2
-		sub 	r2,r0
-		add 	#1,r0
-		cmp/eq	#0,r0
-		bf	.nozero
-		mov 	#1,r0
-.nozero:
-		mov	#_JR,r2
+		mov	r12,r2
+		mov 	r11,r0
+		sub 	r0,r2
+		shll2	r2
 		sub	r5,r6
-		mov 	r0,@r2
-		nop
-		mov 	r6,@(4,r2)
-		nop
-		mov	#8,r2
-.waitdx:
-		dt	r2
-		bf	.waitdx
-		mov 	#_HRL,r2
-		mov 	@r2,r6
-		mov	#_JR,r2
 		sub	r7,r8
-		mov 	r0,@r2
-		nop
-		mov 	r6,@(4,r2)
-		nop
-		mov	#8,r2
-.waitdy:	dt	r2
-		bf	.waitdy
-		mov 	#_HRL,r2
-		mov 	@r2,r8
-; 		mov	r12,r2			; Divtable, doesn't work
-; 		mov 	r11,r0
-; 		sub 	r0,r2
-; 		shll2	r2
-; 		sub	r5,r6
-; 		mov	#RAM_Mars_DivTable-4,r0
-; 		mov	@(r0,r2),r0
-; 		dmuls	r6,r0
-; 		sts	macl,r6
-; 		sts	mach,r0
-; 		xtrct   r0,r6
-; 		sub	r7,r8
-; 		mov	#RAM_Mars_DivTable-4,r0
-; 		mov	@(r0,r2),r0
-; 		dmuls	r8,r0
-; 		sts	macl,r8
-; 		sts	mach,r0
-; 		xtrct   r0,r8
-
+		mov	#RAM_Mars_DivTable-4,r0
+		mov	@(r0,r2),r0
+		dmuls	r6,r0
+		sts	macl,r6
+		sts	mach,r0
+		xtrct   r0,r6
+		mov	#RAM_Mars_DivTable-4,r0
+		mov	@(r0,r2),r0
+		dmuls	r8,r0
+		sts	macl,r8
+		sts	mach,r0
+		xtrct   r0,r8
 		mov	#SCREEN_WIDTH,r0
 		cmp/gt	r0,r12
 		bf	.tr_fix
@@ -1117,7 +989,7 @@ drw_task_02:
 		cmp/pl	r11
 		bt	.tl_fix
 		neg	r11,r0
-		dmulu	r6,r0
+		dmuls	r6,r0
 		sts	macl,r0
 		add	r0,r5
 		xor	r11,r11
@@ -1133,8 +1005,6 @@ drw_task_02:
 		add 	r11,r10
 		mov	@(plypz_mtrl,r14),r11		; texture data
 		mov	@(plypz_mtrlopt,r14),r4		; texture width
-		mov	#$FFFF,r0
-		and	r0,r4
 .texloop:
 		swap.w	r7,r2				; Build row offset
 		mulu.w	r2,r4
@@ -1149,7 +1019,6 @@ drw_task_02:
 		dt	r12
 		bf/s	.texloop
 		add	r8,r7				; Update Y
-
 .tex_upd_line:
 		mov	@r15+,r10
 		mov	@r15+,r8
@@ -1158,7 +1027,7 @@ drw_task_02:
 		mov	@r15+,r5
 		mov	@r15+,r4
 		mov	@r15+,r2
-.tex_skipline:
+.tex_skip_line:
 		mov	@(plypz_src_xl_dx,r14),r0
 		add	r0,r5
 		mov	@(plypz_src_xr_dx,r14),r0
@@ -1172,7 +1041,86 @@ drw_task_02:
 		dt	r10
 		bf/s	.tex_next_line
 		add	#1,r9
-		
+		bra	.next_piece
+		nop
+
+; ------------------------------------
+; Solid Color
+; ------------------------------------
+
+.solid_color:
+		mov	@(plypz_mtrl,r14),r5
+		mov	@(plypz_mtrlopt,r14),r6
+.next_line:
+		mov	r1,r11
+		mov	r3,r12
+		shlr16	r11
+		shlr16	r12
+		exts	r11,r11
+		exts	r12,r12
+		mov	#SCREEN_WIDTH,r0
+		cmp/pl	r12
+		bf	.upd_line
+		cmp/gt	r0,r11
+		bt	.upd_line
+		cmp/gt	r0,r12
+		bf	.r_fix
+		mov	r0,r12
+.r_fix:
+		cmp/pl	r11
+		bt	.l_fix
+		xor	r11,r11
+.l_fix:
+		sub	r11,r12
+		cmp/pl	r12
+		bf	.upd_line
+		shlr	r12
+		shlr	r11
+		mov	r9,r0
+		add	#1,r0
+		shll8	r0
+		add 	r0,r11
+.wait:		mov.w	@(10,r13),r0
+		tst	#2,r0
+		bf	.wait
+		mov	r12,r0
+		mov.w	r0,@(4,r13)		; Set length
+		mov	r11,r0
+		mov.w	r0,@(6,r13)		; Set address
+		mov	r5,r0
+		add	r6,r0
+		mov	r0,r11
+		shll8	r11
+		or	r11,r0
+		mov.w	r0,@(8,r13)		; Set data
+; 		mov	#$28,r0
+; 		cmp/ge	r0,r12
+; 		bf	.upd_line
+; 		mov	#3,r0
+; 		mov.w	r0,@(marsGbl_DrwTask,gbr)
+; 		mov	#Cach_LnDrw_S,r0
+; 		mov	r1,@-r0
+; 		mov	r2,@-r0
+; 		mov	r3,@-r0
+; 		mov	r4,@-r0
+; 		mov	r5,@-r0
+; 		mov	r6,@-r0
+; 		mov	r9,@-r0
+; 		mov	r10,@-r0		
+; 		mov	r13,@-r0
+; 		mov	r14,@-r0
+; 		bra	.save_later
+; 		mov	#0,r2
+
+; ------------------------------------
+
+.upd_line:
+		add	r2,r1
+		add	r4,r3
+		dt	r10
+		bf/s	.next_line
+		add	#1,r9
+
 .next_piece:
 		add	#sizeof_plypz,r14
 		mov	#_sysreg+comm8,r0			; DEBUG comm
@@ -1189,6 +1137,8 @@ drw_task_02:
 		mov	#$10,r2
 
 .save_later:
+		lds	@r15+,mach
+		lds	@r15+,macl
 		mov	@r15+,r14
 		mov	@r15+,r13
 		mov	@r15+,r12
@@ -1616,10 +1566,10 @@ set_right:
 ; --------------------------------
 
 put_piece:
-		mov	@(4,r2),r8
-		mov	@(4,r3),r9
-		sub	r10,r8
-		sub	r10,r9
+; 		mov	@(4,r2),r8
+; 		mov	@(4,r3),r9
+; 		sub	r10,r8
+; 		sub	r10,r9
 		mov	@(marsGbl_VdpList_W,gbr),r0
 		mov	r0,r1
 		mov	r8,r0

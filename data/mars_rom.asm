@@ -16,14 +16,14 @@ TEST_MODEL:	binclude "data/mars/models/rubia_head.bin"	; dc.w faces,vertices
 .mtrl:		include "data/mars/models/rubia_mtrl.asm"
 
 		align 4
-Textr_DOREMI:
+Textr_MagicalOjam:
 		binclude "data/mars/models/mtrl/doremi_art.bin"
 		align 4
-		
+
 Textr_TestTexture:
 		binclude "data/mars/models/mtrl/rubia_art.bin"
 		align 4
-
+		
 ; WAV_LEFT:	binclude "data/mars/rom/L.wav",$2C,$100000
 ; WAV_LEFT_E:
 ; 		align 4

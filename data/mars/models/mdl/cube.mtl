@@ -1,23 +1,12 @@
-# Blender MTL File: 'None'
-# Material Count: 2
+# Blender MTL File: 'link.blend'
+# Material Count: 1
 
-newmtl DOREMI
-Ns 225.000000
+newmtl link_oot
+Ns 0.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
-Ks 0.500000 0.500000 0.500000
-Ke 0.000000 0.000000 0.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.501961 0.501961 0.501961
 Ni 1.450000
 d 1.000000
-illum 2
-map_Kd /home/kevin/Documents/games/emus/sega/dev/projects/Shinrinx-MARS/data/mars/models/mtrl/tga/doremi.tga
-
-newmtl MARSNULL
-Ns 225.000000
-Ka 1.000000 1.000000 1.000000
-Kd 0.800000 0.800000 0.800000
-Ks 0.500000 0.500000 0.500000
-Ke 0.000000 0.000000 0.000000
-Ni 1.450000
-d 1.000000
-illum 2
+illum 1
