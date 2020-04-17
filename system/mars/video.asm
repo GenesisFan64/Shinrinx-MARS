@@ -639,7 +639,7 @@ mdlrd_setpersp:
 		neg	r2,r2
 .dontfix2:
 		shlr8	r2
-		shlr8	r3
+		shlr8	r3		
 		exts	r2,r2
 		exts	r3,r3
 
@@ -988,10 +988,13 @@ drw_task_02:
 .tr_fix:
 		cmp/pl	r11
 		bt	.tl_fix
-		neg	r11,r0
-		dmuls	r6,r0
+		neg	r11,r2
+		dmuls	r6,r2
 		sts	macl,r0
 		add	r0,r5
+		dmuls	r8,r2
+		sts	macl,r0
+		add	r0,r7
 		xor	r11,r11
 .tl_fix:
 		mov 	r9,r0
@@ -1123,8 +1126,6 @@ drw_task_02:
 
 .next_piece:
 		add	#sizeof_plypz,r14
-		mov	#_sysreg+comm8,r0			; DEBUG comm
-		mov	r14,@r0
 		mov	r14,r0
 		mov	r0,@(marsGbl_VdpList_R,gbr)
 		mov.w	@(marsGbl_VdpListCnt,gbr),r0
@@ -1355,29 +1356,30 @@ MarsVideo_MakePolygon:
 		bsr	set_right
 		nop
 
-; 		mov	r4,r1		; LX crop
-; 		cmp/pl	r5
-; 		bt	.ldx_l
-; 		mov	r5,r0
-; 		dmuls	r8,r0
-; 		sts	macl,r0
-; 		add	r0,r1
-; .ldx_l:
-; 		shlr16	r1
-; 		exts	r1,r1
-; 		mov	#SCREEN_WIDTH,r0
-; 		cmp/ge	r0,r1
-; 		bt	.exit
-; 		mov	r6,r1		; RX crop
-; 		cmp/pl	r7
-; 		bf	.rdx_l
-; 		mov	r7,r0
-; 		dmuls	r9,r0
-; 		sts	macl,r0
-; 		add	r0,r1
-; .rdx_l:
-; 		cmp/pl	r1
-; 		bf	.exit
+	; TODO: check if this works properly
+		mov	r4,r1		; LX crop
+		cmp/pl	r5
+		bt	.ldx_l
+		mov	r5,r0
+		dmuls	r8,r0
+		sts	macl,r0
+		add	r0,r1
+.ldx_l:
+		shlr16	r1
+		exts	r1,r1
+		mov	#SCREEN_WIDTH,r0
+		cmp/ge	r0,r1
+		bt	.exit
+		mov	r6,r1		; RX crop
+		cmp/pl	r7
+		bf	.rdx_l
+		mov	r7,r0
+		dmuls	r9,r0
+		sts	macl,r0
+		add	r0,r1
+.rdx_l:
+		cmp/pl	r1
+		bf	.exit
 
 .next_pz:
 		cmp/ge	r11,r10
@@ -1566,10 +1568,10 @@ set_right:
 ; --------------------------------
 
 put_piece:
-; 		mov	@(4,r2),r8
-; 		mov	@(4,r3),r9
-; 		sub	r10,r8
-; 		sub	r10,r9
+		mov	@(4,r2),r8
+		mov	@(4,r3),r9
+		sub	r10,r8
+		sub	r10,r9
 		mov	@(marsGbl_VdpList_W,gbr),r0
 		mov	r0,r1
 		mov	r8,r0
