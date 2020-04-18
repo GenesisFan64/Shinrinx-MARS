@@ -27,15 +27,15 @@ import sys
 
 SCALE_SIZE=0x100
 FROM_BLENDER=False #True
-img_width = 1
+img_width  = 1
+img_height = 1
 
-# normal names for textures
+# reserved names for textures
 TAG_NOMATERIAL	  = "MARSNULL"		# random color mode
 TAG_MARSCOLOR	  = "MARSINDX"		# set index color permanently
 TAG_MARSINDX_LIST = "MARSLIST"          # set index color in the material (for animated stuff)
 
-# tag for texture data in assembly
-TAG_TEXTUR        = "Textr_"
+TAG_TEXTUR        = "Textr_"		# tag for texture data in assembly
 
 # ======================================================================
 # -------------------------------------------------

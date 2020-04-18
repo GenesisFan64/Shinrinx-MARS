@@ -16,7 +16,7 @@
 ; ----------------------------------------
 
 MAX_FACES		equ	512
-MAX_SVDP_PZ		equ	1000
+MAX_SVDP_PZ		equ	1024
 MAX_MODELS		equ	64
 
 ; ----------------------------------------
@@ -88,7 +88,6 @@ MarsVideo_Init:
 		mov	#_sysreg,r4
 		mov 	#FM,r0			; FB to MARS
   		mov.b	r0,@(adapter,r4)
-  		
 		mov 	#_vdpreg,r4
 		bsr	.this_fb		; Init line table(s) and swap
 		nop
@@ -96,9 +95,10 @@ MarsVideo_Init:
 		nop
 		mov	#1,r0			; Enable bitmap $01
 		mov.b	r0,@(bitmapmd,r4)
-		
-		mov	#1,r1
+
+		mov	#RAM_Mars_DivTable,r2
 		bsr	Mars_MkDivTable
+		mov	#1,r1
 
 		lds	@r15+,pr
 		rts
@@ -110,20 +110,6 @@ MarsVideo_Init:
 ; ------------------------------------------------
 
 .this_fb:
-		mov.w   @($A,r4),r0
-		tst     #2,r0
-		bf      .this_fb
-		mov.w   @($A,r4), r0
-		xor     #1,r0
-		mov.w   r0,@($A,r4)
-		and     #1,r0
-		mov     r0,r1
-.wait_result:
-		mov.w   @($A,r4), r0
-		and     #1,r0
-		cmp/eq  r0,r1
-		bf      .wait_result
-		
  		mov	#_framebuffer,r1
 		mov	#$200/2,r0		; START line data
 		mov	#240,r2			; Vertical lines to set
@@ -135,35 +121,62 @@ MarsVideo_Init:
 		dt	r2
 		bf	.loop
 		
-;  		mov.b	@(framectl,r4),r0
-; 		not	r0,r0
-;  		and	#1,r0
+.fb_wait1:	mov.w   @($A,r4),r0
+		tst     #2,r0
+		bf      .fb_wait1
+		mov.w   @($A,r4), r0
+		xor     #1,r0
+		mov.w   r0,@($A,r4)
+		and     #1,r0
+		mov     r0,r1
+.wait_result:
+		mov.w   @($A,r4),r0
+		and     #1,r0
+		cmp/eq  r0,r1
+		bf      .wait_result
 		rts
 		nop
-; 		mov.b	r0,@(framectl,r4)
 		align 4
 
 ; ------------------------------------
 ; Generate division table
+; it's faster than doing on HW
+; everytime
 ; 
-; r1 - Base
+; r1 - x/?
+; r2 - Output
+; 
+; zero division will be a
+; copy of ??/1
+; 
+; Example:
+; 	mov	#RAM_YourDivTable,r0
+; 	mov	@(r0,r2),r0	; (??/xx) << 2
+; 	dmuls	r6,r0		; (xx/r0)
+; 	sts	macl,r6
+; 	sts	mach,r0
+; 	xtrct   r0,r6		; Result
 ; ------------------------------------
 
 Mars_MkDivTable:
-		mov.l   #$FFFFFF00,r5
-		mov.l   #RAM_Mars_DivTable,r2
-		mov.l   #$800,r3
-		mov     #1,r4
+		mov	#$FFFFFF00,r6
+		mov	#$800,r4
+		mov     #0,r5
 		shll16  r1
 .loop:
-		mov.l   r4,@r5
-		mov.l   r1,@(4,r5)
+		mov	r5,r0
+		cmp/eq	#0,r0
+		bf	.dontzer
+		mov	#1,r0
+.dontzer:
+		mov	r5,@r6
+		mov	r1,@(4,r6)
 		nop
-		mov.l   @(4,r5), r0
-		mov.l   r0,@r2
-		add     #4, r2
-		add     #1,r4
-		dt      r3
+		mov	@(4,r6),r0
+		mov	r0,@r2
+		add     #4,r2
+		add     #1,r5
+		dt      r4
 		bf	.loop
 		rts
 		nop
@@ -282,17 +295,19 @@ MarsMdl_MakeModel:
 		mov 	@(8,r12),r11			; r11 - face data
 		mov 	@(4,r12),r10			; r10 - vertice data (X,Y,Z)
 		mov.w	@r12,r9				; r9 - numof_faces in model
+		mov	@(marsGbl_CurrZList,gbr),r0
+		mov	r0,r8
 		mov	#MAX_FACES,r0
 		cmp/ge	r0,r9
 		bt	.exit_model
 .next_face:
 		mov.w	@r11+,r4
-		mov	#3,r8
+		mov	#3,r7
 		mov	r4,r0
 		shlr8	r0
 		tst	#PLGN_TRI,r0
 		bf	.set_tri
-		add	#1,r8
+		add	#1,r7
 .set_tri:
 		cmp/pl	r4
 		bt	.solid_type
@@ -302,28 +317,27 @@ MarsMdl_MakeModel:
 ; --------------------------------
 
 		mov	@($C,r12),r6		; r6 - material vertex
-		mov	r13,r7
-		add 	#polygn_srcpnts,r7	; r7 - Output SRC points
-		mov	r8,r5
+		mov	r13,r5
+		add 	#polygn_srcpnts,r5	; r5 - Output SRC points
+		mov	r7,r3
 .srctri:
 		mov.w	@r11+,r0
 		shll2	r0
 		mov	@(r6,r0),r0
-		mov.w	r0,@(2,r7)
+		mov.w	r0,@(2,r5)
 		shlr16	r0
-		mov.w	r0,@r7
-		dt	r5
+		mov.w	r0,@r5
+		dt	r3
 		bf/s	.srctri
-		add	#4,r7
+		add	#4,r5
 
 		mov	r4,r0
-		mov	#$1FFF,r7
-		and	r7,r0
+		mov	#$1FFF,r5
+		and	r5,r0
 		shll2	r0
 		shll	r0
 		mov	@($10,r12),r6
 		add	r0,r6
-		
 		mov	#$E000,r0		; grab special bits
 		and	r0,r4
 		shll16	r4
@@ -355,7 +369,7 @@ MarsMdl_MakeModel:
 .go_faces:
 		mov	r13,r1
 		add 	#polygn_points,r1
-
+		mov	#$7FFFFFFF,r5
 .vert_loop:
 		mov	#0,r0
 		mov.w 	@r11+,r0
@@ -369,19 +383,27 @@ MarsMdl_MakeModel:
 		mov	@(8,r4),r4
 		bsr	mdlrd_setpersp
 		nop
+		cmp/ge	r5,r4
+		bt	.save_z
+		mov	r4,r5
+.save_z:
 		mov.w	r2,@r1
 		mov	r3,r0
 		mov.w	r0,@(2,r1)
+		dt	r7
+		bf/s	.vert_loop
 		add	#4,r1
-		dt	r8
-		bf	.vert_loop
 
 ; --------------------------------
 
 		mov.w	@(marsGbl_CurrNumFace,gbr),r0
 		add	#1,r0
 		mov.w	r0,@(marsGbl_CurrNumFace,gbr)
-
+		mov	r5,@r8
+		add	#4,r8
+		mov	r8,r0
+		mov	r0,@(marsGbl_CurrZList,gbr)
+.face_out:
 		dt	r9
 		bf/s	.next_face
 		add	#sizeof_polygn,r13
@@ -586,11 +608,10 @@ mdlrd_setpersp:
 ;
 
 	; Y perspective
-		mov	#256*512,r8
+		mov	#512*512,r8
 		mov	r4,r0
-; 		shlr	r0
-; 		exts	r0,r0
-		cmp/pz	r0
+		exts	r0,r0
+		cmp/eq	#0,r0
 		bf	.dontdiv
 		mov 	#1,r0
 .dontdiv:
@@ -614,7 +635,7 @@ mdlrd_setpersp:
 
 	; X perspective
 		mov	r4,r0
-		cmp/pz	r0
+		cmp/eq	#0,r0
 		bf	.dontdiv2
 		mov 	#1,r0
 .dontdiv2:
@@ -636,7 +657,7 @@ mdlrd_setpersp:
 		neg	r2,r2
 .dontfix2:
 		shlr8	r2
-		shlr8	r3
+		shlr8	r3		
 		exts	r2,r2
 		exts	r3,r3
 
@@ -655,7 +676,7 @@ mdlrd_setpersp:
 ; .iszero:
 ; 		mov 	r0,r7
 ; 		shll2	r7
-; 		mov	#RAM_Mars_DivTable-4,r0		; Calculate divisor
+; 		mov	#RAM_Mars_DivTable,r0		; Calculate divisor
 ; 		mov	@(r0,r7),r0
 ; 		dmuls	r8,r0
 ; 		sts	macl,r8
@@ -1172,6 +1193,515 @@ drw_task_02:
 		nop
 		align 4
 		ltorg
+
+; ------------------------------------------------
+; Read polygon and build pieces
+; 
+; Type bits:
+; %tsp----- -------- -------- --------
+;
+; p - Figure type: Quad (0) or Triangle (1)
+; s - Polygon type: Normal (0) or Sprite (1)
+; t - Polygon has texture data (1):
+;     polygn_mtrlopt: Texture width
+;     polygn_mtrl   : Texture data address
+;     polygn_srcpnts: Texture X/Y positions for
+;                     each edge (3 or 4)
+; ------------------------------------------------
+
+; MarsVideo_MakePolygon:
+; 		sts	pr,@-r15
+; 		mov	#CachPnts_Real,r12
+; 		mov	#CachPnts_Last,r13
+; 		mov	@(polygn_type,r14),r0
+; 		shlr16	r0
+; 		shlr8	r0
+; 		tst	#PLGN_TRI,r0			; PLGN_TRI set?
+; 		bf	.tringl
+; 		add	#8,r13
+; .tringl:
+; 		mov	r14,r1
+; 		mov	r12,r2
+; 		mov	#CachPnts_Src,r3
+; 		add	#polygn_points,r1
+; 		tst	#PLGN_SPRITE,r0			; PLGN_SPRITE set?
+; 		bt	.plgn_pnts
+; 		
+; ; ----------------------------------------
+; ; Sprite points
+; ; ----------------------------------------
+; 
+; ; TODO: rework on this
+; ; it sucks
+; 
+; .spr_pnts:
+; 		mov.w	@r1+,r8		; X pos
+; 		mov.w	@r1+,r9		; Y pos
+; 
+; 		mov.w	@r1+,r4
+; 		mov.w	@r1+,r6
+; 		mov.w	@r1+,r5
+; 		mov.w	@r1+,r7
+; 		add	#2*2,r1
+; 		add	r8,r4
+; 		add 	r8,r5
+; 		add	r9,r6
+; 		add 	r9,r7
+; 		mov	r5,@r2		; TR
+; 		add	#4,r2
+; 		mov	r6,@r2
+; 		add	#4,r2
+; 		mov	r4,@r2		; TL
+; 		add	#4,r2
+; 		mov	r6,@r2
+; 		add	#4,r2
+; 		mov	r4,@r2		; BL
+; 		add	#4,r2
+; 		mov	r7,@r2
+; 		add	#4,r2
+; 		mov	r5,@r2		; BR
+; 		add	#4,r2
+; 		mov	r7,@r2
+; 		add	#4,r2
+; 
+; 		mov.w	@r1+,r4
+; 		mov.w	@r1+,r6
+; 		mov.w	@r1+,r5
+; 		mov.w	@r1+,r7
+; 		mov	r5,@r3		; TR
+; 		add	#4,r3
+; 		mov	r6,@r3
+; 		add	#4,r3
+; 		mov	r4,@r3		; TL
+; 		add	#4,r3
+; 		mov	r6,@r3
+; 		add	#4,r3
+; 		mov	r4,@r3		; BL
+; 		add	#4,r3
+; 		mov	r7,@r3
+; 		add	#4,r3
+; 		mov	r5,@r3		; BR
+; 		add	#4,r3
+; 		mov	r7,@r3
+; 		add	#4,r3
+; 
+; ; 		mov	#4*2,r0
+; ; .sprsrc_pnts:
+; ; 		mov.w	@r1+,r0
+; ; 		mov.w	@r1+,r4
+; ; 		mov	r0,@r3
+; ; 		mov	r4,@(4,r3)
+; ; 		dt	r0
+; ; 		bf/s	.sprsrc_pnts
+; ; 		add	#8,r3
+; 		bra	.start_math
+; 		nop
+; 
+; ; ----------------------------------------
+; ; Polygon points
+; ; ----------------------------------------
+; 
+; .plgn_pnts:
+; 		mov	#4,r8
+; 		mov	#SCREEN_WIDTH/2,r6
+; 		mov	#SCREEN_HEIGHT/2,r7
+; .setpnts:
+; 		mov.w	@r1+,r4
+; 		mov.w	@r1+,r5
+; 		exts	r4,r4
+; 		exts	r5,r5
+; 		add	r6,r4
+; 		add	r7,r5
+; 		mov	r4,@r2
+; 		mov	r5,@(4,r2)
+; 		dt	r8
+; 		bf/s	.setpnts
+; 		add	#8,r2
+; 		mov	#4,r8
+; 
+; .src_pnts:
+; 		mov.w	@r1+,r4
+; 		mov.w	@r1+,r5
+; 		mov	r4,@r3
+; 		mov	r5,@(4,r3)
+; 		dt	r8
+; 		bf/s	.src_pnts
+; 		add	#8,r3
+; 		
+; .start_math:
+; 		mov	#3,r9
+; 		tst	#PLGN_TRI,r0			; PLGN_TRI set?
+; 		bf	.ytringl
+; 		add	#1,r9
+; .ytringl:
+; 		mov	#$7FFFFFFF,r10
+; 		mov	#$FFFFFFFF,r11
+; 		mov 	r12,r7
+; 		mov	r12,r8
+; .find_top:
+; 		mov	@(4,r7),r0
+; 		cmp/gt	r11,r0
+; 		bf	.is_low
+; 		mov 	r0,r11
+; .is_low:
+; 		mov	@(4,r8),r0
+; 		cmp/gt	r10,r0
+; 		bt	.is_high
+; 		mov 	r0,r10
+; 		mov	r8,r1
+; .is_high:
+; 		add 	#8,r7
+; 		dt	r9
+; 		bf/s	.find_top
+; 		add	#8,r8
+; 		cmp/eq	r11,r10
+; 		bt	.exit
+; 
+; 		cmp/pl	r11
+; 		bf	.exit
+; 		mov	#SCREEN_HEIGHT+1,r0
+; 		cmp/gt	r0,r10
+; 		bt	.exit
+; 
+; 	; r2 - Left Point
+; 	; r3 - Right pointer
+; 	; r4 - Left X
+; 	; r5 - Left DX
+; 	; r6 - Right X
+; 	; r7 - Right DX
+; 	; r8 - Left width
+; 	; r9 - Right width
+; 	; r10 - TOP Y
+; 	; r11 - BOTTOM Y
+; 	; r12 - First base DST
+; 	; r13 - Last base DST
+; 		mov	r1,r2
+; 		mov	r1,r3
+; 		bsr	set_left
+; 		nop
+; 		bsr	set_right
+; 		nop
+; 
+; 	; TODO: doesn't work
+; ; 		mov	r4,r1		; LX crop
+; ; 		cmp/pl	r5
+; ; 		bt	.ldx_l
+; ; 		mov	r5,r0
+; ; 		dmuls	r8,r0
+; ; 		sts	macl,r0
+; ; 		add	r0,r1
+; ; .ldx_l:
+; ; 		shlr16	r1
+; ; 		exts	r1,r1
+; ; 		mov	#SCREEN_WIDTH,r0
+; ; 		cmp/ge	r0,r1
+; ; 		bt	.exit
+; ; 		mov	r6,r1		; RX crop
+; ; 		cmp/pl	r7
+; ; 		bf	.rdx_l
+; ; 		mov	r7,r0
+; ; 		dmuls	r9,r0
+; ; 		sts	macl,r0
+; ; 		add	r0,r1
+; ; .rdx_l:
+; ; 		cmp/pl	r1
+; ; 		bf	.exit
+; 
+; .next_pz:
+; 		cmp/ge	r11,r10
+; 		bt	.exit
+; 		stc	sr,@-r15	; Stop interrupts
+; 		stc	sr,r0
+; 		or	#$F0,r0
+; 		ldc	r0,sr
+; 		bsr	put_piece
+; 		nop
+; 		ldc	@r15+,sr	; Restore interrupts
+; 
+; 		cmp/gt	r9,r8
+; 		bf	.lefth2
+; 		bsr	set_right
+; 		nop
+; 		bra	.next_pz
+; 		nop
+; .lefth2:
+; 		bsr	set_left
+; 		nop
+; 		bra	.next_pz
+; 		nop		
+; .exit:
+; 		lds	@r15+,pr
+; 		rts
+; 		nop
+; 		align 4
+; 		ltorg
+; 
+; ; --------------------------------
+; 
+; set_left:
+; 		mov	r2,r8
+; 		add	#$20,r8
+; 		mov	@r8,r4
+; 		mov	@(4,r8),r5
+; 		mov	#CachPnts_Src_L,r8
+; 		mov	r4,r0
+; 		shll16	r0
+; 		mov	r0,@r8
+; 		mov	r5,r0
+; 		shll16	r0
+; 		mov	r0,@(8,r8)
+; 
+; 		mov	@r2,r1
+; 		mov	@(4,r2),r8
+; 		add	#8,r2
+; 		cmp/gt	r13,r2
+; 		bf	.lft_ok
+; 		mov 	r12,r2
+; .lft_ok:
+; 		mov	@(4,r2),r0
+; 		sub	r8,r0
+; 		cmp/eq	#0,r0
+; 		bt	set_left
+; 		cmp/pz	r0
+; 		bf	.lft_skip
+; 
+; 		lds	r0,mach
+; 		mov	r2,r8
+; 		add	#$20,r8
+; 		mov 	@r8,r0
+; 		sub 	r4,r0
+; 		mov 	@(4,r8),r4
+; 		sub 	r5,r4
+; 		shll16	r0
+; 		mov	r0,r5
+; 		shll16	r4
+; 		sts	mach,r8
+; 		shll2	r8
+; 		mov	#RAM_Mars_DivTable,r0
+; 		mov	@(r0,r8),r0
+; 		dmuls	r5,r0
+; 		sts	macl,r5
+; 		sts	mach,r0
+; 		xtrct   r0,r5
+; 		mov	#CachPnts_Src_L+4,r0
+; 		mov	r5,@r0
+; 		mov	#RAM_Mars_DivTable,r0
+; 		mov	@(r0,r8),r0
+; 		dmuls	r4,r0
+; 		sts	macl,r4
+; 		sts	mach,r0
+; 		xtrct   r0,r4
+; 		mov	#CachPnts_Src_L+$C,r0
+; 		mov	r4,@r0
+; 		
+; 	; Calculate X dest
+; 		mov	@r2,r5
+; 		sub 	r1,r5
+; 		shll16	r5
+; 		mov 	r1,r4
+; 		shll16	r4
+; 		mov	#RAM_Mars_DivTable,r0
+; 		mov	@(r0,r8),r0
+; 		dmuls	r5,r0
+; 		sts	macl,r5
+; 		sts	mach,r0
+; 		xtrct   r0,r5
+; 		shlr2	r8
+; 		exts	r8,r8
+; .lft_skip:
+; 		rts
+; 		nop
+; 		align 4
+; 
+; ; --------------------------------
+; 
+; set_right:
+; 		mov	r3,r9
+; 		add	#$20,r9
+; 		mov	@r9,r6
+; 		mov	@(4,r9),r7
+; 		mov	#CachPnts_Src_R,r9
+; 		mov	r6,r0
+; 		shll16	r0
+; 		mov	r0,@r9
+; 		mov	r7,r0
+; 		shll16	r0
+; 		mov	r0,@(8,r9)
+; 
+; 		mov	@r3,r1
+; 		mov	@(4,r3),r9
+; 		add	#-8,r3
+; 		cmp/ge	r12,r3
+; 		bt	.rgt_ok
+; 		mov 	r13,r3
+; .rgt_ok:
+; 		mov	@(4,r3),r0
+; 		sub	r9,r0
+; 		cmp/eq	#0,r0
+; 		bt	set_right
+; 		cmp/pz	r0
+; 		bf	.rgt_skip
+; 		lds	r0,mach
+; 		mov	r3,r9
+; 		add	#$20,r9
+; 		mov 	@r9,r0
+; 		sub 	r6,r0
+; 		mov 	@(4,r9),r6
+; 		sub 	r7,r6
+; 		shll16	r0
+; 		mov	r0,r7
+; 		shll16	r6
+; 		sts	mach,r9
+; 		shll2	r9
+; 		mov	#RAM_Mars_DivTable,r0
+; 		mov	@(r0,r9),r0
+; 		dmuls	r7,r0
+; 		sts	macl,r7
+; 		sts	mach,r0
+; 		xtrct   r0,r7
+; 		mov	#CachPnts_Src_R+4,r0
+; 		mov	r7,@r0
+; 		mov	#RAM_Mars_DivTable,r0
+; 		mov	@(r0,r9),r0
+; 		dmuls	r6,r0
+; 		sts	macl,r6
+; 		sts	mach,r0
+; 		xtrct   r0,r6
+; 		mov	#CachPnts_Src_R+$C,r0
+; 		mov	r6,@r0
+; 
+; 		mov	@r3,r7
+; 		sub 	r1,r7
+; 		shll16	r7
+; 		mov 	r1,r6
+; 		shll16	r6
+; 		mov	#RAM_Mars_DivTable,r0		; Calculate divisor
+; 		mov	@(r0,r9),r0
+; 		dmuls	r7,r0
+; 		sts	macl,r7
+; 		sts	mach,r0
+; 		xtrct   r0,r7
+; 		shlr2	r9
+; 		exts	r9,r9
+; .rgt_skip:
+; 		rts
+; 		nop
+; 		align 4
+; 		ltorg
+; 
+; ; --------------------------------
+; ; Mark piece
+; ; --------------------------------
+; 
+; put_piece:
+; 		mov	@(4,r2),r8
+; 		mov	@(4,r3),r9
+; 		sub	r10,r8
+; 		sub	r10,r9
+; 		mov	@(marsGbl_VdpList_W,gbr),r0
+; 		mov	r0,r1
+; 		mov	r8,r0
+; 		cmp/gt	r8,r9
+; 		bt	.lefth
+; 		mov	r9,r0
+; .lefth:
+; 		mov 	r4,@(plypz_xl,r1)
+; 		mov 	r5,@(plypz_xl_dx,r1)
+; 		mov 	r6,@(plypz_xr,r1)
+; 		mov 	r7,@(plypz_xr_dx,r1)
+; 
+; 		mov	r2,@-r15
+; 		mov	r3,@-r15
+; 		mov	r5,@-r15
+; 		mov	r7,@-r15
+; 		mov	r8,@-r15
+; 		mov	r9,@-r15
+; 
+; 		dmulu	r0,r5
+; 		sts	macl,r2
+; 		dmulu	r0,r7
+; 		sts	macl,r3
+; 		add 	r2,r4
+; 		add	r3,r6
+; 		mov	r10,r2
+; 		add	r0,r10
+; 		mov	r10,r3
+; 		shll16	r2
+; 		or	r2,r3
+; 		mov	r3,@(plypz_ypos,r1)
+; 
+; 		mov	#CachPnts_Src_L,r2
+; 		mov	@r2,r5
+; 		mov	r5,@(plypz_src_xl,r1)
+; 		mov	@(4,r2),r7
+; 		mov	r7,@(plypz_src_xl_dx,r1)
+; 		mov	@(8,r2),r8
+; 		mov	r8,@(plypz_src_yl,r1)
+; 		mov	@($C,r2),r9
+; 		mov	r9,@(plypz_src_yl_dx,r1)
+; 		dmulu	r0,r7
+; 		sts	macl,r2
+; 		dmulu	r0,r9
+; 		sts	macl,r3
+; 		add 	r2,r5
+; 		add	r3,r8
+; 		mov	#CachPnts_Src_L,r2
+; 		mov	r5,@r2
+; 		mov	r8,@(8,r2)
+; 	
+; 		mov	#CachPnts_Src_R,r2
+; 		mov	@r2,r5
+; 		mov	r5,@(plypz_src_xr,r1)
+; 		mov	@(4,r2),r7
+; 		mov	r7,@(plypz_src_xr_dx,r1)
+; 		mov	@(8,r2),r8
+; 		mov	r8,@(plypz_src_yr,r1)
+; 		mov	@($C,r2),r9
+; 		mov	r9,@(plypz_src_yr_dx,r1)
+; 		dmulu	r0,r7
+; 		sts	macl,r2
+; 		dmulu	r0,r9
+; 		sts	macl,r3
+; 		add 	r2,r5
+; 		add	r3,r8
+; 		mov	#CachPnts_Src_R,r2
+; 		mov	r5,@r2
+; 		mov	r8,@(8,r2)
+; 
+; 		mov	@(polygn_mtrl,r14),r0
+; 		mov 	r0,@(plypz_mtrl,r1)
+; 		mov	@(polygn_type,r14),r0
+; 		mov 	r0,@(plypz_mtrlopt,r1)
+; 
+; 		mov	@r15+,r9
+; 		mov	@r15+,r8
+; 		mov	@r15+,r7
+; 		mov	@r15+,r5
+; 		mov	@r15+,r3
+; 		mov	@r15+,r2
+; 
+; 		add	#sizeof_plypz,r1
+; 		mov	r1,r0
+; 		mov	r0,@(marsGbl_VdpList_W,gbr)
+; 		mov.w	@(marsGbl_VdpListCnt,gbr),r0
+; 		add	#1,r0
+; 		rts
+; 		mov.w	r0,@(marsGbl_VdpListCnt,gbr)
+; 		align 4
+; 		ltorg
+; 
+; ; ------------------------------------------------
+; 
+; 		align 4
+; CachPnts_Real	ds.l 2*2	; First 2 points
+; CachPnts_Last	ds.l 2*2	; Triangle or Quad (+8)
+; CachPnts_Src	ds.l 4*2
+; CachPnts_Src_L	ds.l 4		; X/DX/Y/DX result for textures
+; CachPnts_Src_R	ds.l 4
+; 
+; Cach_LnDrw_L	ds.l 10
+; Cach_LnDrw_S	ds.l 0
+; Cach_ClrLines	ds.w 1
 
 ; ------------------------------------------------
 ; Read polygon and build pieces
