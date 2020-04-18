@@ -110,6 +110,20 @@ MarsVideo_Init:
 ; ------------------------------------------------
 
 .this_fb:
+		mov.w   @($A,r4),r0
+		tst     #2,r0
+		bf      .this_fb
+		mov.w   @($A,r4), r0
+		xor     #1,r0
+		mov.w   r0,@($A,r4)
+		and     #1,r0
+		mov     r0,r1
+.wait_result:
+		mov.w   @($A,r4), r0
+		and     #1,r0
+		cmp/eq  r0,r1
+		bf      .wait_result
+		
  		mov	#_framebuffer,r1
 		mov	#$200/2,r0		; START line data
 		mov	#240,r2			; Vertical lines to set
@@ -121,21 +135,12 @@ MarsVideo_Init:
 		dt	r2
 		bf	.loop
 		
-.wait_vint:	mov.w   @($A,r4),r0
-		tst     #2,r0
-		bf      .wait_vint
-		mov.w   @($A,r4), r0
-		xor     #1,r0
-		mov.w   r0,@($A,r4)
-		and     #1,r0
-		mov     r0,r1
-.wait_result:
-		mov.w   @($A,r4), r0
-		and     #1,r0
-		cmp/eq  r0,r1
-		bf      .wait_result
+;  		mov.b	@(framectl,r4),r0
+; 		not	r0,r0
+;  		and	#1,r0
 		rts
 		nop
+; 		mov.b	r0,@(framectl,r4)
 		align 4
 
 ; ------------------------------------
@@ -809,7 +814,7 @@ m_irq_custom:
 		ltorg
 
 ; --------------------------------
-; TASK $02 - Main drawing routine
+; TASK $00 - Nothing
 ; --------------------------------
 
 drw_task_02:

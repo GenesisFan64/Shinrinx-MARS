@@ -528,6 +528,8 @@ SH2_M_HotStart:
 
 ; ------------------------------------------------
 
+		bsr	MarsVideo_Init			; Init video
+		nop
 		bsr	MarsSound_Init			; Init sound
 		nop
 		mov.l	#Palette_Puyo,r1
@@ -685,24 +687,22 @@ SH2_S_HotStart:
 
 ; ------------------------------------------------
 
-		bsr	MarsVideo_Init			; Init video
-		nop
-		mov	#0,r1
-		mov	#WAV_LEFT,r2
-		mov	#WAV_LEFT_E,r3
-		mov	r2,r4
-		mov	#$100,r5
-		mov	#0,r6
-		bsr	MarsSound_SetChannel
-		mov	#%10,r7
-		mov	#1,r1
-		mov	#WAV_RIGHT,r2
-		mov	#WAV_RIGHT_E,r3
-		mov	r2,r4
-		mov	#$100,r5
-		mov	#0,r6
-		bsr	MarsSound_SetChannel
-		mov	#%01,r7
+; 		mov	#0,r1
+; 		mov	#WAV_LEFT,r2
+; 		mov	#WAV_LEFT_E,r3
+; 		mov	r2,r4
+; 		mov	#$100,r5
+; 		mov	#0,r6
+; 		bsr	MarsSound_SetChannel
+; 		mov	#%10,r7
+; 		mov	#1,r1
+; 		mov	#WAV_RIGHT,r2
+; 		mov	#WAV_RIGHT_E,r3
+; 		mov	r2,r4
+; 		mov	#$100,r5
+; 		mov	#0,r6
+; 		bsr	MarsSound_SetChannel
+; 		mov	#%01,r7
 		mov.l	#$20,r0			; Interrupts ON
 		ldc	r0,sr
 
