@@ -16,7 +16,7 @@
 ; ----------------------------------------
 
 MAX_FACES		equ	512
-MAX_SVDP_PZ		equ	1024
+MAX_SVDP_PZ		equ	1000
 MAX_MODELS		equ	64
 
 ; ----------------------------------------
@@ -121,16 +121,16 @@ MarsVideo_Init:
 		dt	r2
 		bf	.loop
 		
-.fb_wait1:	mov.w   @($A,r4),r0
+.wait_vint:	mov.w   @($A,r4),r0
 		tst     #2,r0
-		bf      .fb_wait1
+		bf      .wait_vint
 		mov.w   @($A,r4), r0
 		xor     #1,r0
 		mov.w   r0,@($A,r4)
 		and     #1,r0
 		mov     r0,r1
 .wait_result:
-		mov.w   @($A,r4),r0
+		mov.w   @($A,r4), r0
 		and     #1,r0
 		cmp/eq  r0,r1
 		bf      .wait_result
@@ -277,19 +277,17 @@ MarsMdl_MakeModel:
 		mov 	@(8,r12),r11			; r11 - face data
 		mov 	@(4,r12),r10			; r10 - vertice data (X,Y,Z)
 		mov.w	@r12,r9				; r9 - numof_faces in model
-		mov	@(marsGbl_CurrZList,gbr),r0
-		mov	r0,r8
 		mov	#MAX_FACES,r0
 		cmp/ge	r0,r9
 		bt	.exit_model
 .next_face:
 		mov.w	@r11+,r4
-		mov	#3,r7
+		mov	#3,r8
 		mov	r4,r0
 		shlr8	r0
 		tst	#PLGN_TRI,r0
 		bf	.set_tri
-		add	#1,r7
+		add	#1,r8
 .set_tri:
 		cmp/pl	r4
 		bt	.solid_type
@@ -299,27 +297,28 @@ MarsMdl_MakeModel:
 ; --------------------------------
 
 		mov	@($C,r12),r6		; r6 - material vertex
-		mov	r13,r5
-		add 	#polygn_srcpnts,r5	; r5 - Output SRC points
-		mov	r7,r3
+		mov	r13,r7
+		add 	#polygn_srcpnts,r7	; r7 - Output SRC points
+		mov	r8,r5
 .srctri:
 		mov.w	@r11+,r0
 		shll2	r0
 		mov	@(r6,r0),r0
-		mov.w	r0,@(2,r5)
+		mov.w	r0,@(2,r7)
 		shlr16	r0
-		mov.w	r0,@r5
-		dt	r3
+		mov.w	r0,@r7
+		dt	r5
 		bf/s	.srctri
-		add	#4,r5
+		add	#4,r7
 
 		mov	r4,r0
-		mov	#$1FFF,r5
-		and	r5,r0
+		mov	#$1FFF,r7
+		and	r7,r0
 		shll2	r0
 		shll	r0
 		mov	@($10,r12),r6
 		add	r0,r6
+		
 		mov	#$E000,r0		; grab special bits
 		and	r0,r4
 		shll16	r4
@@ -351,7 +350,7 @@ MarsMdl_MakeModel:
 .go_faces:
 		mov	r13,r1
 		add 	#polygn_points,r1
-		mov	#$7FFFFFFF,r5
+
 .vert_loop:
 		mov	#0,r0
 		mov.w 	@r11+,r0
@@ -365,27 +364,19 @@ MarsMdl_MakeModel:
 		mov	@(8,r4),r4
 		bsr	mdlrd_setpersp
 		nop
-		cmp/ge	r5,r4
-		bt	.save_z
-		mov	r4,r5
-.save_z:
 		mov.w	r2,@r1
 		mov	r3,r0
 		mov.w	r0,@(2,r1)
-		dt	r7
-		bf/s	.vert_loop
 		add	#4,r1
+		dt	r8
+		bf	.vert_loop
 
 ; --------------------------------
 
 		mov.w	@(marsGbl_CurrNumFace,gbr),r0
 		add	#1,r0
 		mov.w	r0,@(marsGbl_CurrNumFace,gbr)
-		mov	r5,@r8
-		add	#4,r8
-		mov	r8,r0
-		mov	r0,@(marsGbl_CurrZList,gbr)
-.face_out:
+
 		dt	r9
 		bf/s	.next_face
 		add	#sizeof_polygn,r13
@@ -590,10 +581,11 @@ mdlrd_setpersp:
 ;
 
 	; Y perspective
-		mov	#512*512,r8
+		mov	#256*512,r8
 		mov	r4,r0
-		exts	r0,r0
-		cmp/eq	#0,r0
+; 		shlr	r0
+; 		exts	r0,r0
+		cmp/pz	r0
 		bf	.dontdiv
 		mov 	#1,r0
 .dontdiv:
@@ -617,7 +609,7 @@ mdlrd_setpersp:
 
 	; X perspective
 		mov	r4,r0
-		cmp/eq	#0,r0
+		cmp/pz	r0
 		bf	.dontdiv2
 		mov 	#1,r0
 .dontdiv2:
@@ -639,7 +631,7 @@ mdlrd_setpersp:
 		neg	r2,r2
 .dontfix2:
 		shlr8	r2
-		shlr8	r3		
+		shlr8	r3
 		exts	r2,r2
 		exts	r3,r3
 
@@ -817,7 +809,7 @@ m_irq_custom:
 		ltorg
 
 ; --------------------------------
-; TASK $00 - Nothing
+; TASK $02 - Main drawing routine
 ; --------------------------------
 
 drw_task_02:
@@ -969,13 +961,13 @@ drw_task_02:
 		shll2	r2
 		sub	r5,r6
 		sub	r7,r8
-		mov	#RAM_Mars_DivTable-4,r0
+		mov	#RAM_Mars_DivTable,r0
 		mov	@(r0,r2),r0
 		dmuls	r6,r0
 		sts	macl,r6
 		sts	mach,r0
 		xtrct   r0,r6
-		mov	#RAM_Mars_DivTable-4,r0
+		mov	#RAM_Mars_DivTable,r0
 		mov	@(r0,r2),r0
 		dmuls	r8,r0
 		sts	macl,r8
@@ -1061,6 +1053,14 @@ drw_task_02:
 		shlr16	r12
 		exts	r11,r11
 		exts	r12,r12
+		mov	r12,r0
+		sub	r11,r0
+		cmp/pl	r0
+		bt	.revers
+		mov	r12,r0
+		mov	r11,r12
+		mov	r0,r11
+.revers:
 		mov	#SCREEN_WIDTH,r0
 		cmp/pl	r12
 		bf	.upd_line
@@ -1205,7 +1205,7 @@ MarsVideo_MakePolygon:
 ; Sprite points
 ; ----------------------------------------
 
-; TODO: rework on this
+; TODO: improve this
 ; it sucks
 
 .spr_pnts:
@@ -1356,30 +1356,29 @@ MarsVideo_MakePolygon:
 		bsr	set_right
 		nop
 
-	; TODO: check if this works properly
-		mov	r4,r1		; LX crop
-		cmp/pl	r5
-		bt	.ldx_l
-		mov	r5,r0
-		dmuls	r8,r0
-		sts	macl,r0
-		add	r0,r1
-.ldx_l:
-		shlr16	r1
-		exts	r1,r1
-		mov	#SCREEN_WIDTH,r0
-		cmp/ge	r0,r1
-		bt	.exit
-		mov	r6,r1		; RX crop
-		cmp/pl	r7
-		bf	.rdx_l
-		mov	r7,r0
-		dmuls	r9,r0
-		sts	macl,r0
-		add	r0,r1
-.rdx_l:
-		cmp/pl	r1
-		bf	.exit
+; 		mov	r4,r1		; LX crop
+; 		cmp/pl	r5
+; 		bt	.ldx_l
+; 		mov	r5,r0
+; 		dmuls	r8,r0
+; 		sts	macl,r0
+; 		add	r0,r1
+; .ldx_l:
+; 		shlr16	r1
+; 		exts	r1,r1
+; 		mov	#SCREEN_WIDTH,r0
+; 		cmp/ge	r0,r1
+; 		bt	.exit
+; 		mov	r6,r1		; RX crop
+; 		cmp/pl	r7
+; 		bf	.rdx_l
+; 		mov	r7,r0
+; 		dmuls	r9,r0
+; 		sts	macl,r0
+; 		add	r0,r1
+; .rdx_l:
+; 		cmp/pl	r1
+; 		bf	.exit
 
 .next_pz:
 		cmp/ge	r11,r10
@@ -1391,8 +1390,7 @@ MarsVideo_MakePolygon:
 		bsr	put_piece
 		nop
 		ldc	@r15+,sr	; Restore interrupts
-
-		cmp/gt	r9,r8
+		cmp/ge	r9,r8
 		bf	.lefth2
 		bsr	set_right
 		nop
@@ -1568,14 +1566,10 @@ set_right:
 ; --------------------------------
 
 put_piece:
-		mov	@(4,r2),r8
-		mov	@(4,r3),r9
-		sub	r10,r8
-		sub	r10,r9
 		mov	@(marsGbl_VdpList_W,gbr),r0
 		mov	r0,r1
 		mov	r8,r0
-		cmp/gt	r8,r9
+		cmp/ge	r8,r9
 		bt	.lefth
 		mov	r9,r0
 .lefth:
