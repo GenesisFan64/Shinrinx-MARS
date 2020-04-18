@@ -18,6 +18,7 @@
 MAX_FACES		equ	512
 MAX_SVDP_PZ		equ	1024
 MAX_MODELS		equ	64
+MAX_DIVTABLE		equ	$800
 
 ; ----------------------------------------
 ; Variables
@@ -160,7 +161,7 @@ MarsVideo_Init:
 
 Mars_MkDivTable:
 		mov	#$FFFFFF00,r6
-		mov	#$800,r4
+		mov	#MAX_DIVTABLE,r4
 		mov     #0,r5
 		shll16  r1
 .loop:
@@ -786,12 +787,6 @@ m_irq_custom:
 		mov.b   @(7,r1), r0
 		xor     #2,r0
 		mov.b   r0,@(7,r1)
-
-		mov	#_sysreg+comm6,r1
-		mov.w	@r1,r0
-		add	#1,r0
-		mov.w	r0,@r1
-		
 		mov.w	@(marsGbl_DrwTask,gbr),r0
 		cmp/eq	#1,r0
 		bf	drw_task_02
@@ -1154,12 +1149,12 @@ drw_task_02:
 		add	#sizeof_plypz,r14
 		mov	r14,r0
 		mov	r0,@(marsGbl_VdpList_R,gbr)
-		mov.w	@(marsGbl_VdpListCnt,gbr),r0
-		cmp/eq	#0,r0
-		bt/s	.finish_it
-		add	#-1,r0
-		bra	.new_piece
-		mov.w	r0,@(marsGbl_VdpListCnt,gbr)
+; 		mov.w	@(marsGbl_VdpListCnt,gbr),r0	; uncomment if gets slower
+; 		cmp/eq	#0,r0
+; 		bt/s	.finish_it
+; 		add	#-1,r0
+; 		bra	.new_piece
+; 		mov.w	r0,@(marsGbl_VdpListCnt,gbr)
 .finish_it:
 		mov	#$10,r2
 

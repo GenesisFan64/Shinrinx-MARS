@@ -7,8 +7,8 @@ NTSC Systems only, untested on PAL
 
 Current issues:
 - Can't see the models until you press RESET
-- Fix the perspective calculation, vertices explode if they are close to the screen
 - Model faces sometimes desync
+- Fix the perspective calculation, vertices explode if they are close to the screen
 - Improve solid color drawing so it doesnt look too blocky
 
 Please note that current 32X emulators ignore critical parts of the system, these include:
