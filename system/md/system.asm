@@ -137,17 +137,17 @@ System_Input:
 		bsr.s	.this_one
 		adda	#2,a4
 		adda	#sizeof_input,a5
-		bsr.s	.this_one
+; 		bsr.s	.this_one
 ; 		move.w	#0,(z80_bus).l
 
 
 	; MARS only
-		lea	(sysmars_reg).l,a5
-		move.w	(Controller_1+on_hold),d4
-		move.w	(Controller_2+on_hold),d5
-		move.w	d4,comm12(a5)
-		move.w	d5,comm14(a5)
-		rts
+; 		lea	(sysmars_reg).l,a5
+; 		move.w	(Controller_1+on_hold),d4
+; 		move.w	(Controller_2+on_hold),d5
+; 		move.w	d4,comm12(a5)
+; 		move.w	d5,comm14(a5)
+; 		rts
 
 ; --------------------------------------------------------	
 ; do port

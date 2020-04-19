@@ -21,9 +21,7 @@ marsGbl_VdpList_R	ds.l 1
 marsGbl_VdpList_W	ds.l 1
 marsGbl_CurrFacePos	ds.l 1
 marsGbl_CurrZList	ds.l 1
-marsGbl_PolyCny_0	ds.w 1
-marsGbl_PolyCny_1	ds.w 1
-marsGbl_PolyBuffNum	ds.w 1
+; marsGbl_PolyBuffNum	ds.w 1
 marsGbl_CurrNumFace	ds.w 1
 marsGbl_VdpListCnt	ds.w 1
 marsGbl_DrwTask		ds.w 1
@@ -180,26 +178,26 @@ m_irq_v:
 
 ; 	; Grab inputs from MD (using COMM12 and COMM14)
 ; 	; using MD's VBlank
-		mov	#_sysreg+comm0,r5
-		mov.l	#$FFFF,r2
-		mov.l	#MarsSys_Input,r3
-		mov.w 	@($E,r5),r0
-		and	r2,r0
-		mov 	r0,r4
-		mov.w 	@($C,r5),r0
-		and	r2,r0
-		mov.l	@r3,r1
-		xor	r0,r1
-		mov.l	r0,@r3
-		and	r0,r1
-		mov.l	r1,@(4,r3)
-		add 	#8,r3
-		mov 	r4,r0
-		mov.l	@r3,r1
-		xor	r0,r1
-		mov.l	r0,@r3
-		and	r0,r1
-		mov.l	r1,@(4,r3)
+; 		mov	#_sysreg+comm0,r5
+; 		mov.l	#$FFFF,r2
+; 		mov.l	#MarsSys_Input,r3
+; 		mov.w 	@($E,r5),r0
+; 		and	r2,r0
+; 		mov 	r0,r4
+; 		mov.w 	@($C,r5),r0
+; 		and	r2,r0
+; 		mov.l	@r3,r1
+; 		xor	r0,r1
+; 		mov.l	r0,@r3
+; 		and	r0,r1
+; 		mov.l	r1,@(4,r3)
+; 		add 	#8,r3
+; 		mov 	r4,r0
+; 		mov.l	@r3,r1
+; 		xor	r0,r1
+; 		mov.l	r0,@r3
+; 		and	r0,r1
+; 		mov.l	r1,@(4,r3)
 		mov.l	@r15+,r6
 		mov.l	@r15+,r5
 		mov.l	@r15+,r4
@@ -574,32 +572,41 @@ SH2_M_HotStart:
 ; --------------------------------------------------------
 
 master_loop:
-		bsr	MarsRndr_SetWatchdog
-		nop
+		mov	#_sysreg+comm12,r1
+.wait_respons:	mov.w	@r1,r0
+		cmp/eq	#0,r0
+		bt	.wait_respons
 
 	; --------------------------------------
-		mov	#_sysreg+comm0,r1
-		mov.w   @r1,r0
+
+		bsr	MarsRndr_SetWatchdog
+		nop
+		mov	#_sysreg+comm10,r1
+		mov.w	@r1,r0
+; 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		tst     #1,r0
 		bt	.page_2
-		mov.w	@(marsGbl_PolyCny_0,gbr),r0
 		mov 	#RAM_Mars_PlgnList_0,r14
 		bra	.cont_plgn
 		nop
 .page_2:
-		mov.w	@(marsGbl_PolyCny_1,gbr),r0
 		mov 	#RAM_Mars_PlgnList_1,r14
 .cont_plgn:
-; 		cmp/eq	#0,r0
-; 		bt	.skip
-		mov	#1,r13
+		mov	#_sysreg+comm8,r1
+		mov.w	@r1,r0
+		cmp/eq	#0,r0
+		bt	.skip
+		mov	r0,r13
 .loop:
 		mov	r14,@-r15
 		mov	r13,@-r15
 		mov	@r14,r14
+		cmp/pl	r14
+		bf	.bad_one
 		mov 	#MarsVideo_MakePolygon,r0
 		jsr	@r0
 		nop
+.bad_one:
 		mov	@r15+,r13
 		mov	@r15+,r14
 		add	#4,r14
@@ -624,7 +631,10 @@ master_loop:
 		mov.w	@r1,r0
 		add	#1,r0
 		mov.w	r0,@r1
-
+		
+		mov	#_sysreg+comm12,r1
+		mov	#0,r0
+		mov.w	r0,@r1
 		bra	master_loop
 		nop
 		align 4
@@ -700,7 +710,7 @@ SH2_S_HotStart:
 		mov	#RAM_Mars_Objects,r1
 		mov	#TEST_MODEL,r0
 		mov	r0,@(mdl_data,r1)
-		mov	#-$80000,r0
+		mov	#-$D0000,r0
 		mov	r0,@(mdl_z_pos,r1)
 		mov	#$20,r0			; Interrupts ON
 		ldc	r0,sr
@@ -710,36 +720,29 @@ SH2_S_HotStart:
 ; --------------------------------------------------------
 
 slave_loop:
-		mov	#1,r0
-		mov.w	r0,@(marsGbl_VIntFlag_S,gbr)
-.wait:		mov.w	@(marsGbl_VIntFlag_S,gbr),r0
-		cmp/eq	#1,r0
-		bt	.wait
+		mov	#_sysreg+comm14,r1
+.wait_respons:	mov.w	@r1,r0
+		cmp/eq	#0,r0
+		bt	.wait_respons
 		mov	#_sysreg+comm6,r1
 		mov.w	@r1,r0
 		add	#1,r0
 		mov.w	r0,@r1
 
-; ----------------------------------------
-; Move/rotate your models here
-; ----------------------------------------
-
 		mov	#RAM_Mars_Objects,r1
-		mov	#-$400,r2
+		mov	#-$1000,r2
 		mov	@(mdl_x_rot,r1),r0
 		add	r2,r0
 		mov	r0,@(mdl_x_rot,r1)
-; 		mov	@(mdl_z_rot,r1),r0
-; 		add	r2,r0
-; 		mov	r0,@(mdl_z_rot,r1)
-
+		
 ; ----------------------------------------
 
 		mov	#0,r0
 		mov.w	r0,@(marsGbl_CurrNumFace,gbr)
 		mov 	#RAM_Mars_Polygons_0,r1
-		mov	#_sysreg+comm0,r2
-		mov.w   @r2,r0
+; 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
+		mov	#_sysreg+comm10,r2
+		mov.w	@r2,r0
 		tst     #1,r0
 		bt	.go_mdl
 		mov 	#RAM_Mars_Polygons_1,r1
@@ -764,35 +767,38 @@ slave_loop:
 		bf/s	.loop
 		add	#sizeof_mdlobj,r14
 .skip:
-		mov	#_sysreg+comm8,r1
-		mov.w	@(marsGbl_CurrNumFace,gbr),r0
-		mov.w	r0,@r1
 
 ; ----------------------------------------
 
-		mov	#_sysreg+comm0,r1
-		mov.w   @r1,r0
+; 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
+		mov	#_sysreg+comm10,r1
+		mov.w	@r1,r0
 		tst     #1,r0
 		bf	.page_2
 		mov 	#RAM_Mars_PlgnList_0,r14
 		mov 	#RAM_Mars_Polygons_0,r13
 		bsr	.check_z
 		nop
-		mov.w	@(marsGbl_CurrNumFace,gbr),r0
 		bra	.swap_now
-		mov.w	r0,@(marsGbl_PolyCny_0,gbr)
+		nop
 .page_2:
 		mov 	#RAM_Mars_PlgnList_1,r14
 		mov 	#RAM_Mars_Polygons_1,r13
 		bsr	.check_z
 		nop
-		mov.w	@(marsGbl_CurrNumFace,gbr),r0
-		mov.w	r0,@(marsGbl_PolyCny_1,gbr)
+
 .swap_now:
-		mov	#_sysreg+comm0,r1
-		mov.w   @r1,r0
+		mov.w	@(marsGbl_CurrNumFace,gbr),r0
+		mov	#_sysreg+comm8,r1		; Faces count for Reading
+		mov.w	r0,@r1
+		mov	#_sysreg+comm10,r1		; Swap buffer
+		mov.w	@r1,r0
  		xor	#1,r0
- 		mov.w 	r0,@r1
+ 		mov.w	r0,@r1
+		
+		mov	#_sysreg+comm14,r1		
+		mov	#0,r0
+		mov.w	r0,@r1
 		bra	slave_loop
 		nop
 		align 4
@@ -963,9 +969,9 @@ sizeof_marssnd		ds.l 0
 RAM_Mars_Global		ds.w sizeof_MarsGbl		; Note: keep it as a word
 RAM_Mars_DivTable	ds.l MAX_DIVTABLE
 RAM_Mars_Palette	ds.w 256
-RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer
+RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer list(s)
 RAM_Mars_PlgnList_1	ds.l MAX_FACES
-RAM_Mars_Plgn_ZList	ds.l MAX_FACES			; Same order as Polygons_0 and _1
+RAM_Mars_Plgn_ZList	ds.l MAX_FACES			; Z lowest for current face list
 RAM_Mars_Objects	ds.b sizeof_mdlobj*64
 RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
 RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
