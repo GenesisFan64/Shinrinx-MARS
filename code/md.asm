@@ -76,17 +76,23 @@ MD_Main:
 ; Loop
 ; ------------------------------------------------------
 
+		lea	(sysmars_reg),a0
+		move.w	#1,comm14(a0)
+		
 .loop:
 		bsr	System_VSync
 ; 		move.w	(Controller_1+on_hold),d1
 ; 		move.w	d1,d0
 ; 		btst	#bitJoyC,d1
 ; 		beq.s	.no_press
+
+
 		lea	(sysmars_reg),a0
 		move.w	comm12(a0),d0
-		or.w	comm14(a0),d0
 		bne.s	.no_press
 		move.w	#1,comm12(a0)
+		move.w	comm14(a0),d0
+		bne.s	.no_press
 		move.w	#1,comm14(a0)
 .no_press:
 

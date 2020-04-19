@@ -23,9 +23,9 @@ Textr_TestTexture:
 		binclude "data/mars/models/mtrl/rubia_art.bin"
 		align 4
 		
-; WAV_LEFT:	binclude "data/mars/rom/L.wav",$2C,$100000
+; WAV_LEFT:	binclude "data/mars/L.wav",$2C,$140000
 ; WAV_LEFT_E:
 ; 		align 4
-; WAV_RIGHT:	binclude "data/mars/rom/R.wav",$2C,$100000
+; WAV_RIGHT:	binclude "data/mars/R.wav",$2C,$140000
 ; WAV_RIGHT_E:
 ; 		align 4

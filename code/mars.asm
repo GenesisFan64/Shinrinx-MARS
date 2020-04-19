@@ -62,7 +62,7 @@ m_irq_bad:
 ; ------------------------------------------------
 
 m_irq_pwm:
-		mov	#_sysreg,r1
+		mov	#_sysreg+monowidth,r1
 		mov.b	@r1,r0
  		tst	#$80,r0
  		bf	.exit
@@ -72,10 +72,12 @@ m_irq_pwm:
 		mov.l	r5,@-r15
 		mov.l	r6,@-r15
 		mov.l	r7,@-r15
+		mov.l	r8,@-r15
 		sts	pr,@-r15
 		bsr	MarsSound_PWM
 		nop
 		lds	@r15+,pr
+		mov.l	@r15+,r8
 		mov.l	@r15+,r7
 		mov.l	@r15+,r6
 		mov.l	@r15+,r5
@@ -176,28 +178,6 @@ m_irq_v:
 		add	#1,r0
 		mov.l	r0,@r6			; Start OPERATION
 
-; 	; Grab inputs from MD (using COMM12 and COMM14)
-; 	; using MD's VBlank
-; 		mov	#_sysreg+comm0,r5
-; 		mov.l	#$FFFF,r2
-; 		mov.l	#MarsSys_Input,r3
-; 		mov.w 	@($E,r5),r0
-; 		and	r2,r0
-; 		mov 	r0,r4
-; 		mov.w 	@($C,r5),r0
-; 		and	r2,r0
-; 		mov.l	@r3,r1
-; 		xor	r0,r1
-; 		mov.l	r0,@r3
-; 		and	r0,r1
-; 		mov.l	r1,@(4,r3)
-; 		add 	#8,r3
-; 		mov 	r4,r0
-; 		mov.l	@r3,r1
-; 		xor	r0,r1
-; 		mov.l	r0,@r3
-; 		and	r0,r1
-; 		mov.l	r1,@(4,r3)
 		mov.l	@r15+,r6
 		mov.l	@r15+,r5
 		mov.l	@r15+,r4
@@ -702,7 +682,7 @@ SH2_S_HotStart:
 		mov	#$19,r0
 		mov.w	r0,@r1
 		mov	#_sysreg,r1
-		mov.l	#VIRQ_ON|CMDIRQ_ON,r0		; IRQ enable bits
+		mov.l	#VIRQ_ON|CMDIRQ_ON,r0	; IRQ enable bits
     		mov.b	r0,@(intmask,r1)	; clear IRQ ACK regs
 
 ; ------------------------------------------------
@@ -710,8 +690,10 @@ SH2_S_HotStart:
 		mov	#RAM_Mars_Objects,r1
 		mov	#TEST_MODEL,r0
 		mov	r0,@(mdl_data,r1)
-		mov	#-$D0000,r0
+		mov	#-$100000,r0
 		mov	r0,@(mdl_z_pos,r1)
+		mov	#-$100,r2
+		mov	r0,@(mdl_x_rot,r1)
 		mov	#$20,r0			; Interrupts ON
 		ldc	r0,sr
 
@@ -729,12 +711,6 @@ slave_loop:
 		add	#1,r0
 		mov.w	r0,@r1
 
-		mov	#RAM_Mars_Objects,r1
-		mov	#-$1000,r2
-		mov	@(mdl_x_rot,r1),r0
-		add	r2,r0
-		mov	r0,@(mdl_x_rot,r1)
-		
 ; ----------------------------------------
 
 		mov	#0,r0
@@ -824,13 +800,14 @@ slave_loop:
 		mov	r9,r8			; r8 - max faces to check
 		mov	r9,r7			; r7 - drawn points counter
 		mov	#0,r6			; r6 - current face position
-		mov	#$7FFFFFFF,r5		; r5 - already drawn flag	
+		mov	#$7FFFFFFF,r5		; r5 - already drawn flag
+		mov	r5,r4
 .z_sort:
 		cmp/pl	r7
 		bf	.z_end
 		mov	@r10,r0
 		cmp/eq	r5,r10
-		bt	.z_notequ
+		bt	.z_notnew
 		cmp/eq	r11,r0
 		bf	.z_notequ
 		mov	r13,r0
@@ -840,13 +817,20 @@ slave_loop:
 		mov	r5,@r10			; Set already drawn on Zbuff
 		add	#-1,r7
 .z_notequ:
+		cmp/ge	r4,r0
+		bt	.z_notnew
+		cmp/eq	r5,r0
+		bt	.z_notnew
+		mov	r0,r4
+.z_notnew:
 		add	#sizeof_polygn,r6	; Next face
 		dt	r8
 		bf/s	.z_sort
-		add	#4,r10			; Next Z
+		add	#4,r10			; Next Z entry
 		mov	r12,r10			; restart Zlist
 		mov	r9,r8			; reset faces to check
-		add	#1,r11
+		mov	r4,r11
+		add	#1,r4
 		bra	.z_sort
 		mov	#0,r6
 .z_end:
