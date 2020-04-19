@@ -552,16 +552,32 @@ SH2_M_HotStart:
 ; --------------------------------------------------------
 
 master_loop:
-		mov	#_sysreg+comm12,r1
-.wait_respons:	mov.w	@r1,r0
+		mov	#0,r0
+		mov	#_sysreg+comm14,r1
+		mov.b	r0,@r1
+.mstr_wait:
+		mov.b	@r1,r0
 		cmp/eq	#0,r0
-		bt	.wait_respons
+		bf	.mstr_free
+		mov.l	#$64,r0
+.mstr_delay:
+		nop
+		dt	r0
+		bf/s	.mstr_delay
+		nop
+		bra	.mstr_wait
+		nop
+; ---------------------------------------------------------------------------
 
-	; --------------------------------------
-
+.mstr_free:
+		mov.l	#$FFFFFE92,r0
+		mov	#8,r1
+		mov.b	r1,@r0
+		mov	#$19,r1
+		mov.b	r1,@r0
 		bsr	MarsRndr_SetWatchdog
 		nop
-		mov	#_sysreg+comm10,r1
+		mov	#_sysreg+comm12,r1
 		mov.w	@r1,r0
 ; 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		tst     #1,r0
@@ -572,7 +588,7 @@ master_loop:
 .page_2:
 		mov 	#RAM_Mars_PlgnList_1,r14
 .cont_plgn:
-		mov	#_sysreg+comm8,r1
+		mov	#_sysreg+comm10,r1
 		mov.w	@r1,r0
 		cmp/eq	#0,r0
 		bt	.skip
@@ -611,10 +627,7 @@ master_loop:
 		mov.w	@r1,r0
 		add	#1,r0
 		mov.w	r0,@r1
-		
-		mov	#_sysreg+comm12,r1
-		mov	#0,r0
-		mov.w	r0,@r1
+
 		bra	master_loop
 		nop
 		align 4
@@ -692,8 +705,8 @@ SH2_S_HotStart:
 		mov	r0,@(mdl_data,r1)
 		mov	#-$100000,r0
 		mov	r0,@(mdl_z_pos,r1)
-		mov	#-$100,r2
-		mov	r0,@(mdl_x_rot,r1)
+; 		mov	#-$100,r2
+; 		mov	r0,@(mdl_x_rot,r1)
 		mov	#$20,r0			; Interrupts ON
 		ldc	r0,sr
 
@@ -702,14 +715,20 @@ SH2_S_HotStart:
 ; --------------------------------------------------------
 
 slave_loop:
-		mov	#_sysreg+comm14,r1
-.wait_respons:	mov.w	@r1,r0
-		cmp/eq	#0,r0
-		bt	.wait_respons
+; 		mov	#_sysreg+comm15,r1
+; .wait_respons:	mov.b	@r1,r0
+; 		cmp/eq	#0,r0
+; 		bt	.wait_respons
 		mov	#_sysreg+comm6,r1
 		mov.w	@r1,r0
 		add	#1,r0
 		mov.w	r0,@r1
+
+		mov	#RAM_Mars_Objects,r1
+		mov	@(mdl_x_rot,r1),r0
+		mov	#-$800,r2
+		add	r2,r0
+		mov	r0,@(mdl_x_rot,r1)
 
 ; ----------------------------------------
 
@@ -717,7 +736,7 @@ slave_loop:
 		mov.w	r0,@(marsGbl_CurrNumFace,gbr)
 		mov 	#RAM_Mars_Polygons_0,r1
 ; 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
-		mov	#_sysreg+comm10,r2
+		mov	#_sysreg+comm12,r2
 		mov.w	@r2,r0
 		tst     #1,r0
 		bt	.go_mdl
@@ -747,7 +766,7 @@ slave_loop:
 ; ----------------------------------------
 
 ; 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
-		mov	#_sysreg+comm10,r1
+		mov	#_sysreg+comm12,r1
 		mov.w	@r1,r0
 		tst     #1,r0
 		bf	.page_2
@@ -765,20 +784,25 @@ slave_loop:
 
 .swap_now:
 		mov.w	@(marsGbl_CurrNumFace,gbr),r0
-		mov	#_sysreg+comm8,r1		; Faces count for Reading
+		mov	#_sysreg+comm10,r1		; Faces count for Reading
 		mov.w	r0,@r1
-		mov	#_sysreg+comm10,r1		; Swap buffer
+		
+		bsr	Slv_WaitMaster
+		nop
+		mov	#_sysreg+comm12,r1		; Swap buffer
 		mov.w	@r1,r0
  		xor	#1,r0
  		mov.w	r0,@r1
+		bsr	Slv_SetMasterTask
+		mov	#1,r2
 		
-		mov	#_sysreg+comm14,r1		
-		mov	#0,r0
-		mov.w	r0,@r1
+; 		mov	#_sysreg+comm15,r1		
+; 		mov	#0,r0
+; 		mov.b	r0,@r1
 		bra	slave_loop
 		nop
 		align 4
-		
+
 ; ----------------------------------------
 
 .check_z:
@@ -847,6 +871,34 @@ slave_loop:
 		rts
 		nop
 		align 4
+
+; ----------------------------------------
+
+Slv_SetMasterTask:
+		mov.l	#_sysreg+comm14,r1
+		mov.b	r2,@r1
+		rts
+		nop
+		align 4
+
+Slv_WaitMaster:
+		mov.l	#_sysreg+comm14,r1
+.wait_master:
+		mov.b	@r1,r0
+		cmp/eq	#0,r0
+		bt	.master_free
+		mov.l	#$44C,r0
+.wait_delay:
+		dt	r0
+		bf	.wait_delay
+		bra	.wait_master
+		nop
+.master_free:
+		rts
+		nop
+		align 4
+		
+; ----------------------------------------
 
 ; 		mov	#plygnytest+2,r1
 ; 		mov.w	@r1,r0

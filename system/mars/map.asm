@@ -57,6 +57,8 @@ comm8		equ	$28		;
 comm10		equ	$2A		;
 comm12		equ	$2C		;
 comm14		equ	$2E		;
+comm15		equ	$2F		;
+
 timerctl	equ	$30		; PWM Timer Control
 pwmctl		equ	$31		; PWM Control
 cycle		equ	$32		; PWM Cycle
