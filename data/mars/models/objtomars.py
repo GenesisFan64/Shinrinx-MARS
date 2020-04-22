@@ -25,7 +25,7 @@ import sys
 # Init
 # -------------------------------------------------
 
-SCALE_SIZE=0x100
+#SCALE_SIZE=0x100
 FROM_BLENDER=False #True
 img_width  = 1
 img_height = 1
@@ -101,12 +101,12 @@ while reading:
     a = text[2:]
     point = a.replace("\n","").split(" ")
     if point[0] != "":
-      x=float(point[0])*SCALE_SIZE
-      y=(float(point[1])*SCALE_SIZE)
-      z=float(point[2])*SCALE_SIZE
+      x=float(point[0])#*SCALE_SIZE
+      y=float(point[1])#*SCALE_SIZE)
+      z=float(point[2])#*SCALE_SIZE
       mars_x=int(x)*-1
-      mars_z=int(z)
-      mars_y=int(y)+(int(INCR_Y)*-1)
+      mars_z=int(z)*-1
+      mars_y=int(y)*-1
       
       #print(mars_x,mars_y,mars_z)
       

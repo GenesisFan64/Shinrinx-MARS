@@ -21,7 +21,7 @@ marsGbl_VdpList_R	ds.l 1
 marsGbl_VdpList_W	ds.l 1
 marsGbl_CurrFacePos	ds.l 1
 marsGbl_CurrZList	ds.l 1
-; marsGbl_PolyBuffNum	ds.w 1
+marsGbl_PolyBuffNum	ds.w 1
 marsGbl_CurrNumFace	ds.w 1
 marsGbl_VdpListCnt	ds.w 1
 marsGbl_DrwTask		ds.w 1
@@ -454,7 +454,6 @@ SH2_M_Entry:
 		mov     #0,r0
 		mov.b   r0,@(3,r1)
 		mov.b   r0,@(2,r1)
-
 		mov.l   #$FFFFFEE2,r0
 		mov     #$50,r1
 		mov.w   r1,@r0
@@ -462,6 +461,10 @@ SH2_M_Entry:
 		mov     #$120/4,r1		; VBR + this/4
 		shll8   r1
 		mov.w   r1,@r0
+
+		mov	#RAM_Mars_DivTable,r2
+		bsr	Mars_MkDivTable
+		mov	#1,r1
 
 ; ------------------------------------------------
 ; Wait for Genesis and Slave CPU
@@ -567,7 +570,7 @@ master_loop:
 		nop
 		bra	.mstr_wait
 		nop
-; ---------------------------------------------------------------------------
+; --------------------------------------------------------
 
 .mstr_free:
 		mov.l	#$FFFFFE92,r0
@@ -577,9 +580,7 @@ master_loop:
 		mov.b	r1,@r0
 		bsr	MarsRndr_SetWatchdog
 		nop
-		mov	#_sysreg+comm12,r1
-		mov.w	@r1,r0
-; 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
+		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		tst     #1,r0
 		bt	.page_2
 		mov 	#RAM_Mars_PlgnList_0,r14
@@ -588,7 +589,7 @@ master_loop:
 .page_2:
 		mov 	#RAM_Mars_PlgnList_1,r14
 .cont_plgn:
-		mov	#_sysreg+comm10,r1
+		mov	#_sysreg+comm12,r1
 		mov.w	@r1,r0
 		cmp/eq	#0,r0
 		bt	.skip
@@ -703,8 +704,8 @@ SH2_S_HotStart:
 		mov	#RAM_Mars_Objects,r1
 		mov	#TEST_MODEL,r0
 		mov	r0,@(mdl_data,r1)
-		mov	#-$100000,r0
-		mov	r0,@(mdl_z_pos,r1)
+; 		mov	#-$40000,r0
+; 		mov	r0,@(mdl_z_pos,r1)
 ; 		mov	#-$100,r2
 ; 		mov	r0,@(mdl_x_rot,r1)
 		mov	#$20,r0			; Interrupts ON
@@ -715,29 +716,30 @@ SH2_S_HotStart:
 ; --------------------------------------------------------
 
 slave_loop:
-; 		mov	#_sysreg+comm15,r1
-; .wait_respons:	mov.b	@r1,r0
-; 		cmp/eq	#0,r0
-; 		bt	.wait_respons
 		mov	#_sysreg+comm6,r1
 		mov.w	@r1,r0
 		add	#1,r0
 		mov.w	r0,@r1
 
-		mov	#RAM_Mars_Objects,r1
-		mov	@(mdl_x_rot,r1),r0
-		mov	#-$800,r2
-		add	r2,r0
-		mov	r0,@(mdl_x_rot,r1)
+		mov	#RAM_Mars_Objects,r2
+		mov	#$400,r1
+		mov	@(mdl_x_rot,r2),r0
+		add	r1,r0
+		mov	r0,@(mdl_x_rot,r2)
+		mov	@(mdl_y_rot,r2),r0
+		add	r1,r0
+		mov	r0,@(mdl_y_rot,r2)
+		mov	#-$400,r1
+		mov	@(mdl_z_pos,r2),r0
+		add	r1,r0
+		mov	r0,@(mdl_z_pos,r2)
 
 ; ----------------------------------------
 
 		mov	#0,r0
 		mov.w	r0,@(marsGbl_CurrNumFace,gbr)
 		mov 	#RAM_Mars_Polygons_0,r1
-; 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
-		mov	#_sysreg+comm12,r2
-		mov.w	@r2,r0
+		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		tst     #1,r0
 		bt	.go_mdl
 		mov 	#RAM_Mars_Polygons_1,r1
@@ -765,9 +767,7 @@ slave_loop:
 
 ; ----------------------------------------
 
-; 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
-		mov	#_sysreg+comm12,r1
-		mov.w	@r1,r0
+		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		tst     #1,r0
 		bf	.page_2
 		mov 	#RAM_Mars_PlgnList_0,r14
@@ -784,21 +784,17 @@ slave_loop:
 
 .swap_now:
 		mov.w	@(marsGbl_CurrNumFace,gbr),r0
-		mov	#_sysreg+comm10,r1		; Faces count for Reading
+		mov	#_sysreg+comm12,r1		; Faces count for Reading
 		mov.w	r0,@r1
 		
 		bsr	Slv_WaitMaster
 		nop
-		mov	#_sysreg+comm12,r1		; Swap buffer
-		mov.w	@r1,r0
+		mov.w	@(marsGbl_PolyBuffNum,gbr),r0
  		xor	#1,r0
- 		mov.w	r0,@r1
+ 		mov.w	r0,@(marsGbl_PolyBuffNum,gbr)
+
 		bsr	Slv_SetMasterTask
 		mov	#1,r2
-		
-; 		mov	#_sysreg+comm15,r1		
-; 		mov	#0,r0
-; 		mov.b	r0,@r1
 		bra	slave_loop
 		nop
 		align 4
@@ -887,7 +883,8 @@ Slv_WaitMaster:
 		mov.b	@r1,r0
 		cmp/eq	#0,r0
 		bt	.master_free
-		mov.l	#$44C,r0
+; 		mov	#$44C,r0
+		mov	#$44C,r0
 .wait_delay:
 		dt	r0
 		bf	.wait_delay
@@ -946,8 +943,11 @@ Slv_WaitMaster:
 ; ----------------------------------------------------------------
 
 		align 4
-sin_table	binclude "system/mars/data/sinedata.bin"	; sinetable for 3D stuff
+sin_table	binclude "system/mars/data/sinedata.bin"
 		align 4
+persp_table:	binclude "system/mars/data/perspdata.bin"
+		align 4
+
 		include "data/mars_sdram.asm"
 
 ; ====================================================================
@@ -1002,9 +1002,9 @@ sizeof_marssnd		ds.l 0
 ; ----------------------------------------------------------------
 
 			struct MarsRam_Video
+RAM_Mars_Palette	ds.w 256
 RAM_Mars_Global		ds.w sizeof_MarsGbl		; Note: keep it as a word
 RAM_Mars_DivTable	ds.l MAX_DIVTABLE
-RAM_Mars_Palette	ds.w 256
 RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer list(s)
 RAM_Mars_PlgnList_1	ds.l MAX_FACES
 RAM_Mars_Plgn_ZList	ds.l MAX_FACES			; Z lowest for current face list

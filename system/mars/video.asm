@@ -18,7 +18,7 @@
 MAX_FACES		equ	512
 MAX_SVDP_PZ		equ	1024
 MAX_MODELS		equ	64
-MAX_DIVTABLE		equ	$800
+MAX_DIVTABLE		equ	$800		; LONGS
 
 ; ----------------------------------------
 ; Variables
@@ -96,10 +96,6 @@ MarsVideo_Init:
 		nop
 		mov	#1,r0			; Enable bitmap $01
 		mov.b	r0,@(bitmapmd,r4)
-
-		mov	#RAM_Mars_DivTable,r2
-		bsr	Mars_MkDivTable
-		mov	#1,r1
 
 		lds	@r15+,pr
 		rts
@@ -431,81 +427,85 @@ mdlrd_setpersp:
 ; 		mov 	#MarsMdl_Playfld,r13
 ; 
 ; 	; PASS 1
+		shll8	r2			; float the values
+		shll8	r3			;
+		shll8	r4			;
+		
 		mov	@(mdl_x_rot,r14),r0	; X rotation
 ; 		shlr	r0
 		bsr	mdlrd_readsine
 		shlr8	r0
-		dmuls	r2,r8		; X cos @
+		dmuls	r2,r8			; X cos @
 		sts	macl,r5
 		sts	mach,r0
 		xtrct	r0,r5
-		dmuls	r4,r7		; Z sin @
+		dmuls	r4,r7			; Z sin @
 		sts	macl,r6
 		sts	mach,r0
 		xtrct	r0,r6
 		add 	r6,r5
 		neg	r7,r7
-		dmuls	r2,r7		; X -sin @
+		dmuls	r2,r7			; X -sin @
 		sts	macl,r6
 		sts	mach,r0
 		xtrct	r0,r6
-		dmuls	r4,r8		; Z cos @
+		dmuls	r4,r8			; Z cos @
 		sts	macl,r0
 		sts	mach,r7
 		xtrct	r7,r0
 		add	r0,r6
-		mov 	r5,r2		; Save X	
+		mov 	r5,r2			; Save X	
 		mov	@(mdl_y_rot,r14),r0	; Y rotation
 ; 		shlr	r0
 		bsr	mdlrd_readsine
 		shlr8	r0		
 		mov	r3,r9
-		dmuls	r3,r8		; Y cos @
+		dmuls	r3,r8			; Y cos @
 		sts	macl,r9
 		sts	mach,r0
 		xtrct	r0,r9
-		dmuls	r6,r7		; Z sin @
+		dmuls	r6,r7			; Z sin @
 		sts	macl,r5
 		sts	mach,r0
 		xtrct	r0,r5
 		add 	r5,r9
 		neg	r7,r7
-		dmuls	r3,r7		; Y -sin @
-		mov	r9,r3		; Save Y
+		dmuls	r3,r7			; Y -sin @
+		mov	r9,r3			; Save Y
 		sts	macl,r9
 		sts	mach,r0
 		xtrct	r0,r9
-		dmuls	r6,r8		; Z cos @
+		dmuls	r6,r8			; Z cos @
 		sts	macl,r5
 		sts	mach,r0
 		xtrct	r0,r5
 		add	r5,r9
-		mov	r9,r4		; Save Z
+		mov	r9,r4			; Save Z
 		mov	@(mdl_z_rot,r14),r0	; Z rotation
 ; 		shlr	r0
 		bsr	mdlrd_readsine
 		shlr8	r0
 		add 	r7,r0
-		dmuls	r2,r8		; X cos @
+		dmuls	r2,r8			; X cos @
 		sts	macl,r5
 		sts	mach,r0
 		xtrct	r0,r5
-		dmuls	r3,r7		; Z sin @
+		dmuls	r3,r7			; Z sin @
 		sts	macl,r6
 		sts	mach,r0
 		xtrct	r0,r6
 		add 	r6,r5
 		neg	r7,r7
-		dmuls	r2,r7		; X -sin @
+		dmuls	r2,r7			; X -sin @
 		sts	macl,r6
 		sts	mach,r0
 		xtrct	r0,r6
-		dmuls	r3,r8		; Z cos @
+		dmuls	r3,r8			; Z cos @
 		sts	macl,r0
 		sts	mach,r7
 		xtrct	r7,r0
 		add	r0,r6
-		mov 	r5,r2		; Save X
+		mov 	r5,r2			; Save X
 		mov	r6,r3
 		mov	@(mdl_x_pos,r14),r0
 		shlr8	r0
@@ -606,91 +606,58 @@ mdlrd_setpersp:
 ; 		xtrct	r7,r0
 ; 		add	r0,r6
 ; 		mov 	r5,r2		; Save X
-;
 
-	; Y perspective
-		mov	#512*512,r8
-		mov	r4,r0
-		exts	r0,r0
-		cmp/eq	#0,r0
-		bf	.dontdiv
-		mov 	#1,r0
-.dontdiv:
-		mov 	#_JR,r5
-		mov 	r0,@r5
-		nop
-		mov 	r8,@(4,r5)
-		nop
-		mov	#8,r5
-.waitdx:
-		dt	r5
-		bf	.waitdx
-		mov	#_HRL,r5
-		mov 	@r5,r5
-		dmuls	r5,r3
-		sts	macl,r3		; new Y
-		cmp/pz	r4
-		bf	.dontfix
-		neg 	r3,r3
-.dontfix:
+; 		cmp/pz	r4
+; 		bf	.inside
+; 		mov	#0,r0
+; 		bra	.offscrn
+; 		nop
+; .inside:
+; 		neg	r4,r0
+; .offscrn:
+; 		mov	#MAX_DIVTABLE,r8
+; 		cmp/gt	r8,r0
+; 		bf	.toomuch
+; 		mov	r8,r0
+; .toomuch:
+; 		shll2	r0		
+; 		mov	#RAM_Mars_DivTable,r8
+; 		mov	@(r8,r0),r8
+; 		shll8	r8
+; 		dmuls	r2,r8
+; 		sts	macl,r2
+; 		sts	mach,r0
+; 		xtrct   r0,r2
+; 		dmuls	r3,r8
+; 		sts	macl,r3
+; 		sts	mach,r0
+; 		xtrct   r0,r3
 
-	; X perspective
-		mov	r4,r0
-		cmp/eq	#0,r0
-		bf	.dontdiv2
-		mov 	#1,r0
-.dontdiv2:
-		mov 	#_JR,r5
-		mov 	r0,@r5
-		nop
-		mov 	r8,@(4,r5)
-		nop
-		mov	#8,r5
-.waitdx2:
-		dt	r5
-		bf	.waitdx2
-		mov	#_HRL,r5
-		mov 	@r5,r5
-		dmuls	r5,r2
-		sts	macl,r2		; new X
 		cmp/pz	r4
-		bf	.dontfix2
-		neg	r2,r2
-.dontfix2:
+		bf	.inside
+		mov	#0,r0
+		bra	.offscrn
+		nop
+.inside:
+		neg	r4,r0
+.offscrn:
+		mov	#1000*2,r8
+		cmp/gt	r8,r0
+		bf	.toomuch
+		mov	r8,r0
+.toomuch:
+		mov	#persp_table,r8
+		shll	r0
+		mov.w	@(r8,r0),r8
+		muls	r8,r2
+		sts	macl,r2
+		muls	r8,r3
+		sts	macl,r3
 		shlr8	r2
-		shlr8	r3		
+		shlr8	r3	
 		exts	r2,r2
 		exts	r3,r3
 
-; 		mov	#128,r8
-; 		mov	r4,r0
-; 		exts	r0,r0
-; 		cmp/pl	r0
-; 		bt	.truez
-; 		neg	r0,r0
-; .truez:
-; 		shlr2	r0
-; 		exts	r0,r0
-; 		cmp/eq	#0,r0
-; 		bf	.iszero
-; 		mov	#1,r0
-; .iszero:
-; 		mov 	r0,r7
-; 		shll2	r7
-; 		mov	#RAM_Mars_DivTable,r0		; Calculate divisor
-; 		mov	@(r0,r7),r0
-; 		dmuls	r8,r0
-; 		sts	macl,r8
-; 		sts	mach,r0
-; 		xtrct   r0,r8
-; 		dmuls	r8,r2
-; 		sts	macl,r2
-; 		dmuls	r8,r3
-; 		sts	macl,r3
-; 		shlr8	r2
-; 		shlr8	r3
-		
-		
 		mov	@r15+,r13
 		mov	@r15+,r9
 		mov	@r15+,r8
@@ -701,6 +668,45 @@ mdlrd_setpersp:
 		rts
 		nop
 		align 4
+
+
+; 		mov	#$F0,r8
+; 		bra	*
+; 		ldc	r8,sr
+; 
+; 		dmuls	r2,r8
+; 		sts	macl,r2
+; 		sts	mach,r0
+; 		xtrct   r0,r2
+; 		dmuls	r3,r8
+; 		sts	macl,r3
+; 		sts	mach,r0
+; 		xtrct   r0,r3
+; .no_div:
+
+; 		mov	r4,r0			; Kinda working
+; 		cmp/pz	r0
+; 		bt	.lel
+; 		neg 	r0,r0
+; .dontneg:
+; 		mov	#MAX_DIVTABLE,r8
+; 		cmp/gt	r8,r0
+; 		bf	.toomuch
+; 		mov	r8,r0
+; .toomuch:
+; 		shll2	r0		
+; 		mov	#RAM_Mars_DivTable,r8
+; 		mov	@(r8,r0),r8
+; 		shll8	r8
+; 		dmuls	r2,r8
+; 		sts	macl,r2
+; 		sts	mach,r0
+; 		xtrct   r0,r2
+; 		dmuls	r3,r8
+; 		sts	macl,r3
+; 		sts	mach,r0
+; 		xtrct   r0,r3
+; .lel:
 
 ; ------------------------------------------------
 ; Input:
@@ -1068,6 +1074,12 @@ drw_task_02:
 		mov	@(plypz_mtrl,r14),r5
 		mov	@(plypz_mtrlopt,r14),r6
 .next_line:
+		cmp/pl	r9
+		bf	.upd_line
+		mov	#SCREEN_HEIGHT,r0
+		cmp/ge	r0,r9
+		bt	.next_piece
+		
 		mov	r1,r11
 		mov	r3,r12
 		shlr16	r11
@@ -1403,6 +1415,9 @@ MarsVideo_MakePolygon:
 ; 		bf	.exit
 
 .next_pz:
+		mov	#SCREEN_HEIGHT,r0
+		cmp/gt	r0,r10
+		bt	.exit
 		cmp/ge	r11,r10
 		bt	.exit
 		stc	sr,@-r15	; Stop interrupts
@@ -1600,11 +1615,6 @@ put_piece:
 		bt	.lefth
 		mov	r9,r0
 .lefth:
-		mov 	r4,@(plypz_xl,r1)
-		mov 	r5,@(plypz_xl_dx,r1)
-		mov 	r6,@(plypz_xr,r1)
-		mov 	r7,@(plypz_xr_dx,r1)
-
 		mov	r2,@-r15
 		mov	r3,@-r15
 		mov	r5,@-r15
@@ -1612,6 +1622,10 @@ put_piece:
 		mov	r8,@-r15
 		mov	r9,@-r15
 
+		mov 	r4,@(plypz_xl,r1)
+		mov 	r5,@(plypz_xl_dx,r1)
+		mov 	r6,@(plypz_xr,r1)
+		mov 	r7,@(plypz_xr_dx,r1)
 		dmulu	r0,r5
 		sts	macl,r2
 		dmulu	r0,r7
@@ -1624,7 +1638,8 @@ put_piece:
 		shll16	r2
 		or	r2,r3
 		mov	r3,@(plypz_ypos,r1)
-
+		
+		mov	r3,@-r15
 		mov	#CachPnts_Src_L,r2
 		mov	@r2,r5
 		mov	r5,@(plypz_src_xl,r1)
@@ -1662,26 +1677,35 @@ put_piece:
 		mov	#CachPnts_Src_R,r2
 		mov	r5,@r2
 		mov	r8,@(8,r2)
-
+		mov	@r15+,r3
+		
+		cmp/pl	r3			; TOP check, 2 steps
+		bt	.top_neg
+		shll16	r3
+		cmp/pl	r3
+		bf	.bad_piece
+.top_neg:
 		mov	@(polygn_mtrl,r14),r0
 		mov 	r0,@(plypz_mtrl,r1)
 		mov	@(polygn_type,r14),r0
 		mov 	r0,@(plypz_mtrlopt,r1)
-
-		mov	@r15+,r9
-		mov	@r15+,r8
-		mov	@r15+,r7
-		mov	@r15+,r5
-		mov	@r15+,r3
-		mov	@r15+,r2
 
 		add	#sizeof_plypz,r1
 		mov	r1,r0
 		mov	r0,@(marsGbl_VdpList_W,gbr)
 		mov.w	@(marsGbl_VdpListCnt,gbr),r0
 		add	#1,r0
-		rts
 		mov.w	r0,@(marsGbl_VdpListCnt,gbr)
+		
+.bad_piece:
+		mov	@r15+,r9
+		mov	@r15+,r8
+		mov	@r15+,r7
+		mov	@r15+,r5
+		mov	@r15+,r3
+		mov	@r15+,r2
+		rts
+		nop
 		align 4
 		ltorg
 
