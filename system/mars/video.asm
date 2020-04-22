@@ -19,6 +19,7 @@ MAX_FACES		equ	512
 MAX_SVDP_PZ		equ	1024
 MAX_MODELS		equ	64
 MAX_DIVTABLE		equ	$800		; LONGS
+MAX_PERSP		equ	$2000 		; WORDS
 
 ; ----------------------------------------
 ; Variables
@@ -366,6 +367,7 @@ MarsMdl_MakeModel:
 .go_faces:
 		mov	r13,r1
 		add 	#polygn_points,r1
+		mov	#0,r6
 		mov	#$7FFFFFFF,r5
 .vert_loop:
 		mov	#0,r0
@@ -393,18 +395,19 @@ MarsMdl_MakeModel:
 
 ; --------------------------------
 
+; 		cmp/pl	r5		; Z is too close
+; 		bt	.face_out
 		mov.w	@(marsGbl_CurrNumFace,gbr),r0
 		add	#1,r0
 		mov.w	r0,@(marsGbl_CurrNumFace,gbr)
 		mov	r5,@r8
 		add	#4,r8
-		mov	r8,r0
-		mov	r0,@(marsGbl_CurrZList,gbr)
 .face_out:
 		dt	r9
 		bf/s	.next_face
 		add	#sizeof_polygn,r13
-		
+		mov	r8,r0
+		mov	r0,@(marsGbl_CurrZList,gbr)
 .exit_model:
 		lds	@r15+,pr
 		rts
@@ -427,9 +430,9 @@ mdlrd_setpersp:
 ; 		mov 	#MarsMdl_Playfld,r13
 ; 
 ; 	; PASS 1
-		shll8	r2			; float the values
-		shll8	r3			;
-		shll8	r4			;
+; 		shll8	r2			; float the values
+; 		shll8	r3			;
+; 		shll8	r4			;
 		
 		mov	@(mdl_x_rot,r14),r0	; X rotation
 ; 		shlr	r0
@@ -607,54 +610,36 @@ mdlrd_setpersp:
 ; 		add	r0,r6
 ; 		mov 	r5,r2		; Save X
 
-; 		cmp/pz	r4
-; 		bf	.inside
-; 		mov	#0,r0
-; 		bra	.offscrn
-; 		nop
-; .inside:
-; 		neg	r4,r0
-; .offscrn:
-; 		mov	#MAX_DIVTABLE,r8
-; 		cmp/gt	r8,r0
-; 		bf	.toomuch
-; 		mov	r8,r0
-; .toomuch:
-; 		shll2	r0		
-; 		mov	#RAM_Mars_DivTable,r8
-; 		mov	@(r8,r0),r8
-; 		shll8	r8
-; 		dmuls	r2,r8
-; 		sts	macl,r2
-; 		sts	mach,r0
-; 		xtrct   r0,r2
-; 		dmuls	r3,r8
-; 		sts	macl,r3
-; 		sts	mach,r0
-; 		xtrct   r0,r3
-
-		cmp/pz	r4
+		cmp/pl	r4
 		bf	.inside
-		mov	#0,r0
+		mov	#2,r0
 		bra	.offscrn
 		nop
 .inside:
 		neg	r4,r0
 .offscrn:
-		mov	#1000*2,r8
+		mov	#2000*2,r8
 		cmp/gt	r8,r0
 		bf	.toomuch
 		mov	r8,r0
 .toomuch:
-		mov	#persp_table,r8
+		mov	#20,r7		; this is the only
+		cmp/ge	r7,r0		; fix i got
+		bt	.notzer
+		mov	r7,r0
+.notzer:
+		mov	#RAM_Mars_PerspTable,r8
 		shll	r0
 		mov.w	@(r8,r0),r8
+		extu.w	r8,r8
+; 		shll	r8
 		muls	r8,r2
 		sts	macl,r2
 		muls	r8,r3
 		sts	macl,r3
+.lel:
 		shlr8	r2
-		shlr8	r3	
+		shlr8	r3
 		exts	r2,r2
 		exts	r3,r3
 
@@ -985,9 +970,10 @@ drw_task_02:
 		mov	r12,r2
 		mov 	r11,r0
 		sub 	r0,r2
-		shll2	r2
 		sub	r5,r6
 		sub	r7,r8
+
+		shll2	r2
 		mov	#RAM_Mars_DivTable,r0
 		mov	@(r0,r2),r0
 		dmuls	r6,r0
@@ -1028,8 +1014,9 @@ drw_task_02:
 		mov	@(plypz_mtrl,r14),r11		; texture data
 		mov	@(plypz_mtrlopt,r14),r4		; texture width
 .texloop:
-		swap.w	r7,r2				; Build row offset
-		mulu.w	r2,r4
+		mov	r7,r2
+		shlr16	r2
+		mulu	r2,r4
 		mov	r5,r2	   			; Build column index
 		sts	macl,r0
 		shlr16	r2
@@ -1486,38 +1473,53 @@ set_left:
 		mov	r0,r5
 		shll16	r4
 		sts	mach,r8
-		shll2	r8
-		mov	#RAM_Mars_DivTable,r0
-		mov	@(r0,r8),r0
-		dmuls	r5,r0
-		sts	macl,r5
-		sts	mach,r0
-		xtrct   r0,r5
+		mov	#_JR,r0			; HW DIV
+		mov	r8,@r0
+		mov	r5,@(4,r0)
+		nop
+		mov	@(4,r0),r5
 		mov	#CachPnts_Src_L+4,r0
 		mov	r5,@r0
-		mov	#RAM_Mars_DivTable,r0
-		mov	@(r0,r8),r0
-		dmuls	r4,r0
-		sts	macl,r4
-		sts	mach,r0
-		xtrct   r0,r4
+		mov	#_JR,r0
+		mov	r8,@r0
+		mov	r4,@(4,r0)
+		nop
+		mov	@(4,r0),r4
 		mov	#CachPnts_Src_L+$C,r0
 		mov	r4,@r0
-		
-	; Calculate X dest
+; 		shll2	r8
+; 		mov	#RAM_Mars_DivTable,r0		; OLD
+; 		mov	@(r0,r8),r0
+; 		dmuls	r5,r0
+; 		sts	macl,r5
+; 		sts	mach,r0
+; 		xtrct   r0,r5
+; 		mov	#CachPnts_Src_L+4,r0
+; 		mov	r5,@r0
+; 		mov	#RAM_Mars_DivTable,r0
+; 		mov	@(r0,r8),r0
+; 		dmuls	r4,r0
+; 		sts	macl,r4
+; 		sts	mach,r0
+; 		xtrct   r0,r4
+; 		mov	#CachPnts_Src_L+$C,r0
+; 		mov	r4,@r0
 		mov	@r2,r5
 		sub 	r1,r5
 		shll16	r5
 		mov 	r1,r4
 		shll16	r4
-		mov	#RAM_Mars_DivTable,r0
-		mov	@(r0,r8),r0
-		dmuls	r5,r0
-		sts	macl,r5
-		sts	mach,r0
-		xtrct   r0,r5
-		shlr2	r8
-		exts	r8,r8
+		mov	#_JR,r0				; HW DIV
+		mov	r8,@r0
+		mov	r5,@(4,r0)
+		nop
+		mov	@(4,r0),r5
+; 		mov	#RAM_Mars_DivTable,r0		; OLD
+; 		mov	@(r0,r8),r0
+; 		dmuls	r5,r0
+; 		sts	macl,r5
+; 		sts	mach,r0
+; 		xtrct   r0,r5
 .lft_skip:
 		rts
 		nop
@@ -1562,37 +1564,53 @@ set_right:
 		mov	r0,r7
 		shll16	r6
 		sts	mach,r9
-		shll2	r9
-		mov	#RAM_Mars_DivTable,r0
-		mov	@(r0,r9),r0
-		dmuls	r7,r0
-		sts	macl,r7
-		sts	mach,r0
-		xtrct   r0,r7
+		mov	#_JR,r0				; HW DIV
+		mov	r9,@r0
+		mov	r7,@(4,r0)
+		nop
+		mov	@(4,r0),r7
 		mov	#CachPnts_Src_R+4,r0
 		mov	r7,@r0
-		mov	#RAM_Mars_DivTable,r0
-		mov	@(r0,r9),r0
-		dmuls	r6,r0
-		sts	macl,r6
-		sts	mach,r0
-		xtrct   r0,r6
+		mov	#_JR,r0
+		mov	r9,@r0
+		mov	r6,@(4,r0)
+		nop
+		mov	@(4,r0),r6
 		mov	#CachPnts_Src_R+$C,r0
 		mov	r6,@r0
-
+; 		shll2	r9
+; 		mov	#RAM_Mars_DivTable,r0		; OLD
+; 		mov	@(r0,r9),r0
+; 		dmuls	r7,r0
+; 		sts	macl,r7
+; 		sts	mach,r0
+; 		xtrct   r0,r7
+; 		mov	#CachPnts_Src_R+4,r0
+; 		mov	r7,@r0
+; 		mov	#RAM_Mars_DivTable,r0
+; 		mov	@(r0,r9),r0
+; 		dmuls	r6,r0
+; 		sts	macl,r6
+; 		sts	mach,r0
+; 		xtrct   r0,r6
+; 		mov	#CachPnts_Src_R+$C,r0
+; 		mov	r6,@r0
 		mov	@r3,r7
 		sub 	r1,r7
 		shll16	r7
 		mov 	r1,r6
 		shll16	r6
-		mov	#RAM_Mars_DivTable,r0		; Calculate divisor
-		mov	@(r0,r9),r0
-		dmuls	r7,r0
-		sts	macl,r7
-		sts	mach,r0
-		xtrct   r0,r7
-		shlr2	r9
-		exts	r9,r9
+		mov	#_JR,r0				; HW DIV
+		mov	r9,@r0
+		mov	r7,@(4,r0)
+		nop
+		mov	@(4,r0),r7
+; 		mov	#RAM_Mars_DivTable,r0		; OLD
+; 		mov	@(r0,r9),r0
+; 		dmuls	r7,r0
+; 		sts	macl,r7
+; 		sts	mach,r0
+; 		xtrct   r0,r7
 .rgt_skip:
 		rts
 		nop

@@ -462,10 +462,6 @@ SH2_M_Entry:
 		shll8   r1
 		mov.w   r1,@r0
 
-		mov	#RAM_Mars_DivTable,r2
-		bsr	Mars_MkDivTable
-		mov	#1,r1
-
 ; ------------------------------------------------
 ; Wait for Genesis and Slave CPU
 ; ------------------------------------------------
@@ -699,12 +695,36 @@ SH2_S_HotStart:
 		mov.l	#VIRQ_ON|CMDIRQ_ON,r0	; IRQ enable bits
     		mov.b	r0,@(intmask,r1)	; clear IRQ ACK regs
 
+	; Generate division tables
+		mov	#RAM_Mars_DivTable,r2
+		bsr	Mars_MkDivTable
+		mov	#1,r1
+		mov	#_JR,r5
+		mov	#RAM_Mars_PerspTable,r2
+		mov	#$E000,r1
+		mov	#0,r0
+		mov.w	r0,@r2
+		add	#2,r2
+
+		mov	#MAX_PERSP-1,r3
+		mov	#1,r4
+.next:
+		mov.l	r4,@r5
+		mov.l	r1,@(4,r5)
+		nop
+		mov.l	@(4,r5),r0
+		mov.w	r0,@r2
+		add	#2,r2
+		dt	r3
+		bf/s	.next
+		add	#1,r4
+		
 ; ------------------------------------------------
 
 		mov	#RAM_Mars_Objects,r1
 		mov	#TEST_MODEL,r0
 		mov	r0,@(mdl_data,r1)
-; 		mov	#-$40000,r0
+; 		mov	#-$10000,r0
 ; 		mov	r0,@(mdl_z_pos,r1)
 ; 		mov	#-$100,r2
 ; 		mov	r0,@(mdl_x_rot,r1)
@@ -726,10 +746,10 @@ slave_loop:
 		mov	@(mdl_x_rot,r2),r0
 		add	r1,r0
 		mov	r0,@(mdl_x_rot,r2)
-		mov	@(mdl_y_rot,r2),r0
-		add	r1,r0
-		mov	r0,@(mdl_y_rot,r2)
-		mov	#-$400,r1
+; 		mov	@(mdl_y_rot,r2),r0
+; 		add	r1,r0
+; 		mov	r0,@(mdl_y_rot,r2)
+		mov	#-$100,r1
 		mov	@(mdl_z_pos,r2),r0
 		add	r1,r0
 		mov	r0,@(mdl_z_pos,r2)
@@ -803,6 +823,8 @@ slave_loop:
 
 .check_z:
 		mov.w	@(marsGbl_CurrNumFace,gbr),r0
+		cmp/eq	#0,r0
+		bt	.z_end
 		mov	r0,r9
 		mov	#RAM_Mars_Plgn_ZList,r12
 		mov	@r12,r11	
@@ -858,15 +880,15 @@ slave_loop:
 		nop
 		align 4
 
-.temporal:
-		mov	r13,@r14
-		add	#4,r14
-		add	#sizeof_polygn,r13
-		dt	r9
-		bf	.temporal
-		rts
-		nop
-		align 4
+; .temporal:
+; 		mov	r13,@r14
+; 		add	#4,r14
+; 		add	#sizeof_polygn,r13
+; 		dt	r9
+; 		bf	.temporal
+; 		rts
+; 		nop
+; 		align 4
 
 ; ----------------------------------------
 
@@ -945,8 +967,8 @@ Slv_WaitMaster:
 		align 4
 sin_table	binclude "system/mars/data/sinedata.bin"
 		align 4
-persp_table:	binclude "system/mars/data/perspdata.bin"
-		align 4
+; persp_table:	binclude "system/mars/data/perspdata.bin"
+; 		align 4
 
 		include "data/mars_sdram.asm"
 
@@ -1005,6 +1027,7 @@ sizeof_marssnd		ds.l 0
 RAM_Mars_Palette	ds.w 256
 RAM_Mars_Global		ds.w sizeof_MarsGbl		; Note: keep it as a word
 RAM_Mars_DivTable	ds.l MAX_DIVTABLE
+RAM_Mars_PerspTable	ds.w MAX_PERSP
 RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer list(s)
 RAM_Mars_PlgnList_1	ds.l MAX_FACES
 RAM_Mars_Plgn_ZList	ds.l MAX_FACES			; Z lowest for current face list
