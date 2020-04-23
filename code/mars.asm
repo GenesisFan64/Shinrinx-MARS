@@ -724,8 +724,8 @@ SH2_S_HotStart:
 		mov	#RAM_Mars_Objects,r1
 		mov	#TEST_MODEL,r0
 		mov	r0,@(mdl_data,r1)
-; 		mov	#-$10000,r0
-; 		mov	r0,@(mdl_z_pos,r1)
+		mov	#-$C000,r0
+		mov	r0,@(mdl_z_pos,r1)
 ; 		mov	#-$100,r2
 ; 		mov	r0,@(mdl_x_rot,r1)
 		mov	#$20,r0			; Interrupts ON
@@ -742,17 +742,17 @@ slave_loop:
 		mov.w	r0,@r1
 
 		mov	#RAM_Mars_Objects,r2
-		mov	#$400,r1
+		mov	#$800,r1
 		mov	@(mdl_x_rot,r2),r0
 		add	r1,r0
 		mov	r0,@(mdl_x_rot,r2)
 ; 		mov	@(mdl_y_rot,r2),r0
 ; 		add	r1,r0
 ; 		mov	r0,@(mdl_y_rot,r2)
-		mov	#-$100,r1
-		mov	@(mdl_z_pos,r2),r0
-		add	r1,r0
-		mov	r0,@(mdl_z_pos,r2)
+; 		mov	#-$100,r1
+; 		mov	@(mdl_x_pos,r2),r0
+; 		add	r1,r0
+; 		mov	r0,@(mdl_x_pos,r2)
 
 ; ----------------------------------------
 
@@ -787,6 +787,10 @@ slave_loop:
 
 ; ----------------------------------------
 
+		mov.w	@(marsGbl_CurrNumFace,gbr),r0
+		mov	#_sysreg+comm12,r1		; Faces count for Reading
+		mov.w	r0,@r1
+
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		tst     #1,r0
 		bf	.page_2
@@ -803,10 +807,6 @@ slave_loop:
 		nop
 
 .swap_now:
-		mov.w	@(marsGbl_CurrNumFace,gbr),r0
-		mov	#_sysreg+comm12,r1		; Faces count for Reading
-		mov.w	r0,@r1
-		
 		bsr	Slv_WaitMaster
 		nop
 		mov.w	@(marsGbl_PolyBuffNum,gbr),r0
