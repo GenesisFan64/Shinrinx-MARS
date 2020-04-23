@@ -749,10 +749,10 @@ slave_loop:
 ; 		mov	@(mdl_y_rot,r2),r0
 ; 		add	r1,r0
 ; 		mov	r0,@(mdl_y_rot,r2)
-; 		mov	#-$100,r1
-; 		mov	@(mdl_x_pos,r2),r0
+; 		mov	#$100,r1
+; 		mov	@(mdl_y_pos,r2),r0
 ; 		add	r1,r0
-; 		mov	r0,@(mdl_x_pos,r2)
+; 		mov	r0,@(mdl_y_pos,r2)
 
 ; ----------------------------------------
 
@@ -788,7 +788,7 @@ slave_loop:
 ; ----------------------------------------
 
 		mov.w	@(marsGbl_CurrNumFace,gbr),r0
-		mov	#_sysreg+comm12,r1		; Faces count for Reading
+		mov	#_sysreg+comm12,r1
 		mov.w	r0,@r1
 
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0

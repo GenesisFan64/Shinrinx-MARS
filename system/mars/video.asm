@@ -371,6 +371,14 @@ MarsMdl_MakeModel:
 		mov	r7,r0
 		shll	r0
 		add	r0,r11
+		mov 	r8,@-r15
+		mov 	r9,@-r15
+		mov 	r11,@-r15
+		mov 	r12,@-r15
+		mov	#-160,r8
+		neg	r8,r9
+		mov	#-112,r11
+		neg	r11,r12
 		mov	#$7FFFFFFF,r5
 .vert_loop:
 		mov	#0,r0
@@ -389,28 +397,51 @@ MarsMdl_MakeModel:
 		bt	.save_z
 		mov	r4,r5
 .save_z:
-
-	; TODO: make a better
-	; crop check
-		mov	#(-160)-64,r0
-		cmp/gt	r0,r2
-		bf	.face_out
-		mov	#(160)+64,r0
-		cmp/ge	r0,r2
-		bt	.face_out
-; 		mov	#(-112)-96,r0
-; 		cmp/ge	r0,r3
-; 		bf	.face_out
-; 		mov	#(112)+96,r0
-; 		cmp/ge	r0,r3
-; 		bt	.face_out
-		
+		cmp/gt	r8,r2
+		bf	.x_lw
+		mov	r2,r8
+.x_lw:
+		cmp/gt	r9,r2
+		bt	.x_rw
+		mov	r2,r9
+.x_rw:
+		cmp/gt	r11,r3
+		bf	.y_lw
+		mov	r3,r11
+.y_lw:
+		cmp/gt	r12,r3
+		bt	.y_rw
+		mov	r3,r12
+; 		mov	#_sysreg+comm0,r0
+; 		mov.w	r12,@r0
+.y_rw:		
 		mov.w	r2,@r1
 		mov	r3,r0
 		mov.w	r0,@(2,r1)
 		dt	r7
 		bf/s	.vert_loop
 		add	#4,r1
+
+		mov	r8,r1
+		mov	r9,r2
+		mov	r11,r3
+		mov	r12,r4
+		mov	@r15+,r12
+		mov	@r15+,r11
+		mov	@r15+,r9
+		mov	@r15+,r8
+		mov	#-160,r0
+		cmp/gt	r0,r1
+		bf	.face_out
+		neg	r0,r0
+		cmp/ge	r0,r2
+		bt	.face_out
+		mov	#-112,r0
+		cmp/gt	r0,r3
+		bf	.face_out
+		neg	r0,r0
+		cmp/ge	r0,r4
+		bt	.face_out
 
 ; --------------------------------
 
@@ -444,7 +475,9 @@ mdlrd_setpersp:
 		mov 	r7,@-r15
 		mov 	r8,@-r15
 		mov 	r9,@-r15
-		mov 	r13,@-r15
+; 		mov 	r11,@-r15
+; 		mov 	r12,@-r15
+; 		mov 	r13,@-r15
 ; 		mov 	#MarsMdl_Playfld,r13
 ; 
 ; 	; PASS 1
@@ -661,7 +694,9 @@ mdlrd_setpersp:
 		exts	r2,r2
 		exts	r3,r3
 
-		mov	@r15+,r13
+; 		mov	@r15+,r13
+; 		mov	@r15+,r12
+; 		mov	@r15+,r11
 		mov	@r15+,r9
 		mov	@r15+,r8
 		mov	@r15+,r7

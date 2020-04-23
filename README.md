@@ -7,7 +7,6 @@ NTSC Systems only, untested on PAL
 
 Current issues:
 - Rewrite the routine that draws the polygons, it's a mess
-- Implement the check(s) to ignore faces outside of the screen
 
 Please note that current 32X emulators ignore critical parts of the system, these include:
 - FM bit: This bit tells which system side (Genesis or 32X) can read/write to the Super VDP (The framebuffer and 256-color palette), if a CPU with NO permission touches the Super VDP, it will freeze the entire system (32X or Genesis)
