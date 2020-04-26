@@ -70,12 +70,12 @@
 		dc.l MD_ErrorTrap
 		dc.l MD_ErrorTrap
 		dc.b "SEGA 32X        "
-		dc.b "(C)???? 2020.???"
-		dc.b "DOMESTIC TITLE                                  "
-		dc.b "OVERSEAS TITLE                                  "
+		dc.b "(C)GF64 2020.???"
+		dc.b "Proyecto Chairinx                               "
+		dc.b "Project Shinrinx                                "
 		dc.b "GM HOMEBREW-00"
 		dc.w 0
-		dc.b "J               "
+		dc.b "J6              "
 		dc.l 0
 		dc.l ROM_END
 		dc.l $FF0000
@@ -118,7 +118,7 @@
 		jmp	($880000|MD_ErrorTrap).l
 		jmp	($880000|MD_ErrorTrap).l
 		jmp	($880000|MD_ErrorTrap).l
-		jmp	(RAM_HBlankGoTo).l			; VDP HBlank interrupt
+		jmp	(RAM_HBlankGoTo).l		; VDP HBlank interrupt
 		jmp	($880000|MD_ErrorTrap).l
 		jmp	(RAM_VBlankGoTo).l		; VDP VBlank interrupt
 		jmp	($880000|MD_ErrorTrap).l
@@ -250,7 +250,7 @@ MARS_Entry:
 
 .no_mars:
 		move.w	#$2700,sr
-		move.l	#$C0000000,(vdp_ctrl).l		; Red screen
+		move.l	#$C0000000,(vdp_ctrl).l		; Blue screen
 		move.w	#$0E00,(vdp_data).l
 		bra.s	*
 		

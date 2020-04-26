@@ -833,7 +833,7 @@ m_irq_custom:
 		mov.b   r0,@(7,r1)
 		mov.w	@(marsGbl_DrwTask,gbr),r0
 		cmp/eq	#8,r0
-		bf	maindrw_tasks
+		bf	drw_task_02
 
 ; --------------------------------
 ; TASK $01 - Clear Framebuffer
@@ -864,7 +864,7 @@ m_irq_custom:
 		dt	r0
 		bf/s	.on_clr
 		mov.w	r0,@r1
-		mov	#1,r0
+		mov	#2,r0
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 .on_clr:
 		mov.l   @r15+,r2
@@ -874,113 +874,22 @@ m_irq_custom:
 		ltorg
 
 ; --------------------------------
-; Main drawing routine
+; TASK $00 - Nothing
 ; --------------------------------
 
-maindrw_tasks:
-		shll2	r0
-		mov	#.list,r1
-		mov	@(r1,r0),r0
-		jmp	@r0
-		nop
-		align 4
-
-; --------------------------------
-
-.list:
-		dc.l drwtsk_01		; 
-		dc.l drwtsk_01		; Main drawing routine
-		dc.l drwtsk_02		; Resume from solid color
-		
-; --------------------------------
-; Task $00
-; --------------------------------
-
-drwtsk_00:
-		mov	#0,r0
-		mov.w	r0,@(marsGbl_DrwTask,gbr)
-		bra	drwtask_exit
-		mov	#$7F,r2
-
-drwtask_return:
-		lds	@r15+,mach
-		lds	@r15+,macl
-		mov	@r15+,r14
-		mov	@r15+,r13
-		mov	@r15+,r12
-		mov	@r15+,r11
-		mov	@r15+,r10
-		mov	@r15+,r9
-		mov	@r15+,r8
-		mov	@r15+,r7
-		mov	@r15+,r6
-		mov	@r15+,r5
-		mov	@r15+,r4
-		mov	@r15+,r3
-drwtask_exit:
-		mov.l   #$FFFFFE80,r1
-		mov.w   #$A518,r0
-		mov.w   r0,@r1
-		or      #$20,r0
-		mov.w   r0,@r1
-		mov.w   #$5A00,r0
-		or	r2,r0
-		mov.w   r0,@r1
-		mov	@r15+,r2
-		rts
-		nop
-		align 4
-		ltorg
-
-; --------------------------------
-; Task $02
-; --------------------------------
-
-drwtsk_02:
-		mov	r3,@-r15
-		mov	r4,@-r15
-		mov	r5,@-r15
-		mov	r6,@-r15
-		mov	r7,@-r15
-		mov	r8,@-r15
-		mov	r9,@-r15
-		mov	r10,@-r15
-		mov	r11,@-r15
-		mov	r12,@-r15
-		mov	r13,@-r15
-		mov	r14,@-r15
-		sts	macl,@-r15
-		sts	mach,@-r15
-		mov	#Cach_LnDrw_L,r0
-		mov	@r0+,r14
-		mov	@r0+,r13
-		mov	@r0+,r10
-		mov	@r0+,r9
-		mov	@r0+,r6
-		mov	@r0+,r5
-		mov	@r0+,r4
-		mov	@r0+,r3
-		mov	@r0+,r2
-		mov	@r0+,r1
-		mov	#1,r0
-		mov.w	r0,@(marsGbl_DrwTask,gbr)
-		bra	drwsld_updline
-		nop
-
-; --------------------------------
-; Task $01
-; --------------------------------
-
-drwtsk_01:
+drw_task_02:
 		mov.w	@(marsGbl_VdpListCnt,gbr),r0
 		cmp/eq	#0,r0
 		bf/s	.has_pz
 		add	#-1,r0
 		mov	#0,r0
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
-		bra	drwtask_exit
+		bra	.exit_task
 		mov	#$7F,r2
-.has_pz	
+		
+.resume_me:
+
+.has_pz:
 		mov.w	r0,@(marsGbl_VdpListCnt,gbr)
 		mov	r3,@-r15
 		mov	r4,@-r15
@@ -996,9 +905,32 @@ drwtsk_01:
 		mov	r14,@-r15
 		sts	macl,@-r15
 		sts	mach,@-r15
-drwtsk1_newpz:
+
+; 		mov	#CS3|$40,r1
+; 		mov.w	@(marsGbl_DrwTask,gbr),r0
+; 		cmp/eq	#3,r0
+; 		bf	.new_piece
+; 		mov	#0,r0
+; 		mov.w	r0,@(marsGbl_DrwTask,gbr)
+; 		mov	#Cach_LnDrw_L,r0
+; 		mov	@r0+,r14
+; 		mov	@r0+,r13
+; 		mov	@r0+,r10
+; 		mov	@r0+,r9
+; 		mov	@r0+,r6
+; 		mov	@r0+,r5
+; 		mov	@r0+,r4
+; 		mov	@r0+,r3
+; 		mov	@r0+,r2
+; 		mov	@r0+,r1
+; 		bra	*
+; 		nop
+.new_piece:
+		mov	#0,r0
+		mov.w	r0,@(marsGbl_DrwTask,gbr)
 		mov	@(marsGbl_VdpList_R,gbr),r0
 		mov	r0,r14
+		mov	#_vdpreg,r13
 		mov	@(plypz_ypos,r14),r9
 		mov	r9,r10
 		mov	#$FFFF,r0
@@ -1007,25 +939,24 @@ drwtsk1_newpz:
 		and	r0,r10
 		cmp/eq	r9,r0
 		bt	.invld_y
-		mov	#SCREEN_HEIGHT,r0
-		cmp/ge	r0,r9
-		bt	.invld_y
+; 		mov	#SCREEN_HEIGHT,r0
+; 		cmp/ge	r0,r9
+; 		bt	.invld_y
 		cmp/gt	r0,r10
 		bf	.len_max
 		mov	r0,r10
 .len_max:
 		sub	r9,r10
 		cmp/pl	r10
-		bt	drwtsk1_vld_y
+		bt	.valid_y
 .invld_y:
-		bra	drwsld_nextpz
+		bra	.next_piece
 		nop
 		align 4
-		ltorg
 
 ; ------------------------------------
 
-drwtsk1_vld_y:
+.valid_y:
 		mov	@(plypz_xl,r14),r1
 		mov	@(plypz_xl_dx,r14),r2
 		mov	@(plypz_xr,r14),r3
@@ -1178,7 +1109,7 @@ drwtsk1_vld_y:
 		dt	r10
 		bf/s	.tex_next_line
 		add	#1,r9
-		bra	drwsld_nextpz
+		bra	.next_piece
 		nop
 
 ; ------------------------------------
@@ -1186,19 +1117,14 @@ drwtsk1_vld_y:
 ; ------------------------------------
 
 .solid_color:
-		mov	#$FF,r0
-		mov	@(plypz_mtrl,r14),r6
-		mov	@(plypz_mtrlopt,r14),r5
-		and	r0,r5
-		and	r0,r6
-		add	r5,r6
-		mov	#_vdpreg,r13
-drwsld_nxtline:
+		mov	@(plypz_mtrl,r14),r5
+		mov	@(plypz_mtrlopt,r14),r6
+.next_line:
 		cmp/pl	r9
-		bf	drwsld_updline
+		bf	.upd_line
 		mov	#SCREEN_HEIGHT,r0
 		cmp/ge	r0,r9
-		bt	drwsld_nextpz
+		bt	.next_piece
 		
 		mov	r1,r11
 		mov	r3,r12
@@ -1216,9 +1142,9 @@ drwsld_nxtline:
 .revers:
 		mov	#SCREEN_WIDTH,r0
 		cmp/pl	r12
-		bf	drwsld_updline
+		bf	.upd_line
 		cmp/gt	r0,r11
-		bt	drwsld_updline
+		bt	.upd_line
 		cmp/gt	r0,r12
 		bf	.r_fix
 		mov	r0,r12
@@ -1227,98 +1153,97 @@ drwsld_nxtline:
 		bt	.l_fix
 		xor	r11,r11
 .l_fix:
-		mov	#-2,r0
-		and	r0,r11
-		and	r0,r12
-		mov	r12,r0
-		sub	r11,r0
-; 		mov	#6,r5
-; 		cmp/gt	r5,r0
-; 		bf	drwsld_lowpixls
+		sub	r11,r12
+		cmp/pl	r12
+		bf	.upd_line
+		shlr	r12
+		shlr	r11
+		mov	r9,r0
+		add	#1,r0
+		shll8	r0
+		add 	r0,r11
 .wait:		mov.w	@(10,r13),r0
 		tst	#2,r0
 		bf	.wait
 		mov	r12,r0
-		sub	r11,r0
-		shlr	r0
-		mov.w	r0,@(4,r13)	; length
+		mov.w	r0,@(4,r13)		; Set length
 		mov	r11,r0
-		shlr	r0
-		mov	r9,r5
-		shll8	r5
-		add	r5,r0
-		mov.w	r0,@(6,r13)	; address
-		mov	r6,r0
-		shll8	r0
-		or	r6,r0
-		mov.w	r0,@(8,r13)	; Set data
-		mov	#$28,r0		; line too large
-		cmp/ge	r0,r12
-		bf	drwsld_updline
-		mov	#2,r0
-		mov.w	r0,@(marsGbl_DrwTask,gbr)
-		mov	#Cach_LnDrw_S,r0
-		mov	r1,@-r0
-		mov	r2,@-r0
-		mov	r3,@-r0
-		mov	r4,@-r0
-		mov	r5,@-r0
-		mov	r6,@-r0
-		mov	r9,@-r0
-		mov	r10,@-r0		
-		mov	r13,@-r0
-		mov	r14,@-r0
-		bra	drwtask_return
-		mov	#0,r2
-
-; 		bra	drwsld_updline
-; 		nop
+		mov.w	r0,@(6,r13)		; Set address
+		mov	r5,r0
+		add	r6,r0
+		mov	r0,r11
+		shll8	r11
+		or	r11,r0
+		mov.w	r0,@(8,r13)		; Set data
+; 		mov	#$28,r0
+; 		cmp/ge	r0,r12
+; 		bf	.upd_line
+; 		mov	#3,r0
+; 		mov.w	r0,@(marsGbl_DrwTask,gbr)
+; 		mov	#Cach_LnDrw_S,r0
+; 		mov	r1,@-r0
+; 		mov	r2,@-r0
+; 		mov	r3,@-r0
+; 		mov	r4,@-r0
+; 		mov	r5,@-r0
+; 		mov	r6,@-r0
+; 		mov	r9,@-r0
+; 		mov	r10,@-r0		
+; 		mov	r13,@-r0
+; 		mov	r14,@-r0
+; 		bra	.save_later
+; 		mov	#0,r2
 
 ; ------------------------------------
-; if lower than 6 pixels
 
-drwsld_lowpixls:
-		cmp/pl	r0
-		bf	drwsld_updline
-		mov	r0,r12
-		mov	r9,r0
-		add	#1,r0
-		shll8	r0
-		shll	r0
-		add 	r11,r0
-		mov	#_overwrite+$200,r5
-		add	r0,r5
-.wait_fb	mov.w	@(10,r13),r0
-		tst	#2,r0
-		bf	.wait_fb
-		mov	#-1,r0
-.perpixl:
-		mov.b	r0,@r5
-		dt	r12
-		bf/s	.perpixl
-		add	#1,r5
-		
-; ------------------------------------
-
-drwsld_updline:
+.upd_line:
 		add	r2,r1
 		add	r4,r3
 		dt	r10
-		bf/s	drwsld_nxtline
+		bf/s	.next_line
 		add	#1,r9
-drwsld_nextpz:
+
+.next_piece:
 		add	#sizeof_plypz,r14
 		mov	r14,r0
 		mov	r0,@(marsGbl_VdpList_R,gbr)
-; 		mov.w	@(marsGbl_VdpListCnt,gbr),r0
+; 		mov.w	@(marsGbl_VdpListCnt,gbr),r0	; uncomment if it gets slower
 ; 		cmp/eq	#0,r0
 ; 		bt/s	.finish_it
 ; 		add	#-1,r0
-; 		bra	drwtsk1_newpz
+; 		bra	.new_piece
 ; 		mov.w	r0,@(marsGbl_VdpListCnt,gbr)
 .finish_it:
-		bra	drwtask_return
 		mov	#$10,r2
+
+.save_later:
+		lds	@r15+,mach
+		lds	@r15+,macl
+		mov	@r15+,r14
+		mov	@r15+,r13
+		mov	@r15+,r12
+		mov	@r15+,r11
+		mov	@r15+,r10
+		mov	@r15+,r9
+		mov	@r15+,r8
+		mov	@r15+,r7
+		mov	@r15+,r6
+		mov	@r15+,r5
+		mov	@r15+,r4
+		mov	@r15+,r3
+
+.exit_task:
+		mov.l   #$FFFFFE80,r1
+		mov.w   #$A518,r0
+		mov.w   r0,@r1
+		or      #$20,r0
+		mov.w   r0,@r1
+		mov.w   #$5A00,r0
+		or	r2,r0
+		mov.w   r0,@r1
+		mov	@r15+,r2
+		rts
+		nop
 		align 4
 		ltorg
 
