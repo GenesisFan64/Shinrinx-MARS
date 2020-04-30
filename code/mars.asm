@@ -22,7 +22,7 @@ marsGbl_VdpList_W	ds.l 1
 marsGbl_CurrFacePos	ds.l 1
 marsGbl_CurrZList	ds.l 1
 marsGbl_PolyBuffNum	ds.w 1
-marsGbl_CurrNumFace	ds.w 1
+marsGbl_MdlFacesCntr	ds.w 1
 marsGbl_VdpListCnt	ds.w 1
 marsGbl_DrwTask		ds.w 1
 marsGbl_VIntFlag_M	ds.w 1
@@ -558,7 +558,8 @@ master_loop:
 		mov.b	@r1,r0
 		cmp/eq	#0,r0
 		bf	.mstr_free
-		mov.l	#$64,r0
+; 		mov.l	#$64,r0
+		mov	#$16,r0
 .mstr_delay:
 		nop
 		dt	r0
@@ -580,16 +581,16 @@ master_loop:
 		tst     #1,r0
 		bt	.page_2
 		mov 	#RAM_Mars_PlgnList_0,r14
+		mov	#RAM_Mars_PlgnNum_0,r13
 		bra	.cont_plgn
 		nop
 .page_2:
 		mov 	#RAM_Mars_PlgnList_1,r14
+		mov	#RAM_Mars_PlgnNum_1,r13
 .cont_plgn:
-		mov	#_sysreg+comm12,r1
-		mov.w	@r1,r0
-		cmp/eq	#0,r0
-		bt	.skip
-		mov	r0,r13
+		mov.w	@r13,r13
+		cmp/pl	r13
+		bf	.skip
 .loop:
 		mov	r14,@-r15
 		mov	r13,@-r15
@@ -724,8 +725,8 @@ SH2_S_HotStart:
 		mov	#RAM_Mars_Objects,r1
 		mov	#TEST_MODEL,r0
 		mov	r0,@(mdl_data,r1)
-		mov	#-$C000,r0
-		mov	r0,@(mdl_z_pos,r1)
+; 		mov	#-$C000,r0
+; 		mov	r0,@(mdl_z_pos,r1)
 ; 		mov	#-$100,r2
 ; 		mov	r0,@(mdl_x_rot,r1)
 		mov	#$20,r0			; Interrupts ON
@@ -742,22 +743,22 @@ slave_loop:
 		mov.w	r0,@r1
 
 		mov	#RAM_Mars_Objects,r2
-		mov	#$100,r1
-		mov	@(mdl_x_rot,r2),r0
-		add	r1,r0
-		mov	r0,@(mdl_x_rot,r2)
+; 		mov	#$400,r1
+; 		mov	@(mdl_x_rot,r2),r0
+; 		add	r1,r0
+; 		mov	r0,@(mdl_x_rot,r2)
 ; 		mov	@(mdl_y_rot,r2),r0
 ; 		add	r1,r0
 ; 		mov	r0,@(mdl_y_rot,r2)
-; 		mov	#-$100,r1
-; 		mov	@(mdl_z_pos,r2),r0
-; 		add	r1,r0
-; 		mov	r0,@(mdl_z_pos,r2)
+		mov	#$400,r1
+		mov	@(mdl_z_pos,r2),r0
+		add	r1,r0
+		mov	r0,@(mdl_z_pos,r2)
 
 ; ----------------------------------------
 
 		mov	#0,r0
-		mov.w	r0,@(marsGbl_CurrNumFace,gbr)
+		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
 		mov 	#RAM_Mars_Polygons_0,r1
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		tst     #1,r0
@@ -787,26 +788,26 @@ slave_loop:
 
 ; ----------------------------------------
 
-		mov.w	@(marsGbl_CurrNumFace,gbr),r0
-		mov	#_sysreg+comm12,r1
-		mov.w	r0,@r1
-
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		tst     #1,r0
 		bf	.page_2
 		mov 	#RAM_Mars_PlgnList_0,r14
-		mov 	#RAM_Mars_Polygons_0,r13
-		bsr	.check_z
+		mov 	#RAM_Mars_PlgnNum_0,r13
+		bsr	slv_check_z
 		nop
 		bra	.swap_now
 		nop
 .page_2:
 		mov 	#RAM_Mars_PlgnList_1,r14
-		mov 	#RAM_Mars_Polygons_1,r13
-		bsr	.check_z
+		mov 	#RAM_Mars_PlgnNum_1,r13
+		bsr	slv_check_z
 		nop
 
 .swap_now:
+		mov.w	@r13,r0
+		mov	#_sysreg+comm0,r1
+		mov.w	r0,@r1
+
 		bsr	Slv_WaitMaster
 		nop
 		mov.w	@(marsGbl_PolyBuffNum,gbr),r0
@@ -818,77 +819,85 @@ slave_loop:
 		bra	slave_loop
 		nop
 		align 4
+		ltorg
+
+; ----------------------------------------
+; Bubble sorting
+	
+slv_check_z:
+		sts	pr,@-r15
+		mov	#0,r0
+		mov.w	r0,@r13
+
+		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
+		cmp/eq	#0,r0
+		bt	.z_end
+		mov	#2,r11
+		cmp/ge	r11,r0
+		bt	.z_normal
+
+		bra	.z_end
+		nop
+.z_normal:
+		mov	#MAX_FACES,r11
+		cmp/ge	r11,r0
+		bf	.z_ranout
+		mov	r11,r0
+.z_ranout:
+		mov	#RAM_Mars_Plgn_ZList,r12
+		mov	r0,r11
+		mov	r0,r10
+		add	#-1,r10
+		mov	r10,r7
+		add	#-1,r7
+		cmp/pl	r7
+		bf	.z_end
+.z_outer:
+		mov	r10,r8
+		mov	r12,r9
+.z_inner:
+		mov	@r9,r0
+		mov	@(8,r9),r1
+		cmp/gt	r1,r0
+		bf	.z_high
+		mov	r1,@r9
+		mov	r0,@(8,r9)
+		mov	@(4,r9),r0
+		mov	@($C,r9),r1
+		mov	r1,@(4,r9)
+		mov	r0,@($C,r9)
+.z_high:
+		dt	r8
+		bf/s	.z_inner
+		add	#8,r9
+		dt	r7
+		bf	.z_outer
 
 ; ----------------------------------------
 
-.check_z:
-		mov.w	@(marsGbl_CurrNumFace,gbr),r0
-		cmp/eq	#0,r0
-		bt	.z_end
-		mov	r0,r9
-		mov	#RAM_Mars_Plgn_ZList,r12
-		mov	@r12,r11	
 		mov	r12,r10
-		mov	r9,r8
-.lowst:
-		mov	@r10+,r0
-		cmp/gt	r11,r0
-		bt	.zhigh
-		mov	r0,r11
-.zhigh:
-		dt	r8
-		bf	.lowst
-		mov	r12,r10			; r10 - Zlist current
-		mov	r9,r8			; r8 - max faces to check
-		mov	r9,r7			; r7 - drawn points counter
-		mov	#0,r6			; r6 - current face position
-		mov	#$7FFFFFFF,r5		; r5 - already drawn flag
-		mov	r5,r4
-.z_sort:
+		mov	r11,r9
+		mov	#0,r8
+.next_face:
+		mov	@(4,r10),r7
 		cmp/pl	r7
-		bf	.z_end
-		mov	@r10,r0
-		cmp/eq	r5,r10
-		bt	.z_notnew
-		cmp/eq	r11,r0
-		bf	.z_notequ
-		mov	r13,r0
-		add	r6,r0
-		mov	r0,@r14			; Mark face on list
+		bf	.no_face
+		mov	#0,r0
+		mov	r0,@(4,r10)
+		mov	r7,@r14
 		add	#4,r14
-		mov	r5,@r10			; Set already drawn on Zbuff
-		add	#-1,r7
-.z_notequ:
-		cmp/ge	r4,r0
-		bt	.z_notnew
-		cmp/eq	r5,r0
-		bt	.z_notnew
-		mov	r0,r4
-.z_notnew:
-		add	#sizeof_polygn,r6	; Next face
-		dt	r8
-		bf/s	.z_sort
-		add	#4,r10			; Next Z entry
-		mov	r12,r10			; restart Zlist
-		mov	r9,r8			; reset faces to check
-		mov	r4,r11
-		add	#1,r4
-		bra	.z_sort
-		mov	#0,r6
+		add	#1,r8
+.no_face:
+		dt	r9
+		bf/s	.next_face
+		add 	#8,r10
+		mov.w	r8,@r13
 .z_end:
+		lds	@r15+,pr
 		rts
 		nop
 		align 4
-
-; .temporal:
-; 		mov	r13,@r14
-; 		add	#4,r14
-; 		add	#sizeof_polygn,r13
-; 		dt	r9
-; 		bf	.temporal
-; 		rts
-; 		nop
-; 		align 4
+		ltorg
 
 ; ----------------------------------------
 
@@ -906,7 +915,7 @@ Slv_WaitMaster:
 		cmp/eq	#0,r0
 		bt	.master_free
 ; 		mov	#$44C,r0
-		mov	#$44C,r0
+		mov	#$11C,r0
 .wait_delay:
 		dt	r0
 		bf	.wait_delay
@@ -916,44 +925,6 @@ Slv_WaitMaster:
 		rts
 		nop
 		align 4
-		
-; ----------------------------------------
-
-; 		mov	#plygnytest+2,r1
-; 		mov.w	@r1,r0
-; 		add	#-1,r0
-; 		mov.w	r0,@r1
-; 		mov	#polygoun,r1
-; 		mov	#RAM_Mars_Polygons_0,r2
-; 		mov	#RAM_Mars_Polygons_1,r3
-; 		mov	#10,r4
-; .lelme:
-; 		mov	@r1+,r0
-; 		mov	r0,@r2
-; 		mov	r0,@r3
-; 		add	#4,r2
-; 		add	#4,r3
-; 		dt	r4
-; 		bf	.lelme
-; 		mov	#RAM_Mars_Polygons_0,r0
-; 		mov 	#RAM_Mars_PlgnList_0,r1
-; 		mov 	#RAM_Mars_PlgnList_1,r2
-; 		mov	r0,@r1
-; 		mov	r0,@r2
-; 		mov.w	#1,r0
-; 		mov.w	r0,@(marsGbl_PolyCny_0,gbr)
-; 		mov.w	r0,@(marsGbl_PolyCny_1,gbr)
-; polygoun:
-; 		dc.w $8000,480
-; 		dc.l Textr_MagicalOjam
-; plygnytest	dc.w  64,-64
-; 		dc.w -64,-64
-; 		dc.w -64, 64
-; 		dc.w  64, 64
-; 		dc.w 480,  0
-; 		dc.w   0,  0
-; 		dc.w   0,360
-; 		dc.w 480,360
 
 ; ----------------------------------------
 
@@ -1030,7 +1001,9 @@ RAM_Mars_DivTable	ds.l MAX_DIVTABLE
 RAM_Mars_PerspTable	ds.w MAX_PERSP
 RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer list(s)
 RAM_Mars_PlgnList_1	ds.l MAX_FACES
-RAM_Mars_Plgn_ZList	ds.l MAX_FACES			; Z lowest for current face list
+RAM_Mars_Plgn_ZList	ds.l MAX_FACES*2		; Z value / foward faces | backward faces
+RAM_Mars_PlgnNum_0	ds.w 1
+RAM_Mars_PlgnNum_1	ds.w 1
 RAM_Mars_Objects	ds.b sizeof_mdlobj*64
 RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
 RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1

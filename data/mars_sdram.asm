@@ -7,5 +7,5 @@
 ; ----------------------------------------------------------------
 
 		align 4
-Palette_Puyo:	binclude "data/mars/models/mtrl/doremi_pal.bin"
+Palette_Puyo:	binclude "data/mars/models/mtrl/yui_pal.bin"
 		align 4

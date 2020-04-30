@@ -295,10 +295,14 @@ MarsMdl_MakeModel:
 		mov.w	@r12,r9				; r9 - numof_faces in model
 		mov	@(marsGbl_CurrZList,gbr),r0
 		mov	r0,r8
-		mov	#MAX_FACES,r0
-		cmp/ge	r0,r9
-		bt	.exit_model
 .next_face:
+		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
+		mov	#MAX_FACES,r1
+		cmp/ge	r1,r0
+		bf	.go_build
+		bra	.exit_model
+		nop
+.go_build:
 		mov.w	@r11+,r4
 		mov	#3,r7
 		mov	r4,r0
@@ -430,6 +434,9 @@ MarsMdl_MakeModel:
 		mov	@r15+,r11
 		mov	@r15+,r9
 		mov	@r15+,r8
+		mov	#-$300,r0	; Draw distance
+		cmp/ge	r0,r5
+		bf	.face_out
 		mov	#-160,r0
 		cmp/gt	r0,r1
 		bf	.face_out
@@ -446,15 +453,20 @@ MarsMdl_MakeModel:
 ; --------------------------------
 
 .face_ok:
-		mov.w	@(marsGbl_CurrNumFace,gbr),r0
+		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
 		add	#1,r0
-		mov.w	r0,@(marsGbl_CurrNumFace,gbr)
+		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
 		mov	r5,@r8
+		add	#4,r8
+		mov	r13,@r8
 		add	#4,r8
 		add	#sizeof_polygn,r13
 .face_out:
 		dt	r9
-		bf	.next_face
+		bt	.finish_this
+		bra	.next_face
+		nop
+.finish_this:
 		mov	r8,r0
 		mov	r0,@(marsGbl_CurrZList,gbr)
 .exit_model:
@@ -663,7 +675,7 @@ mdlrd_setpersp:
 
 		cmp/pl	r4
 		bf	.inside
-		mov	#2,r0
+		mov	#1,r0
 		bra	.offscrn
 		nop
 .inside:
@@ -1194,10 +1206,10 @@ drwtsk1_vld_y:
 		add	r5,r6
 		mov	#_vdpreg,r13
 drwsld_nxtline:
-		cmp/pl	r9
+		cmp/pz	r9
 		bf	drwsld_updline
 		mov	#SCREEN_HEIGHT,r0
-		cmp/ge	r0,r9
+		cmp/gt	r0,r9
 		bt	drwsld_nextpz
 		
 		mov	r1,r11
@@ -1245,6 +1257,7 @@ drwsld_nxtline:
 		mov	r11,r0
 		shlr	r0
 		mov	r9,r5
+		add	#1,r5
 		shll8	r5
 		add	r5,r0
 		mov.w	r0,@(6,r13)	; address
@@ -1509,31 +1522,6 @@ MarsVideo_MakePolygon:
 		nop
 		bsr	set_right
 		nop
-
-		mov	r4,r1		; LX crop
-		cmp/pl	r5
-		bt	.ldx_l
-		mov	r5,r0
-		dmuls	r8,r0
-		sts	macl,r0
-		add	r0,r1
-.ldx_l:
-		shlr16	r1
-		exts	r1,r1
-		mov	#SCREEN_WIDTH,r0
-		cmp/ge	r0,r1
-		bt	.exit
-		mov	r6,r1		; RX crop
-		cmp/pl	r7
-		bf	.rdx_l
-		mov	r7,r0
-		dmuls	r9,r0
-		sts	macl,r0
-		add	r0,r1
-.rdx_l:
-		cmp/pl	r1
-		bf	.exit
-
 .next_pz:
 		mov	#SCREEN_HEIGHT,r0
 		cmp/gt	r0,r10
@@ -1868,6 +1856,7 @@ CachDDA_Last	ds.l 2*2		; Triangle or Quad (+8)
 CachDDA_Src	ds.l 4*2
 CachDDA_Src_L	ds.l 4			; X/DX/Y/DX result for textures
 CachDDA_Src_R	ds.l 4
+CachMdl_Copy	ds.b sizeof_mdlobj
 Cach_LnDrw_L	ds.l 10
 Cach_LnDrw_S	ds.l 0
 Cach_ClrLines	ds.w 1

@@ -35,11 +35,9 @@ Var_example	equ	1234
 ; RAM for current screen mode
 ; ------------------------------------------------------
 
-; 		struct RAM_ModeBuff
-; GmMode0_long	ds.l 1
-; GmMode0_word	ds.w 1
-; GmMode0_byte	ds.b 1
-; 		finish
+		struct RAM_ModeBuff
+ScrnTest_Info	ds.w 1
+		finish
 
 ; ====================================================================
 ; --------------------------------------------------------
@@ -68,6 +66,9 @@ MD_Main:
 		move.w	#$2700,sr
 		bsr	Mode_Init
 		bsr	Video_PrintInit
+		lea	str_Title(pc),a0
+		move.l	#locate(0,0,0),d0
+		bsr	Video_Print
 		bset	#bitDispEnbl,(RAM_VdpRegs+1).l		; Enable display
 		bsr	Video_Update
 
@@ -82,7 +83,7 @@ MD_Main:
 .loop:
 		bsr	System_VSync
 
-		lea	str_Title(pc),a0
+		lea	str_Status(pc),a0
 		move.l	#locate(0,0,26),d0
 		bsr	Video_Print
 		bra	.loop
@@ -113,7 +114,10 @@ MD_Main:
 ; ------------------------------------------------------
 
 		align 2
-str_Title:	dc.b "\\w \\w \\w \\w",$A
+str_Title:	dc.b "Project Shirinx-MARS",0
+		align 2
+
+str_Status:	dc.b "\\w \\w \\w \\w",$A
 		dc.b "\\w \\w \\w \\w         MD: \\l",0
 		dc.l sysmars_reg+comm0
 		dc.l sysmars_reg+comm2
