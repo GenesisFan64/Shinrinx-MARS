@@ -697,52 +697,69 @@ SH2_S_HotStart:
     		mov.b	r0,@(intmask,r1)	; clear IRQ ACK regs
 
 	; Generate division tables
-		mov	#RAM_Mars_DivTable,r2
-		bsr	Mars_MkDivTable
-		mov	#1,r1
-		mov	#_JR,r5
-		mov	#RAM_Mars_PerspTable,r2
-		mov	#$E000,r1
-		mov	#0,r0
-		mov.w	r0,@r2
-		add	#2,r2
-
-		mov	#MAX_PERSP-1,r3
-		mov	#1,r4
-.next:
-		mov.l	r4,@r5
-		mov.l	r1,@(4,r5)
+		bsr	MarsMdl_Init
 		nop
-		mov.l	@(4,r5),r0
-		mov.w	r0,@r2
-		add	#2,r2
-		dt	r3
-		bf/s	.next
-		add	#1,r4
 		
 ; ------------------------------------------------
 
-		mov	#RAM_Mars_Objects,r1
-		mov	#TEST_MODEL,r0
-		mov	r0,@(mdl_data,r1)
-; 		mov	#-$C000,r0
-; 		mov	r0,@(mdl_z_pos,r1)
-; 		mov	#-$100,r2
-; 		mov	r0,@(mdl_x_rot,r1)
 		mov	#$20,r0			; Interrupts ON
 		ldc	r0,sr
+		mov	#RAM_Mars_Objects,r1
+		mov	#TEST_MODEL,r0
+		mov	r0,@r1
 
 ; --------------------------------------------------------
 ; Loop
 ; --------------------------------------------------------
 
 slave_loop:
-		mov	#_sysreg+comm6,r1
+		mov	#_sysreg+comm15,r14
+		mov.b	@r14,r0
+		cmp/eq	#0,r0
+		bt	.no_requests
+		mov	#_sysreg+comm8,r1
+		mov	#RAM_Mars_ObjCamera,r2
+.transfer_loop:
+		nop
+		nop
+		nop
+		nop
 		mov.w	@r1,r0
-		add	#1,r0
+		cmp/eq	#0,r0
+		bt	.transfer_loop
+		cmp/eq	#2,r0
+		bt	.trnsfr_done
+		mov.w	@(2,r1),r0
+		extu	r0,r0
+		shll16	r0
+		mov	r0,r3
+		mov.w	@(4,r1),r0
+		extu	r0,r0
+		or	r3,r0
+		mov.l	r0,@r2
+		nop
+		nop
+		nop
+		nop
+		mov	#0,r0
 		mov.w	r0,@r1
+		nop
+		nop
+		nop
+		nop
+		bra	.transfer_loop
+		add	#4,r2
+.trnsfr_done:
+		mov	#0,r0
+		mov.w	r0,@r1
+		mov.b	r0,@r14
+.no_requests:
 
-		mov	#RAM_Mars_Objects,r2
+; --------------------------------------------
+; Main slave CPU job
+; --------------------------------------------
+
+; 		mov	#RAM_Mars_Objects,r2
 ; 		mov	#$400,r1
 ; 		mov	@(mdl_x_rot,r2),r0
 ; 		add	r1,r0
@@ -750,13 +767,14 @@ slave_loop:
 ; 		mov	@(mdl_y_rot,r2),r0
 ; 		add	r1,r0
 ; 		mov	r0,@(mdl_y_rot,r2)
-		mov	#$400,r1
-		mov	@(mdl_z_pos,r2),r0
-		add	r1,r0
-		mov	r0,@(mdl_z_pos,r2)
+
 
 ; ----------------------------------------
 
+		mov	#_sysreg+comm6,r1		; DEBUG counter
+		mov.w	@r1,r0
+		add	#1,r0
+		mov.w	r0,@r1
 		mov	#0,r0
 		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
 		mov 	#RAM_Mars_Polygons_0,r1
@@ -771,7 +789,7 @@ slave_loop:
 		mov	r0,@(marsGbl_CurrZList,gbr)
 		mov	#RAM_Mars_Objects,r14
 		mov	#0,r13
-		mov	#2,r12
+		mov	#MAX_MODELS,r12
 .loop:
 		mov	@(mdl_data,r14),r0
 		cmp/eq	#0,r0
@@ -995,8 +1013,8 @@ sizeof_marssnd		ds.l 0
 ; ----------------------------------------------------------------
 
 			struct MarsRam_Video
-RAM_Mars_Palette	ds.w 256
 RAM_Mars_Global		ds.w sizeof_MarsGbl		; Note: keep it as a word
+RAM_Mars_Palette	ds.w 256
 RAM_Mars_DivTable	ds.l MAX_DIVTABLE
 RAM_Mars_PerspTable	ds.w MAX_PERSP
 RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer list(s)
@@ -1004,6 +1022,7 @@ RAM_Mars_PlgnList_1	ds.l MAX_FACES
 RAM_Mars_Plgn_ZList	ds.l MAX_FACES*2		; Z value / foward faces | backward faces
 RAM_Mars_PlgnNum_0	ds.w 1
 RAM_Mars_PlgnNum_1	ds.w 1
+RAM_Mars_ObjCamera	ds.b sizeof_camera*4
 RAM_Mars_Objects	ds.b sizeof_mdlobj*64
 RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
 RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1

@@ -111,7 +111,7 @@ MarsSound_PWM:
 		
 		
 		and 	#$FF,r0
-		shll 	r0
+; 		shll	r0
 		mov 	r0,r2
 		mov 	@(mchnsnd_flags,r7),r0
 		tst	#2,r0

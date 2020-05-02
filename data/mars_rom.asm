@@ -25,6 +25,9 @@ Textr_TestTexture:
 Textr_cubeleds:
 		binclude "data/mars/models/mtrl/semf_art.bin"
 		align 4
+Textr_grass:
+		binclude "data/mars/models/mtrl/grass_art.bin"
+		align 4
 		
 ; WAV_LEFT:	binclude "data/mars/L.wav",$2C,$140000
 ; WAV_LEFT_E:

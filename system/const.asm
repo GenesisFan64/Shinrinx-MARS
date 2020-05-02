@@ -188,3 +188,31 @@ sizeof_mdram	ds.l 0
 		message "MD RAM ends at: \{((sizeof_mdram)&$FFFFFF)}"
 	endif
 		finish
+		
+; ====================================================================
+; ----------------------------------------------------------------
+; MARS shared constants
+; ----------------------------------------------------------------
+
+; model objects
+		struct 0
+mdl_data	ds.l 1
+mdl_x_pos	ds.l 1
+mdl_y_pos	ds.l 1
+mdl_z_pos	ds.l 1
+mdl_x_rot	ds.l 1
+mdl_y_rot	ds.l 1
+mdl_z_rot	ds.l 1
+sizeof_mdlobj	ds.l 0
+		finish
+		
+; field view camera
+		struct 0
+cam_x_pos	ds.l 1
+cam_y_pos	ds.l 1
+cam_z_pos	ds.l 1
+cam_x_rot	ds.l 1
+cam_y_rot	ds.l 1
+cam_z_rot	ds.l 1
+sizeof_camera	ds.l 0
+		finish
