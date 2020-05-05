@@ -15,11 +15,13 @@
 ; Settings
 ; ----------------------------------------
 
-MAX_FACES		equ	256
+; MAX_RDVERT		equ	1024
+MAX_FACES		equ	512
 MAX_SVDP_PZ		equ	1024
 MAX_MODELS		equ	64
 MAX_DIVTABLE		equ	$800		; LONGS
-MAX_PERSP		equ	$4000 		; WORDS
+MAX_PERSP		equ	$2000 		; WORDS
+MAX_ZDIST		equ	-$C00		; MAX Z view distance
 
 ; ----------------------------------------
 ; Variables
@@ -263,8 +265,10 @@ MarsVideo_LoadPal:
 		shll	r0
 		add 	r0,r5
 		mov 	r3,r6
+		mov	#$8000,r7
 .loop:
 		mov.w	@r4+,r0
+		or	r7,r0
 		mov.w	r0,@r5
 		add 	#2,r5
 		dt	r6
@@ -286,7 +290,7 @@ MarsMdl_Init:
 		mov	#1,r1
 		mov	#_JR,r5
 		mov	#RAM_Mars_PerspTable,r2
-		mov	#$E000,r1
+		mov	#$FFF0,r1
 		mov	#0,r0
 		mov.w	r0,@r2
 		add	#2,r2
@@ -453,8 +457,6 @@ MarsMdl_MakeModel:
 		cmp/gt	r12,r3
 		bt	.y_rw
 		mov	r3,r12
-; 		mov	#_sysreg+comm0,r0
-; 		mov.w	r12,@r0
 .y_rw:		
 		mov.w	r2,@r1
 		mov	r3,r0
@@ -481,12 +483,12 @@ MarsMdl_MakeModel:
 		bf	.revrscam
 		neg	r7,r7
 .revrscam:
-		mov	#-$400,r0
+		mov	#MAX_ZDIST,r0
 		cmp/ge	r0,r7
 		bt	.camlimit
 		mov	r0,r7
 .camlimit:
-		mov	#-$600,r0	; Draw distance
+		mov	#MAX_ZDIST,r0	; Draw distance
 		add 	r7,r0
 		cmp/ge	r0,r5
 		bf	.face_out
@@ -533,6 +535,7 @@ MarsMdl_MakeModel:
 ; Perspective X/Y/Z
 ; ----------------------------------------
 
+		align 4
 mdlrd_setpersp:
 		sts	pr,@-r15
 		mov 	r5,@-r15
@@ -721,14 +724,14 @@ mdlrd_setpersp:
 
 		cmp/pl	r4
 		bf	.inside
-		mov	#1,r0
+		mov	#4,r0
 		bra	.offscrn
 		nop
 .inside:
 		neg	r4,r0
 .offscrn:
-		mov	#60,r7		; this is the only
-		cmp/ge	r7,r0		; fix i got
+		mov	#80,r7
+		cmp/ge	r7,r0
 		bt	.notzer
 		mov	r7,r0
 .notzer:
@@ -1110,7 +1113,7 @@ drwtsk1_vld_y:
 		mov	@(plypz_src_yl,r14),r7
 		mov	@(plypz_src_yr,r14),r8
 .tex_next_line:
-		cmp/pl	r9
+		cmp/pz	r9
 		bf	.tex_skip_line
 		mov	#SCREEN_HEIGHT,r0
 		cmp/ge	r0,r9
@@ -1365,6 +1368,11 @@ drwsld_updline:
 drwsld_nextpz:
 		add	#sizeof_plypz,r14
 		mov	r14,r0
+		mov	#RAM_Mars_VdpDrwList_e,r14
+		cmp/gt	r14,r0
+		bf	.reset_rd
+		mov	#RAM_Mars_VdpDrwList,r0
+.reset_rd:
 		mov	r0,@(marsGbl_VdpList_R,gbr)
 ; 		mov.w	@(marsGbl_VdpListCnt,gbr),r0
 ; 		cmp/eq	#0,r0
@@ -1574,14 +1582,17 @@ MarsVideo_MakePolygon:
 		mov	@(marsGbl_VdpList_W,gbr),r0
 		mov	r0,r1
 		mov	#RAM_Mars_VdpDrwList_e,r0
-		cmp/ge	r0,r1
-		bt	.exit
+		cmp/gt	r0,r1
+		bf	.dontreset
+		mov	#RAM_Mars_VdpDrwList,r0
+		mov	r0,r1
+		mov	r0,@(marsGbl_VdpList_W,gbr)
+.dontreset:
 		stc	sr,@-r15	; Stop interrupts
 		stc	sr,r0
 		or	#$F0,r0
-		ldc	r0,sr
 		bsr	put_piece
-		nop
+		ldc	r0,sr
 		ldc	@r15+,sr	; Restore interrupts
 
 		cmp/gt	r9,r8

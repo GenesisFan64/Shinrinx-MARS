@@ -5,6 +5,7 @@
 ; 1MB max
 ; ----------------------------------------------------------------
 
-MDBANK_0:
-		dc.b "MD BANK DATA GOES HERE"
-		align 2
+		align $8000
+MdGfx_Bg:
+		binclude "data/md/bg/bg_art.bin"
+MdGfx_Bg_e:	align 2

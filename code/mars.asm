@@ -509,6 +509,10 @@ SH2_M_HotStart:
 		mov	#256,r3
 		bsr	MarsVideo_LoadPal
 		mov	#0,r2
+		mov	#$1F<<10,r0
+		mov	#RAM_Mars_Palette,r1
+		mov.w	r0,@r1
+		
 		mov 	#CACHE_START,r1			; VIDEO Routines	
 		mov 	#$C0000000,r2
 		mov 	#(CACHE_END-CACHE_START)/4,r3

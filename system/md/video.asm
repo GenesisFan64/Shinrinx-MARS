@@ -758,20 +758,32 @@ Video_RamCode:
 .wait:
 		btst	#0,(z80_bus).l			; Wait for cpu
 		bne.s	.wait
-; 		move.w	(sysmars_reg+dreqctl).l,d4	; Set RV=1
-; 		or.w	#1,d4				; (68k ROM map moves to $000000)
-; 		move.w	d4,(sysmars_reg+dreqctl).l	; Make sure SH2 isn't touching ROM
+		move.l	d0,d4
+		swap	d4
+		lsr.w	#8,d4
+		cmp.b	#$FF,d4
+		beq.s	.from_ram
+		move.w	(sysmars_reg+dreqctl).l,d4	; Set RV=1
+		or.w	#1,d4				; (68k ROM map moves to $000000)
+		move.w	d4,(sysmars_reg+dreqctl).l	; Make sure SH2 isn't touching ROM
  		move.w	d5,-(sp)
 		move.w	(sp)+,(a4)			; Second write
-; 		move.w	(sysmars_reg+dreqctl).l,d4	; Set RV=0
-; 		and.w	#%11111110,d4			; (68k ROM map returns to $880000)
-; 		move.w	d4,(sysmars_reg+dreqctl).l
+		move.w	(sysmars_reg+dreqctl).l,d4	; Set RV=0
+		and.w	#%11111110,d4			; (68k ROM map returns to $880000)
+		move.w	d4,(sysmars_reg+dreqctl).l
 		move.w	#0,(z80_bus).l
 		move.w	#$8100,d4
 		move.b	(RAM_VdpRegs+1),d4
 		move.w	d4,(a4)
 		rts
-
+.from_ram:
+ 		move.w	d5,-(sp)
+		move.w	(sp)+,(a4)			; Second write
+		move.w	#$8100,d4
+		move.b	(RAM_VdpRegs+1),d4
+		move.w	d4,(a4)
+		rts
+		
 ; --------------------------------------------------------
 
 Video_RamCode_e:
