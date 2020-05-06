@@ -1,4 +1,4 @@
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 1 - 5/5/2020 17:59:59
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 1 - 5/5/2020 18:02:38
 
 
        1/       0 :                     ; ===========================================================================
@@ -35923,7 +35923,7 @@ MARS RAM from 9910 to 2B3E0
                     0000 0000 0000 0000 
                     0000 0000 0000 0000 
       88/   A0000 :                     
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 2 - 5/5/2020 18:00:00
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 2 - 5/5/2020 18:02:38
 
 
   symbol table (* = unused):
@@ -36392,7 +36392,7 @@ MARS RAM from 9910 to 2B3E0
  TEST_MODEL.VRTX :          60088B0 C | *TEXTR_CUBELEDS :           2044B2C C |
 *TEXTR_GRASS :              205326C C | *TEXTR_TESTTEXTURE :        2040B2C C |
 *TEXTR_YUI :                2012EC0 C |  TH :                      20000000 - |
-*TIME :                    17:59:59 - |  TIMERCTL :                      30 - |
+*TIME :                    18:02:38 - |  TIMERCTL :                      30 - |
 *TRUE :                           1 - | *TVMODE :                         0 - |
  VARNULLVRAM :                  7FF - | *VAR_EXAMPLE :                  4D2 - |
 *VBLK :                          80 - |  VDPSTS :                         A - |
@@ -36472,7 +36472,7 @@ MARS RAM from 9910 to 2B3E0
     940 symbols
     172 unused symbols
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 3 - 5/5/2020 18:00:00
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 3 - 5/5/2020 18:02:38
 
 
   defined macros:
@@ -36484,7 +36484,7 @@ ROMPAD                                | STRUCT
 
       6 macros
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 4 - 5/5/2020 18:00:00
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 4 - 5/5/2020 18:02:38
 
 
   defined functions:
@@ -36493,7 +36493,7 @@ ROMPAD                                | STRUCT
 NOTZ80                                | LOCATE                               
 MAPSIZE                               | DOUBLEWORD                           
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 5 - 5/5/2020 18:00:00
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 5 - 5/5/2020 18:02:38
 
 
   codepages:
@@ -36502,7 +36502,7 @@ MAPSIZE                               | DOUBLEWORD
 STANDARD (0 changed characters)
 
 
-0.22 seconds assembly time
+0.20 seconds assembly time
 
    6442 lines source file
    7237 lines incl. macro expansions
