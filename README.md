@@ -1,13 +1,13 @@
 # Shinrinx-MARS
-A 3D Polygon system for the Sega 32X, inspired by that tech demo
+A 3D Polygon system for the Sega 32X, inspired by the Zyrinx tech demo
 
 This is a rewrite of MdlRenderer-MARS, now it uses a special interrupt to draw the polygons
 
 NTSC Systems only, needs to be tested on PAL
 
 Current issues/plans:
-- Probably rework the perspective routine
-- Fix the bubble sort when faces are lower than < 2
+- Perspective works fine inside the camera, but points outside view expand way more than they should
+- Keep checking bubble sort if it still works for faces lower than 3
 
 Please note that current 32X emulators ignore critical parts of the system, these include:
 - FM bit: This bit tells which system side (Genesis or 32X) can read/write to the Super VDP (The framebuffer and 256-color palette), if a CPU with NO permission touches the Super VDP, it will freeze the entire system (32X or Genesis)

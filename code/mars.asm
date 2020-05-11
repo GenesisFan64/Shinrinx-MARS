@@ -711,6 +711,8 @@ SH2_S_HotStart:
 		mov	#RAM_Mars_Objects,r1
 		mov	#TEST_MODEL,r0
 		mov	r0,@r1
+; 		mov	#-$C000,r0
+; 		mov	r0,@(mdl_z_pos,r1)
 
 ; --------------------------------------------------------
 ; Loop
@@ -851,14 +853,15 @@ slv_check_z:
 		mov	#0,r0
 		mov.w	r0,@r13
 
+		mov	#RAM_Mars_Plgn_ZList,r12
 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
 		cmp/eq	#0,r0
 		bt	.z_end
 		mov	#2,r11
-		cmp/ge	r11,r0
+		cmp/gt	r11,r0
 		bt	.z_normal
-
-		bra	.z_end
+		mov	r0,r11
+		bra	.set_now
 		nop
 .z_normal:
 		mov	#MAX_FACES,r11
@@ -866,7 +869,6 @@ slv_check_z:
 		bf	.z_ranout
 		mov	r11,r0
 .z_ranout:
-		mov	#RAM_Mars_Plgn_ZList,r12
 		mov	r0,r11
 		mov	r0,r10
 		add	#-1,r10
@@ -897,6 +899,7 @@ slv_check_z:
 
 ; ----------------------------------------
 
+.set_now:
 		mov	r12,r10
 		mov	r11,r9
 		mov	#0,r8
@@ -960,9 +963,6 @@ Slv_WaitMaster:
 		align 4
 sin_table	binclude "system/mars/data/sinedata.bin"
 		align 4
-; persp_table:	binclude "system/mars/data/perspdata.bin"
-; 		align 4
-
 		include "data/mars_sdram.asm"
 
 ; ====================================================================

@@ -74,7 +74,7 @@ sizeof_plypz	ds.l 0
 		struct 0
 polygn_type	ds.l 1		; %MSTo oooo oooo oooo | Type bits and Material option (Width or PalIncr)
 polygn_mtrl	ds.l 1		; Material Type: Color (0-255) or Texture data address
-polygn_points	ds.l 4		; X/Y positions
+polygn_points	ds.l 4*2	; X/Y positions
 polygn_srcpnts	ds.l 4		; X/Y texture points (16-bit), blank if using solidcolor
 sizeof_polygn	ds.l 0
 		finish
@@ -305,7 +305,7 @@ MarsMdl_Init:
 		add	#2,r2
 		dt	r3
 		bf/s	.next
-		add	#1,r4
+		add	#2,r4
 		mov	#0,r0
 		mov	#RAM_Mars_Objects,r1
 		mov	#sizeof_mdlobj/4,r2
@@ -319,6 +319,7 @@ MarsMdl_Init:
 		rts
 		nop
 		align 4
+		ltorg
 
 ; ------------------------------------------------
 ; MarsMdl_MakeModel
@@ -361,7 +362,7 @@ MarsMdl_MakeModel:
 
 		mov	@($C,r12),r6		; r6 - material vertex
 		mov	r13,r5
-		add 	#polygn_srcpnts,r5	; r5 - Output SRC points
+		add 	#polygn_srcpnts,r5
 		mov	r7,r3
 .srctri:
 		mov.w	@r11+,r0
@@ -420,11 +421,13 @@ MarsMdl_MakeModel:
 		mov 	r9,@-r15
 		mov 	r11,@-r15
 		mov 	r12,@-r15
+		mov 	r13,@-r15
 		mov	#-160,r8
 		neg	r8,r9
 		mov	#-112,r11
 		neg	r11,r12
 		mov	#$7FFFFFFF,r5
+		mov	#$FFFFFFFF,r13
 .vert_loop:
 		mov	#0,r0
 		mov.w 	@r6+,r0
@@ -438,7 +441,11 @@ MarsMdl_MakeModel:
 		mov	@(8,r4),r4
 		bsr	mdlrd_setpersp
 		nop
-		cmp/ge	r5,r4
+		cmp/gt	r13,r4
+		bf	.save_z2
+		mov	r4,r13
+.save_z2:
+		cmp/gt	r5,r4
 		bt	.save_z
 		mov	r4,r5
 .save_z:
@@ -457,26 +464,27 @@ MarsMdl_MakeModel:
 		cmp/gt	r12,r3
 		bt	.y_rw
 		mov	r3,r12
-.y_rw:		
-		mov.w	r2,@r1
-		mov	r3,r0
-		mov.w	r0,@(2,r1)
+.y_rw:
+		mov	r2,@r1
+		mov	r3,@(4,r1)
 		dt	r7
 		bf/s	.vert_loop
-		add	#4,r1
+		add	#8,r1
 
 		mov	r8,r1
 		mov	r9,r2
 		mov	r11,r3
 		mov	r12,r4
+		mov	r13,r6
+		mov	@r15+,r13
 		mov	@r15+,r12
 		mov	@r15+,r11
 		mov	@r15+,r9
 		mov	@r15+,r8
 		cmp/pl	r5
 		bt	.face_out
-		mov	#RAM_Mars_ObjCamera,r6
-		mov	@(cam_y_pos,r6),r7
+		mov	#RAM_Mars_ObjCamera,r0
+		mov	@(cam_y_pos,r0),r7
 		shlr8	r7
 		exts	r7,r7
 		cmp/pl	r7
@@ -508,6 +516,36 @@ MarsMdl_MakeModel:
 ; --------------------------------
 
 .face_ok:
+; 		mov	r13,r2
+; 		add 	#polygn_points,r2
+; 		mov	#Cach_DstPnts,r1
+; 		mov	@r1+,r0
+; 		mov	r0,@r2
+; 		add	#4,r2
+; 		mov	@r1+,r0
+; 		mov	r0,@r2
+; 		add	#4,r2
+; 		mov	@r1+,r0
+; 		mov	r0,@r2
+; 		add	#4,r2
+; 		mov	@r1+,r0
+; 		mov	r0,@r2
+; 		add	#4,r2
+; 		mov	r13,r2
+; 		add 	#polygn_srcpnts,r2
+; 		mov	#Cach_SrcPnts,r1
+; 		mov	@r1+,r0
+; 		mov	r0,@r2
+; 		add	#4,r2
+; 		mov	@r1+,r0
+; 		mov	r0,@r2
+; 		add	#4,r2
+; 		mov	@r1+,r0
+; 		mov	r0,@r2
+; 		add	#4,r2
+; 		mov	@r1+,r0
+; 		mov	r0,@r2
+; 		add	#4,r2
 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
 		add	#1,r0
 		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
@@ -544,84 +582,25 @@ mdlrd_setpersp:
 		mov 	r8,@-r15
 		mov 	r9,@-r15
 		mov 	r10,@-r15
+		mov 	r11,@-r15
 		
-; 	; PASS 1
-		mov	@(mdl_x_rot,r14),r0	; X rotation
-; 		shlr	r0
-		bsr	mdlrd_readsine
-		shlr8	r0
-		dmuls	r2,r8			; X cos @
-		sts	macl,r5
-		sts	mach,r0
-		xtrct	r0,r5
-		dmuls	r4,r7			; Z sin @
-		sts	macl,r6
-		sts	mach,r0
-		xtrct	r0,r6
-		add 	r6,r5
-		neg	r7,r7
-		dmuls	r2,r7			; X -sin @
-		sts	macl,r6
-		sts	mach,r0
-		xtrct	r0,r6
-		dmuls	r4,r8			; Z cos @
-		sts	macl,r0
-		sts	mach,r7
-		xtrct	r7,r0
-		add	r0,r6
-		mov 	r5,r2			; Save X	
-		mov	@(mdl_y_rot,r14),r0	; Y rotation
-; 		shlr	r0
-		bsr	mdlrd_readsine
-		shlr8	r0		
-		mov	r3,r9
-		dmuls	r3,r8			; Y cos @
-		sts	macl,r9
-		sts	mach,r0
-		xtrct	r0,r9
-		dmuls	r6,r7			; Z sin @
-		sts	macl,r5
-		sts	mach,r0
-		xtrct	r0,r5
-		add 	r5,r9
-		neg	r7,r7
-		dmuls	r3,r7			; Y -sin @
-		mov	r9,r3			; Save Y
-		sts	macl,r9
-		sts	mach,r0
-		xtrct	r0,r9
-		dmuls	r6,r8			; Z cos @
-		sts	macl,r5
-		sts	mach,r0
-		xtrct	r0,r5
-		add	r5,r9
-		mov	r9,r4			; Save Z
-		mov	@(mdl_z_rot,r14),r0	; Z rotation
-; 		shlr	r0
-		bsr	mdlrd_readsine
-		shlr8	r0
-		add 	r7,r0
-		dmuls	r2,r8			; X cos @
-		sts	macl,r5
-		sts	mach,r0
-		xtrct	r0,r5
-		dmuls	r3,r7			; Z sin @
-		sts	macl,r6
-		sts	mach,r0
-		xtrct	r0,r6
-		add 	r6,r5
-		neg	r7,r7
-		dmuls	r2,r7			; X -sin @
-		sts	macl,r6
-		sts	mach,r0
-		xtrct	r0,r6
-		dmuls	r3,r8			; Z cos @
-		sts	macl,r0
-		sts	mach,r7
-		xtrct	r7,r0
-		add	r0,r6
-		mov 	r5,r2			; Save X
-		mov	r6,r3
+	; Model rotation
+		mov	r2,r5
+  		mov 	@(mdl_x_rot,r14),r0
+  		bsr	mdlrd_rotate
+		mov	r4,r6
+   		mov	r7,r2
+  		mov	r8,r6
+  		mov 	@(mdl_y_rot,r14),r0
+  		bsr	mdlrd_rotate
+   		mov	r3,r5
+   		mov	r8,r4
+   		mov	r2,r5
+   		mov 	@(mdl_z_rot,r14),r0
+  		bsr	mdlrd_rotate
+   		mov	r7,r6
+   		mov	r7,r2
+   		mov	r8,r3
 		mov	@(mdl_x_pos,r14),r0
 		shlr8	r0
 		exts	r0,r0
@@ -635,125 +614,73 @@ mdlrd_setpersp:
 		exts	r0,r0
 		add 	r0,r4
 
-
-		mov 	#RAM_Mars_ObjCamera,r10
-		mov	@(cam_x_pos,r10),r0
+		mov 	#RAM_Mars_ObjCamera,r11
+		mov	@(cam_x_pos,r11),r0
 		shlr8	r0
 		exts	r0,r0
 		sub 	r0,r2
-		mov	@(cam_y_pos,r10),r0
+		mov	@(cam_y_pos,r11),r0
 		shlr8	r0
 		exts	r0,r0
 		sub 	r0,r3
-		mov	@(cam_z_pos,r10),r0
+		mov	@(cam_z_pos,r11),r0
 		shlr8	r0
 		exts	r0,r0
 		add 	r0,r4
-		mov	@(cam_x_rot,r10),r0	; X rotation
-		bsr	mdlrd_readsine
-		shlr8	r0
-		dmuls	r2,r8		; X cos @
-		sts	macl,r5
-		sts	mach,r0
-		xtrct	r0,r5
-		dmuls	r4,r7		; Z sin @
-		sts	macl,r6
-		sts	mach,r0
-		xtrct	r0,r6
-		add 	r6,r5
-		neg	r7,r7
-		dmuls	r2,r7		; X -sin @
-		sts	macl,r6
-		sts	mach,r0
-		xtrct	r0,r6
-		dmuls	r4,r8		; Z cos @
-		sts	macl,r0
-		sts	mach,r7
-		xtrct	r7,r0
-		add	r0,r6
-		mov 	r5,r2		; Save X	
-		mov	@(cam_y_rot,r10),r0	; Y rotation
-		bsr	mdlrd_readsine
-		shlr8	r0
-		mov	r3,r9
-		dmuls	r3,r8		; Y cos @
-		sts	macl,r9
-		sts	mach,r0
-		xtrct	r0,r9
-		dmuls	r6,r7		; Z sin @
-		sts	macl,r5
-		sts	mach,r0
-		xtrct	r0,r5
-		add 	r5,r9
-		neg	r7,r7
-		dmuls	r3,r7		; Y -sin @
-		mov	r9,r3		; Save Y
-		sts	macl,r9
-		sts	mach,r0
-		xtrct	r0,r9
-		dmuls	r6,r8		; Z cos @
-		sts	macl,r5
-		sts	mach,r0
-		xtrct	r0,r5
-		add	r5,r9
-		mov	r9,r4		; Save Z
-		mov	@(cam_z_rot,r10),r0	; Z rotation
-		bsr	mdlrd_readsine
-		shlr8	r0
-		add 	r7,r0
-		dmuls	r2,r8		; X cos @
-		sts	macl,r5
-		sts	mach,r0
-		xtrct	r0,r5
-		dmuls	r3,r7		; Z sin @
-		sts	macl,r6
-		sts	mach,r0
-		xtrct	r0,r6
-		add 	r6,r5
-		neg	r7,r7
-		dmuls	r2,r7		; X -sin @
-		sts	macl,r6
-		sts	mach,r0
-		xtrct	r0,r6
-		dmuls	r3,r8		; Z cos @
-		sts	macl,r0
-		sts	mach,r7
-		xtrct	r7,r0
-		add	r0,r6
-		mov 	r5,r2		; Save X
 
-		cmp/pl	r4
-		bf	.inside
-		mov	#4,r0
-		bra	.offscrn
-		nop
-.inside:
+		mov	r2,r5
+  		mov 	@(cam_x_rot,r11),r0
+  		bsr	mdlrd_rotate
+		mov	r4,r6
+   		mov	r7,r2
+  		mov	r8,r6
+  		mov 	@(cam_y_rot,r11),r0
+  		bsr	mdlrd_rotate
+   		mov	r3,r5
+   		mov	r8,r4
+   		mov	r2,r5
+   		mov 	@(cam_z_rot,r11),r0
+  		bsr	mdlrd_rotate
+   		mov	r7,r6
+   		mov	r7,r2
+   		mov	r8,r3
+
+		mov	#160*256,r7
 		neg	r4,r0
-.offscrn:
-		mov	#80,r7
-		cmp/ge	r7,r0
-		bt	.notzer
-		mov	r7,r0
-.notzer:
-		mov	#MAX_PERSP,r8
-		cmp/gt	r8,r0
-		bf	.toomuch
-		mov	r8,r0
-.toomuch:
-		mov	#RAM_Mars_PerspTable,r8
-		shll	r0
-		mov.w	@(r8,r0),r8
-		extu.w	r8,r8
-		muls	r8,r2
-		sts	macl,r2
-		muls	r8,r3
+		cmp/pl	r0
+		bt	.inside
+		mov	#1,r0
+.inside:
+		mov 	#_JR,r8
+		cmp/eq	#0,r0
+		bf	.dontdiv
+		mov 	#1,r0
+.dontdiv:
+		mov 	r0,@r8
+		mov 	r7,@(4,r8)
+		nop
+		mov 	@(4,r8),r5
+		dmuls	r5,r3
 		sts	macl,r3
-.lel:
-		shlr8	r2
-		shlr8	r3
-		exts	r2,r2
-		exts	r3,r3
-
+		dmuls	r5,r2
+		sts	macl,r2
+		shar	r2
+		shar	r2
+		shar	r2
+		shar	r2
+		shar	r2
+		shar	r2
+		shar	r2
+		shar	r2
+		shar	r3
+		shar	r3
+		shar	r3
+		shar	r3
+		shar	r3
+		shar	r3
+		shar	r3
+		shar	r3
+		mov	@r15+,r11
 		mov	@r15+,r10
 		mov	@r15+,r9
 		mov	@r15+,r8
@@ -765,65 +692,83 @@ mdlrd_setpersp:
 		nop
 		align 4
 
+; ------------------------------
+; Rotate point
+;
+; Entry:
+; r5: x
+; r6: y
+; r0: theta
+;
+; Returns:
+; r7: (x  cos @) + (y sin @)
+; r8: (x -sin @) + (y cos @)
+; ------------------------------
 
-; 		mov	#$F0,r8
-; 		bra	*
-; 		ldc	r8,sr
-; 
-; 		dmuls	r2,r8
-; 		sts	macl,r2
-; 		sts	mach,r0
-; 		xtrct   r0,r2
-; 		dmuls	r3,r8
-; 		sts	macl,r3
-; 		sts	mach,r0
-; 		xtrct   r0,r3
-; .no_div:
-
-; 		mov	r4,r0			; Kinda working
-; 		cmp/pz	r0
-; 		bt	.lel
-; 		neg 	r0,r0
-; .dontneg:
-; 		mov	#MAX_DIVTABLE,r8
-; 		cmp/gt	r8,r0
-; 		bf	.toomuch
-; 		mov	r8,r0
-; .toomuch:
-; 		shll2	r0		
-; 		mov	#RAM_Mars_DivTable,r8
-; 		mov	@(r8,r0),r8
-; 		shll8	r8
-; 		dmuls	r2,r8
-; 		sts	macl,r2
-; 		sts	mach,r0
-; 		xtrct   r0,r2
-; 		dmuls	r3,r8
-; 		sts	macl,r3
-; 		sts	mach,r0
-; 		xtrct   r0,r3
-; .lel:
-
-; ------------------------------------------------
-; Input:
-; r0 - tan
-; 
-; Output:
-; r7 - sin
-; r8 - cos
-; ------------------------------------------------
-
-mdlrd_readsine:
-		shll2	r0
-		mov	#$1FFF,r7
-		and	r7,r0
+mdlrd_rotate:
+   		shlr8	r0
+    		mov	#$7FF,r7
+    		and	r7,r0
+   		shll2	r0
 		mov	#sin_table,r7
 		mov	#sin_table+$800,r8
-		mov	@(r0,r7),r7
-		mov	@(r0,r8),r8
-		rts
+		mov	@(r0,r7),r9		; r3
+		mov	@(r0,r8),r10		; r4
+
+		dmuls	r5,r10		; x cos @
+		sts	macl,r7
+		sts	mach,r0
+		xtrct	r0,r7
+		dmuls	r6,r9		; y sin @
+		sts	macl,r8
+		sts	mach,r0
+		xtrct	r0,r8
+		add	r8,r7
+
+		neg	r9,r9
+		dmuls	r5,r9		; x -sin @
+		sts	macl,r8
+		sts	mach,r0
+		xtrct	r0,r8
+		dmuls	r6,r10		; y cos @
+		sts	macl,r0
+		sts	mach,r10
+		xtrct	r10,r0
+		add	r0,r8
+
+; 		dmuls	r5,r4		; x cos @
+; 		sts	macl,r0
+; 		sts	mach,r1
+; 		xtrct	r1,r0
+; 		dmuls	r6,r3		; y sin @
+; 		sts	macl,r1
+; 		sts	mach,r2
+; 		xtrct	r2,r1
+; 		add	r1,r0
+; 		neg	r3,r3
+; 		dmuls	r5,r3		; x -sin @
+; 		sts	macl,r1
+; 		sts	mach,r2
+; 		xtrct	r2,r1
+; 		dmuls	r6,r4		; y cos @
+; 		sts	macl,r2
+; 		sts	mach,r3
+; 		xtrct	r3,r2
+; 		add	r2,r1
+ 		rts
 		nop
 		align 4
+		
+; 		shll2	r0
+; 		mov	#$1FFF,r7
+; 		and	r7,r0
+; 		mov	#sin_table,r7
+; 		mov	#sin_table+$800,r8
+; 		mov	@(r0,r7),r7
+; 		mov	@(r0,r8),r8
+; 		rts
+; 		nop
+; 		align 4
 
 ; ----------------------------------------
 
@@ -880,9 +825,22 @@ CACHE_START:
 		phase $C0000000
 
 ; ------------------------------------------------
+
+CachDDA_Top	ds.l 2*2		; First 2 points
+CachDDA_Last	ds.l 2*2		; Triangle or Quad (+8)
+CachDDA_Src	ds.l 4*2
+CachDDA_Src_L	ds.l 4			; X/DX/Y/DX result for textures
+CachDDA_Src_R	ds.l 4
+CachMdl_Copy	ds.b sizeof_mdlobj
+Cach_LnDrw_L	ds.l 10
+Cach_LnDrw_S	ds.l 0
+Cach_ClrLines	ds.w 1
+
+; ------------------------------------------------
 ; MASTER Background tasks
 ; ------------------------------------------------
 
+		align 4
 m_irq_custom:
 		mov.l   r2,@-r15
 		mov.l   #$FFFFFE10,r1
@@ -1498,10 +1456,8 @@ MarsVideo_MakePolygon:
 		mov	#SCREEN_WIDTH/2,r6
 		mov	#SCREEN_HEIGHT/2,r7
 .setpnts:
-		mov.w	@r1+,r4
-		mov.w	@r1+,r5
-		exts	r4,r4
-		exts	r5,r5
+		mov	@r1+,r4
+		mov	@r1+,r5
 		add	r6,r4
 		add	r7,r5
 		mov	r4,@r2
@@ -1686,14 +1642,17 @@ set_left:
 ; 		mov	r4,@r0
 		mov	@r2,r5
 		sub 	r1,r5
-		shll16	r5
 		mov 	r1,r4
-		shll16	r4
+		shll8	r5
+		shll8	r4
 		mov	#_JR,r0				; HW DIV
 		mov	r8,@r0
 		mov	r5,@(4,r0)
 		nop
 		mov	@(4,r0),r5
+		shll8	r5
+		shll8	r4
+
 ; 		mov	#RAM_Mars_DivTable,r0		; OLD
 ; 		mov	@(r0,r8),r0
 ; 		dmuls	r5,r0
@@ -1777,14 +1736,16 @@ set_right:
 ; 		mov	r6,@r0
 		mov	@r3,r7
 		sub 	r1,r7
-		shll16	r7
 		mov 	r1,r6
-		shll16	r6
+		shll8	r6
+		shll8	r7
 		mov	#_JR,r0				; HW DIV
 		mov	r9,@r0
 		mov	r7,@(4,r0)
 		nop
 		mov	@(4,r0),r7
+		shll8	r6
+		shll8	r7
 ; 		mov	#RAM_Mars_DivTable,r0		; OLD
 ; 		mov	@(r0,r9),r0
 ; 		dmuls	r7,r0
@@ -1822,9 +1783,9 @@ put_piece:
 		mov 	r5,@(plypz_xl_dx,r1)
 		mov 	r6,@(plypz_xr,r1)
 		mov 	r7,@(plypz_xr_dx,r1)
-		dmulu	r0,r5
+		dmuls	r0,r5
 		sts	macl,r2
-		dmulu	r0,r7
+		dmuls	r0,r7
 		sts	macl,r3
 		add 	r2,r4
 		add	r3,r6
@@ -1845,9 +1806,9 @@ put_piece:
 		mov	r8,@(plypz_src_yl,r1)
 		mov	@($C,r2),r9
 		mov	r9,@(plypz_src_yl_dx,r1)
-		dmulu	r0,r7
+		dmuls	r0,r7
 		sts	macl,r2
-		dmulu	r0,r9
+		dmuls	r0,r9
 		sts	macl,r3
 		add 	r2,r5
 		add	r3,r8
@@ -1864,9 +1825,9 @@ put_piece:
 		mov	r8,@(plypz_src_yr,r1)
 		mov	@($C,r2),r9
 		mov	r9,@(plypz_src_yr_dx,r1)
-		dmulu	r0,r7
+		dmuls	r0,r7
 		sts	macl,r2
-		dmulu	r0,r9
+		dmuls	r0,r9
 		sts	macl,r3
 		add 	r2,r5
 		add	r3,r8
@@ -1904,19 +1865,6 @@ put_piece:
 		nop
 		align 4
 		ltorg
-
-; ------------------------------------------------
-
-		align 4
-CachDDA_Top	ds.l 2*2		; First 2 points
-CachDDA_Last	ds.l 2*2		; Triangle or Quad (+8)
-CachDDA_Src	ds.l 4*2
-CachDDA_Src_L	ds.l 4			; X/DX/Y/DX result for textures
-CachDDA_Src_R	ds.l 4
-CachMdl_Copy	ds.b sizeof_mdlobj
-Cach_LnDrw_L	ds.l 10
-Cach_LnDrw_S	ds.l 0
-Cach_ClrLines	ds.w 1
 
 ; ------------------------------------------------
 ; CACHE END

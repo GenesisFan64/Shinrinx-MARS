@@ -100,7 +100,7 @@ MD_Main:
 		bsr	System_VSync
 		move.l	#$7C000003,(vdp_ctrl).l
 		move.w	(RAM_BgCamCurr).l,d0
-		lsr.w	#4,d0
+		lsr.w	#3,d0
 		move.w	#0,(vdp_data).l
 		move.w	d0,(vdp_data).l
 
@@ -110,8 +110,8 @@ MD_Main:
 
 	; Foward/Backward/Left/Right
 
-		move.l	#$800,d5
-		move.l	#-$800,d6
+		move.l	#$400,d5
+		move.l	#-$400,d6
 		
 		move.w	(Controller_1+on_hold),d7
 		btst	#bitJoyUp,d7
@@ -154,7 +154,8 @@ MD_Main:
 		move.l	cam_x_rot(a0),d0
 		add.l	d6,d0
 		move.l	d0,cam_x_rot(a0)
-		add.w	#$40,(RAM_BgCamera).l
+		move.w	d6,d0
+		add.w	#$10,(RAM_BgCamera).l
 .no_a:
 		btst	#bitJoyB,d7
 		beq.s	.no_b
@@ -163,7 +164,7 @@ MD_Main:
 		move.l	cam_x_rot(a0),d0
 		add.l	d5,d0
 		move.l	d0,cam_x_rot(a0)
-		sub.w	#$40,(RAM_BgCamera).l
+		sub.w	#$10,(RAM_BgCamera).l
 .no_b:
 	; Reset all
 		btst	#bitJoyC,d7
