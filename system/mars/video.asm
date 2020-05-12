@@ -613,7 +613,6 @@ mdlrd_setpersp:
 		shlr8	r0
 		exts	r0,r0
 		add 	r0,r4
-
 		mov 	#RAM_Mars_ObjCamera,r11
 		mov	@(cam_x_pos,r11),r0
 		shlr8	r0
@@ -627,7 +626,6 @@ mdlrd_setpersp:
 		shlr8	r0
 		exts	r0,r0
 		add 	r0,r4
-
 		mov	r2,r5
   		mov 	@(cam_x_rot,r11),r0
   		bsr	mdlrd_rotate
@@ -645,13 +643,15 @@ mdlrd_setpersp:
    		mov	r7,r2
    		mov	r8,r3
 
-		mov	#160*256,r7
+	; TODO: this is the best i can get
+	; with this
+		mov 	#_JR,r8
+		mov	#160<<8,r7
 		neg	r4,r0
 		cmp/pl	r0
 		bt	.inside
 		mov	#1,r0
 .inside:
-		mov 	#_JR,r8
 		cmp/eq	#0,r0
 		bf	.dontdiv
 		mov 	#1,r0
@@ -660,6 +660,7 @@ mdlrd_setpersp:
 		mov 	r7,@(4,r8)
 		nop
 		mov 	@(4,r8),r5
+.lel2:
 		dmuls	r5,r3
 		sts	macl,r3
 		dmuls	r5,r2
@@ -680,6 +681,7 @@ mdlrd_setpersp:
 		shar	r3
 		shar	r3
 		shar	r3
+		
 		mov	@r15+,r11
 		mov	@r15+,r10
 		mov	@r15+,r9
@@ -691,6 +693,36 @@ mdlrd_setpersp:
 		rts
 		nop
 		align 4
+
+; 		mov	r4,r8
+; 		mov 	#0,r7
+; 		shlr2	r8
+; 		shlr2	r8
+; 		shlr2	r8
+; 		exts	r8,r8
+; 		mov	r8,r7
+; 		mov	#persp_table_max,r0
+; 		cmp/pz	r8
+; 		bt	.calc
+; 		neg	r8,r7
+; 		mov	#persp_table_min,r0
+; .calc:
+; 		shll2	r7
+; 		mov	@(r0,r7),r8
+; 		shll8	r8
+; 		
+; 		mov	r2,r0
+; 		dmuls	r8,r0
+; 		sts	macl,r0
+; 		sts	mach,r7
+; 		xtrct	r7,r0
+; 		mov	r0,r2
+; 		mov	r3,r0
+; 		dmuls	r8,r0
+; 		sts	macl,r0
+; 		sts	mach,r7
+; 		xtrct	r7,r0
+; 		mov	r0,r3
 
 ; ------------------------------
 ; Rotate point
@@ -1605,9 +1637,9 @@ set_left:
 		sub 	r4,r0
 		mov 	@(4,r8),r4
 		sub 	r5,r4
-		shll16	r0
 		mov	r0,r5
-		shll16	r4
+		shll8	r4
+		shll8	r5
 		sts	mach,r8
 		mov	#_JR,r0			; HW DIV
 		mov	r8,@r0
@@ -1615,6 +1647,7 @@ set_left:
 		nop
 		mov	@(4,r0),r5
 		mov	#CachDDA_Src_L+4,r0
+		shll8	r5
 		mov	r5,@r0
 		mov	#_JR,r0
 		mov	r8,@r0
@@ -1622,6 +1655,7 @@ set_left:
 		nop
 		mov	@(4,r0),r4
 		mov	#CachDDA_Src_L+$C,r0
+		shll8	r4
 		mov	r4,@r0
 ; 		shll2	r8
 ; 		mov	#RAM_Mars_DivTable,r0		; OLD
@@ -1644,15 +1678,13 @@ set_left:
 		sub 	r1,r5
 		mov 	r1,r4
 		shll8	r5
-		shll8	r4
+		shll16	r4
 		mov	#_JR,r0				; HW DIV
 		mov	r8,@r0
 		mov	r5,@(4,r0)
 		nop
 		mov	@(4,r0),r5
 		shll8	r5
-		shll8	r4
-
 ; 		mov	#RAM_Mars_DivTable,r0		; OLD
 ; 		mov	@(r0,r8),r0
 ; 		dmuls	r5,r0
@@ -1699,9 +1731,9 @@ set_right:
 		sub 	r6,r0
 		mov 	@(4,r9),r6
 		sub 	r7,r6
-		shll16	r0
 		mov	r0,r7
-		shll16	r6
+		shll8	r6
+		shll8	r7
 		sts	mach,r9
 		mov	#_JR,r0				; HW DIV
 		mov	r9,@r0
@@ -1709,6 +1741,7 @@ set_right:
 		nop
 		mov	@(4,r0),r7
 		mov	#CachDDA_Src_R+4,r0
+		shll8	r7
 		mov	r7,@r0
 		mov	#_JR,r0
 		mov	r9,@r0
@@ -1716,6 +1749,7 @@ set_right:
 		nop
 		mov	@(4,r0),r6
 		mov	#CachDDA_Src_R+$C,r0
+		shll8	r6
 		mov	r6,@r0
 ; 		shll2	r9
 ; 		mov	#RAM_Mars_DivTable,r0		; OLD
@@ -1737,14 +1771,13 @@ set_right:
 		mov	@r3,r7
 		sub 	r1,r7
 		mov 	r1,r6
-		shll8	r6
+		shll16	r6
 		shll8	r7
 		mov	#_JR,r0				; HW DIV
 		mov	r9,@r0
 		mov	r7,@(4,r0)
 		nop
 		mov	@(4,r0),r7
-		shll8	r6
 		shll8	r7
 ; 		mov	#RAM_Mars_DivTable,r0		; OLD
 ; 		mov	@(r0,r9),r0

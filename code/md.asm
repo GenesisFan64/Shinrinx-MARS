@@ -110,8 +110,8 @@ MD_Main:
 
 	; Foward/Backward/Left/Right
 
-		move.l	#$400,d5
-		move.l	#-$400,d6
+		move.l	#$100,d5
+		move.l	#-$100,d6
 		
 		move.w	(Controller_1+on_hold),d7
 		btst	#bitJoyUp,d7
