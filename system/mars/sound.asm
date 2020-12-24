@@ -17,40 +17,10 @@ mchnsnd_vol	ds.l 1
 sizeof_sndchn	ds.l 0
 		finish
 
-; --------------------------------------------------------
-; Init Sound
-; 
-; Uses:
-; a0-a2,d0-d1
-; 
-; 23011361 NTSC
-; 22801467 PAL
-; --------------------------------------------------------
-
-MarsSound_Init:
-		sts	pr,@-r15
-		stc	gbr,@-r15
-
-		mov	#_sysreg,r0
-		ldc	r0,gbr
-		mov	#((((23011361<<1)/32000+1)>>1)+1),r0	; 32000 works but the CPU must be calm
-		mov.w	r0,@(cycle,gbr)
-		mov	#$0105,r0
-		mov.w	r0,@(timerctl,gbr)
-		mov	#1,r0
-		mov.w	r0,@(monowidth,gbr)
-		mov.w	r0,@(monowidth,gbr)
-		mov.w	r0,@(monowidth,gbr)
-
-		ldc	@r15+,gbr
-		lds	@r15+,pr
-		rts
-		nop
-		align 4
-
-; --------------------------------------------------------
-; MARS sound player (VBlank routine)
-; --------------------------------------------------------
+; ====================================================================
+; ----------------------------------------------------------------
+; Mars PWM control (Runs on VBlank)
+; ----------------------------------------------------------------
 
 MarsSound_Run:
 		sts	pr,@-r15
@@ -62,7 +32,7 @@ MarsSound_Run:
 
 ; ====================================================================
 ; ----------------------------------------------------------------
-; Mars PWM driver (Runs on PWM interrupt)
+; Mars PWM playback (Runs on PWM interrupt)
 ; 
 ; READ/START/END/LOOP points are floating values (xxxxxx.00)
 ; 
@@ -153,11 +123,43 @@ MarsSound_PWM:
 		rts
 		nop
 		align 4
+		ltorg
 
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; Subroutines
 ; ----------------------------------------------------------------
+
+; --------------------------------------------------------
+; Init Sound PWM
+; 
+; Frequency values:
+; 23011361 NTSC
+; 22801467 PAL
+; 
+; NOTE: This causes a CLICK on boot, it's normal
+; --------------------------------------------------------
+
+MarsSound_Init:
+		sts	pr,@-r15
+		stc	gbr,@-r15
+
+		mov	#_sysreg,r0
+		ldc	r0,gbr
+		mov	#((((23011361<<1)/32000+1)>>1)+1),r0	; 32000 works but the CPU must be calm
+		mov.w	r0,@(cycle,gbr)
+		mov	#$0105,r0
+		mov.w	r0,@(timerctl,gbr)
+		mov	#1,r0
+		mov.w	r0,@(monowidth,gbr)
+		mov.w	r0,@(monowidth,gbr)
+		mov.w	r0,@(monowidth,gbr)
+
+		ldc	@r15+,gbr
+		lds	@r15+,pr
+		rts
+		nop
+		align 4
 
 ; --------------------------------------------------------
 ; MarsSound_SetChannel
@@ -172,6 +174,9 @@ MarsSound_PWM:
 ; r5 | Pitch ($xxxxxx.xx)
 ; r6 | Volume
 ; r7 | Flags (Currently: %xxxxxxLR)
+; 
+; Uses:
+; r0,r8
 ; --------------------------------------------------------
 
 MarsSound_SetChannel:
@@ -180,19 +185,14 @@ MarsSound_SetChannel:
 		mulu	r1,r0
 		sts	macl,r0
 		add 	r0,r8
-
 		mov 	r5,@(mchnsnd_pitch,r8)
 		mov 	r6,@(mchnsnd_vol,r8)		
 		mov 	r7,@(mchnsnd_flags,r8)
-		
-	; Set BANK
-		mov 	r2,r0
+		mov 	r2,r0				; Set MSB
 		mov 	#$FF000000,r7
 		and 	r7,r0
 		mov 	r0,@(mchnsnd_bank,r8)
-
-	; Set POINTS
-		mov 	r4,r0
+		mov 	r4,r0				; Set POINTS
 		cmp/eq	#-1,r0
 		bt	.endmrk
 		shll8	r0

@@ -185,4 +185,3 @@ int_s_list:
 		dc.l s_irq_h,s_irq_h
 		dc.l s_irq_v,s_irq_v
 		dc.l s_irq_vres,s_irq_vres
-

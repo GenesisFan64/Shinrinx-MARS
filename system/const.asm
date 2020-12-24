@@ -161,8 +161,8 @@ sizeof_mdvid	ds.l 0
 ; ----------------------------------------------------------------
 ; MD RAM
 ;
-; NOTE:
-; MCD Uses $FFFD00-$FFFDFF, stack starts at $FFFD00
+; NOTE: If using MCD Uses $FFFD00-$FFFDFF, and
+; stack point is $FFFD00
 ; ----------------------------------------------------------------
 
 		struct MDRAM_START
@@ -179,7 +179,7 @@ RAM_ModeBuff	ds.b MAX_MDERAM				; Second pass, sizes are set
 RAM_MdSystem	ds.b sizeof_mdsys-RAM_MdSystem
 RAM_MdSound	ds.b sizeof_mdsnd-RAM_MdSound
 RAM_MdVideo	ds.b sizeof_mdvid-RAM_MdVideo
-RAM_ExRamSub	ds.w $300				; (CUSTOM SIZE) ROM-to-VDP DMA routines
+RAM_ExRamSub	ds.w $300				; (MANUAL SIZE) routines for doing ROM-to-VDP DMA tasks
 RAM_MdGlobal	ds.b sizeof_mdglbl-RAM_MdGlobal
 sizeof_mdram	ds.l 0
 	endif

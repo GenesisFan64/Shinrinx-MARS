@@ -1,7 +1,9 @@
 ; ====================================================================
 ; ----------------------------------------------------------------
-; MD Data other than DMA'd graphics, 1MB maximum
+; Graphics data to be transfered with DMA
 ; ----------------------------------------------------------------
 
 		align $8000
-		dc.b "MD DATA BANK 0"
+MdGfx_Bg:
+		binclude "data/md/bg/bg_art.bin"
+MdGfx_Bg_e:	align 2

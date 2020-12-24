@@ -225,7 +225,7 @@ while reading:
               # filename
               if b.find("map_Kd") == False:
                   tex_fname = b[7:].rstrip('\r\n')
-                  tex_file = open(tex_fname,"rb")
+                  tex_file = open("mdl/"+tex_fname,"rb")
                   # COPYPASTED
                   tex_file.seek(1)
                   color_type = ord(tex_file.read(1))

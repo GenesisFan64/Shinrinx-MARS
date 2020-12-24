@@ -2,8 +2,8 @@
 ; ----------------------------------------------------------------
 ; SH2 SDRAM user data
 ; 
-; this data is stored on SDRAM, it's always available to use
-; and can be writeable
+; This data is stored on SDRAM, it's always available to use
+; and can be re-writeable
 ; ----------------------------------------------------------------
 
 		align 4
@@ -14,5 +14,5 @@ TEST_MODEL:	binclude "data/mars/models/cube_head.bin"	; dc.w faces,vertices
 .vrtx:		binclude "data/mars/models/cube_vrtx.bin"
 .mtrl:		include "data/mars/models/cube_mtrl.asm"
 		align 4
-Palette_Puyo:	binclude "data/mars/models/mtrl/yui_pal.bin"
+Palette_Puyo:	binclude "data/mars/models/mtrl/gomamon_pal.bin"
 		align 4

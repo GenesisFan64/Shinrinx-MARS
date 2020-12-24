@@ -23,7 +23,7 @@ sizeof_mdglbl	ds.l 0
 ; Variables
 ; ------------------------------------------------------
 
-Var_example	equ	1234
+var_MoveSpd	equ	$400
 
 ; ====================================================================
 ; ------------------------------------------------------
@@ -110,8 +110,8 @@ MD_Main:
 
 	; Foward/Backward/Left/Right
 
-		move.l	#$100,d5
-		move.l	#-$100,d6
+		move.l	#var_MoveSpd,d5
+		move.l	#-var_MoveSpd,d6
 		
 		move.w	(Controller_1+on_hold),d7
 		btst	#bitJoyUp,d7

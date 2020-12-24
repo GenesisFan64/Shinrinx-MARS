@@ -15,13 +15,12 @@
 ; Settings
 ; ----------------------------------------
 
-; MAX_RDVERT		equ	1024
 MAX_FACES		equ	512
 MAX_SVDP_PZ		equ	1024
-MAX_MODELS		equ	64
-MAX_DIVTABLE		equ	$800		; LONGS
-MAX_PERSP		equ	$2000 		; WORDS
-MAX_ZDIST		equ	-$C00		; MAX Z view distance
+MAX_MODELS		equ	16
+MAX_DIVTABLE		equ	$400		; LONGS
+; MAX_PERSP		equ	$2000 		; WORDS
+MAX_ZDIST		equ	-$700		; MAX Z view distance
 
 ; ----------------------------------------
 ; Variables
@@ -288,24 +287,24 @@ MarsMdl_Init:
 		mov	#RAM_Mars_DivTable,r2
 		bsr	Mars_MkDivTable
 		mov	#1,r1
-		mov	#_JR,r5
-		mov	#RAM_Mars_PerspTable,r2
-		mov	#$FFF0,r1
-		mov	#0,r0
-		mov.w	r0,@r2
-		add	#2,r2
-		mov	#MAX_PERSP-1,r3
-		mov	#1,r4
-.next:
-		mov.l	r4,@r5
-		mov.l	r1,@(4,r5)
-		nop
-		mov.l	@(4,r5),r0
-		mov.w	r0,@r2
-		add	#2,r2
-		dt	r3
-		bf/s	.next
-		add	#2,r4
+; 		mov	#_JR,r5
+; 		mov	#RAM_Mars_PerspTable,r2
+; 		mov	#$FFF0,r1
+; 		mov	#0,r0
+; 		mov.w	r0,@r2
+; 		add	#2,r2
+; 		mov	#MAX_PERSP-1,r3
+; 		mov	#1,r4
+; .next:
+; 		mov.l	r4,@r5
+; 		mov.l	r1,@(4,r5)
+; 		nop
+; 		mov.l	@(4,r5),r0
+; 		mov.w	r0,@r2
+; 		add	#2,r2
+; 		dt	r3
+; 		bf/s	.next
+; 		add	#2,r4
 		mov	#0,r0
 		mov	#RAM_Mars_Objects,r1
 		mov	#sizeof_mdlobj/4,r2
@@ -314,7 +313,6 @@ MarsMdl_Init:
 		dt	r2
 		bf/s	.clnup
 		add	#4,r1
-		
 		lds	@r15+,pr
 		rts
 		nop
@@ -481,7 +479,14 @@ MarsMdl_MakeModel:
 		mov	@r15+,r11
 		mov	@r15+,r9
 		mov	@r15+,r8
-		cmp/pl	r5
+		
+	; TODO: perspective is still bad, change this
+	; depending how you want to ignore faces closer to
+	; the camera:
+	; 
+	; r5 - Back Z point (weird motion)
+	; r6 - Front Z point (instant delete)
+		cmp/pl	r6
 		bt	.face_out
 		mov	#RAM_Mars_ObjCamera,r0
 		mov	@(cam_y_pos,r0),r7
@@ -496,10 +501,13 @@ MarsMdl_MakeModel:
 		bt	.camlimit
 		mov	r0,r7
 .camlimit:
+; 		cmp/pl	r6
+; 		bt	.face_out
 		mov	#MAX_ZDIST,r0	; Draw distance
 		add 	r7,r0
 		cmp/ge	r0,r5
 		bf	.face_out
+		
 		mov	#-160,r0
 		cmp/gt	r0,r1
 		bf	.face_out
@@ -562,6 +570,8 @@ MarsMdl_MakeModel:
 .finish_this:
 		mov	r8,r0
 		mov	r0,@(marsGbl_CurrZList,gbr)
+		mov	r13,r0
+		mov	r0,@(marsGbl_CurrFacePos,gbr)
 .exit_model:
 		lds	@r15+,pr
 		rts
@@ -643,8 +653,7 @@ mdlrd_setpersp:
    		mov	r7,r2
    		mov	r8,r3
 
-	; TODO: this is the best i can get
-	; with this
+	; TODO: this is the best I can get with this
 		mov 	#_JR,r8
 		mov	#160<<8,r7
 		neg	r4,r0
@@ -809,8 +818,7 @@ mdlrd_rotate:
 ; ------------------------------------------------
 ; MarsRndr_SetWatchdog
 ; 
-; Start interrupt for drawing the polygons
-; pieces
+; Starts interrupt for drawing the polygon pieces
 ; ------------------------------------------------
 
 MarsRndr_SetWatchdog:
@@ -835,7 +843,6 @@ MarsRndr_SetWatchdog:
 		mov	#RAM_Mars_VdpDrwList,r0
 		mov	r0,@(marsGbl_VdpList_R,gbr)
 		mov	r0,@(marsGbl_VdpList_W,gbr)
-
 		mov.l	#$FFFFFE80,r1
 		mov.w	#$5AFF,r0
 		mov.w	r0,@r1
@@ -873,6 +880,7 @@ Cach_ClrLines	ds.w 1
 ; ------------------------------------------------
 
 		align 4
+; Cache_OnInterrupt:
 m_irq_custom:
 		mov.l   r2,@-r15
 		mov.l   #$FFFFFE10,r1
