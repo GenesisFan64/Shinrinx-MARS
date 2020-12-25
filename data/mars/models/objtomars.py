@@ -10,6 +10,8 @@
 # MARSNULL      - Pick random color from index palette
 # MARSINDX_indx - Pick a color from the palette using
 # 		  indexes from 0 to 255
+# Any other
+# name:         - A Label is added: Textur_(MATERIALNAME)
 # 		  
 # VALUE SIZES:
 # Vertices: LONG
@@ -25,16 +27,14 @@ import sys
 # Init
 # -------------------------------------------------
 
-SCALE_SIZE=0x100
-FROM_BLENDER=False #True
-img_width  = 1
-img_height = 1
+SCALE_SIZE	  = 0x100
+img_width         = 1			# failsafe.
+img_height        = 1
 
 # reserved names for textures
 TAG_NOMATERIAL	  = "MARSNULL"		# random color mode
-TAG_MARSCOLOR	  = "MARSINDX"		# set index color permanently
+TAG_MARSCOLOR	  = "MARSINDX"		# set specific pixel color (0-255)
 TAG_MARSINDX_LIST = "MARSLIST"          # set index color in the material (for animated stuff)
-
 TAG_TEXTUR        = "Textr_"		# tag for texture data in assembly
 
 # ======================================================================

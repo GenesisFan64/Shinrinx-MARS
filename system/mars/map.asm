@@ -103,7 +103,7 @@ HIRQ_ON		equ	$04
 CMDIRQ_ON	equ	$02
 PWMIRQ_ON	equ	$01
 _JR		equ	$FFFFFF00	; DIVU (--- / val)
-_HRL32		equ	$FFFFFF04	; DIVU (val / ---)
+_HRL32		equ	$FFFFFF04	; DIVU (val / ---) or result
 _HRH		equ	$FFFFFF10	; DIVU Result, HIGH
 _HRL		equ	$FFFFFF14	; DIVU Result, LOW
 

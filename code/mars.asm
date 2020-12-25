@@ -27,6 +27,7 @@ marsGbl_VdpListCnt	ds.w 1
 marsGbl_DrwTask		ds.w 1
 marsGbl_VIntFlag_M	ds.w 1
 marsGbl_VIntFlag_S	ds.w 1
+marsGbl_DivReq_M	ds.w 1
 sizeof_MarsGbl		ds.l 0
 			finish
 			
@@ -511,7 +512,8 @@ SH2_M_HotStart:
 		mov	#$19,r0
 		mov.w	r0,@r1
 		mov	#_sysreg,r1
-		mov.l	#VIRQ_ON|PWMIRQ_ON|CMDIRQ_ON,r0	; Enable these interrupts
+; 		mov	#VIRQ_ON|PWMIRQ_ON|CMDIRQ_ON,r0	; Enable these interrupts
+		mov	#VIRQ_ON|CMDIRQ_ON,r0		; Enable these interrupts		
     		mov.b	r0,@(intmask,r1)
 
 		mov 	#CACHE_START,r1			; Load 3D Routines on CACHE	
@@ -739,11 +741,11 @@ SH2_S_HotStart:
 		mov	#TEST_MODEL,r0
 		mov	r0,@r1
 
-		mov	#RAM_Mars_Objects+sizeof_mdlobj,r1
-		mov	#TEST_MODEL,r0
-		mov	r0,@r1
-		mov	#-$80000,r0
-		mov	r0,@(mdl_z_pos,r1)
+; 		mov	#RAM_Mars_Objects+sizeof_mdlobj,r1
+; 		mov	#TEST_MODEL,r0
+; 		mov	r0,@r1
+; 		mov	#-$80000,r0
+; 		mov	r0,@(mdl_z_pos,r1)
 		
 ; --------------------------------------------------------
 ; Loop
@@ -1046,7 +1048,6 @@ sizeof_marssnd		ds.l 0
 
 			struct MarsRam_Video
 RAM_Mars_Palette	ds.w 256
-RAM_Mars_DivTable	ds.l MAX_DIVTABLE
 RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer list(s)
 RAM_Mars_PlgnList_1	ds.l MAX_FACES
 RAM_Mars_Plgn_ZList	ds.l MAX_FACES*2		; Z value / foward faces | backward faces

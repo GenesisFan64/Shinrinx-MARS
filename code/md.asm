@@ -23,7 +23,7 @@ sizeof_mdglbl	ds.l 0
 ; Variables
 ; ------------------------------------------------------
 
-var_MoveSpd	equ	$400
+var_MoveSpd	equ	$1000
 
 ; ====================================================================
 ; ------------------------------------------------------
@@ -155,7 +155,7 @@ MD_Main:
 		add.l	d6,d0
 		move.l	d0,cam_x_rot(a0)
 		move.w	d6,d0
-		add.w	#$10,(RAM_BgCamera).l
+		add.w	#var_MoveSpd>>6,(RAM_BgCamera).l
 .no_a:
 		btst	#bitJoyB,d7
 		beq.s	.no_b
@@ -164,7 +164,7 @@ MD_Main:
 		move.l	cam_x_rot(a0),d0
 		add.l	d5,d0
 		move.l	d0,cam_x_rot(a0)
-		sub.w	#$10,(RAM_BgCamera).l
+		sub.w	#var_MoveSpd>>6,(RAM_BgCamera).l
 .no_b:
 	; Reset all
 		btst	#bitJoyC,d7

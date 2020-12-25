@@ -12,6 +12,9 @@
 Textr_gomamon:
 		binclude "data/mars/models/mtrl/gomamon_art.bin"
 		align 4
+Textr_doremi:
+		binclude "data/mars/models/mtrl/doremi_art.bin"
+		align 4
 		
 ; WAV_LEFT:	binclude "data/mars/L.wav",$2C,$140000
 ; WAV_LEFT_E:

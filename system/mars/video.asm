@@ -15,12 +15,10 @@
 ; Settings
 ; ----------------------------------------
 
-MAX_FACES		equ	512
-MAX_SVDP_PZ		equ	1024
+MAX_FACES		equ	768
+MAX_SVDP_PZ		equ	512		; The pieces list gets is recycled, increase the value if you see visual glitches
 MAX_MODELS		equ	16
-MAX_DIVTABLE		equ	$400		; LONGS
-; MAX_PERSP		equ	$2000 		; WORDS
-MAX_ZDIST		equ	-$700		; MAX Z view distance
+MAX_ZDIST		equ	-$600		; MAX Z view distance
 
 ; ----------------------------------------
 ; Variables
@@ -157,29 +155,29 @@ MarsVideo_Init:
 ; 	xtrct   r0,r6		; Result
 ; ------------------------------------
 
-Mars_MkDivTable:
-		mov	#$FFFFFF00,r6
-		mov	#MAX_DIVTABLE,r4
-		mov     #0,r5
-		shll16  r1
-.loop:
-		mov	r5,r0
-		cmp/eq	#0,r0
-		bf	.dontzer
-		mov	#1,r0
-.dontzer:
-		mov	r5,@r6
-		mov	r1,@(4,r6)
-		nop
-		mov	@(4,r6),r0
-		mov	r0,@r2
-		add     #4,r2
-		add     #1,r5
-		dt      r4
-		bf	.loop
-		rts
-		nop
-		align 4
+; Mars_MkDivTable:
+; 		mov	#$FFFFFF00,r6
+; 		mov	#MAX_DIVTABLE,r4
+; 		mov     #0,r5
+; 		shll16  r1
+; .loop:
+; 		mov	r5,r0
+; 		cmp/eq	#0,r0
+; 		bf	.dontzer
+; 		mov	#1,r0
+; .dontzer:
+; 		mov	r5,@r6
+; 		mov	r1,@(4,r6)
+; 		nop
+; 		mov	@(4,r6),r0
+; 		mov	r0,@r2
+; 		add     #4,r2
+; 		add     #1,r5
+; 		dt      r4
+; 		bf	.loop
+; 		rts
+; 		nop
+; 		align 4
 		
 ; ------------------------------------
 ; MarsVideo_ClearFrame
@@ -284,27 +282,10 @@ MarsVideo_LoadPal:
 
 MarsMdl_Init:
 		sts	pr,@-r15
-		mov	#RAM_Mars_DivTable,r2
-		bsr	Mars_MkDivTable
-		mov	#1,r1
-; 		mov	#_JR,r5
-; 		mov	#RAM_Mars_PerspTable,r2
-; 		mov	#$FFF0,r1
-; 		mov	#0,r0
-; 		mov.w	r0,@r2
-; 		add	#2,r2
-; 		mov	#MAX_PERSP-1,r3
-; 		mov	#1,r4
-; .next:
-; 		mov.l	r4,@r5
-; 		mov.l	r1,@(4,r5)
-; 		nop
-; 		mov.l	@(4,r5),r0
-; 		mov.w	r0,@r2
-; 		add	#2,r2
-; 		dt	r3
-; 		bf/s	.next
-; 		add	#2,r4
+; 		mov	#RAM_Mars_DivTable,r2
+; 		bsr	Mars_MkDivTable
+; 		mov	#1,r1
+
 		mov	#0,r0
 		mov	#RAM_Mars_Objects,r1
 		mov	#sizeof_mdlobj/4,r2
@@ -486,7 +467,7 @@ MarsMdl_MakeModel:
 	; 
 	; r5 - Back Z point (weird motion)
 	; r6 - Front Z point (instant delete)
-		cmp/pl	r6
+		cmp/pl	r5
 		bt	.face_out
 		mov	#RAM_Mars_ObjCamera,r0
 		mov	@(cam_y_pos,r0),r7
@@ -655,7 +636,7 @@ mdlrd_setpersp:
 
 	; TODO: this is the best I can get with this
 		mov 	#_JR,r8
-		mov	#160<<8,r7
+		mov	#256<<8,r7
 		neg	r4,r0
 		cmp/pl	r0
 		bt	.inside
@@ -1030,14 +1011,12 @@ drwtsk_02:
 drwtsk_01:
 		mov.w	@(marsGbl_VdpListCnt,gbr),r0
 		cmp/eq	#0,r0
-		bf/s	.has_pz
-		add	#-1,r0
+		bf	.has_pz
 		mov	#0,r0
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 		bra	drwtask_exit
 		mov	#$7F,r2
-.has_pz	
-		mov.w	r0,@(marsGbl_VdpListCnt,gbr)
+.has_pz:
 		mov	r3,@-r15
 		mov	r4,@-r15
 		mov	r5,@-r15
@@ -1090,8 +1069,10 @@ drwtsk1_vld_y:
 		shlr16	r0
 		shlr8	r0
  		tst	#PLGN_TEXURE,r0
- 		bt	.solid_color
-		
+ 		bf	.texture_line
+		bra	.solid_color
+		nop
+
 ; ------------------------------------
 ; Texture
 ; r1  - XL
@@ -1105,6 +1086,11 @@ drwtsk1_vld_y:
 ; r9  - Y current
 ; r10  - Y end
 ; ------------------------------------
+
+.texture_line:
+		mov.w	@(marsGbl_DivReq_M,gbr),r0
+		cmp/eq	#1,r0
+		bt	drwtask_return
 
 		mov	@(plypz_src_xl,r14),r5
 		mov	@(plypz_src_xr,r14),r6
@@ -1156,20 +1142,32 @@ drwtsk1_vld_y:
 		sub 	r0,r2
 		sub	r5,r6
 		sub	r7,r8
+		
+	; Make sure the DivReq flag is enabled or it will
+	; conflict with MarsVideo_MakePolygon
+		mov	#_JR,r0			; Hardware DIV
+		mov	r2,@r0
+		mov	r6,@(4,r0)
+		nop
+		mov	@(4,r0),r6
+		mov	r2,@r0
+		mov	r8,@(4,r0)
+		nop
+		mov	@(4,r0),r8		; Hardware DIV
+; 		shll2	r2			; Hookup-table DIV (old)
+; 		mov	#RAM_Mars_DivTable,r0
+; 		mov	@(r0,r2),r0
+; 		dmuls	r6,r0
+; 		sts	macl,r6
+; 		sts	mach,r0
+; 		xtrct   r0,r6
+; 		mov	#RAM_Mars_DivTable,r0
+; 		mov	@(r0,r2),r0
+; 		dmuls	r8,r0
+; 		sts	macl,r8
+; 		sts	mach,r0
+; 		xtrct   r0,r8			; Hookup-table DIV
 
-		shll2	r2
-		mov	#RAM_Mars_DivTable,r0
-		mov	@(r0,r2),r0
-		dmuls	r6,r0
-		sts	macl,r6
-		sts	mach,r0
-		xtrct   r0,r6
-		mov	#RAM_Mars_DivTable,r0
-		mov	@(r0,r2),r0
-		dmuls	r8,r0
-		sts	macl,r8
-		sts	mach,r0
-		xtrct   r0,r8
 		mov	#SCREEN_WIDTH,r0
 		cmp/gt	r0,r12
 		bf	.tr_fix
@@ -1364,6 +1362,9 @@ drwsld_updline:
 		bf/s	drwsld_nxtline
 		add	#1,r9
 drwsld_nextpz:
+		mov.w	@(marsGbl_VdpListCnt,gbr),r0		; -1 piece
+		add	#-1,r0
+		mov.w	r0,@(marsGbl_VdpListCnt,gbr)
 		add	#sizeof_plypz,r14
 		mov	r14,r0
 		mov	#RAM_Mars_VdpDrwList_e,r14
@@ -1584,13 +1585,12 @@ MarsVideo_MakePolygon:
 		mov	r0,r1
 		mov	r0,@(marsGbl_VdpList_W,gbr)
 .dontreset:
-		stc	sr,@-r15	; Stop interrupts
+		stc	sr,@-r15			; Stop interrupts
 		stc	sr,r0
 		or	#$F0,r0
 		bsr	put_piece
 		ldc	r0,sr
-		ldc	@r15+,sr	; Restore interrupts
-
+		ldc	@r15+,sr			; Restore interrupts
 		cmp/gt	r9,r8
 		bf	.lefth2
 		bsr	set_right
@@ -1649,39 +1649,25 @@ set_left:
 		shll8	r4
 		shll8	r5
 		sts	mach,r8
-		mov	#_JR,r0			; HW DIV
+
+		mov	#1,r0				; Stopsign for HW Division
+		mov.w	r0,@(marsGbl_DivReq_M,gbr)
+		mov	#_JR,r0				; HW DIV
 		mov	r8,@r0
 		mov	r5,@(4,r0)
 		nop
 		mov	@(4,r0),r5
-		mov	#CachDDA_Src_L+4,r0
-		shll8	r5
-		mov	r5,@r0
 		mov	#_JR,r0
 		mov	r8,@r0
 		mov	r4,@(4,r0)
 		nop
 		mov	@(4,r0),r4
-		mov	#CachDDA_Src_L+$C,r0
 		shll8	r4
+		shll8	r5
+		mov	#CachDDA_Src_L+$C,r0
 		mov	r4,@r0
-; 		shll2	r8
-; 		mov	#RAM_Mars_DivTable,r0		; OLD
-; 		mov	@(r0,r8),r0
-; 		dmuls	r5,r0
-; 		sts	macl,r5
-; 		sts	mach,r0
-; 		xtrct   r0,r5
-; 		mov	#CachDDA_Src_L+4,r0
-; 		mov	r5,@r0
-; 		mov	#RAM_Mars_DivTable,r0
-; 		mov	@(r0,r8),r0
-; 		dmuls	r4,r0
-; 		sts	macl,r4
-; 		sts	mach,r0
-; 		xtrct   r0,r4
-; 		mov	#CachDDA_Src_L+$C,r0
-; 		mov	r4,@r0
+		mov	#CachDDA_Src_L+4,r0
+		mov	r5,@r0
 		mov	@r2,r5
 		sub 	r1,r5
 		mov 	r1,r4
@@ -1692,13 +1678,9 @@ set_left:
 		mov	r5,@(4,r0)
 		nop
 		mov	@(4,r0),r5
+		mov	#0,r0				; Resume HW Division
+		mov.w	r0,@(marsGbl_DivReq_M,gbr)
 		shll8	r5
-; 		mov	#RAM_Mars_DivTable,r0		; OLD
-; 		mov	@(r0,r8),r0
-; 		dmuls	r5,r0
-; 		sts	macl,r5
-; 		sts	mach,r0
-; 		xtrct   r0,r5
 .lft_skip:
 		rts
 		nop
@@ -1743,39 +1725,26 @@ set_right:
 		shll8	r6
 		shll8	r7
 		sts	mach,r9
+
+		mov	#1,r0				; Resume HW Division
+		mov.w	r0,@(marsGbl_DivReq_M,gbr)
 		mov	#_JR,r0				; HW DIV
 		mov	r9,@r0
 		mov	r7,@(4,r0)
 		nop
 		mov	@(4,r0),r7
-		mov	#CachDDA_Src_R+4,r0
-		shll8	r7
-		mov	r7,@r0
 		mov	#_JR,r0
 		mov	r9,@r0
 		mov	r6,@(4,r0)
 		nop
 		mov	@(4,r0),r6
-		mov	#CachDDA_Src_R+$C,r0
 		shll8	r6
+		shll8	r7
+		mov	#CachDDA_Src_R+4,r0
+		mov	r7,@r0
+		mov	#CachDDA_Src_R+$C,r0
+
 		mov	r6,@r0
-; 		shll2	r9
-; 		mov	#RAM_Mars_DivTable,r0		; OLD
-; 		mov	@(r0,r9),r0
-; 		dmuls	r7,r0
-; 		sts	macl,r7
-; 		sts	mach,r0
-; 		xtrct   r0,r7
-; 		mov	#CachDDA_Src_R+4,r0
-; 		mov	r7,@r0
-; 		mov	#RAM_Mars_DivTable,r0
-; 		mov	@(r0,r9),r0
-; 		dmuls	r6,r0
-; 		sts	macl,r6
-; 		sts	mach,r0
-; 		xtrct   r0,r6
-; 		mov	#CachDDA_Src_R+$C,r0
-; 		mov	r6,@r0
 		mov	@r3,r7
 		sub 	r1,r7
 		mov 	r1,r6
@@ -1786,13 +1755,9 @@ set_right:
 		mov	r7,@(4,r0)
 		nop
 		mov	@(4,r0),r7
+		mov	#0,r0				; Resume HW Division
+		mov.w	r0,@(marsGbl_DivReq_M,gbr)
 		shll8	r7
-; 		mov	#RAM_Mars_DivTable,r0		; OLD
-; 		mov	@(r0,r9),r0
-; 		dmuls	r7,r0
-; 		sts	macl,r7
-; 		sts	mach,r0
-; 		xtrct   r0,r7
 .rgt_skip:
 		rts
 		nop
