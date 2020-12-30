@@ -14,5 +14,5 @@ TEST_MODEL:	binclude "data/mars/models/cube_head.bin"	; dc.w faces,vertices
 .vrtx:		binclude "data/mars/models/cube_vrtx.bin"
 .mtrl:		include "data/mars/models/cube_mtrl.asm"
 		align 4
-Palette_Puyo:	binclude "data/mars/models/mtrl/doremi_pal.bin"
+Palette_Puyo:	binclude "data/mars/models/mtrl/marscity_pal.bin"
 		align 4

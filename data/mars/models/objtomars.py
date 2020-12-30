@@ -248,7 +248,7 @@ while reading:
                     img_width += ord(tex_file.read(1)) << 8
                     img_height = ord(tex_file.read(1))
                     img_height += ord(tex_file.read(1)) << 8
-	
+
                     img_pixbits = ord(tex_file.read(1))
                     img_type = ord(tex_file.read(1)) 
                     if (img_type >> 5 & 1) == False:
@@ -358,23 +358,17 @@ while reading:
 	          outz_l,outz_r,
 	          ]))
       
+        a=img_width
+        b=img_height
         c=(int(x_curr[1])-1)*4
-        a=img_width
-        b=img_height
-        vertex_list[c+2]=img_width
-        vertex_list[c+3]=img_height
-      
+        vertex_list[c+2]=a
+        vertex_list[c+3]=b
         c=(int(y_curr[1])-1)*4
-        a=img_width
-        b=img_height
-        vertex_list[c+2]=img_width
-        vertex_list[c+3]=img_height
-        
+        vertex_list[c+2]=a
+        vertex_list[c+3]=b
         c=(int(z_curr[1])-1)*4
-        a=img_width
-        b=img_height
-        vertex_list[c+2]=img_width
-        vertex_list[c+3]=img_height
+        vertex_list[c+2]=a
+        vertex_list[c+3]=b
       
       x=int(x_curr[0])-1
       y=int(y_curr[0])-1
@@ -453,29 +447,20 @@ while reading:
 	        ]))
 
         # set texture
+        a=img_width
+        b=img_height
         c=(int(x_curr[1])-1)*4
-        a=img_width
-        b=img_height
-        vertex_list[c+2]=img_width
-        vertex_list[c+3]=img_height
-      
+        vertex_list[c+2]=a
+        vertex_list[c+3]=b
         c=(int(y_curr[1])-1)*4
-        a=img_width
-        b=img_height
-        vertex_list[c+2]=img_width
-        vertex_list[c+3]=img_height
-        
+        vertex_list[c+2]=a
+        vertex_list[c+3]=b
         c=(int(z_curr[1])-1)*4
-        a=img_width
-        b=img_height
-        vertex_list[c+2]=img_width
-        vertex_list[c+3]=img_height
-
+        vertex_list[c+2]=a
+        vertex_list[c+3]=b
         c=(int(q_curr[1])-1)*4
-        a=img_width
-        b=img_height
-        vertex_list[c+2]=img_width
-        vertex_list[c+3]=img_height
+        vertex_list[c+2]=a
+        vertex_list[c+3]=b
 
       x=int(x_curr[0])-1
       y=int(y_curr[0])-1
@@ -503,6 +488,9 @@ while reading:
 # Vertex convert
 # ----------------------------
 
+# TODO: check if texture
+# points still work correctly
+
 cntr = len(vertex_list)
 if cntr != 0:
   out_vertex = open(projectname+"_vrtx.bin","wb")	# texture vertex
@@ -510,7 +498,7 @@ if cntr != 0:
   x_tx = 0
   while cntr:
     x_l = int(vertex_list[x_tx+2] * vertex_list[x_tx])
-    x_r = int(vertex_list[x_tx+3] * vertex_list[x_tx+1])-1
+    x_r = int(vertex_list[x_tx+3] * vertex_list[x_tx+1]) +1
     out_vertex.write( bytes([
     x_l>>8&0xFF,x_l&0xFF,
     x_r>>8&0xFF,x_r&0xFF]))

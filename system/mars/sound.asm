@@ -78,10 +78,8 @@ MarsSound_PWM:
 ; Read WAV
 .read:
 		mov.b	@r2,r0
-		
-		
 		and 	#$FF,r0
-; 		shll	r0
+		shll	r0				; manual volume
 		mov 	r0,r2
 		mov 	@(mchnsnd_flags,r7),r0
 		tst	#2,r0
@@ -146,7 +144,7 @@ MarsSound_Init:
 
 		mov	#_sysreg,r0
 		ldc	r0,gbr
-		mov	#((((23011361<<1)/32000+1)>>1)+1),r0	; 32000 works but the CPU must be calm
+		mov	#((((23011361<<1)/22050+1)>>1)+1),r0	; 32000 works but the CPU must be calm
 		mov.w	r0,@(cycle,gbr)
 		mov	#$0105,r0
 		mov.w	r0,@(timerctl,gbr)

@@ -1,7 +1,7 @@
 ; ====================================================================		
 ; ----------------------------------------------------------------
-; MARS SH2 Section, CODE for both CPUs, RAM usage and
-; DATA goes here
+; MARS SH2 Section, CODE for both CPUs
+; RAM and some DATA goes here
 ; ----------------------------------------------------------------
 
 		phase CS3			; now we are at SDRAM
@@ -14,20 +14,23 @@
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; MARS Global variables (for gbr)
+; 
+; Shared for both CPUs
 ; ----------------------------------------------------------------
 
 			struct 0
-marsGbl_VdpList_R	ds.l 1
-marsGbl_VdpList_W	ds.l 1
-marsGbl_CurrFacePos	ds.l 1
-marsGbl_CurrZList	ds.l 1
-marsGbl_PolyBuffNum	ds.w 1
-marsGbl_MdlFacesCntr	ds.w 1
-marsGbl_VdpListCnt	ds.w 1
-marsGbl_DrwTask		ds.w 1
-marsGbl_VIntFlag_M	ds.w 1
-marsGbl_VIntFlag_S	ds.w 1
-marsGbl_DivReq_M	ds.w 1
+marsGbl_PlyPzList_R	ds.l 1		; Current graphic piece to draw
+marsGbl_PlyPzList_W	ds.l 1		; Current graphic piece to write
+marsGbl_CurrZList	ds.l 1		; Current Zsort entry
+marsGbl_CurrFacePos	ds.l 1		; Current top face of the list while reading model data
+marsGbl_MdlFacesCntr	ds.w 1		; And the number of faces stored on that list
+marsGbl_PolyBuffNum	ds.w 1		; Buffer switcher: READ/WRITE or WRITE/READ
+marsGbl_PzListCntr	ds.w 1		; Number of graphic pieces to draw
+marsGbl_DrwTask		ds.w 1		; Drawing task for Watchdog
+marsGbl_VIntFlag_M	ds.w 1		; Reset if VBlank finished on Master CPU
+marsGbl_VIntFlag_S	ds.w 1		; The same but for Slave CPU
+marsGbl_DivReq_M	ds.w 1		; Tell Watchdog we are in the middle of division (skips task)
+marsGbl_MdlDrawReq	ds.w 1		; Flag to draw models at the request from MD
 sizeof_MarsGbl		ds.l 0
 			finish
 			
@@ -63,35 +66,17 @@ m_irq_bad:
 ; ------------------------------------------------
 
 m_irq_pwm:
-		mov	#_sysreg+monowidth,r1
-		mov.b	@r1,r0
- 		tst	#$80,r0
- 		bf	.exit
-		mov.l	r2,@-r15
-		mov.l	r3,@-r15
-		mov.l	r4,@-r15
-		mov.l	r5,@-r15
-		mov.l	r6,@-r15
-		mov.l	r7,@-r15
-		mov.l	r8,@-r15
-		sts	pr,@-r15
-		bsr	MarsSound_PWM
-		nop
-		lds	@r15+,pr
-		mov.l	@r15+,r8
-		mov.l	@r15+,r7
-		mov.l	@r15+,r6
-		mov.l	@r15+,r5
-		mov.l	@r15+,r4
-		mov.l	@r15+,r3
-		mov.l	@r15+,r2
-.exit:
 		mov.l	#$FFFFFE10,r1
 		mov.b	@(7,r1),r0
 		xor	#2,r0
 		mov.b	r0,@(7,r1)
 		mov	#_sysreg+pwmintclr,r1
 		mov.w	r0,@r1
+		nop
+		nop
+		nop
+		nop
+		nop
 		rts
 		nop
 		align 4
@@ -269,17 +254,35 @@ s_irq_bad:
 ; ------------------------------------------------
 
 s_irq_pwm:
+		mov	#_sysreg+monowidth,r1
+		mov.b	@r1,r0
+ 		tst	#$80,r0
+ 		bf	.exit
+		mov.l	r2,@-r15
+		mov.l	r3,@-r15
+		mov.l	r4,@-r15
+		mov.l	r5,@-r15
+		mov.l	r6,@-r15
+		mov.l	r7,@-r15
+		mov.l	r8,@-r15
+		sts	pr,@-r15
+		bsr	MarsSound_PWM
+		nop
+		lds	@r15+,pr
+		mov.l	@r15+,r8
+		mov.l	@r15+,r7
+		mov.l	@r15+,r6
+		mov.l	@r15+,r5
+		mov.l	@r15+,r4
+		mov.l	@r15+,r3
+		mov.l	@r15+,r2
+.exit:
 		mov.l	#$FFFFFE10,r1
 		mov.b	@(7,r1),r0
 		xor	#2,r0
 		mov.b	r0,@(7,r1)
 		mov	#_sysreg+pwmintclr,r1
 		mov.w	r0,@r1
-		nop
-		nop
-		nop
-		nop
-		nop
 		rts
 		nop
 		align 4
@@ -512,7 +515,6 @@ SH2_M_HotStart:
 		mov	#$19,r0
 		mov.w	r0,@r1
 		mov	#_sysreg,r1
-; 		mov	#VIRQ_ON|PWMIRQ_ON|CMDIRQ_ON,r0	; Enable these interrupts
 		mov	#VIRQ_ON|CMDIRQ_ON,r0		; Enable these interrupts		
     		mov.b	r0,@(intmask,r1)
 
@@ -540,22 +542,22 @@ SH2_M_HotStart:
 		mov	#RAM_Mars_Palette,r1
 		mov.w	r0,@r1
 		
-; 		mov	#0,r1
-; 		mov	#WAV_LEFT,r2
-; 		mov	#WAV_LEFT_E,r3
-; 		mov	r2,r4
-; 		mov	#$100,r5
-; 		mov	#0,r6
-; 		bsr	MarsSound_SetChannel
-; 		mov	#%10,r7
-; 		mov	#1,r1
-; 		mov	#WAV_RIGHT,r2
-; 		mov	#WAV_RIGHT_E,r3
-; 		mov	r2,r4
-; 		mov	#$100,r5
-; 		mov	#0,r6
-; 		bsr	MarsSound_SetChannel
-; 		mov	#%01,r7
+		mov	#0,r1
+		mov	#WAV_LEFT,r2
+		mov	#WAV_LEFT_E,r3
+		mov	r2,r4
+		mov	#$100,r5
+		mov	#0,r6
+		bsr	MarsSound_SetChannel
+		mov	#%10,r7
+		mov	#1,r1
+		mov	#WAV_RIGHT,r2
+		mov	#WAV_RIGHT_E,r3
+		mov	r2,r4
+		mov	#$100,r5
+		mov	#0,r6
+		bsr	MarsSound_SetChannel
+		mov	#%01,r7
 		
 ; ------------------------------------------------
 
@@ -598,7 +600,7 @@ master_loop:
 		mov.b	r1,@r0
 		mov	#$19,r1
 		mov.b	r1,@r0
-		bsr	MarsRndr_SetWatchdog		; Enable special interrupt
+		bsr	MarsRndr_SetWatchdog
 		nop
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0	; Start drawing polygons from the READ buffer
 		tst     #1,r0				; Check for which buffer to use
@@ -622,29 +624,29 @@ master_loop:
 		mov	r13,@-r15
 		mov	@r14,r14			; Get location of the polygon
 		cmp/pl	r14
-		bf	.bad_one
+		bf	.invalid
 		mov 	#MarsVideo_MakePolygon,r0
 		jsr	@r0
 		nop
-.bad_one:
+.invalid:
 		mov	@r15+,r13
 		mov	@r15+,r14
-		add	#4,r14
 		dt	r13
-		bf	.loop
+		bf/s	.loop
+		add	#4,r14
 .skip:
 
 	; --------------------------------------
 
-.wait_pz:	mov.w	@(marsGbl_VdpListCnt,gbr),r0	; Any polygons remaining?
+.wait_pz: 	mov.w	@(marsGbl_PzListCntr,gbr),r0	; Any polygons remaining on interrupt?
 		cmp/eq	#0,r0
 		bf	.wait_pz
-.wait_task:	mov.w	@(marsGbl_DrwTask,gbr),r0	; Draw task still active?
+.wait_task:	mov.w	@(marsGbl_DrwTask,gbr),r0	; Any draw task active?
 		cmp/eq	#0,r0
 		bf	.wait_task
-		mov.l   #$FFFFFE80,r2			; Watchdog stop
+		mov.l   #$FFFFFE80,r1			; Stop watchdog
 		mov.w   #$A518,r0
-		mov.w   r0,@r2
+		mov.w   r0,@r1
 		bsr	MarsVideo_FrameSwap		; Swap frame (waits VBlank)
 		nop
 
@@ -713,39 +715,37 @@ SH2_S_Entry:
 ; ----------------------------------------------------------------
 
 SH2_S_HotStart:
-		mov.l	#CS3|$3F000,r15		; Reset stack
-		mov.l	#RAM_Mars_Global,r14	; Reset gbr
+		mov.l	#CS3|$3F000,r15			; Reset stack
+		mov.l	#RAM_Mars_Global,r14		; Reset gbr
 		ldc	r14,gbr
-		mov.l	#$F0,r0			; Interrupts OFF
+		mov.l	#$F0,r0				; Interrupts OFF
 		ldc	r0,sr
-		mov.l	#_CCR,r1		; Set this cache mode
+		mov.l	#_CCR,r1			; Set this cache mode
 		mov	#0,r0
 		mov.w	r0,@r1
 		mov	#$19,r0
 		mov.w	r0,@r1
 		mov	#_sysreg,r1
-		mov.l	#VIRQ_ON|CMDIRQ_ON,r0	; IRQ enable bits
-    		mov.b	r0,@(intmask,r1)	; clear IRQ ACK regs
+		mov.l	#VIRQ_ON||PWMIRQ_ON|CMDIRQ_ON,r0	; IRQ enable bits
+    		mov.b	r0,@(intmask,r1)			; clear IRQ ACK regs
 
-	; Generate division tables
-		bsr	MarsMdl_Init
-		nop
-		
+
 ; ------------------------------------------------
 ; REMINDER: In blender, each block is
-; $20000 in size
+; 1 meter: $20000 pixels
 
+		bsr	MarsMdl_Init
+		nop
 		mov	#$20,r0			; Interrupts ON
 		ldc	r0,sr
 		mov	#RAM_Mars_Objects,r1
 		mov	#TEST_MODEL,r0
 		mov	r0,@r1
-
 ; 		mov	#RAM_Mars_Objects+sizeof_mdlobj,r1
 ; 		mov	#TEST_MODEL,r0
 ; 		mov	r0,@r1
-; 		mov	#-$80000,r0
-; 		mov	r0,@(mdl_z_pos,r1)
+		mov	#-$10000,r0
+		mov	r0,@(mdl_z_pos,r1)
 		
 ; --------------------------------------------------------
 ; Loop
@@ -795,7 +795,15 @@ slave_loop:
 		mov	#0,r0
 		mov.w	r0,@r1
 		mov.b	r0,@r14
+		mov.w	@(marsGbl_MdlDrawReq,gbr),r0
+		cmp/eq	#1,r0
+		bt	slave_loop
+ 		mov	#1,r0
+ 		mov.w	r0,@(marsGbl_MdlDrawReq,gbr)
 .no_requests:
+ 		mov.w	@(marsGbl_MdlDrawReq,gbr),r0
+ 		cmp/eq	#0,r0
+ 		bt	slave_loop
 
 ; --------------------------------------------------------
 ; Start building polygons from models
@@ -832,6 +840,37 @@ slave_loop:
 		mov	@(mdl_data,r14),r0
 		cmp/eq	#0,r0
 		bt	.invlid
+		
+; 	; WIP offbounds check for current object
+; 		mov	#RAM_Mars_ObjCamera,r0
+; 		mov	@(mdl_x_pos,r14),r1
+; 		mov	@(mdl_y_pos,r14),r2
+; 		mov	@(mdl_z_pos,r14),r3
+; 		mov	@(cam_x_pos,r0),r4
+; 		mov	@(cam_y_pos,r0),r5
+; 		mov	@(cam_z_pos,r0),r6
+; 		add	r4,r1
+; 		add	r5,r2	
+; 		add	r6,r3
+; 		mov	#-$20000*3,r4
+; 		mov	#-$20000*2,r5
+; ; 		mov	#-$20000*4,r6
+; 		neg	r4,r0
+; 		cmp/gt	r4,r1			; X limits
+; 		bf	.invlid
+; 		cmp/ge	r0,r1
+; 		bt	.invlid
+; 		neg	r5,r0	
+; 		cmp/gt	r5,r2			; Y limits
+; 		bf	.invlid
+; 		cmp/ge	r0,r2
+; 		bt	.invlid
+; 		neg	r6,r0	
+; 		cmp/gt	r6,r3			; Z limits
+; 		bf	.invlid
+; 		cmp/ge	r0,r3
+; 		bt	.invlid
+		
 		mov	r12,@-r15
 		bsr	MarsMdl_MakeModel
 		nop
@@ -849,25 +888,31 @@ slave_loop:
 		bf	.page_2
 		mov 	#RAM_Mars_PlgnList_0,r14
 		mov 	#RAM_Mars_PlgnNum_0,r13
-		bsr	slv_check_z
+		bsr	slv_sort_z
 		nop
 		bra	.swap_now
 		nop
 .page_2:
 		mov 	#RAM_Mars_PlgnList_1,r14
 		mov 	#RAM_Mars_PlgnNum_1,r13
-		bsr	slv_check_z
+		bsr	slv_sort_z
 		nop
-
 .swap_now:
-		mov.w	@r13,r0
+		mov.w	@r13,r0				; DEBUG: report number of faces
 		mov	#_sysreg+comm0,r1
 		mov.w	r0,@r1
-		bsr	Slv_WaitMaster
-		nop
+		
+	; Wait states
+		mov.l	#_sysreg+comm14,r1		; Master CPU still drawing pieces?
+.wait_master:
+		mov.b	@r1,r0
+		cmp/eq	#1,r0
+		bt	slave_loop
 		mov.w	@(marsGbl_PolyBuffNum,gbr),r0
  		xor	#1,r0
  		mov.w	r0,@(marsGbl_PolyBuffNum,gbr)
+ 		mov	#0,r0
+ 		mov.w	r0,@(marsGbl_MdlDrawReq,gbr)
 		bsr	Slv_SetMasterTask
 		mov	#1,r2
 		bra	slave_loop
@@ -878,20 +923,22 @@ slave_loop:
 ; ----------------------------------------
 ; Bubble sorting
 	
-slv_check_z:
+slv_sort_z:
 		sts	pr,@-r15
-		mov	#0,r0
+		mov	#0,r0					; Reset current PlgnNum
 		mov.w	r0,@r13
-		mov	#RAM_Mars_Plgn_ZList,r12
-		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
+		mov	#RAM_Mars_Plgn_ZList,r12	
+		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0		; Check number of faces to sort
 		cmp/eq	#0,r0
 		bt	.z_end
 		mov	#2,r11
 		cmp/gt	r11,r0
 		bt	.z_normal
 		mov	r0,r11
-		bra	.set_now
+		bra	.z_fewfaces
 		nop
+		
+; if faces > 2
 .z_normal:
 		mov	#MAX_FACES,r11
 		cmp/ge	r11,r0
@@ -928,7 +975,7 @@ slv_check_z:
 
 ; ----------------------------------------
 
-.set_now:
+.z_fewfaces:
 		mov	r12,r10
 		mov	r11,r9
 		mov	#0,r8
@@ -958,26 +1005,6 @@ slv_check_z:
 Slv_SetMasterTask:
 		mov.l	#_sysreg+comm14,r1
 		mov.b	r2,@r1
-		rts
-		nop
-		align 4
-
-; ----------------------------------------
-
-Slv_WaitMaster:
-		mov.l	#_sysreg+comm14,r1
-.wait_master:
-		mov.b	@r1,r0
-		cmp/eq	#0,r0
-		bt	.master_free
-; 		mov	#$11C,r0
-; .wait_delay:
-; 		dt	r0
-; 		bf	.wait_delay
-		nop
-		bra	.wait_master
-		nop
-.master_free:
 		rts
 		nop
 		align 4
@@ -1023,16 +1050,6 @@ sizeof_marsram	ds.l 0
 		
 ; ====================================================================
 ; ----------------------------------------------------------------
-; MARS System RAM
-; ----------------------------------------------------------------
-
-			struct MarsRam_System
-RAM_Mars_Global		ds.w sizeof_MarsGbl		; Note: keep it as a word
-sizeof_marssys		ds.l 0
-			finish
-		
-; ====================================================================
-; ----------------------------------------------------------------
 ; MARS Sound RAM
 ; ----------------------------------------------------------------
 
@@ -1060,4 +1077,14 @@ RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
 RAM_Mars_VdpDrwList	ds.b sizeof_plypz*MAX_SVDP_PZ
 RAM_Mars_VdpDrwList_e	ds.l 0
 sizeof_marsvid		ds.l 0
+			finish
+			
+; ====================================================================
+; ----------------------------------------------------------------
+; MARS System RAM
+; ----------------------------------------------------------------
+
+			struct MarsRam_System
+RAM_Mars_Global		ds.w sizeof_MarsGbl		; Note: keep it as a word
+sizeof_marssys		ds.l 0
 			finish

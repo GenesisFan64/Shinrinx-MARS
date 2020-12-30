@@ -23,7 +23,7 @@ sizeof_mdglbl	ds.l 0
 ; Variables
 ; ------------------------------------------------------
 
-var_MoveSpd	equ	$1000
+var_MoveSpd	equ	$800
 
 ; ====================================================================
 ; ------------------------------------------------------
@@ -40,9 +40,9 @@ var_MoveSpd	equ	$1000
 ; RAM for current screen mode
 ; ------------------------------------------------------
 
-		struct RAM_ModeBuff
-ScrnTest_Info	ds.w 1
-		finish
+; 		struct RAM_ModeBuff
+; ScrnTest_Info	ds.w 1
+; 		finish
 
 ; ====================================================================
 ; --------------------------------------------------------
@@ -91,6 +91,8 @@ MD_Main:
 		move.w	#1,d2
 		bsr	Video_LoadArt
 		
+		move.w	#1,(RAM_MdMdlsUpd).l
+
 ; ====================================================================
 ; ------------------------------------------------------
 ; Loop
@@ -155,7 +157,7 @@ MD_Main:
 		add.l	d6,d0
 		move.l	d0,cam_x_rot(a0)
 		move.w	d6,d0
-		add.w	#var_MoveSpd>>6,(RAM_BgCamera).l
+		add.w	#var_MoveSpd>>5,(RAM_BgCamera).l
 .no_a:
 		btst	#bitJoyB,d7
 		beq.s	.no_b
@@ -164,7 +166,7 @@ MD_Main:
 		move.l	cam_x_rot(a0),d0
 		add.l	d5,d0
 		move.l	d0,cam_x_rot(a0)
-		sub.w	#var_MoveSpd>>6,(RAM_BgCamera).l
+		sub.w	#var_MoveSpd>>5,(RAM_BgCamera).l
 .no_b:
 	; Reset all
 		btst	#bitJoyC,d7
@@ -200,10 +202,10 @@ MD_Main:
 		add.l	d6,d0
 		move.l	d0,cam_y_pos(a0)
 .no_y:
-
-		tst.w	(RAM_MdMdlsUpd).l
-		beq	.loop
-		clr.w	(RAM_MdMdlsUpd).l
+; 
+; 		tst.w	(RAM_MdMdlsUpd).l
+; 		beq	.loop
+; 		clr.w	(RAM_MdMdlsUpd).l
 		bsr	MdMars_TrsnfrMdls
 		bra	.loop
 		

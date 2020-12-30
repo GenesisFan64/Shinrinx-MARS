@@ -24,7 +24,7 @@
 ; Stored on RAM to prevent BUS fighting (Kolibri-style)
 ; 
 ; or if needed: remove the RAM-copying part from head.asm and
-; change the phase from $FF0000 to $880000
+; change the phase from $FF0000 to $880000 (Size: 512kb)
 ; ----------------------------------------------------------------
 
 Engine_Code:
@@ -86,4 +86,5 @@ MARS_RAMDATA_E:
 ; ---------------------------------------------
 		
 ROM_END:
-		rompad (ROM_END&$FF0000)+$40000
+; 		rompad (ROM_END&$FF0000)+$40000
+		align $8000

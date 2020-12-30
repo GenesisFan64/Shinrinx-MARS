@@ -15,10 +15,10 @@
 ; Settings
 ; ----------------------------------------
 
-MAX_FACES		equ	768
-MAX_SVDP_PZ		equ	512		; The pieces list gets is recycled, increase the value if you see visual glitches
+MAX_FACES		equ	1024
+MAX_SVDP_PZ		equ	384	; This list loops, increase the value if needed
 MAX_MODELS		equ	16
-MAX_ZDIST		equ	-$600		; MAX Z view distance
+MAX_ZDIST		equ	-$300	; MAX Z view distance
 
 ; ----------------------------------------
 ; Variables
@@ -221,7 +221,7 @@ MarsVideo_ClearFrame:
 ; ------------------------------------
 
 MarsVideo_FrameSwap:
-		mov.l	#$20004100,r2
+		mov.l	#_vdpreg,r2
 .wait_fb:
 		mov.w	@($A,r2),r0
 		tst	#2,r0
@@ -282,10 +282,6 @@ MarsVideo_LoadPal:
 
 MarsMdl_Init:
 		sts	pr,@-r15
-; 		mov	#RAM_Mars_DivTable,r2
-; 		bsr	Mars_MkDivTable
-; 		mov	#1,r1
-
 		mov	#0,r0
 		mov	#RAM_Mars_Objects,r1
 		mov	#sizeof_mdlobj/4,r2
@@ -594,27 +590,34 @@ mdlrd_setpersp:
    		mov	r8,r3
 		mov	@(mdl_x_pos,r14),r0
 		shlr8	r0
+		shlr	r0
 		exts	r0,r0
 		add 	r0,r2
 		mov	@(mdl_y_pos,r14),r0
 		shlr8	r0
+		shlr	r0
 		exts	r0,r0
 		add 	r0,r3
 		mov	@(mdl_z_pos,r14),r0
 		shlr8	r0
+		shlr	r0
 		exts	r0,r0
 		add 	r0,r4
+
 		mov 	#RAM_Mars_ObjCamera,r11
 		mov	@(cam_x_pos,r11),r0
 		shlr8	r0
+		shlr	r0
 		exts	r0,r0
 		sub 	r0,r2
 		mov	@(cam_y_pos,r11),r0
 		shlr8	r0
+		shlr	r0
 		exts	r0,r0
 		sub 	r0,r3
 		mov	@(cam_z_pos,r11),r0
 		shlr8	r0
+		shlr	r0
 		exts	r0,r0
 		add 	r0,r4
 		mov	r2,r5
@@ -636,7 +639,7 @@ mdlrd_setpersp:
 
 	; TODO: this is the best I can get with this
 		mov 	#_JR,r8
-		mov	#256<<8,r7
+		mov	#320<<8,r7
 		neg	r4,r0
 		cmp/pl	r0
 		bt	.inside
@@ -807,29 +810,29 @@ MarsRndr_SetWatchdog:
 		stc	sr,r0
 		or	#$F0,r0
 		ldc	r0,sr
-		mov.l	#$20004100,r1
-.wait_fb:
-		mov.w	@($A,r1), r0
-		tst	#2,r0
-		bf	.wait_fb
-		mov.w	#$A1,r0				; Start at 161
-		mov.w	r0,@(6,r1)
-		mov	#0,r0
-		mov.w	r0,@(marsGbl_VdpListCnt,gbr)
-		mov	#Cach_ClrLines,r1
+		mov	#0,r0				; Reset polygon pieces counter
+		mov.w	r0,@(marsGbl_PzListCntr,gbr)
+		mov	#Cach_ClrLines,r1		; Line counter for the frame clear routine
 		mov	#$E0,r0
 		mov.w	r0,@r1
-		mov	#8,r0
+		mov	#8,r0				; Set drawing task to $08 (Clear framebuffer)
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
-		mov	#RAM_Mars_VdpDrwList,r0
-		mov	r0,@(marsGbl_VdpList_R,gbr)
-		mov	r0,@(marsGbl_VdpList_W,gbr)
-		mov.l	#$FFFFFE80,r1
-		mov.w	#$5AFF,r0
+		mov	#RAM_Mars_VdpDrwList,r0		; Prepare piece drawing list on both READ and WRITE pointers
+		mov	r0,@(marsGbl_PlyPzList_R,gbr)
+		mov	r0,@(marsGbl_PlyPzList_W,gbr)
+		mov	#_vdpreg,r1
+.wait_fb:
+		mov.w	@($A,r1), r0			; Framebuffer available?
+		tst	#2,r0
+		bf	.wait_fb
+		mov.w	#$A1,r0				; Pre-start SVDP fill line at 161
+		mov.w	r0,@(6,r1)
+		mov	#$FFFFFE80,r1
+		mov.w	#$5AFF,r0			; Interrupt priority(?)
 		mov.w	r0,@r1
-		mov.w	#$A538,r0
+		mov.w	#$A538,r0			; Enable watchdog (piece drawing routines)
 		mov.w	r0,@r1
-		ldc.l	@r15+,sr
+		ldc	@r15+,sr
 		rts
 		nop
 		align 4
@@ -863,48 +866,46 @@ Cach_ClrLines	ds.w 1
 		align 4
 ; Cache_OnInterrupt:
 m_irq_custom:
-		mov.l   r2,@-r15
-		mov.l   #$FFFFFE10,r1
-		mov.b   @(7,r1), r0
-		xor     #2,r0
-		mov.b   r0,@(7,r1)
-		mov.w	@(marsGbl_DrwTask,gbr),r0
+		mov	#$FFFFFE10,r1
+		mov.b	@(7,r1), r0
+		xor	#2,r0
+		mov.b	r0,@(7,r1)
+		mov.w	@(marsGbl_DrwTask,gbr),r0	; Framebuffer clear request?
 		cmp/eq	#8,r0
 		bf	maindrw_tasks
 
 ; --------------------------------
-; TASK $01 - Clear Framebuffer
+; TASK $08 - Clear Framebuffer
 ; --------------------------------
 
 .task_01:
-		mov.l   #$20004100,r2
+		mov.l   #_vdpreg,r1
 .wait_fb:
-		mov.w   @($A,r2), r0
+		mov.w   @($A,r1), r0			; Framebuffer free?
 		tst     #2,r0
 		bf      .wait_fb
-		mov.w   @(6,r2),r0
-		add     #$5F,r0		; Preincrement
-		mov.w   r0,@(6,r2)
-		mov.w   #$A0,r0
-		mov.w   r0,@(4,r2)
-		mov     #0,r0
-		mov.w   r0,@(8,r2)
-		mov.l   #$FFFFFE80,r2
-		mov.w   #$A518,r0	; OFF
-		mov.w   r0,@r2
-		or      #$20,r0		; ON
-		mov.w   r0,@r2
+		mov.w   @(6,r1),r0			; SVDP-fill address
+		add     #$5F,r0				; Preincrement
+		mov.w   r0,@(6,r1)
+		mov.w   #320/2,r0			; SVDP-fill size (320 pixels)
+		mov.w   r0,@(4,r1)
+		mov     #0,r0				; SVDP-fill pixel data and start filling
+		mov.w   r0,@(8,r1)			; After finishing, SVDP-address got updated
+		mov.l   #$FFFFFE80,r1			; Interrupt delay(?)
+		mov.w   #$A518,r0			; OFF
+		mov.w   r0,@r1
+		or      #$20,r0				; ON
+		mov.w   r0,@r1
 		mov.w   #$5A10,r0
-		mov.w   r0,@r2
-		mov	#Cach_ClrLines,r1
+		mov.w   r0,@r1
+		mov	#Cach_ClrLines,r1		; Decrement number of lines to progress
 		mov.w	@r1,r0
 		dt	r0
 		bf/s	.on_clr
 		mov.w	r0,@r1
-		mov	#1,r0
+		mov	#1,r0				; If done: set task $01
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 .on_clr:
-		mov.l   @r15+,r2
 		rts
 		nop
 		align 4
@@ -928,52 +929,16 @@ maindrw_tasks:
 		dc.l drwtsk_01		; 
 		dc.l drwtsk_01		; Main drawing routine
 		dc.l drwtsk_02		; Resume from solid color
-		
-; --------------------------------
-; Task $00
-; --------------------------------
-
-drwtsk_00:
-		mov	#0,r0
-		mov.w	r0,@(marsGbl_DrwTask,gbr)
-		bra	drwtask_exit
-		mov	#$7F,r2
-
-drwtask_return:
-		lds	@r15+,mach
-		lds	@r15+,macl
-		mov	@r15+,r14
-		mov	@r15+,r13
-		mov	@r15+,r12
-		mov	@r15+,r11
-		mov	@r15+,r10
-		mov	@r15+,r9
-		mov	@r15+,r8
-		mov	@r15+,r7
-		mov	@r15+,r6
-		mov	@r15+,r5
-		mov	@r15+,r4
-		mov	@r15+,r3
-drwtask_exit:
-		mov.l   #$FFFFFE80,r1
-		mov.w   #$A518,r0
-		mov.w   r0,@r1
-		or      #$20,r0
-		mov.w   r0,@r1
-		mov.w   #$5A00,r0
-		or	r2,r0
-		mov.w   r0,@r1
-		mov	@r15+,r2
-		rts
-		nop
-		align 4
-		ltorg
 
 ; --------------------------------
 ; Task $02
 ; --------------------------------
 
+; TODO: currently it only works
+; for solid_color
+
 drwtsk_02:
+		mov	r2,@-r15
 		mov	r3,@-r15
 		mov	r4,@-r15
 		mov	r5,@-r15
@@ -1009,7 +974,8 @@ drwtsk_02:
 ; --------------------------------
 
 drwtsk_01:
-		mov.w	@(marsGbl_VdpListCnt,gbr),r0
+		mov	r2,@-r15
+		mov.w	@(marsGbl_PzListCntr,gbr),r0
 		cmp/eq	#0,r0
 		bf	.has_pz
 		mov	#0,r0
@@ -1032,7 +998,7 @@ drwtsk_01:
 		sts	macl,@-r15
 		sts	mach,@-r15
 drwtsk1_newpz:
-		mov	@(marsGbl_VdpList_R,gbr),r0
+		mov	@(marsGbl_PlyPzList_R,gbr),r0
 		mov	r0,r14
 		mov	@(plypz_ypos,r14),r9
 		mov	r9,r10
@@ -1074,7 +1040,8 @@ drwtsk1_vld_y:
 		nop
 
 ; ------------------------------------
-; Texture
+; Texture mode
+; 
 ; r1  - XL
 ; r2  - XL DX
 ; r3  - XR
@@ -1084,25 +1051,29 @@ drwtsk1_vld_y:
 ; r7  - SRC YL
 ; r8  - SRC YR
 ; r9  - Y current
-; r10  - Y end
+; r10  - Number of lines
 ; ------------------------------------
 
+.tex_gonxtpz:
+		bra	drwsld_nextpz
+		nop
 .texture_line:
-		mov.w	@(marsGbl_DivReq_M,gbr),r0
-		cmp/eq	#1,r0
-		bt	drwtask_return
-
-		mov	@(plypz_src_xl,r14),r5
-		mov	@(plypz_src_xr,r14),r6
-		mov	@(plypz_src_yl,r14),r7
-		mov	@(plypz_src_yr,r14),r8
+		mov.w	@(marsGbl_DivReq_M,gbr),r0	; Waste interrupt if MarsVideo_MakePolygon is in the
+		cmp/eq	#1,r0				; middle of division
+		bf	.texvalid
+		bra	drwtask_return
+		nop
+.texvalid:
+		mov	@(plypz_src_xl,r14),r5		; Texture X left
+		mov	@(plypz_src_xr,r14),r6		; Texture X right
+		mov	@(plypz_src_yl,r14),r7		; Texture Y up
+		mov	@(plypz_src_yr,r14),r8		; Texture Y down
 .tex_next_line:
-		cmp/pz	r9
+		cmp/pz	r9				; Y Line below 0?
 		bf	.tex_skip_line
-		mov	#SCREEN_HEIGHT,r0
+		mov	#SCREEN_HEIGHT,r0		; Y Line after 224?
 		cmp/ge	r0,r9
-		bt	.tex_skip_line
-
+		bt	.tex_gonxtpz
 		mov	r2,@-r15
 		mov	r4,@-r15
 		mov	r5,@-r15
@@ -1110,17 +1081,17 @@ drwtsk1_vld_y:
 		mov	r7,@-r15
 		mov	r8,@-r15
 		mov	r10,@-r15
-		mov	r1,r11
-		mov	r3,r12
+		mov	r1,r11			; r11 - X left copy
+		mov	r3,r12			; r12 - X right copy
 		shlr16	r11
 		shlr16	r12
 		exts	r11,r11
 		exts	r12,r12
-		mov	r12,r0
+		mov	r12,r0			; r0: X Right - X Left
 		sub	r11,r0
-		cmp/pl	r0
+		cmp/pl	r0			; Is line backwards?
 		bt	.txrevers
-		mov	r12,r0
+		mov	r12,r0			; Reverse XL and XR
 		mov	r11,r12
 		mov	r0,r11
 		mov	r5,r0
@@ -1130,22 +1101,20 @@ drwtsk1_vld_y:
 		mov	r8,r7
 		mov	r0,r8
 .txrevers:
-		cmp/eq	r11,r12
+		cmp/eq	r11,r12			; Same X position?
 		bt	.tex_upd_line
-		mov	#SCREEN_WIDTH,r0
+		mov	#SCREEN_WIDTH,r0	; X right < 0?
 		cmp/pl	r12
 		bf	.tex_upd_line
-		cmp/gt	r0,r11
+		cmp/gt	r0,r11			; X left > 320?
 		bt	.tex_upd_line
 		mov	r12,r2
 		mov 	r11,r0
 		sub 	r0,r2
 		sub	r5,r6
 		sub	r7,r8
-		
-	; Make sure the DivReq flag is enabled or it will
-	; conflict with MarsVideo_MakePolygon
-		mov	#_JR,r0			; Hardware DIV
+
+		mov	#_JR,r0
 		mov	r2,@r0
 		mov	r6,@(4,r0)
 		nop
@@ -1153,49 +1122,45 @@ drwtsk1_vld_y:
 		mov	r2,@r0
 		mov	r8,@(4,r0)
 		nop
-		mov	@(4,r0),r8		; Hardware DIV
-; 		shll2	r2			; Hookup-table DIV (old)
-; 		mov	#RAM_Mars_DivTable,r0
-; 		mov	@(r0,r2),r0
-; 		dmuls	r6,r0
-; 		sts	macl,r6
-; 		sts	mach,r0
-; 		xtrct   r0,r6
-; 		mov	#RAM_Mars_DivTable,r0
-; 		mov	@(r0,r2),r0
-; 		dmuls	r8,r0
-; 		sts	macl,r8
-; 		sts	mach,r0
-; 		xtrct   r0,r8			; Hookup-table DIV
+		mov	@(4,r0),r8
 
-		mov	#SCREEN_WIDTH,r0
+	; Limit X destionation points
+	; and correct the texture X positions
+		mov	#SCREEN_WIDTH,r0		; XR point > 320?
 		cmp/gt	r0,r12
 		bf	.tr_fix
-		mov	r0,r12
+		mov	r0,r12				; Force XR to 320
 .tr_fix:
-		cmp/pl	r11
+		cmp/pl	r11				; XL point < 0?
 		bt	.tl_fix
-		neg	r11,r2
+		neg	r11,r2				; Fix texture positions
 		dmuls	r6,r2
 		sts	macl,r0
 		add	r0,r5
 		dmuls	r8,r2
 		sts	macl,r0
 		add	r0,r7
-		xor	r11,r11
+		xor	r11,r11				; And reset XL to 0
 .tl_fix:
-		mov 	r9,r0
-		shll8	r0
-		shll	r0
 		sub 	r11,r12
 		cmp/pl	r12
 		bf	.tex_upd_line
+		
+; 		mov	#$10,r0
+; 		cmp/ge	r0,r12
+; 		bf	.testlwrit
+; 		mov	r0,r12
+; .testlwrit:
+
+		mov 	r9,r0				; Y position * $200
+		shll8	r0
+		shll	r0
 		mov 	#_overwrite+$200,r10
 		add 	r0,r10
 		add 	r11,r10
 		mov	@(plypz_mtrl,r14),r11		; texture data
 		mov	@(plypz_mtrlopt,r14),r4		; texture width
-.texloop:
+.tex_xloop:
 		mov	r7,r2
 		shlr16	r2
 		mulu	r2,r4
@@ -1208,7 +1173,7 @@ drwtsk1_vld_y:
 		add 	#1,r10
 		add	r6,r5				; Update X
 		dt	r12
-		bf/s	.texloop
+		bf/s	.tex_xloop
 		add	r8,r7				; Update Y
 .tex_upd_line:
 		mov	@r15+,r10
@@ -1232,6 +1197,7 @@ drwtsk1_vld_y:
 		dt	r10
 		bf/s	.tex_next_line
 		add	#1,r9
+
 		bra	drwsld_nextpz
 		nop
 
@@ -1248,6 +1214,10 @@ drwtsk1_vld_y:
 		add	r5,r6
 		mov	#_vdpreg,r13
 drwsld_nxtline:
+		mov	r9,r0
+		add	r10,r0
+		cmp/pl	r0
+		bf	drwsld_nextpz
 		cmp/pz	r9
 		bf	drwsld_updline
 		mov	#SCREEN_HEIGHT,r0
@@ -1264,9 +1234,12 @@ drwsld_nxtline:
 		sub	r11,r0
 		cmp/pl	r0
 		bt	.revers
+; 		bra	drwsld_updline
+; 		nop
 		mov	r12,r0
 		mov	r11,r12
 		mov	r0,r11
+
 .revers:
 		mov	#SCREEN_WIDTH,r0
 		cmp/pl	r12
@@ -1310,6 +1283,7 @@ drwsld_nxtline:
 		mov	#$28,r0		; line too large
 		cmp/ge	r0,r12
 		bf	drwsld_updline
+
 		mov	#2,r0
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 		mov	#Cach_LnDrw_S,r0
@@ -1326,32 +1300,29 @@ drwsld_nxtline:
 		bra	drwtask_return
 		mov	#0,r2
 
-; 		bra	drwsld_updline
-; 		nop
-
 ; ------------------------------------
 ; if lower than 6 pixels
 
-drwsld_lowpixls:
-		cmp/pl	r0
-		bf	drwsld_updline
-		mov	r0,r12
-		mov	r9,r0
-		add	#1,r0
-		shll8	r0
-		shll	r0
-		add 	r11,r0
-		mov	#_overwrite+$200,r5
-		add	r0,r5
-.wait_fb	mov.w	@(10,r13),r0
-		tst	#2,r0
-		bf	.wait_fb
-		mov	#-1,r0
-.perpixl:
-		mov.b	r0,@r5
-		dt	r12
-		bf/s	.perpixl
-		add	#1,r5
+; drwsld_lowpixls:
+; 		cmp/pl	r0
+; 		bf	drwsld_updline
+; 		mov	r0,r12
+; 		mov	r9,r0
+; 		add	#1,r0
+; 		shll8	r0
+; 		shll	r0
+; 		add 	r11,r0
+; 		mov	#_overwrite+$200,r5
+; 		add	r0,r5
+; .wait_fb	mov.w	@(10,r13),r0
+; 		tst	#2,r0
+; 		bf	.wait_fb
+; 		mov	#-1,r0
+; .perpixl:
+; 		mov.b	r0,@r5
+; 		dt	r12
+; 		bf/s	.perpixl
+; 		add	#1,r5
 		
 ; ------------------------------------
 
@@ -1362,26 +1333,65 @@ drwsld_updline:
 		bf/s	drwsld_nxtline
 		add	#1,r9
 drwsld_nextpz:
-		mov.w	@(marsGbl_VdpListCnt,gbr),r0		; -1 piece
+		mov.w	@(marsGbl_PzListCntr,gbr),r0		; -1 piece
 		add	#-1,r0
-		mov.w	r0,@(marsGbl_VdpListCnt,gbr)
+		mov.w	r0,@(marsGbl_PzListCntr,gbr)
 		add	#sizeof_plypz,r14
 		mov	r14,r0
 		mov	#RAM_Mars_VdpDrwList_e,r14
-		cmp/gt	r14,r0
+		cmp/ge	r14,r0
 		bf	.reset_rd
 		mov	#RAM_Mars_VdpDrwList,r0
 .reset_rd:
-		mov	r0,@(marsGbl_VdpList_R,gbr)
-; 		mov.w	@(marsGbl_VdpListCnt,gbr),r0
+		mov	r0,@(marsGbl_PlyPzList_R,gbr)
+; 		mov.w	@(marsGbl_PzListCntr,gbr),r0
 ; 		cmp/eq	#0,r0
 ; 		bt/s	.finish_it
 ; 		add	#-1,r0
 ; 		bra	drwtsk1_newpz
-; 		mov.w	r0,@(marsGbl_VdpListCnt,gbr)
+; 		mov.w	r0,@(marsGbl_PzListCntr,gbr)
 .finish_it:
 		bra	drwtask_return
 		mov	#$10,r2
+
+; --------------------------------
+; Task $00
+; --------------------------------
+
+drwtsk_00:
+		mov	r2,@-r15
+		mov	#0,r0
+		mov.w	r0,@(marsGbl_DrwTask,gbr)
+		bra	drwtask_exit
+		mov	#$7F,r2
+
+drwtask_return:
+		lds	@r15+,mach
+		lds	@r15+,macl
+		mov	@r15+,r14
+		mov	@r15+,r13
+		mov	@r15+,r12
+		mov	@r15+,r11
+		mov	@r15+,r10
+		mov	@r15+,r9
+		mov	@r15+,r8
+		mov	@r15+,r7
+		mov	@r15+,r6
+		mov	@r15+,r5
+		mov	@r15+,r4
+		mov	@r15+,r3
+drwtask_exit:
+		mov.l   #$FFFFFE80,r1
+		mov.w   #$A518,r0
+		mov.w   r0,@r1
+		or      #$20,r0
+		mov.w   r0,@r1
+		mov.w   #$5A00,r0
+		or	r2,r0
+		mov.w   r0,@r1
+		mov	@r15+,r2
+		rts
+		nop
 		align 4
 		ltorg
 
@@ -1543,16 +1553,9 @@ MarsVideo_MakePolygon:
 		dt	r9
 		bf/s	.find_top
 		add	#8,r8
-		cmp/eq	r11,r10
-		bt	.exit
 
-		cmp/pl	r11
-		bf	.exit
-		mov	#SCREEN_HEIGHT+1,r0
-		cmp/gt	r0,r10
-		bt	.exit
-
-	; r2 - Left Point
+	; r1 - Main pointer
+	; r2 - Left pointer
 	; r3 - Right pointer
 	; r4 - Left X
 	; r5 - Left DX
@@ -1560,10 +1563,17 @@ MarsVideo_MakePolygon:
 	; r7 - Right DX
 	; r8 - Left width
 	; r9 - Right width
-	; r10 - TOP Y
-	; r11 - BOTTOM Y
+	; r10 - Top Y (gets updated after next_pz)
+	; r11 - Bottom Y
 	; r12 - First base DST
 	; r13 - Last base DST
+		cmp/ge	r11,r10			; Already reached end?
+		bt	.exit
+		cmp/pl	r11			; Bottom < 0?
+		bf	.exit
+		mov	#SCREEN_HEIGHT,r0	; Top > 224?
+		cmp/ge	r0,r10
+		bt	.exit
 		mov	r1,r2
 		mov	r1,r3
 		bsr	set_left
@@ -1571,27 +1581,27 @@ MarsVideo_MakePolygon:
 		bsr	set_right
 		nop
 .next_pz:
-		mov	#SCREEN_HEIGHT,r0
+		mov	#SCREEN_HEIGHT,r0		; Current Y > 224?
 		cmp/gt	r0,r10
 		bt	.exit
-		cmp/ge	r11,r10
+		cmp/ge	r11,r10				; Reached Y end?
 		bt	.exit
-		mov	@(marsGbl_VdpList_W,gbr),r0
+		mov	@(marsGbl_PlyPzList_W,gbr),r0	; r1 - Current piece to WRITE
 		mov	r0,r1
-		mov	#RAM_Mars_VdpDrwList_e,r0
-		cmp/gt	r0,r1
+		mov	#RAM_Mars_VdpDrwList_e,r0	; pointer reached end of the list?
+		cmp/ge	r0,r1
 		bf	.dontreset
-		mov	#RAM_Mars_VdpDrwList,r0
+		mov	#RAM_Mars_VdpDrwList,r0		; Return WRITE pointer to the top of the list
 		mov	r0,r1
-		mov	r0,@(marsGbl_VdpList_W,gbr)
+		mov	r0,@(marsGbl_PlyPzList_W,gbr)
 .dontreset:
-		stc	sr,@-r15			; Stop interrupts
+		stc	sr,@-r15			; Stop interrupts (including Watchdog)
 		stc	sr,r0
 		or	#$F0,r0
 		bsr	put_piece
 		ldc	r0,sr
 		ldc	@r15+,sr			; Restore interrupts
-		cmp/gt	r9,r8
+		cmp/gt	r9,r8				; Left width > Right width?
 		bf	.lefth2
 		bsr	set_right
 		nop
@@ -1855,10 +1865,16 @@ put_piece:
 
 		add	#sizeof_plypz,r1
 		mov	r1,r0
-		mov	r0,@(marsGbl_VdpList_W,gbr)
-		mov.w	@(marsGbl_VdpListCnt,gbr),r0
+		mov	#RAM_Mars_VdpDrwList_e,r8
+		cmp/ge	r8,r0
+		bf	.dontreset_pz
+		mov	#RAM_Mars_VdpDrwList,r0
+		mov	r0,r1
+.dontreset_pz:
+		mov	r0,@(marsGbl_PlyPzList_W,gbr)
+		mov.w	@(marsGbl_PzListCntr,gbr),r0
 		add	#1,r0
-		mov.w	r0,@(marsGbl_VdpListCnt,gbr)
+		mov.w	r0,@(marsGbl_PzListCntr,gbr)
 		
 .bad_piece:
 		mov	@r15+,r9

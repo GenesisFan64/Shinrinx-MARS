@@ -1,1 +1,1 @@
-	 dc.l Textr_doremi,480
+	 dc.l Textr_marscity,1015
