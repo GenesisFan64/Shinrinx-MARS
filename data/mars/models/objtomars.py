@@ -60,7 +60,7 @@ model_file    = open("mdl/"+projectname+".obj","r")
 material_file = open("mdl/"+projectname+".mtl","r")	# CHECK BELOW
 out_vertices  = open(projectname+"_vert.bin","wb")	# vertices (points)
 out_faces     = open(projectname+"_face.bin","wb")	# faces
-#out_vertex    = open(projectname+"_vrtx.bin","wb")	# texture vertex
+#out_vertex    = open(projectname+"_vrtx.bin","wb")	# texture vertex (MOVED)
 out_head      = open(projectname+"_head.bin","wb")	# header
 out_mtrl      = open(projectname+"_mtrl.asm","w")
 

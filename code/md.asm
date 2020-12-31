@@ -206,7 +206,7 @@ MD_Main:
 ; 		tst.w	(RAM_MdMdlsUpd).l
 ; 		beq	.loop
 ; 		clr.w	(RAM_MdMdlsUpd).l
-		bsr	MdMars_TrsnfrMdls
+; 		bsr	MdMars_TrsnfrMdls
 		bra	.loop
 		
 ; ====================================================================

@@ -15,10 +15,10 @@
 ; Settings
 ; ----------------------------------------
 
-MAX_FACES		equ	1024
-MAX_SVDP_PZ		equ	384	; This list loops, increase the value if needed
+MAX_FACES		equ	1024	; Maximum polygon faces (models,sprites) to store on buffer
+MAX_SVDP_PZ		equ	384	; This list loops on both read and write, increase the value if needed
 MAX_MODELS		equ	16
-MAX_ZDIST		equ	-$300	; MAX Z view distance
+MAX_ZDIST		equ	-$300	; Max drawing distance (-Z max)
 
 ; ----------------------------------------
 ; Variables
@@ -290,6 +290,44 @@ MarsMdl_Init:
 		dt	r2
 		bf/s	.clnup
 		add	#4,r1
+		lds	@r15+,pr
+		rts
+		nop
+		align 4
+		ltorg
+
+; ------------------------------------------------
+; MarsMdl_Animate
+; 
+; r14 - Current model address
+; r13 - Animation data pointer
+; ------------------------------------------------
+
+; location.x location.y location.z rotation_euler.x rotation_euler.y rotation_euler.z angle_y
+
+MarsMdl_Animate:
+		sts	pr,@-r15
+		
+; 		mov	@(mdl_frame
+; 		mov	#$18,r0
+; 		mulu	r0,r1
+; 		
+; 		mov	@r14+,r1
+; 		mov	@r14+,r2
+; 		mov	@r14+,r3	
+; 		mov	@r14+,r4
+; 		mov	@r14+,r5
+; 		mov	@r14+,r6
+; 		mov	r1,@(mdl_x_pos,r14)
+; 		mov	r1,@(mdl_x_pos,r14)
+; 		mov	r1,@(mdl_x_pos,r14)
+; 		mov	r1,@(mdl_x_pos,r14)
+; 		mov	r1,@(mdl_x_pos,r14)
+; 		mov	r1,@(mdl_x_pos,r14)
+; 		mov	r1,@(mdl_x_pos,r14)
+; 		mov	r1,@(mdl_x_pos,r14)
+; 		mov	r1,@(mdl_x_pos,r14)
+		
 		lds	@r15+,pr
 		rts
 		nop
@@ -590,17 +628,14 @@ mdlrd_setpersp:
    		mov	r8,r3
 		mov	@(mdl_x_pos,r14),r0
 		shlr8	r0
-		shlr	r0
 		exts	r0,r0
 		add 	r0,r2
 		mov	@(mdl_y_pos,r14),r0
 		shlr8	r0
-		shlr	r0
 		exts	r0,r0
 		add 	r0,r3
 		mov	@(mdl_z_pos,r14),r0
 		shlr8	r0
-		shlr	r0
 		exts	r0,r0
 		add 	r0,r4
 
@@ -622,16 +657,19 @@ mdlrd_setpersp:
 		add 	r0,r4
 		mov	r2,r5
   		mov 	@(cam_x_rot,r11),r0
+		shlr8	r0
   		bsr	mdlrd_rotate
 		mov	r4,r6
    		mov	r7,r2
   		mov	r8,r6
   		mov 	@(cam_y_rot,r11),r0
+		shlr8	r0
   		bsr	mdlrd_rotate
    		mov	r3,r5
    		mov	r8,r4
    		mov	r2,r5
    		mov 	@(cam_z_rot,r11),r0
+		shlr8	r0
   		bsr	mdlrd_rotate
    		mov	r7,r6
    		mov	r7,r2

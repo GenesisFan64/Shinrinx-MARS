@@ -538,7 +538,7 @@ SH2_M_HotStart:
 		mov	#256,r3
 		bsr	MarsVideo_LoadPal
 		mov	#0,r2
-		mov	#$1F<<10,r0
+		mov	#($1F<<10)|($E<<5),r0
 		mov	#RAM_Mars_Palette,r1
 		mov.w	r0,@r1
 		
@@ -744,66 +744,70 @@ SH2_S_HotStart:
 ; 		mov	#RAM_Mars_Objects+sizeof_mdlobj,r1
 ; 		mov	#TEST_MODEL,r0
 ; 		mov	r0,@r1
-		mov	#-$10000,r0
-		mov	r0,@(mdl_z_pos,r1)
+; 		mov	#-$10000,r0
+; 		mov	r0,@(mdl_z_pos,r1)
+		
+		mov	#CAMERA_ANIM,r0
+		mov	#RAM_Mars_ObjCamera+cam_animdata,r1
+		mov	r0,@r1
 		
 ; --------------------------------------------------------
 ; Loop
 ; --------------------------------------------------------
 
 slave_loop:
-		mov	#_sysreg+comm15,r14		; Any request from MD?
-		mov.b	@r14,r0
-		cmp/eq	#0,r0
-		bt	.no_requests
-
-; --------------------------------------------
-
-		mov	#_sysreg+comm8,r1
-		mov	#RAM_Mars_ObjCamera,r2
-.transfer_loop:
-		nop
-		nop
-		nop
-		nop
-		mov.w	@r1,r0
-		cmp/eq	#0,r0
-		bt	.transfer_loop
-		cmp/eq	#2,r0
-		bt	.trnsfr_done
-		mov.w	@(2,r1),r0
-		extu	r0,r0
-		shll16	r0
-		mov	r0,r3
-		mov.w	@(4,r1),r0
-		extu	r0,r0
-		or	r3,r0
-		mov.l	r0,@r2
-		nop
-		nop
-		nop
-		nop
-		mov	#0,r0
-		mov.w	r0,@r1
-		nop
-		nop
-		nop
-		nop
-		bra	.transfer_loop
-		add	#4,r2
-.trnsfr_done:
-		mov	#0,r0
-		mov.w	r0,@r1
-		mov.b	r0,@r14
-		mov.w	@(marsGbl_MdlDrawReq,gbr),r0
-		cmp/eq	#1,r0
-		bt	slave_loop
- 		mov	#1,r0
- 		mov.w	r0,@(marsGbl_MdlDrawReq,gbr)
-.no_requests:
- 		mov.w	@(marsGbl_MdlDrawReq,gbr),r0
- 		cmp/eq	#0,r0
- 		bt	slave_loop
+; 		mov	#_sysreg+comm15,r14		; Any request from MD?
+; 		mov.b	@r14,r0
+; 		cmp/eq	#0,r0
+; 		bt	.no_requests
+; 
+; ; --------------------------------------------
+; 
+; 		mov	#_sysreg+comm8,r1
+; 		mov	#RAM_Mars_ObjCamera,r2
+; .transfer_loop:
+; 		nop
+; 		nop
+; 		nop
+; 		nop
+; 		mov.w	@r1,r0
+; 		cmp/eq	#0,r0
+; 		bt	.transfer_loop
+; 		cmp/eq	#2,r0
+; 		bt	.trnsfr_done
+; 		mov.w	@(2,r1),r0
+; 		extu	r0,r0
+; 		shll16	r0
+; 		mov	r0,r3
+; 		mov.w	@(4,r1),r0
+; 		extu	r0,r0
+; 		or	r3,r0
+; 		mov.l	r0,@r2
+; 		nop
+; 		nop
+; 		nop
+; 		nop
+; 		mov	#0,r0
+; 		mov.w	r0,@r1
+; 		nop
+; 		nop
+; 		nop
+; 		nop
+; 		bra	.transfer_loop
+; 		add	#4,r2
+; .trnsfr_done:
+; 		mov	#0,r0
+; 		mov.w	r0,@r1
+; 		mov.b	r0,@r14
+; 		mov.w	@(marsGbl_MdlDrawReq,gbr),r0
+; 		cmp/eq	#1,r0
+; 		bt	slave_loop
+;  		mov	#1,r0
+;  		mov.w	r0,@(marsGbl_MdlDrawReq,gbr)
+; .no_requests:
+;  		mov.w	@(marsGbl_MdlDrawReq,gbr),r0
+;  		cmp/eq	#0,r0
+;  		bt	slave_loop
 
 ; --------------------------------------------------------
 ; Start building polygons from models
@@ -833,9 +837,58 @@ slave_loop:
 		mov	r0,@(marsGbl_CurrFacePos,gbr)
 		mov	#RAM_Mars_Plgn_ZList,r0
 		mov	r0,@(marsGbl_CurrZList,gbr)
+
+; 	Camera animation
+		mov	#RAM_Mars_ObjCamera,r14
+		mov	@(cam_animdata,r14),r13
+		cmp/pl	r13
+		bf	.no_camanim
+		mov	@(cam_animtimer,r14),r0
+		dt	r0
+		bt	.wait_camanim
+
+		mov	#CS3|$60,r1
+		mov	@r1,r0
+		add	#1,r0
+		mov	r0,@r1
+		mov	#500,r2
+		mov	@(cam_animframe,r14),r0
+		mov	r0,r1
+		add	#1,r0
+		cmp/eq	r2,r0
+		bf	.on_frames
+		xor	r0,r0
+.on_frames:
+		mov	r0,@(cam_animframe,r14)
+		mov	#$18,r0
+		mulu	r0,r1
+		sts	macl,r0 	
+		add	r0,r13
+		mov	@r13+,r1
+		mov	@r13+,r2
+		mov	@r13+,r3
+		mov	@r13+,r4
+		mov	@r13+,r5
+		mov	@r13+,r6
+
+; 		mov	#$F0,r0				; Interrupts OFF
+; 		bra	*
+; 		ldc	r0,sr
+		
+		mov	r1,@(cam_x_pos,r14)
+		mov	r2,@(cam_y_pos,r14)
+		mov	r3,@(cam_z_pos,r14)
+		mov	r4,@(cam_x_rot,r14)
+		mov	r5,@(cam_y_rot,r14)
+		mov	r6,@(cam_z_rot,r14)
+		mov	#2,r0
+.wait_camanim:
+		mov	r0,@(cam_animtimer,r14)		
+.no_camanim:
+
+	; Start reading models
 		mov	#RAM_Mars_Objects,r14
-		mov	#0,r13
-		mov	#MAX_MODELS,r12
+		mov	#MAX_MODELS,r13
 .loop:
 		mov	@(mdl_data,r14),r0
 		cmp/eq	#0,r0
@@ -871,12 +924,18 @@ slave_loop:
 ; 		cmp/ge	r0,r3
 ; 		bt	.invlid
 		
-		mov	r12,@-r15
+		mov	r13,@-r15
+		mov	@(mdl_anim,r14),r13
+		cmp/pl	r13
+		bf	.no_anim
+		bsr	MarsMdl_Animate
+		nop
+.no_anim:
 		bsr	MarsMdl_MakeModel
 		nop
-		mov	@r15+,r12
+		mov	@r15+,r13
 .invlid:
-		dt	r12
+		dt	r13
 		bf/s	.loop
 		add	#sizeof_mdlobj,r14
 .skip:
@@ -907,7 +966,7 @@ slave_loop:
 .wait_master:
 		mov.b	@r1,r0
 		cmp/eq	#1,r0
-		bt	slave_loop
+		bt	.hold_on
 		mov.w	@(marsGbl_PolyBuffNum,gbr),r0
  		xor	#1,r0
  		mov.w	r0,@(marsGbl_PolyBuffNum,gbr)
@@ -915,6 +974,7 @@ slave_loop:
  		mov.w	r0,@(marsGbl_MdlDrawReq,gbr)
 		bsr	Slv_SetMasterTask
 		mov	#1,r2
+.hold_on:
 		bra	slave_loop
 		nop
 		align 4
@@ -1071,7 +1131,7 @@ RAM_Mars_Plgn_ZList	ds.l MAX_FACES*2		; Z value / foward faces | backward faces
 RAM_Mars_PlgnNum_0	ds.w 1
 RAM_Mars_PlgnNum_1	ds.w 1
 RAM_Mars_ObjCamera	ds.b sizeof_camera*4
-RAM_Mars_Objects	ds.b sizeof_mdlobj*64
+RAM_Mars_Objects	ds.b sizeof_mdlobj*MAX_MODELS
 RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
 RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
 RAM_Mars_VdpDrwList	ds.b sizeof_plypz*MAX_SVDP_PZ
@@ -1085,6 +1145,6 @@ sizeof_marsvid		ds.l 0
 ; ----------------------------------------------------------------
 
 			struct MarsRam_System
-RAM_Mars_Global		ds.w sizeof_MarsGbl		; Note: keep it as a word
+RAM_Mars_Global		ds.w sizeof_MarsGbl		; keep it as a word
 sizeof_marssys		ds.l 0
 			finish
