@@ -612,16 +612,22 @@ mdlrd_setpersp:
 	; Model rotation
 		mov	r2,r5
   		mov 	@(mdl_x_rot,r14),r0
+		shlr8	r0
+		exts	r0,r0
   		bsr	mdlrd_rotate
 		mov	r4,r6
    		mov	r7,r2
   		mov	r8,r6
   		mov 	@(mdl_y_rot,r14),r0
+		shlr8	r0
+		exts	r0,r0
   		bsr	mdlrd_rotate
    		mov	r3,r5
    		mov	r8,r4
    		mov	r2,r5
    		mov 	@(mdl_z_rot,r14),r0
+		shlr8	r0
+		exts	r0,r0
   		bsr	mdlrd_rotate
    		mov	r7,r6
    		mov	r7,r2
@@ -676,17 +682,17 @@ mdlrd_setpersp:
    		mov	r8,r3
 
 	; TODO: this is the best I can get with this
-		mov 	#_JR,r8
-		mov	#320<<8,r7
+		mov	#360<<8,r7
 		neg	r4,r0
-		cmp/pl	r0
+		cmp/pz	r0
 		bt	.inside
-		mov	#1,r0
+		mov	#8,r0
 .inside:
 		cmp/eq	#0,r0
 		bf	.dontdiv
 		mov 	#1,r0
 .dontdiv:
+		mov 	#_JR,r8
 		mov 	r0,@r8
 		mov 	r7,@(4,r8)
 		nop
@@ -712,7 +718,7 @@ mdlrd_setpersp:
 		shar	r3
 		shar	r3
 		shar	r3
-		
+
 		mov	@r15+,r11
 		mov	@r15+,r10
 		mov	@r15+,r9
@@ -887,14 +893,13 @@ CACHE_START:
 
 ; ------------------------------------------------
 
+Cach_LnDrw_L	ds.l 14			;
+Cach_LnDrw_S	ds.l 0			; Reads backwards
 CachDDA_Top	ds.l 2*2		; First 2 points
 CachDDA_Last	ds.l 2*2		; Triangle or Quad (+8)
 CachDDA_Src	ds.l 4*2
 CachDDA_Src_L	ds.l 4			; X/DX/Y/DX result for textures
 CachDDA_Src_R	ds.l 4
-CachMdl_Copy	ds.b sizeof_mdlobj
-Cach_LnDrw_L	ds.l 10
-Cach_LnDrw_S	ds.l 0
 Cach_ClrLines	ds.w 1
 
 ; ------------------------------------------------
@@ -994,8 +999,12 @@ drwtsk_02:
 		mov	#Cach_LnDrw_L,r0
 		mov	@r0+,r14
 		mov	@r0+,r13
+		mov	@r0+,r12
+		mov	@r0+,r11
 		mov	@r0+,r10
 		mov	@r0+,r9
+		mov	@r0+,r8
+		mov	@r0+,r7
 		mov	@r0+,r6
 		mov	@r0+,r5
 		mov	@r0+,r4
@@ -1318,10 +1327,13 @@ drwsld_nxtline:
 		shll8	r0
 		or	r6,r0
 		mov.w	r0,@(8,r13)	; Set data
-		mov	#$28,r0		; line too large
+		
+	; If the line is large, leave it to VDP
+	; and exit interrupt, we will come back
+	; with more lines to draw
+		mov	#$28,r0
 		cmp/ge	r0,r12
 		bf	drwsld_updline
-
 		mov	#2,r0
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 		mov	#Cach_LnDrw_S,r0
@@ -1331,8 +1343,12 @@ drwsld_nxtline:
 		mov	r4,@-r0
 		mov	r5,@-r0
 		mov	r6,@-r0
+		mov	r7,@-r0
+		mov	r8,@-r0
 		mov	r9,@-r0
-		mov	r10,@-r0		
+		mov	r10,@-r0
+		mov	r11,@-r0
+		mov	r12,@-r0
 		mov	r13,@-r0
 		mov	r14,@-r0
 		bra	drwtask_return
@@ -1371,12 +1387,12 @@ drwsld_updline:
 		bf/s	drwsld_nxtline
 		add	#1,r9
 drwsld_nextpz:
-		mov.w	@(marsGbl_PzListCntr,gbr),r0		; -1 piece
+		mov.w	@(marsGbl_PzListCntr,gbr),r0	; -1 piece
 		add	#-1,r0
 		mov.w	r0,@(marsGbl_PzListCntr,gbr)
-		add	#sizeof_plypz,r14
+		add	#sizeof_plypz,r14		; Point to next piece for the next interrupt
 		mov	r14,r0
-		mov	#RAM_Mars_VdpDrwList_e,r14
+		mov	#RAM_Mars_VdpDrwList_e,r14	; End-of-list?
 		cmp/ge	r14,r0
 		bf	.reset_rd
 		mov	#RAM_Mars_VdpDrwList,r0

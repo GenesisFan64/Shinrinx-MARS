@@ -15,6 +15,7 @@
 ; --------------------------------------------------------
 
 System_Init:
+		move.w	#$2700,sr
 		move.w	#$0100,(z80_bus).l	; Stop Z80
 .wait:
 		btst	#0,(z80_bus).l		; Wait for it
@@ -30,11 +31,18 @@ System_Init:
 .clrinput:
 		move.w	#0,(a0)+
 		dbf	d1,.clrinput
-	if MCD=0
+		
+; 		lea	(RAM_MdSystem),a0
+; 		move.w	#(sizeof_mdsys/4)-1,d1
+; 		moveq	#0,d0
+; .clrinput:
+; 		move.w	d0,(a0)+
+; 		dbf	d1,.clrinput
 		move.w	#$4EF9,d0		; JMP opcode
  		move.w	d0,(RAM_VBlankGoTo).l
 		move.w	d0,(RAM_HBlankGoTo).l
-	endif
+		move.w	#$2000,sr
+		
 		move.l	#$56255769,d0
 		move.l	#$95116102,d1
 		move.l	d0,(RAM_SysRandVal).l

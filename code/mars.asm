@@ -741,83 +741,110 @@ SH2_S_HotStart:
 		mov	#RAM_Mars_Objects,r1
 		mov	#TEST_MODEL,r0
 		mov	r0,@r1
-; 		mov	#RAM_Mars_Objects+sizeof_mdlobj,r1
-; 		mov	#TEST_MODEL,r0
-; 		mov	r0,@r1
-; 		mov	#-$10000,r0
-; 		mov	r0,@(mdl_z_pos,r1)
-		
-		mov	#CAMERA_ANIM,r0
-		mov	#RAM_Mars_ObjCamera+cam_animdata,r1
-		mov	r0,@r1
-		
+
 ; --------------------------------------------------------
 ; Loop
 ; --------------------------------------------------------
 
 slave_loop:
-; 		mov	#_sysreg+comm15,r14		; Any request from MD?
-; 		mov.b	@r14,r0
-; 		cmp/eq	#0,r0
-; 		bt	.no_requests
-; 
-; ; --------------------------------------------
-; 
-; 		mov	#_sysreg+comm8,r1
-; 		mov	#RAM_Mars_ObjCamera,r2
-; .transfer_loop:
-; 		nop
-; 		nop
-; 		nop
-; 		nop
-; 		mov.w	@r1,r0
-; 		cmp/eq	#0,r0
-; 		bt	.transfer_loop
-; 		cmp/eq	#2,r0
-; 		bt	.trnsfr_done
-; 		mov.w	@(2,r1),r0
-; 		extu	r0,r0
-; 		shll16	r0
-; 		mov	r0,r3
-; 		mov.w	@(4,r1),r0
-; 		extu	r0,r0
-; 		or	r3,r0
-; 		mov.l	r0,@r2
-; 		nop
-; 		nop
-; 		nop
-; 		nop
-; 		mov	#0,r0
-; 		mov.w	r0,@r1
-; 		nop
-; 		nop
-; 		nop
-; 		nop
-; 		bra	.transfer_loop
-; 		add	#4,r2
-; .trnsfr_done:
-; 		mov	#0,r0
-; 		mov.w	r0,@r1
-; 		mov.b	r0,@r14
-; 		mov.w	@(marsGbl_MdlDrawReq,gbr),r0
-; 		cmp/eq	#1,r0
-; 		bt	slave_loop
-;  		mov	#1,r0
-;  		mov.w	r0,@(marsGbl_MdlDrawReq,gbr)
-; .no_requests:
-;  		mov.w	@(marsGbl_MdlDrawReq,gbr),r0
-;  		cmp/eq	#0,r0
-;  		bt	slave_loop
+		mov	#_sysreg+comm15,r14		; Any request from MD?
+		mov.b	@r14,r0
+		cmp/eq	#0,r0
+		bt	.no_requests
+
+; --------------------------------------------
+
+		mov	#_sysreg+comm8,r1
+		mov	#RAM_Mars_ObjCamera,r2
+.transfer_loop:
+		nop
+		nop
+		nop
+		nop
+		mov.w	@r1,r0
+		cmp/eq	#0,r0
+		bt	.transfer_loop
+		cmp/eq	#2,r0
+		bt	.trnsfr_done
+		mov.w	@(2,r1),r0
+		extu	r0,r0
+		shll16	r0
+		mov	r0,r3
+		mov.w	@(4,r1),r0
+		extu	r0,r0
+		or	r3,r0
+		mov.l	r0,@r2
+		nop
+		nop
+		nop
+		nop
+		mov	#0,r0
+		mov.w	r0,@r1
+		nop
+		nop
+		nop
+		nop
+		bra	.transfer_loop
+		add	#4,r2
+.trnsfr_done:
+		mov	#0,r0
+		mov.w	r0,@r1
+		mov.b	r0,@r14
+		mov.w	@(marsGbl_MdlDrawReq,gbr),r0
+		cmp/eq	#1,r0
+		bt	slave_loop
+ 		mov	#1,r0
+ 		mov.w	r0,@(marsGbl_MdlDrawReq,gbr)
+.no_requests:
+ 		mov.w	@(marsGbl_MdlDrawReq,gbr),r0
+ 		cmp/eq	#0,r0
+ 		bt	slave_loop
 
 ; --------------------------------------------------------
 ; Start building polygons from models
 ; --------------------------------------------------------
-
-; 		mov	#RAM_Mars_Objects,r2
-; 		mov	#-$100,r1
-; 		mov	@(mdl_z_pos,r2),r0
-; 		add	r1,r0
-; 		mov	r0,@(mdl_z_pos,r2)
+; MOVED TO MD
+; 	Camera animation
+; 		mov.l	#_sysreg+comm14,r1		; Master CPU still drawing pieces?
+; 		mov.b	@r1,r0
+; 		cmp/eq	#1,r0
+; 		bt	slave_loop
+; 		mov	#RAM_Mars_ObjCamera,r14
+; 		mov	@(cam_animdata,r14),r13
+; 		cmp/pl	r13
+; 		bf	.no_camanim
+; 		mov	@(cam_animtimer,r14),r0
+; 		dt	r0
+; 		bt	.wait_camanim
+; 		mov	#500,r2				; TEMPORAL: max frames
+; 		mov	@(cam_animframe,r14),r0
+; 		mov	r0,r1
+; 		add	#1,r0
+; 		cmp/eq	r2,r0
+; 		bf	.on_frames
+; 		xor	r0,r0
+; .on_frames:
+; 		mov	r0,@(cam_animframe,r14)
+; 		mov	#$18,r0
+; 		mulu	r0,r1
+; 		sts	macl,r0 	
+; 		add	r0,r13
+; 		mov	@r13+,r1
+; 		mov	@r13+,r2
+; 		mov	@r13+,r3
+; 		mov	@r13+,r4
+; 		mov	@r13+,r5
+; 		mov	@r13+,r6
+; 		mov	r1,@(cam_x_pos,r14)
+; 		mov	r2,@(cam_y_pos,r14)
+; 		mov	r3,@(cam_z_pos,r14)
+; 		mov	r4,@(cam_x_rot,r14)
+; 		mov	r5,@(cam_y_rot,r14)
+; 		mov	r6,@(cam_z_rot,r14)
+; 		mov	#8,r0
+; .wait_camanim:
+; 		mov	r0,@(cam_animtimer,r14)	
+; .no_camanim:
 
 ; ----------------------------------------
 
@@ -837,56 +864,6 @@ slave_loop:
 		mov	r0,@(marsGbl_CurrFacePos,gbr)
 		mov	#RAM_Mars_Plgn_ZList,r0
 		mov	r0,@(marsGbl_CurrZList,gbr)
-
-; 	Camera animation
-		mov	#RAM_Mars_ObjCamera,r14
-		mov	@(cam_animdata,r14),r13
-		cmp/pl	r13
-		bf	.no_camanim
-		mov	@(cam_animtimer,r14),r0
-		dt	r0
-		bt	.wait_camanim
-
-		mov	#CS3|$60,r1
-		mov	@r1,r0
-		add	#1,r0
-		mov	r0,@r1
-		mov	#500,r2
-		mov	@(cam_animframe,r14),r0
-		mov	r0,r1
-		add	#1,r0
-		cmp/eq	r2,r0
-		bf	.on_frames
-		xor	r0,r0
-.on_frames:
-		mov	r0,@(cam_animframe,r14)
-		mov	#$18,r0
-		mulu	r0,r1
-		sts	macl,r0 	
-		add	r0,r13
-		mov	@r13+,r1
-		mov	@r13+,r2
-		mov	@r13+,r3
-		mov	@r13+,r4
-		mov	@r13+,r5
-		mov	@r13+,r6
-
-; 		mov	#$F0,r0				; Interrupts OFF
-; 		bra	*
-; 		ldc	r0,sr
-		
-		mov	r1,@(cam_x_pos,r14)
-		mov	r2,@(cam_y_pos,r14)
-		mov	r3,@(cam_z_pos,r14)
-		mov	r4,@(cam_x_rot,r14)
-		mov	r5,@(cam_y_rot,r14)
-		mov	r6,@(cam_z_rot,r14)
-		mov	#2,r0
-.wait_camanim:
-		mov	r0,@(cam_animtimer,r14)		
-.no_camanim:
-
-	; Start reading models
 		mov	#RAM_Mars_Objects,r14
 		mov	#MAX_MODELS,r13
 .loop:

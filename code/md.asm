@@ -23,7 +23,7 @@ sizeof_mdglbl	ds.l 0
 ; Variables
 ; ------------------------------------------------------
 
-var_MoveSpd	equ	$800
+var_MoveSpd	equ	$400
 
 ; ====================================================================
 ; ------------------------------------------------------
@@ -91,6 +91,9 @@ MD_Main:
 		move.w	#1,d2
 		bsr	Video_LoadArt
 		
+		move.l	#CAMERA_ANIM,(RAM_MdCamera+cam_animdata)
+; 		move.l	#0,(RAM_MdCamera+cam_animdata)
+		
 		move.w	#1,(RAM_MdMdlsUpd).l
 
 ; ====================================================================
@@ -105,16 +108,85 @@ MD_Main:
 		lsr.w	#3,d0
 		move.w	#0,(vdp_data).l
 		move.w	d0,(vdp_data).l
-
 		lea	str_Status(pc),a0
 		move.l	#locate(0,0,0),d0
 		bsr	Video_Print
+		
+	; Camera animation
+		lea	(RAM_MdCamera),a0
+		move.l	cam_animdata(a0),d0
+		beq.s	.no_camanim
+		move.l	d0,a1
+		move.l	#500,d1				; TEMPORAL: max frames
+		move.l	cam_animframe(a0),d0
+		add.l	#1,d0
+		cmp.l	d1,d0
+		bne.s	.on_frames
+		moveq	#0,d0
+.on_frames:
+		move.l	d0,cam_animframe(a0)
+		mulu.w	#$18,d0
+		adda	d0,a1
+		move.l	(a1)+,cam_x_pos(a0)
+		move.l	(a1)+,cam_y_pos(a0)
+		move.l	(a1)+,cam_z_pos(a0)
+		move.l	(a1)+,cam_x_rot(a0)
+		move.l	(a1)+,cam_y_rot(a0)
+		move.l	(a1)+,cam_z_rot(a0)
+		move.l	cam_x_rot(a0),d0
+		neg.l	d0
+		lsr.l	#8,d0
+		lsr.l	#5,d0
+		move.w	d0,(RAM_BgCamera).l
+		move.w	#1,(RAM_MdMdlsUpd).l
+.no_camanim:
+
 
 	; Foward/Backward/Left/Right
+		bsr	MdMdl_Usercontrol
+		tst.w	(RAM_MdMdlsUpd).l
+		beq	.loop
+		clr.w	(RAM_MdMdlsUpd).l
+		bsr	MdMars_TrsnfrMdls
+		bra	.loop
+		
+; ====================================================================
+; ------------------------------------------------------
+; Subroutines
+; ------------------------------------------------------
 
+MdMars_TrsnfrMdls:
+		lea	(sysmars_reg),a0
+		tst.b	comm15(a0)
+		bne	.no_start
+		move.b	#1,comm15(a0)
+		lea	(sysmars_reg+comm8),a0
+		lea	(RAM_MdCamera),a1
+		move.w	#(sizeof_camera/4)-1,d2
+.paste:
+		nop
+		nop
+		nop
+		move.w	(a0),d0
+		bne.s	.paste
+		move.w	(a1)+,d0
+		move.w	d0,2(a0)
+		move.w	(a1)+,d0
+		move.w	d0,4(a0)
+		move.w	#1,(a0)
+		dbf	d2,.paste
+
+.busy_2:
+		move.w	(a0),d0				; Wait Slave response
+		bne.s	.busy_2
+		move.w	#2,(a0)				; Transfer finish
+		move.w	(RAM_BgCamera).l,(RAM_BgCamCurr).l
+.no_start:
+		rts
+
+MdMdl_Usercontrol:
 		move.l	#var_MoveSpd,d5
 		move.l	#-var_MoveSpd,d6
-		
 		move.w	(Controller_1+on_hold),d7
 		btst	#bitJoyUp,d7
 		beq.s	.no_up
@@ -154,6 +226,7 @@ MD_Main:
 		move.w	#1,(RAM_MdMdlsUpd).l
 		lea	(RAM_MdCamera),a0
 		move.l	cam_x_rot(a0),d0
+		lsl.l	#8,d6
 		add.l	d6,d0
 		move.l	d0,cam_x_rot(a0)
 		move.w	d6,d0
@@ -164,6 +237,7 @@ MD_Main:
 		move.w	#1,(RAM_MdMdlsUpd).l
 		lea	(RAM_MdCamera),a0
 		move.l	cam_x_rot(a0),d0
+		lsl.l	#8,d5
 		add.l	d5,d0
 		move.l	d0,cam_x_rot(a0)
 		sub.w	#var_MoveSpd>>5,(RAM_BgCamera).l
@@ -202,46 +276,6 @@ MD_Main:
 		add.l	d6,d0
 		move.l	d0,cam_y_pos(a0)
 .no_y:
-; 
-; 		tst.w	(RAM_MdMdlsUpd).l
-; 		beq	.loop
-; 		clr.w	(RAM_MdMdlsUpd).l
-; 		bsr	MdMars_TrsnfrMdls
-		bra	.loop
-		
-; ====================================================================
-; ------------------------------------------------------
-; Subroutines
-; ------------------------------------------------------
-
-MdMars_TrsnfrMdls:
-		lea	(sysmars_reg),a0
-		tst.b	comm15(a0)
-		bne.s	.no_start
-		move.b	#1,comm15(a0)
-		lea	(sysmars_reg+comm8),a0
-		lea	(RAM_MdCamera),a1
-		move.w	#(sizeof_camera/4)-1,d2
-.paste:
-		nop
-		nop
-		nop
-		nop
-		nop
-		move.w	(a0),d0
-		bne.s	.paste
-		move.w	(a1)+,d0
-		move.w	d0,2(a0)
-		move.w	(a1)+,d0
-		move.w	d0,4(a0)
-		move.w	#1,(a0)
-		dbf	d2,.paste
-
-.busy_2:	move.w	(a0),d0
-		bne.s	.busy_2
-		move.w	#2,(a0)
-		move.w	(RAM_BgCamera).l,(RAM_BgCamCurr).l
-.no_start:
 		rts
 
 ; ====================================================================
@@ -288,4 +322,3 @@ MdPal_Bg:
 MdMap_Bg:
 		binclude "data/md/bg/bg_map.bin"
 		align 2
-

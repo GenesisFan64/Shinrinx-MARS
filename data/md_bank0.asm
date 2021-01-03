@@ -1,7 +1,8 @@
 ; ====================================================================
 ; ----------------------------------------------------------------
-; MD Data other than DMA'd graphics, 1MB maximum
+; MD Data other than DMA graphics, 1MB maximum
 ; ----------------------------------------------------------------
 
 		align $8000
-		dc.b "MD DATA BANK 0"
+CAMERA_ANIM:	binclude "data/mars/models/camera_anim.bin"
+		align 4
