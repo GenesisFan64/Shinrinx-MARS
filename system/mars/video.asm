@@ -72,7 +72,7 @@ sizeof_plypz	ds.l 0
 polygn_type	ds.l 1		; %MSTo oooo oooo oooo | Type bits and Material option (Width or PalIncr)
 polygn_mtrl	ds.l 1		; Material Type: Color (0-255) or Texture data address
 polygn_points	ds.l 4*2	; X/Y positions
-polygn_srcpnts	ds.l 4		; X/Y texture points (16-bit), blank if using solidcolor
+polygn_srcpnts	ds.w 4*2	; X/Y texture points (16-bit), ignored on solidcolor
 sizeof_polygn	ds.l 0
 		finish
 
@@ -277,7 +277,7 @@ MarsVideo_LoadPal:
 
 ; ====================================================================
 ; ----------------------------------------------------------------
-; 3D MODEL RENDER
+; 3D MODEL RENDERER
 ; ----------------------------------------------------------------
 
 MarsMdl_Init:
@@ -379,6 +379,7 @@ MarsMdl_MakeModel:
 		mov	r7,r3
 .srctri:
 		mov.w	@r11+,r0
+		extu	r0,r0
 		shll2	r0
 		mov	@(r6,r0),r0
 		mov.w	r0,@(2,r5)
@@ -499,7 +500,7 @@ MarsMdl_MakeModel:
 	; depending how you want to ignore faces closer to
 	; the camera:
 	; 
-	; r5 - Back Z point (weird motion)
+	; r5 - Back Z point (affine glitches)
 	; r6 - Front Z point (instant delete)
 		cmp/pl	r5
 		bt	.face_out
@@ -523,13 +524,13 @@ MarsMdl_MakeModel:
 		cmp/ge	r0,r5
 		bf	.face_out
 		
-		mov	#-160,r0
+		mov	#-(SCREEN_WIDTH/2),r0
 		cmp/gt	r0,r1
 		bf	.face_out
 		neg	r0,r0
 		cmp/ge	r0,r2
 		bt	.face_out
-		mov	#-112,r0
+		mov	#-(SCREEN_HEIGHT/2),r0
 		cmp/gt	r0,r3
 		bf	.face_out
 		neg	r0,r0
@@ -539,36 +540,6 @@ MarsMdl_MakeModel:
 ; --------------------------------
 
 .face_ok:
-; 		mov	r13,r2
-; 		add 	#polygn_points,r2
-; 		mov	#Cach_DstPnts,r1
-; 		mov	@r1+,r0
-; 		mov	r0,@r2
-; 		add	#4,r2
-; 		mov	@r1+,r0
-; 		mov	r0,@r2
-; 		add	#4,r2
-; 		mov	@r1+,r0
-; 		mov	r0,@r2
-; 		add	#4,r2
-; 		mov	@r1+,r0
-; 		mov	r0,@r2
-; 		add	#4,r2
-; 		mov	r13,r2
-; 		add 	#polygn_srcpnts,r2
-; 		mov	#Cach_SrcPnts,r1
-; 		mov	@r1+,r0
-; 		mov	r0,@r2
-; 		add	#4,r2
-; 		mov	@r1+,r0
-; 		mov	r0,@r2
-; 		add	#4,r2
-; 		mov	@r1+,r0
-; 		mov	r0,@r2
-; 		add	#4,r2
-; 		mov	@r1+,r0
-; 		mov	r0,@r2
-; 		add	#4,r2
 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
 		add	#1,r0
 		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
@@ -645,6 +616,7 @@ mdlrd_setpersp:
 		exts	r0,r0
 		add 	r0,r4
 
+	; Include camera changes
 		mov 	#RAM_Mars_ObjCamera,r11
 		mov	@(cam_x_pos,r11),r0
 		shlr8	r0
@@ -681,44 +653,33 @@ mdlrd_setpersp:
    		mov	r7,r2
    		mov	r8,r3
 
-	; TODO: this is the best I can get with this
-		mov	#360<<8,r7
-		neg	r4,r0
-		cmp/pz	r0
+	; AFFINE perspective
+	; this is the best I can get...
+		mov	#256<<8,r5
+		neg	r4,r0		; reverse Z
+		cmp/pl	r0
 		bt	.inside
-		mov	#8,r0
-.inside:
-		cmp/eq	#0,r0
-		bf	.dontdiv
-		mov 	#1,r0
-.dontdiv:
-		mov 	#_JR,r8
-		mov 	r0,@r8
-		mov 	r7,@(4,r8)
-		nop
-		mov 	@(4,r8),r5
-.lel2:
 		dmuls	r5,r3
 		sts	macl,r3
 		dmuls	r5,r2
 		sts	macl,r2
-		shar	r2
-		shar	r2
-		shar	r2
-		shar	r2
-		shar	r2
-		shar	r2
-		shar	r2
+		bra	.zmulti
+		nop
+.inside:
+		mov 	#_JR,r7
+		mov 	r0,@r7
+		mov 	r5,@(4,r7)
+		nop
+		mov 	@(4,r7),r5
+		dmuls	r5,r3
+		sts	macl,r3
+		dmuls	r5,r2
+		sts	macl,r2
+.zmulti:
+	rept 8
 		shar	r2
 		shar	r3
-		shar	r3
-		shar	r3
-		shar	r3
-		shar	r3
-		shar	r3
-		shar	r3
-		shar	r3
-
+	endm
 		mov	@r15+,r11
 		mov	@r15+,r10
 		mov	@r15+,r9
@@ -730,36 +691,6 @@ mdlrd_setpersp:
 		rts
 		nop
 		align 4
-
-; 		mov	r4,r8
-; 		mov 	#0,r7
-; 		shlr2	r8
-; 		shlr2	r8
-; 		shlr2	r8
-; 		exts	r8,r8
-; 		mov	r8,r7
-; 		mov	#persp_table_max,r0
-; 		cmp/pz	r8
-; 		bt	.calc
-; 		neg	r8,r7
-; 		mov	#persp_table_min,r0
-; .calc:
-; 		shll2	r7
-; 		mov	@(r0,r7),r8
-; 		shll8	r8
-; 		
-; 		mov	r2,r0
-; 		dmuls	r8,r0
-; 		sts	macl,r0
-; 		sts	mach,r7
-; 		xtrct	r7,r0
-; 		mov	r0,r2
-; 		mov	r3,r0
-; 		dmuls	r8,r0
-; 		sts	macl,r0
-; 		sts	mach,r7
-; 		xtrct	r7,r0
-; 		mov	r0,r3
 
 ; ------------------------------
 ; Rotate point
@@ -969,7 +900,7 @@ maindrw_tasks:
 ; --------------------------------
 
 .list:
-		dc.l drwtsk_01		; 
+		dc.l drwtsk_01		; (null entry, but failsafe)
 		dc.l drwtsk_01		; Main drawing routine
 		dc.l drwtsk_02		; Resume from solid color
 
@@ -977,8 +908,8 @@ maindrw_tasks:
 ; Task $02
 ; --------------------------------
 
-; TODO: currently it only works
-; for solid_color
+; TODO: currently it only resumes
+; from solid_color
 
 drwtsk_02:
 		mov	r2,@-r15
@@ -1288,7 +1219,7 @@ drwsld_nxtline:
 		mov	r0,r11
 
 .revers:
-		mov	#SCREEN_WIDTH,r0
+		mov	#SCREEN_WIDTH-1,r0
 		cmp/pl	r12
 		bf	drwsld_updline
 		cmp/gt	r0,r11
@@ -1486,9 +1417,7 @@ MarsVideo_MakePolygon:
 ; Sprite points
 ; ----------------------------------------
 
-; TODO: rework on this
-; it sucks
-
+; TODO: rework or get rid of this
 .spr_pnts:
 		mov.w	@r1+,r8		; X pos
 		mov.w	@r1+,r9		; Y pos
@@ -1571,7 +1500,6 @@ MarsVideo_MakePolygon:
 		bf/s	.setpnts
 		add	#8,r2
 		mov	#4,r8
-
 .src_pnts:
 		mov.w	@r1+,r4
 		mov.w	@r1+,r5
@@ -1607,7 +1535,14 @@ MarsVideo_MakePolygon:
 		dt	r9
 		bf/s	.find_top
 		add	#8,r8
-
+		cmp/ge	r11,r10			; Already reached end?
+		bt	.exit
+		cmp/pl	r11			; Bottom < 0?
+		bf	.exit
+		mov	#SCREEN_HEIGHT,r0	; Top > 224?
+		cmp/ge	r0,r10
+		bt	.exit
+		
 	; r1 - Main pointer
 	; r2 - Left pointer
 	; r3 - Right pointer
@@ -1617,19 +1552,12 @@ MarsVideo_MakePolygon:
 	; r7 - Right DX
 	; r8 - Left width
 	; r9 - Right width
-	; r10 - Top Y (gets updated after next_pz)
+	; r10 - Top Y (gets updated after calling put_piece)
 	; r11 - Bottom Y
-	; r12 - First base DST
-	; r13 - Last base DST
-		cmp/ge	r11,r10			; Already reached end?
-		bt	.exit
-		cmp/pl	r11			; Bottom < 0?
-		bf	.exit
-		mov	#SCREEN_HEIGHT,r0	; Top > 224?
-		cmp/ge	r0,r10
-		bt	.exit
-		mov	r1,r2
-		mov	r1,r3
+	; r12 - First DST point
+	; r13 - Last DST point
+		mov	r1,r2				; r2 - X left to process
+		mov	r1,r3				; r3 - X right to process
 		bsr	set_left
 		nop
 		bsr	set_right
@@ -1676,8 +1604,8 @@ MarsVideo_MakePolygon:
 ; --------------------------------
 
 set_left:
-		mov	r2,r8
-		add	#$20,r8
+		mov	r2,r8		; Get a copy of Xleft pointer
+		add	#$20,r8		; To read Texture SRC points
 		mov	@r8,r4
 		mov	@(4,r8),r5
 		mov	#CachDDA_Src_L,r8
@@ -1714,7 +1642,7 @@ set_left:
 		shll8	r5
 		sts	mach,r8
 
-		mov	#1,r0				; Stopsign for HW Division
+		mov	#1,r0			; Stopsign for HW Division
 		mov.w	r0,@(marsGbl_DivReq_M,gbr)
 		mov	#_JR,r0				; HW DIV
 		mov	r8,@r0

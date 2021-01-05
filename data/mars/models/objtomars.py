@@ -133,7 +133,7 @@ while reading:
       num_vert += 1
 	
   # ---------------------------
-  # vertex
+  # Vertex
   # ---------------------------
   
   if text.find("vt") == False:
@@ -325,20 +325,6 @@ while reading:
         else:
           a = indx_color|0x4000
       out_faces.write( bytes([a>>8&0xFF,a&0xFF]) )      # TEXTURE ID
-      #if use_img == True:
-        #a = mtrl_curr
-        #b = 0x8000|3
-      #else:
-        #if random_mode == True:
-          #a = random_color
-          #random_color += (1 & 0xFF)
-          #if random_color == 0:
-            #random_color = 1
-        #else:
-          #a = indx_color
-        #b = 3
-      #out_faces.write( bytes([b>>8&0xFF,b&0xFF]) )      # NUMOF_POINTS
-      #out_faces.write( bytes([a>>8&0xFF,a&0xFF]) )      # TEXTURE ID
 
       # set texture
       if use_img == True:
@@ -357,7 +343,6 @@ while reading:
 	          outy_l,outy_r,
 	          outz_l,outz_r,
 	          ]))
-      
         a=img_width
         b=img_height
         c=(int(x_curr[1])-1)*4

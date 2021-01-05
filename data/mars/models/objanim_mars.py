@@ -36,8 +36,10 @@ vertex_list   = list()
 # Getting data
 # -------------------------------------------------
 
+got_frames=0
 scale=0x20000
 reading=True
+out_anim.write(bytes(4))		# first 4 bytes reserved
 while reading:
   text=model_file.readline()
   #reading -= 1
@@ -60,7 +62,12 @@ while reading:
 			 y_rot>>24&0xFF,y_rot>>16&0xFF,y_rot>>8&0xFF,y_rot&0xFF,
 			 z_rot>>24&0xFF,z_rot>>16&0xFF,z_rot>>8&0xFF,z_rot&0xFF			 
 			 ]) )
-	
+  got_frames += 1
+
+a = got_frames
+out_anim.seek(0)
+out_anim.write( bytes([a>>24&0xFF,a>>16&0xFF,a>>8&0xFF,a&0xFF]) )
+		       
 #======================================================================
 # ----------------------------
 # End

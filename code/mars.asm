@@ -30,7 +30,7 @@ marsGbl_DrwTask		ds.w 1		; Drawing task for Watchdog
 marsGbl_VIntFlag_M	ds.w 1		; Reset if VBlank finished on Master CPU
 marsGbl_VIntFlag_S	ds.w 1		; The same but for Slave CPU
 marsGbl_DivReq_M	ds.w 1		; Tell Watchdog we are in the middle of division (skips task)
-marsGbl_MdlDrawReq	ds.w 1		; Flag to draw models at the request from MD
+marsGbl_SlvDrawReq	ds.w 1		; Flag to draw models at the request from MD
 sizeof_MarsGbl		ds.l 0
 			finish
 			
@@ -398,37 +398,6 @@ s_irq_vres:
 
 		ltorg			; Save Slave IRQ literals
 
-; =================================================================
-; ------------------------------------------------
-; Slave | Custom interrupt
-; ------------------------------------------------
-
-s_irq_custom:
-		mov	r2,@-r15
-		mov.l   #_FRT,r1
-		mov.b   @(7,r1),r0
-		xor     #2,r0
-		mov.b   r0,@(7,r1)
-		
-		mov	#CS3+$44,r1
-		mov	@r1,r0
-		add 	#1,r0
-		mov	r0,@r1
-
-		mov	#1,r2
-		mov	#$FFFFFE80,r1
-		mov.w   #$A518,r0
-		mov.w   r0,@r1
-		or      #$20,r0
-		mov.w   r0,@r1
-		mov.w   #$5A00,r0
-		or	r2,r0
-		mov.w	r0,@r1
-		mov	@r15+,r2
-		rts
-		nop
-		align 4
-
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; MARS System features
@@ -790,13 +759,13 @@ slave_loop:
 		mov	#0,r0
 		mov.w	r0,@r1
 		mov.b	r0,@r14
-		mov.w	@(marsGbl_MdlDrawReq,gbr),r0
+		mov.w	@(marsGbl_SlvDrawReq,gbr),r0
 		cmp/eq	#1,r0
 		bt	slave_loop
  		mov	#1,r0
- 		mov.w	r0,@(marsGbl_MdlDrawReq,gbr)
+ 		mov.w	r0,@(marsGbl_SlvDrawReq,gbr)
 .no_requests:
- 		mov.w	@(marsGbl_MdlDrawReq,gbr),r0
+ 		mov.w	@(marsGbl_SlvDrawReq,gbr),r0
  		cmp/eq	#0,r0
  		bt	slave_loop
 
@@ -864,6 +833,18 @@ slave_loop:
 		mov	r0,@(marsGbl_CurrFacePos,gbr)
 		mov	#RAM_Mars_Plgn_ZList,r0
 		mov	r0,@(marsGbl_CurrZList,gbr)
+		
+		mov.l	#$FFFFFE92,r0			; Prepare watchdog on this CPU
+		mov	#8,r1
+		mov.b	r1,@r0
+		mov	#$19,r1
+		mov.b	r1,@r0
+		mov	#$FFFFFE80,r1
+		mov.w	#$5AFF,r0			; Interrupt priority(?)
+		mov.w	r0,@r1
+		mov.w	#$A538,r0			; Enable watchdog (Face autosort on the background)
+		mov.w	r0,@r1
+
 		mov	#RAM_Mars_Objects,r14
 		mov	#MAX_MODELS,r13
 .loop:
@@ -944,11 +925,15 @@ slave_loop:
 		mov.b	@r1,r0
 		cmp/eq	#1,r0
 		bt	.hold_on
+		mov.l   #$FFFFFE80,r1			; Stop watchdog
+		mov.w   #$A518,r0
+		mov.w   r0,@r1
+
 		mov.w	@(marsGbl_PolyBuffNum,gbr),r0
  		xor	#1,r0
  		mov.w	r0,@(marsGbl_PolyBuffNum,gbr)
  		mov	#0,r0
- 		mov.w	r0,@(marsGbl_MdlDrawReq,gbr)
+ 		mov.w	r0,@(marsGbl_SlvDrawReq,gbr)
 		bsr	Slv_SetMasterTask
 		mov	#1,r2
 .hold_on:
@@ -957,23 +942,25 @@ slave_loop:
 		align 4
 		ltorg
 
-; ----------------------------------------
+; --------------------------------------------------------
+; Sort all faces in the current buffer
+; 
+; r14 - Polygon list
+; r13 - Number of polygons processed
+; --------------------------------------------------------
+
 ; Bubble sorting
-	
+
 slv_sort_z:
 		sts	pr,@-r15
 		mov	#0,r0					; Reset current PlgnNum
 		mov.w	r0,@r13
 		mov	#RAM_Mars_Plgn_ZList,r12	
-		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0		; Check number of faces to sort
-		cmp/eq	#0,r0
-		bt	.z_end
 		mov	#2,r11
+		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0		; Check number of faces to sort
 		cmp/gt	r11,r0
-		bt	.z_normal
+		bf	.z_fewfaces
 		mov	r0,r11
-		bra	.z_fewfaces
-		nop
 		
 ; if faces > 2
 .z_normal:
@@ -1011,6 +998,7 @@ slv_sort_z:
 		bf	.z_outer
 
 ; ----------------------------------------
+; only 1 or 2 faces
 
 .z_fewfaces:
 		mov	r12,r10
@@ -1048,6 +1036,54 @@ Slv_SetMasterTask:
 
 ; ----------------------------------------
 
+		ltorg
+
+; =================================================================
+; ------------------------------------------------
+; Slave | Custom interrupt
+; 
+; Autosort faces on the background
+; ------------------------------------------------
+
+s_irq_custom:
+		mov	r2,@-r15
+		mov.l   #_FRT,r1
+		mov.b   @(7,r1),r0
+		xor     #2,r0
+		mov.b   r0,@(7,r1)
+
+	; Sorting task start here
+		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
+		cmp/eq	#0,r0
+		bt	.no_request
+		mov	r3,@-r15
+		mov	r4,@-r15
+		mov	r5,@-r15
+		mov	r6,@-r15
+		mov	#CS3+$44,r1
+		mov	@r1,r0
+		add 	#1,r0
+		mov	r0,@r1
+		mov	@r15+,r6
+		mov	@r15+,r5
+		mov	@r15+,r4
+		mov	@r15+,r3
+.no_request:
+	; End
+
+		mov	#$FFFFFE80,r1
+		mov.w   #$A518,r0
+		mov.w   r0,@r1
+		or      #$20,r0
+		mov.w   r0,@r1
+		mov	#1,r2
+		mov.w   #$5A00,r0
+		or	r2,r0
+		mov.w	r0,@r1
+		mov	@r15+,r2
+		rts
+		nop
+		align 4
 		ltorg
 
 ; ====================================================================
