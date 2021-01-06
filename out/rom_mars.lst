@@ -1,4 +1,4 @@
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 1 - 1/5/2021 18:53:39
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 1 - 1/5/2021 22:02:53
 
 
        1/       0 :                     ; ===========================================================================
@@ -723,7 +723,7 @@ MD RAM ends at: FF9A36
 (1)   78/     190 : 4A36 2020 2020 2020 		dc.b "J6              "
                     2020 2020 2020 2020 
 (1)   79/     1A0 : 0000 0000           		dc.l 0
-(1)   80/     1A4 : 0029 9CC0           		dc.l ROM_END
+(1)   80/     1A4 : 0009 1CC0           		dc.l ROM_END
 (1)   81/     1A8 : 00FF 0000           		dc.l $FF0000
 (1)   82/     1AC : 00FF FFFF           		dc.l $FFFFFF
 (1)   83/     1B0 : 2020 2020           		dc.l $20202020		; dc.b "RA",$F8,$20
@@ -810,9 +810,9 @@ MD RAM ends at: FF9A36
 (1)  162/     3D0 : 0000 0000           		dc.l 0					; version
 (1)  163/     3D4 : 0000 35F0           		dc.l MARS_RAMDATA			; Set to 0 if SH2 code points to ROM
 (1)  164/     3D8 : 0000 0000           		dc.l 0					; ??? keep to 0
-(1)  165/     3DC : 0000 588C           		dc.l MARS_RAMDATA_e-MARS_RAMDATA	; Set to 4 if SH2 code points to ROM
+(1)  165/     3DC : 0000 585C           		dc.l MARS_RAMDATA_e-MARS_RAMDATA	; Set to 4 if SH2 code points to ROM
 (1)  166/     3E0 : 0600 11BC           		dc.l SH2_M_Entry			; Master SH2 PC
-(1)  167/     3E4 : 0600 1348           		dc.l SH2_S_Entry			; Slave SH2 PC
+(1)  167/     3E4 : 0600 1318           		dc.l SH2_S_Entry			; Slave SH2 PC
 (1)  168/     3E8 : 0600 0000           		dc.l SH2_Master				; Master SH2 VBR
 (1)  169/     3EC : 0600 0124           		dc.l SH2_Slave				; Slave SH2 VBR
 (1)  170/     3F0 :                     		binclude "system/mars/data/security.bin"
@@ -2818,12 +2818,12 @@ MD RAM ends at: FF9A36
 (1)   86/  FF1B94 : 223C 003F 001F      		move.l	#mapsize(512,256),d1
 (1)   87/  FF1B9A : 343C 0001           		move.w	#1,d2
 (1)   88/  FF1B9E : 6100 E802           		bsr	Video_LoadMap
-(1)   89/  FF1BA2 : 203C 0001 8000      		move.l	#MdGfx_Bg,d0
+(1)   89/  FF1BA2 : 203C 0001 0000      		move.l	#MdGfx_Bg,d0
 (1)   90/  FF1BA8 : 323C 2EC0           		move.w	#(MdGfx_Bg_e-MdGfx_Bg),d1
 (1)   91/  FF1BAC : 343C 0001           		move.w	#1,d2
 (1)   92/  FF1BB0 : 6100 EBEC           		bsr	Video_LoadArt
 (1)   93/  FF1BB4 :                     		
-(1)   94/  FF1BB4 : 21FC 0091 0000 99D6 		move.l	#CAMERA_ANIM,(RAM_MdCamera+cam_animdata)
+(1)   94/  FF1BB4 : 21FC 0090 8E4C 99D6 		move.l	#CAMERA_ANIM,(RAM_MdCamera+cam_animdata)
 (1)   95/  FF1BBC :                     ; 		move.l	#0,(RAM_MdCamera+cam_animdata)
 (1)   96/  FF1BBC :                     		
 (1)   97/  FF1BBC : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
@@ -2871,220 +2871,222 @@ MD RAM ends at: FF9A36
 (1)  138/  FF1C3E : 2141 001C           		move.l	d1,cam_x_rot(a0)
 (1)  139/  FF1C42 : 2159 0020           		move.l	(a1)+,cam_y_rot(a0)
 (1)  140/  FF1C46 : 2159 0024           		move.l	(a1)+,cam_z_rot(a0)
-(1)  141/  FF1C4A : 2028 001C           		move.l	cam_x_rot(a0),d0
-(1)  142/  FF1C4E : 4480                		neg.l	d0
-(1)  143/  FF1C50 : E088                		lsr.l	#8,d0
-(1)  144/  FF1C52 : EA88                		lsr.l	#5,d0
-(1)  145/  FF1C54 : 33C0 FFFF 9A2A      		move.w	d0,(RAM_BgCamera).l
-(1)  146/  FF1C5A : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
-(1)  147/  FF1C62 :                     .no_camanim:
-(1)  148/  FF1C62 :                     
-(1)  149/  FF1C62 :                     
-(1)  150/  FF1C62 :                     	; Foward/Backward/Left/Right
-(1)  151/  FF1C62 : 6168                		bsr	MdMdl_Usercontrol
-(1)  152/  FF1C64 : 4A79 FFFF 9A32      		tst.w	(RAM_MdMdlsUpd).l
-(1)  153/  FF1C6A : 6700 FF58           		beq	.loop
-(1)  154/  FF1C6E : 4279 FFFF 9A32      		clr.w	(RAM_MdMdlsUpd).l
-(1)  155/  FF1C74 : 6104                		bsr	MdMars_TrsnfrMdls
-(1)  156/  FF1C76 : 6000 FF4C           		bra	.loop
-(1)  157/  FF1C7A :                     		
-(1)  158/  FF1C7A :                     ; ====================================================================
-(1)  159/  FF1C7A :                     ; ------------------------------------------------------
-(1)  160/  FF1C7A :                     ; Subroutines
+(1)  141/  FF1C4A :                     		
+(1)  142/  FF1C4A :                     		
+(1)  143/  FF1C4A : 2028 001C           		move.l	cam_x_rot(a0),d0
+(1)  144/  FF1C4E : 4480                		neg.l	d0
+(1)  145/  FF1C50 : E088                		lsr.l	#8,d0
+(1)  146/  FF1C52 : EA88                		lsr.l	#5,d0
+(1)  147/  FF1C54 : 33C0 FFFF 9A2A      		move.w	d0,(RAM_BgCamera).l
+(1)  148/  FF1C5A : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
+(1)  149/  FF1C62 :                     .no_camanim:
+(1)  150/  FF1C62 :                     
+(1)  151/  FF1C62 :                     
+(1)  152/  FF1C62 :                     	; Foward/Backward/Left/Right
+(1)  153/  FF1C62 : 6168                		bsr	MdMdl_Usercontrol
+(1)  154/  FF1C64 : 4A79 FFFF 9A32      		tst.w	(RAM_MdMdlsUpd).l
+(1)  155/  FF1C6A : 6700 FF58           		beq	.loop
+(1)  156/  FF1C6E : 4279 FFFF 9A32      		clr.w	(RAM_MdMdlsUpd).l
+(1)  157/  FF1C74 : 6104                		bsr	MdMars_TrsnfrMdls
+(1)  158/  FF1C76 : 6000 FF4C           		bra	.loop
+(1)  159/  FF1C7A :                     		
+(1)  160/  FF1C7A :                     ; ====================================================================
 (1)  161/  FF1C7A :                     ; ------------------------------------------------------
-(1)  162/  FF1C7A :                     
-(1)  163/  FF1C7A :                     MdMars_TrsnfrMdls:
-(1)  164/  FF1C7A : 41F9 00A1 5100      		lea	(sysmars_reg),a0
-(1)  165/  FF1C80 : 4A28 002F           		tst.b	comm15(a0)
-(1)  166/  FF1C84 : 6644                		bne	.no_start
-(1)  167/  FF1C86 : 117C 0001 002F      		move.b	#1,comm15(a0)
-(1)  168/  FF1C8C : 41F9 00A1 5128      		lea	(sysmars_reg+comm8),a0
-(1)  169/  FF1C92 : 43F8 99D6           		lea	(RAM_MdCamera),a1
-(1)  170/  FF1C96 : 343C 0009           		move.w	#(sizeof_camera/4)-1,d2
-(1)  171/  FF1C9A :                     .paste:
-(1)  172/  FF1C9A : 4E71                		nop
-(1)  173/  FF1C9C : 4E71                		nop
-(1)  174/  FF1C9E : 4E71                		nop
-(1)  175/  FF1CA0 : 3010                		move.w	(a0),d0
-(1)  176/  FF1CA2 : 66F6                		bne.s	.paste
-(1)  177/  FF1CA4 : 3019                		move.w	(a1)+,d0
-(1)  178/  FF1CA6 : 3140 0002           		move.w	d0,2(a0)
-(1)  179/  FF1CAA : 3019                		move.w	(a1)+,d0
-(1)  180/  FF1CAC : 3140 0004           		move.w	d0,4(a0)
-(1)  181/  FF1CB0 : 30BC 0001           		move.w	#1,(a0)
-(1)  182/  FF1CB4 : 51CA FFE4           		dbf	d2,.paste
-(1)  183/  FF1CB8 :                     
-(1)  184/  FF1CB8 :                     .busy_2:
-(1)  185/  FF1CB8 : 3010                		move.w	(a0),d0				; Wait Slave response
-(1)  186/  FF1CBA : 66FC                		bne.s	.busy_2
-(1)  187/  FF1CBC : 30BC 0002           		move.w	#2,(a0)				; Transfer finish
-(1)  188/  FF1CC0 : 33F9 FFFF 9A2A FFFF 		move.w	(RAM_BgCamera).l,(RAM_BgCamCurr).l
+(1)  162/  FF1C7A :                     ; Subroutines
+(1)  163/  FF1C7A :                     ; ------------------------------------------------------
+(1)  164/  FF1C7A :                     
+(1)  165/  FF1C7A :                     MdMars_TrsnfrMdls:
+(1)  166/  FF1C7A : 41F9 00A1 5100      		lea	(sysmars_reg),a0
+(1)  167/  FF1C80 : 4A28 002F           		tst.b	comm15(a0)
+(1)  168/  FF1C84 : 6644                		bne	.no_start
+(1)  169/  FF1C86 : 117C 0001 002F      		move.b	#1,comm15(a0)
+(1)  170/  FF1C8C : 41F9 00A1 5128      		lea	(sysmars_reg+comm8),a0
+(1)  171/  FF1C92 : 43F8 99D6           		lea	(RAM_MdCamera),a1
+(1)  172/  FF1C96 : 343C 0009           		move.w	#(sizeof_camera/4)-1,d2
+(1)  173/  FF1C9A :                     .paste:
+(1)  174/  FF1C9A : 4E71                		nop
+(1)  175/  FF1C9C : 4E71                		nop
+(1)  176/  FF1C9E : 4E71                		nop
+(1)  177/  FF1CA0 : 3010                		move.w	(a0),d0
+(1)  178/  FF1CA2 : 66F6                		bne.s	.paste
+(1)  179/  FF1CA4 : 3019                		move.w	(a1)+,d0
+(1)  180/  FF1CA6 : 3140 0002           		move.w	d0,2(a0)
+(1)  181/  FF1CAA : 3019                		move.w	(a1)+,d0
+(1)  182/  FF1CAC : 3140 0004           		move.w	d0,4(a0)
+(1)  183/  FF1CB0 : 30BC 0001           		move.w	#1,(a0)
+(1)  184/  FF1CB4 : 51CA FFE4           		dbf	d2,.paste
+(1)  185/  FF1CB8 :                     
+(1)  186/  FF1CB8 :                     .busy_2:
+(1)  187/  FF1CB8 : 3010                		move.w	(a0),d0				; Wait Slave response
+(1)  188/  FF1CBA : 66FC                		bne.s	.busy_2
+(1)  189/  FF1CBC : 30BC 0002           		move.w	#2,(a0)				; Transfer finish
+(1)  190/  FF1CC0 : 33F9 FFFF 9A2A FFFF 		move.w	(RAM_BgCamera).l,(RAM_BgCamCurr).l
                     9A2E                
-(1)  189/  FF1CCA :                     .no_start:
-(1)  190/  FF1CCA : 4E75                		rts
-(1)  191/  FF1CCC :                     
-(1)  192/  FF1CCC :                     MdMdl_Usercontrol:
-(1)  193/  FF1CCC : 2A3C 0000 0400      		move.l	#var_MoveSpd,d5
-(1)  194/  FF1CD2 : 2C3C FFFF FC00      		move.l	#-var_MoveSpd,d6
-(1)  195/  FF1CD8 : 3E38 9002           		move.w	(Controller_1+on_hold),d7
-(1)  196/  FF1CDC : 0807 0000           		btst	#bitJoyUp,d7
-(1)  197/  FF1CE0 : 6716                		beq.s	.no_up
-(1)  198/  FF1CE2 : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
-(1)  199/  FF1CEA : 41F8 99D6           		lea	(RAM_MdCamera),a0
-(1)  200/  FF1CEE : 2028 0018           		move.l	cam_z_pos(a0),d0
-(1)  201/  FF1CF2 : D085                		add.l	d5,d0
-(1)  202/  FF1CF4 : 2140 0018           		move.l	d0,cam_z_pos(a0)
-(1)  203/  FF1CF8 :                     .no_up:
-(1)  204/  FF1CF8 : 0807 0001           		btst	#bitJoyDown,d7
-(1)  205/  FF1CFC : 6716                		beq.s	.no_dw
-(1)  206/  FF1CFE : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
-(1)  207/  FF1D06 : 41F8 99D6           		lea	(RAM_MdCamera),a0
-(1)  208/  FF1D0A : 2028 0018           		move.l	cam_z_pos(a0),d0
-(1)  209/  FF1D0E : D086                		add.l	d6,d0
-(1)  210/  FF1D10 : 2140 0018           		move.l	d0,cam_z_pos(a0)
-(1)  211/  FF1D14 :                     .no_dw:
-(1)  212/  FF1D14 : 0807 0002           		btst	#bitJoyLeft,d7
-(1)  213/  FF1D18 : 6716                		beq.s	.no_lf
-(1)  214/  FF1D1A : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
-(1)  215/  FF1D22 : 41F8 99D6           		lea	(RAM_MdCamera),a0
-(1)  216/  FF1D26 : 2028 0010           		move.l	cam_x_pos(a0),d0
-(1)  217/  FF1D2A : D086                		add.l	d6,d0
-(1)  218/  FF1D2C : 2140 0010           		move.l	d0,cam_x_pos(a0)
-(1)  219/  FF1D30 :                     .no_lf:
-(1)  220/  FF1D30 : 0807 0003           		btst	#bitJoyRight,d7
-(1)  221/  FF1D34 : 6716                		beq.s	.no_rg
-(1)  222/  FF1D36 : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
-(1)  223/  FF1D3E : 41F8 99D6           		lea	(RAM_MdCamera),a0
-(1)  224/  FF1D42 : 2028 0010           		move.l	cam_x_pos(a0),d0
-(1)  225/  FF1D46 : D085                		add.l	d5,d0
-(1)  226/  FF1D48 : 2140 0010           		move.l	d0,cam_x_pos(a0)
-(1)  227/  FF1D4C :                     .no_rg:
-(1)  228/  FF1D4C :                     
-(1)  229/  FF1D4C : 0807 0006           		btst	#bitJoyA,d7
-(1)  230/  FF1D50 : 6726                		beq.s	.no_a
-(1)  231/  FF1D52 : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
-(1)  232/  FF1D5A : 41F8 99D6           		lea	(RAM_MdCamera),a0
-(1)  233/  FF1D5E : 2028 001C           		move.l	cam_x_rot(a0),d0
-(1)  234/  FF1D62 : 2206                		move.l	d6,d1
-(1)  235/  FF1D64 : E189                		lsl.l	#8,d1
-(1)  236/  FF1D66 : D081                		add.l	d1,d0
-(1)  237/  FF1D68 : 2140 001C           		move.l	d0,cam_x_rot(a0)
-(1)  238/  FF1D6C : E088                		lsr.l	#8,d0
-(1)  239/  FF1D6E : EA88                		lsr.l	#5,d0
-(1)  240/  FF1D70 : 4480                		neg.l	d0
-(1)  241/  FF1D72 : 33C0 FFFF 9A2A      		move.w	d0,(RAM_BgCamera).l
-(1)  242/  FF1D78 :                     .no_a:
-(1)  243/  FF1D78 : 0807 0004           		btst	#bitJoyB,d7
-(1)  244/  FF1D7C : 6726                		beq.s	.no_b
-(1)  245/  FF1D7E : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
-(1)  246/  FF1D86 : 41F8 99D6           		lea	(RAM_MdCamera),a0
-(1)  247/  FF1D8A : 2028 001C           		move.l	cam_x_rot(a0),d0
-(1)  248/  FF1D8E : 2205                		move.l	d5,d1
-(1)  249/  FF1D90 : E189                		lsl.l	#8,d1
-(1)  250/  FF1D92 : D081                		add.l	d1,d0
-(1)  251/  FF1D94 : 2140 001C           		move.l	d0,cam_x_rot(a0)
-(1)  252/  FF1D98 : E088                		lsr.l	#8,d0
-(1)  253/  FF1D9A : EA88                		lsr.l	#5,d0
-(1)  254/  FF1D9C : 4480                		neg.l	d0
-(1)  255/  FF1D9E : 33C0 FFFF 9A2A      		move.w	d0,(RAM_BgCamera).l
-(1)  256/  FF1DA4 :                     .no_b:
-(1)  257/  FF1DA4 :                     	; Reset all
-(1)  258/  FF1DA4 : 0807 0005           		btst	#bitJoyC,d7
-(1)  259/  FF1DA8 : 6726                		beq.s	.no_c
-(1)  260/  FF1DAA : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
-(1)  261/  FF1DB2 : 41F8 99D6           		lea	(RAM_MdCamera),a0
-(1)  262/  FF1DB6 : 7000                		moveq	#0,d0
-(1)  263/  FF1DB8 : 2140 0010           		move.l	d0,cam_x_pos(a0)
-(1)  264/  FF1DBC : 2140 0014           		move.l	d0,cam_y_pos(a0)
-(1)  265/  FF1DC0 : 2140 0018           		move.l	d0,cam_z_pos(a0)
-(1)  266/  FF1DC4 : 2140 001C           		move.l	d0,cam_x_rot(a0)
-(1)  267/  FF1DC8 : 2140 0020           		move.l	d0,cam_y_rot(a0)
-(1)  268/  FF1DCC : 2140 0024           		move.l	d0,cam_z_rot(a0)
-(1)  269/  FF1DD0 :                     .no_c:
-(1)  270/  FF1DD0 :                     
-(1)  271/  FF1DD0 :                     
-(1)  272/  FF1DD0 :                     	; Up/Down
-(1)  273/  FF1DD0 : 3807                		move.w	d7,d4
-(1)  274/  FF1DD2 : C87C 0400           		and.w	#JoyX,d4
-(1)  275/  FF1DD6 : 6716                		beq.s	.no_x
-(1)  276/  FF1DD8 : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
-(1)  277/  FF1DE0 : 41F8 99D6           		lea	(RAM_MdCamera),a0
-(1)  278/  FF1DE4 : 2028 0014           		move.l	cam_y_pos(a0),d0
-(1)  279/  FF1DE8 : D085                		add.l	d5,d0
-(1)  280/  FF1DEA : 2140 0014           		move.l	d0,cam_y_pos(a0)
-(1)  281/  FF1DEE :                     .no_x:
-(1)  282/  FF1DEE : 3807                		move.w	d7,d4
-(1)  283/  FF1DF0 : C87C 0200           		and.w	#JoyY,d4
-(1)  284/  FF1DF4 : 6716                		beq.s	.no_y
-(1)  285/  FF1DF6 : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
-(1)  286/  FF1DFE : 41F8 99D6           		lea	(RAM_MdCamera),a0
-(1)  287/  FF1E02 : 2028 0014           		move.l	cam_y_pos(a0),d0
-(1)  288/  FF1E06 : D086                		add.l	d6,d0
-(1)  289/  FF1E08 : 2140 0014           		move.l	d0,cam_y_pos(a0)
-(1)  290/  FF1E0C :                     .no_y:
-(1)  291/  FF1E0C : 4E75                		rts
-(1)  292/  FF1E0E :                     
-(1)  293/  FF1E0E :                     ; ====================================================================
-(1)  294/  FF1E0E :                     ; ------------------------------------------------------
-(1)  295/  FF1E0E :                     ; Interrupts
+(1)  191/  FF1CCA :                     .no_start:
+(1)  192/  FF1CCA : 4E75                		rts
+(1)  193/  FF1CCC :                     
+(1)  194/  FF1CCC :                     MdMdl_Usercontrol:
+(1)  195/  FF1CCC : 2A3C 0000 0400      		move.l	#var_MoveSpd,d5
+(1)  196/  FF1CD2 : 2C3C FFFF FC00      		move.l	#-var_MoveSpd,d6
+(1)  197/  FF1CD8 : 3E38 9002           		move.w	(Controller_1+on_hold),d7
+(1)  198/  FF1CDC : 0807 0000           		btst	#bitJoyUp,d7
+(1)  199/  FF1CE0 : 6716                		beq.s	.no_up
+(1)  200/  FF1CE2 : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
+(1)  201/  FF1CEA : 41F8 99D6           		lea	(RAM_MdCamera),a0
+(1)  202/  FF1CEE : 2028 0018           		move.l	cam_z_pos(a0),d0
+(1)  203/  FF1CF2 : D085                		add.l	d5,d0
+(1)  204/  FF1CF4 : 2140 0018           		move.l	d0,cam_z_pos(a0)
+(1)  205/  FF1CF8 :                     .no_up:
+(1)  206/  FF1CF8 : 0807 0001           		btst	#bitJoyDown,d7
+(1)  207/  FF1CFC : 6716                		beq.s	.no_dw
+(1)  208/  FF1CFE : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
+(1)  209/  FF1D06 : 41F8 99D6           		lea	(RAM_MdCamera),a0
+(1)  210/  FF1D0A : 2028 0018           		move.l	cam_z_pos(a0),d0
+(1)  211/  FF1D0E : D086                		add.l	d6,d0
+(1)  212/  FF1D10 : 2140 0018           		move.l	d0,cam_z_pos(a0)
+(1)  213/  FF1D14 :                     .no_dw:
+(1)  214/  FF1D14 : 0807 0002           		btst	#bitJoyLeft,d7
+(1)  215/  FF1D18 : 6716                		beq.s	.no_lf
+(1)  216/  FF1D1A : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
+(1)  217/  FF1D22 : 41F8 99D6           		lea	(RAM_MdCamera),a0
+(1)  218/  FF1D26 : 2028 0010           		move.l	cam_x_pos(a0),d0
+(1)  219/  FF1D2A : D086                		add.l	d6,d0
+(1)  220/  FF1D2C : 2140 0010           		move.l	d0,cam_x_pos(a0)
+(1)  221/  FF1D30 :                     .no_lf:
+(1)  222/  FF1D30 : 0807 0003           		btst	#bitJoyRight,d7
+(1)  223/  FF1D34 : 6716                		beq.s	.no_rg
+(1)  224/  FF1D36 : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
+(1)  225/  FF1D3E : 41F8 99D6           		lea	(RAM_MdCamera),a0
+(1)  226/  FF1D42 : 2028 0010           		move.l	cam_x_pos(a0),d0
+(1)  227/  FF1D46 : D085                		add.l	d5,d0
+(1)  228/  FF1D48 : 2140 0010           		move.l	d0,cam_x_pos(a0)
+(1)  229/  FF1D4C :                     .no_rg:
+(1)  230/  FF1D4C :                     
+(1)  231/  FF1D4C : 0807 0006           		btst	#bitJoyA,d7
+(1)  232/  FF1D50 : 6726                		beq.s	.no_a
+(1)  233/  FF1D52 : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
+(1)  234/  FF1D5A : 41F8 99D6           		lea	(RAM_MdCamera),a0
+(1)  235/  FF1D5E : 2028 001C           		move.l	cam_x_rot(a0),d0
+(1)  236/  FF1D62 : 2206                		move.l	d6,d1
+(1)  237/  FF1D64 : E189                		lsl.l	#8,d1
+(1)  238/  FF1D66 : D081                		add.l	d1,d0
+(1)  239/  FF1D68 : 2140 001C           		move.l	d0,cam_x_rot(a0)
+(1)  240/  FF1D6C : E088                		lsr.l	#8,d0
+(1)  241/  FF1D6E : EA88                		lsr.l	#5,d0
+(1)  242/  FF1D70 : 4480                		neg.l	d0
+(1)  243/  FF1D72 : 33C0 FFFF 9A2A      		move.w	d0,(RAM_BgCamera).l
+(1)  244/  FF1D78 :                     .no_a:
+(1)  245/  FF1D78 : 0807 0004           		btst	#bitJoyB,d7
+(1)  246/  FF1D7C : 6726                		beq.s	.no_b
+(1)  247/  FF1D7E : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
+(1)  248/  FF1D86 : 41F8 99D6           		lea	(RAM_MdCamera),a0
+(1)  249/  FF1D8A : 2028 001C           		move.l	cam_x_rot(a0),d0
+(1)  250/  FF1D8E : 2205                		move.l	d5,d1
+(1)  251/  FF1D90 : E189                		lsl.l	#8,d1
+(1)  252/  FF1D92 : D081                		add.l	d1,d0
+(1)  253/  FF1D94 : 2140 001C           		move.l	d0,cam_x_rot(a0)
+(1)  254/  FF1D98 : E088                		lsr.l	#8,d0
+(1)  255/  FF1D9A : EA88                		lsr.l	#5,d0
+(1)  256/  FF1D9C : 4480                		neg.l	d0
+(1)  257/  FF1D9E : 33C0 FFFF 9A2A      		move.w	d0,(RAM_BgCamera).l
+(1)  258/  FF1DA4 :                     .no_b:
+(1)  259/  FF1DA4 :                     	; Reset all
+(1)  260/  FF1DA4 : 0807 0005           		btst	#bitJoyC,d7
+(1)  261/  FF1DA8 : 6726                		beq.s	.no_c
+(1)  262/  FF1DAA : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
+(1)  263/  FF1DB2 : 41F8 99D6           		lea	(RAM_MdCamera),a0
+(1)  264/  FF1DB6 : 7000                		moveq	#0,d0
+(1)  265/  FF1DB8 : 2140 0010           		move.l	d0,cam_x_pos(a0)
+(1)  266/  FF1DBC : 2140 0014           		move.l	d0,cam_y_pos(a0)
+(1)  267/  FF1DC0 : 2140 0018           		move.l	d0,cam_z_pos(a0)
+(1)  268/  FF1DC4 : 2140 001C           		move.l	d0,cam_x_rot(a0)
+(1)  269/  FF1DC8 : 2140 0020           		move.l	d0,cam_y_rot(a0)
+(1)  270/  FF1DCC : 2140 0024           		move.l	d0,cam_z_rot(a0)
+(1)  271/  FF1DD0 :                     .no_c:
+(1)  272/  FF1DD0 :                     
+(1)  273/  FF1DD0 :                     
+(1)  274/  FF1DD0 :                     	; Up/Down
+(1)  275/  FF1DD0 : 3807                		move.w	d7,d4
+(1)  276/  FF1DD2 : C87C 0400           		and.w	#JoyX,d4
+(1)  277/  FF1DD6 : 6716                		beq.s	.no_x
+(1)  278/  FF1DD8 : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
+(1)  279/  FF1DE0 : 41F8 99D6           		lea	(RAM_MdCamera),a0
+(1)  280/  FF1DE4 : 2028 0014           		move.l	cam_y_pos(a0),d0
+(1)  281/  FF1DE8 : D085                		add.l	d5,d0
+(1)  282/  FF1DEA : 2140 0014           		move.l	d0,cam_y_pos(a0)
+(1)  283/  FF1DEE :                     .no_x:
+(1)  284/  FF1DEE : 3807                		move.w	d7,d4
+(1)  285/  FF1DF0 : C87C 0200           		and.w	#JoyY,d4
+(1)  286/  FF1DF4 : 6716                		beq.s	.no_y
+(1)  287/  FF1DF6 : 33FC 0001 FFFF 9A32 		move.w	#1,(RAM_MdMdlsUpd).l
+(1)  288/  FF1DFE : 41F8 99D6           		lea	(RAM_MdCamera),a0
+(1)  289/  FF1E02 : 2028 0014           		move.l	cam_y_pos(a0),d0
+(1)  290/  FF1E06 : D086                		add.l	d6,d0
+(1)  291/  FF1E08 : 2140 0014           		move.l	d0,cam_y_pos(a0)
+(1)  292/  FF1E0C :                     .no_y:
+(1)  293/  FF1E0C : 4E75                		rts
+(1)  294/  FF1E0E :                     
+(1)  295/  FF1E0E :                     ; ====================================================================
 (1)  296/  FF1E0E :                     ; ------------------------------------------------------
-(1)  297/  FF1E0E :                     
-(1)  298/  FF1E0E :                     ; --------------------------------------------------
-(1)  299/  FF1E0E :                     ; Custom VBlank
+(1)  297/  FF1E0E :                     ; Interrupts
+(1)  298/  FF1E0E :                     ; ------------------------------------------------------
+(1)  299/  FF1E0E :                     
 (1)  300/  FF1E0E :                     ; --------------------------------------------------
-(1)  301/  FF1E0E :                     
+(1)  301/  FF1E0E :                     ; Custom VBlank
 (1)  302/  FF1E0E :                     ; --------------------------------------------------
-(1)  303/  FF1E0E :                     ; Custom HBlank
+(1)  303/  FF1E0E :                     
 (1)  304/  FF1E0E :                     ; --------------------------------------------------
-(1)  305/  FF1E0E :                     
-(1)  306/  FF1E0E :                     ; ====================================================================
-(1)  307/  FF1E0E :                     ; ------------------------------------------------------
-(1)  308/  FF1E0E :                     ; DATA
-(1)  309/  FF1E0E :                     ; 
-(1)  310/  FF1E0E :                     ; short stuff goes here
-(1)  311/  FF1E0E :                     ; ------------------------------------------------------
-(1)  312/  FF1E0E :                     
-(1)  313/  FF1E0E :                     		align 2
-(1)  314/  FF1E0E : 5072 6F6A 6563 7420 str_Title:	dc.b "Project Shinrinx-MARS",0
+(1)  305/  FF1E0E :                     ; Custom HBlank
+(1)  306/  FF1E0E :                     ; --------------------------------------------------
+(1)  307/  FF1E0E :                     
+(1)  308/  FF1E0E :                     ; ====================================================================
+(1)  309/  FF1E0E :                     ; ------------------------------------------------------
+(1)  310/  FF1E0E :                     ; DATA
+(1)  311/  FF1E0E :                     ; 
+(1)  312/  FF1E0E :                     ; short stuff goes here
+(1)  313/  FF1E0E :                     ; ------------------------------------------------------
+(1)  314/  FF1E0E :                     
+(1)  315/  FF1E0E :                     		align 2
+(1)  316/  FF1E0E : 5072 6F6A 6563 7420 str_Title:	dc.b "Project Shinrinx-MARS",0
                     5368 696E 7269 6E78 
                     2D4D 4152 5300      
-(1)  315/  FF1E24 :                     		align 2
-(1)  316/  FF1E24 :                     
-(1)  317/  FF1E24 :                     str_Status:
-(1)  318/  FF1E24 : 5C77 205C 7720 5C77 		dc.b "\\w \\w \\w \\w         MD: \\l",$A
+(1)  317/  FF1E24 :                     		align 2
+(1)  318/  FF1E24 :                     
+(1)  319/  FF1E24 :                     str_Status:
+(1)  320/  FF1E24 : 5C77 205C 7720 5C77 		dc.b "\\w \\w \\w \\w         MD: \\l",$A
                     205C 7720 2020 2020 
                     2020 2020 4D44 3A20 
                     5C6C 0A             
-(1)  319/  FF1E3F : 5C77 205C 7720 5C77 		dc.b "\\w \\w \\w \\w",$A
+(1)  321/  FF1E3F : 5C77 205C 7720 5C77 		dc.b "\\w \\w \\w \\w",$A
                     205C 770A           
-(1)  320/  FF1E4B : 5C6C 205C 6C20 5C6C 		dc.b "\\l \\l \\l",$A
+(1)  322/  FF1E4B : 5C6C 205C 6C20 5C6C 		dc.b "\\l \\l \\l",$A
                     0A                  
-(1)  321/  FF1E54 : 5C6C 205C 6C20 5C6C 		dc.b "\\l \\l \\l",0
+(1)  323/  FF1E54 : 5C6C 205C 6C20 5C6C 		dc.b "\\l \\l \\l",0
                     00                  
-(1)  322/  FF1E5D : 00A1 5120           		dc.l sysmars_reg+comm0
-(1)  323/  FF1E61 : 00A1 5122           		dc.l sysmars_reg+comm2
-(1)  324/  FF1E65 : 00A1 5124           		dc.l sysmars_reg+comm4
-(1)  325/  FF1E69 : 00A1 5126           		dc.l sysmars_reg+comm6
-(1)  326/  FF1E6D : FFFF 9218           		dc.l RAM_FrameCount
-(1)  327/  FF1E71 : 00A1 5128           		dc.l sysmars_reg+comm8
-(1)  328/  FF1E75 : 00A1 512A           		dc.l sysmars_reg+comm10
-(1)  329/  FF1E79 : 00A1 512C           		dc.l sysmars_reg+comm12
-(1)  330/  FF1E7D : 00A1 512E           		dc.l sysmars_reg+comm14
-(1)  331/  FF1E81 : FFFF 99E6           		dc.l RAM_MdCamera+cam_x_pos
-(1)  332/  FF1E85 : FFFF 99EA           		dc.l RAM_MdCamera+cam_y_pos
-(1)  333/  FF1E89 : FFFF 99EE           		dc.l RAM_MdCamera+cam_z_pos
-(1)  334/  FF1E8D : FFFF 99F2           		dc.l RAM_MdCamera+cam_x_rot
-(1)  335/  FF1E91 : FFFF 99F6           		dc.l RAM_MdCamera+cam_y_rot
-(1)  336/  FF1E95 : FFFF 99FA           		dc.l RAM_MdCamera+cam_z_rot
-(1)  337/  FF1E99 :                     		align 4
-(1)  338/  FF1E9A :                     		
-(1)  339/  FF1E9A :                     MdPal_Bg:
-(1)  340/  FF1E9A :                     		binclude "data/md/bg/bg_pal.bin"
-(1)  341/  FF1EBA :                     		align 2
-(1)  342/  FF1EBA :                     MdMap_Bg:
-(1)  343/  FF1EBA :                     		binclude "data/md/bg/bg_map.bin"
-(1)  344/  FF2CBA :                     		align 2
-(1)  345/  FF2CBA :                     
+(1)  324/  FF1E5D : 00A1 5120           		dc.l sysmars_reg+comm0
+(1)  325/  FF1E61 : 00A1 5122           		dc.l sysmars_reg+comm2
+(1)  326/  FF1E65 : 00A1 5124           		dc.l sysmars_reg+comm4
+(1)  327/  FF1E69 : 00A1 5126           		dc.l sysmars_reg+comm6
+(1)  328/  FF1E6D : FFFF 9218           		dc.l RAM_FrameCount
+(1)  329/  FF1E71 : 00A1 5128           		dc.l sysmars_reg+comm8
+(1)  330/  FF1E75 : 00A1 512A           		dc.l sysmars_reg+comm10
+(1)  331/  FF1E79 : 00A1 512C           		dc.l sysmars_reg+comm12
+(1)  332/  FF1E7D : 00A1 512E           		dc.l sysmars_reg+comm14
+(1)  333/  FF1E81 : FFFF 99E6           		dc.l RAM_MdCamera+cam_x_pos
+(1)  334/  FF1E85 : FFFF 99EA           		dc.l RAM_MdCamera+cam_y_pos
+(1)  335/  FF1E89 : FFFF 99EE           		dc.l RAM_MdCamera+cam_z_pos
+(1)  336/  FF1E8D : FFFF 99F2           		dc.l RAM_MdCamera+cam_x_rot
+(1)  337/  FF1E91 : FFFF 99F6           		dc.l RAM_MdCamera+cam_y_rot
+(1)  338/  FF1E95 : FFFF 99FA           		dc.l RAM_MdCamera+cam_z_rot
+(1)  339/  FF1E99 :                     		align 4
+(1)  340/  FF1E9A :                     		
+(1)  341/  FF1E9A :                     MdPal_Bg:
+(1)  342/  FF1E9A :                     		binclude "data/md/bg/bg_pal.bin"
+(1)  343/  FF1EBA :                     		align 2
+(1)  344/  FF1EBA :                     MdMap_Bg:
+(1)  345/  FF1EBA :                     		binclude "data/md/bg/bg_map.bin"
+(1)  346/  FF2CBA :                     		align 2
+(1)  347/  FF2CBA :                     
       33/    35F0 :                     		dephase
       34/    35F0 :                     Engine_Code_end:
 MD CODE uses: 2CBA
@@ -3175,8 +3177,8 @@ MD CODE uses: 2CBA
 (2)   55/ 6000124 :                     
 (2)   56/ 6000124 :                     		align 4
 (2)   57/ 6000124 :                     SH2_Slave:
-(2)   58/ 6000124 : 0600 1348 0603 F000 		dc.l SH2_S_Entry,CS3|$3F000	; Cold PC,SP
-(2)   59/ 600012C : 0600 1348 0603 F000 		dc.l SH2_S_Entry,CS3|$3F000	; Manual PC,SP
+(2)   58/ 6000124 : 0600 1318 0603 F000 		dc.l SH2_S_Entry,CS3|$3F000	; Cold PC,SP
+(2)   59/ 600012C : 0600 1318 0603 F000 		dc.l SH2_S_Entry,CS3|$3F000	; Manual PC,SP
 (2)   60/ 6000134 :                     
 (2)   61/ 6000134 : 0600 030C           		dc.l SH2_Error			; Illegal instruction
 (2)   62/ 6000138 : 0000 0000           		dc.l 0				; reserved
@@ -3307,7 +3309,7 @@ MD CODE uses: 2CBA
 (2)  179/ 60002CC :                     int_s_list:
 (2)  180/ 60002CC : 0600 0452 0600 0452 		dc.l s_irq_bad,s_irq_bad
 (2)  181/ 60002D4 : 0600 0452 0600 0452 		dc.l s_irq_bad,s_irq_bad
-(2)  182/ 60002DC : 0600 0452 0600 1546 		dc.l s_irq_bad,s_irq_custom
+(2)  182/ 60002DC : 0600 0452 0600 1516 		dc.l s_irq_bad,s_irq_custom
 (2)  183/ 60002E4 : 0600 0458 0600 0458 		dc.l s_irq_pwm,s_irq_pwm
 (2)  184/ 60002EC : 0600 0494 0600 0494 		dc.l s_irq_cmd,s_irq_cmd
 (2)  185/ 60002F4 : 0600 04B0 0600 04B0 		dc.l s_irq_h,s_irq_h
@@ -3540,7 +3542,7 @@ MD CODE uses: 2CBA
 (1)  230/ 600040E :                     		align 4
 (1)  231/ 6000410 : 0600 02CC 2000 401C 		ltorg				; Save MASTER IRQ literals here
                     2000 401A 2000 4018 
-                    2000 4100 0600 58CC 
+                    2000 4100 0600 589C 
                     2000 4200 2000 4016 
                     2000 4000 3638 5550 
                     535F 4F4B 4D5F 4F4B 
@@ -3719,7 +3721,7 @@ MD CODE uses: 2CBA
                     2000 4016 2000 4000 
                     3638 5550 535F 4F4B 
                     4D5F 4F4B 0603 EFF8 
-                    0600 1386 FE10 00F0 
+                    0600 1356 FE10 00F0 
                     44E0                
 (1)  400/ 600055E :                     
 (1)  401/ 600055E :                     ; ====================================================================
@@ -4016,7 +4018,7 @@ MD CODE uses: 2CBA
 (2)  274/ 600061C : 0009                		nop
 (2)  275/ 600061E :                     		align 4
 (2)  276/ 6000620 : 2000 4000 2000 4100 		ltorg
-                    2400 0000 0600 58CC 
+                    2400 0000 0600 589C 
                     0000 8000 0080 0100 
                     00F0 00FF           
 (2)  277/ 600063C :                     
@@ -4039,7 +4041,7 @@ MD CODE uses: 2CBA
 (2)  294/ 600064E : 000B                		rts
 (2)  295/ 6000650 : 0009                		nop
 (2)  296/ 6000652 :                     		align 4
-(2)  297/ 6000654 : 0600 9B70           		ltorg
+(2)  297/ 6000654 : 0600 9B40           		ltorg
 (2)  298/ 6000658 :                     
 (2)  299/ 6000658 :                     ; ------------------------------------------------
 (2)  300/ 6000658 :                     ; MarsMdl_MakeModel
@@ -4311,7 +4313,7 @@ MD CODE uses: 2CBA
 (2)  566/ 60007F0 : 0009                		nop
 (2)  567/ 60007F2 :                     		align 4
 (2)  568/ 60007F4 : 0000 E000 7FFF FFFF 		ltorg
-                    0600 9AD0 0400 1FFF 
+                    0600 9AA0 0400 1FFF 
                     FF60 F800           
 (2)  569/ 6000808 :                     
 (2)  570/ 6000808 :                     ; ----------------------------------------	
@@ -4534,8 +4536,8 @@ MD CODE uses: 2CBA
 (2)  771/ 6000934 :                     
 (2)  772/ 6000934 :                     ; ----------------------------------------
 (2)  773/ 6000934 :                     
-(2)  774/ 6000934 : 0600 9AD0 0001 0000 		ltorg
-                    0600 1594 0600 1D94 
+(2)  774/ 6000934 : 0600 9AA0 0001 0000 		ltorg
+                    0600 1564 0600 1D64 
                     FF00 07FF           
 (2)  775/ 6000948 :                     
 (2)  776/ 6000948 :                     ; ------------------------------------------------
@@ -4575,7 +4577,7 @@ MD CODE uses: 2CBA
 (2)  810/ 600097C : 000B                		rts
 (2)  811/ 600097E : 0009                		nop
 (2)  812/ 6000980 :                     		align 4
-(2)  813/ 6000980 : C000 0098 0602 5E30 		ltorg
+(2)  813/ 6000980 : C000 0098 0602 5E00 		ltorg
                     2000 4100 00E0 00A1 
                     FE80 5AFF A538      
 (2)  814/ 6000996 :                     
@@ -5148,8 +5150,8 @@ MD CODE uses: 2CBA
 (2) 1378/FFFFFFFFC00003C6 : 0009                		nop
 (2) 1379/FFFFFFFFC00003C8 :                     		align 4
 (2) 1380/FFFFFFFFC00003C8 : 2402 0200 2000 4100 		ltorg
-                    C000 0038 0602 B830 
-                    0602 5E30 00E0 0140 
+                    C000 0038 0602 B800 
+                    0602 5E00 00E0 0140 
                     FF00 00FF 013F FE80 
                     A518 5A00           
 (2) 1381/FFFFFFFFC00003EC :                     
@@ -5374,7 +5376,7 @@ MD CODE uses: 2CBA
 (2) 1600/FFFFFFFFC0000518 :                     		align 4
 (2) 1601/FFFFFFFFC0000518 : C000 0038 C000 0048 		ltorg
                     C000 0058 7FFF FFFF 
-                    0602 B830 0602 5E30 
+                    0602 B800 0602 5E00 
                     00A0 00E0           
 (2) 1602/FFFFFFFFC0000534 :                     
 (2) 1603/FFFFFFFFC0000534 :                     ; --------------------------------
@@ -5648,7 +5650,7 @@ MD CODE uses: 2CBA
 (2) 1868/FFFFFFFFC000071C : 0009                		nop
 (2) 1869/FFFFFFFFC000071E :                     		align 4
 (2) 1870/FFFFFFFFC0000720 : C000 0078 C000 0088 		ltorg
-                    0602 B830 0602 5E30 
+                    0602 B800 0602 5E00 
 (2) 1871/FFFFFFFFC0000730 :                     
 (2) 1872/FFFFFFFFC0000730 :                     ; ------------------------------------------------
 (2) 1873/FFFFFFFFC0000730 :                     ; CACHE END
@@ -5787,7 +5789,7 @@ MD CODE uses: 2CBA
 (2)  121/ 600113A : 000B                		rts
 (2)  122/ 600113C : 0009                		nop
 (2)  123/ 600113E :                     		align 4
-(2)  124/ 6001140 : 0602 B830 2000 4038 		ltorg
+(2)  124/ 6001140 : 0602 B800 2000 4038 		ltorg
                     2000 4034 2000 4036 
 (2)  125/ 6001150 :                     
 (2)  126/ 6001150 :                     ; ====================================================================
@@ -5892,7 +5894,7 @@ MD CODE uses: 2CBA
 (2)  225/ 60011AC :                     
 (2)  226/ 60011AC :                     ; ====================================================================
 (2)  227/ 60011AC :                     
-(2)  228/ 60011AC : 2000 4000 0602 B830 		ltorg			; Save literals
+(2)  228/ 60011AC : 2000 4000 0602 B800 		ltorg			; Save literals
                     FF00 0000 0415 0105 
 (2)  229/ 60011BC :                     
 (1)  408/ 60011BC :                     		align 4
@@ -5904,8 +5906,8 @@ MD CODE uses: 2CBA
 (1)  414/ 60011BC :                     
 (1)  415/ 60011BC :                     		align 4
 (1)  416/ 60011BC :                     SH2_M_Entry:
-(1)  417/ 60011BC : DF49                		mov.l	#CS3|$40000,r15		; Set default Stack for Master
-(1)  418/ 60011BE : 91B9                		mov.l   #$FFFFFE10,r1
+(1)  417/ 60011BC : DF41                		mov.l	#CS3|$40000,r15		; Set default Stack for Master
+(1)  418/ 60011BE : 91A1                		mov.l   #$FFFFFE10,r1
 (1)  419/ 60011C0 : E000                		mov     #0,r0
 (1)  420/ 60011C2 : 8010                		mov.b   r0,@(0,r1)
 (1)  421/ 60011C4 : E0E2                		mov     #$FFFFFFE2,r0
@@ -5921,10 +5923,10 @@ MD CODE uses: 2CBA
 (1)  431/ 60011D8 : E000                		mov     #0,r0
 (1)  432/ 60011DA : 8013                		mov.b   r0,@(3,r1)
 (1)  433/ 60011DC : 8012                		mov.b   r0,@(2,r1)
-(1)  434/ 60011DE : 90AA                		mov.l   #$FFFFFEE2,r0		; Pre-init special interrupt
+(1)  434/ 60011DE : 9092                		mov.l   #$FFFFFEE2,r0		; Pre-init special interrupt
 (1)  435/ 60011E0 : E150                		mov     #$50,r1
 (1)  436/ 60011E2 : 2011                		mov.w   r1,@r0
-(1)  437/ 60011E4 : 90A8                		mov.l   #$FFFFFEE4,r0
+(1)  437/ 60011E4 : 9090                		mov.l   #$FFFFFEE4,r0
 (1)  438/ 60011E6 : E148                		mov     #$120/4,r1		; VBR + this/4
 (1)  439/ 60011E8 : 4118                		shll8   r1
 (1)  440/ 60011EA : 2011                		mov.w   r1,@r0
@@ -5934,11 +5936,11 @@ MD CODE uses: 2CBA
 (1)  444/ 60011EC :                     ; ------------------------------------------------
 (1)  445/ 60011EC :                     
 (1)  446/ 60011EC :                     .wait_md:
-(1)  447/ 60011EC : D23E                		mov 	#_sysreg+comm0,r2		; Wait for Genesis
+(1)  447/ 60011EC : D236                		mov 	#_sysreg+comm0,r2		; Wait for Genesis
 (1)  448/ 60011EE : 6022                		mov.l	@r2,r0
 (1)  449/ 60011F0 : 8800                		cmp/eq	#0,r0
 (1)  450/ 60011F2 : 8BFB                		bf	.wait_md
-(1)  451/ 60011F4 : D13D                		mov.l	#"SLAV",r1
+(1)  451/ 60011F4 : D135                		mov.l	#"SLAV",r1
 (1)  452/ 60011F6 :                     .wait_slave:
 (1)  453/ 60011F6 : 5022                		mov.l	@(8,r2),r0			; Wait for Slave CPU to finish booting
 (1)  454/ 60011F8 : 3010                		cmp/eq	r1,r0
@@ -5962,24 +5964,24 @@ MD CODE uses: 2CBA
 (1)  472/ 6001200 :                     ; ----------------------------------------------------------------
 (1)  473/ 6001200 :                     
 (1)  474/ 6001200 :                     SH2_M_HotStart:
-(1)  475/ 6001200 : DF38                		mov.l	#CS3|$40000,r15			; Stack again if coming from RESET
-(1)  476/ 6001202 : DE3B                		mov.l	#RAM_Mars_Global,r14		; GBR - Global values/variables
+(1)  475/ 6001200 : DF30                		mov.l	#CS3|$40000,r15			; Stack again if coming from RESET
+(1)  476/ 6001202 : DE33                		mov.l	#RAM_Mars_Global,r14		; GBR - Global values/variables
 (1)  477/ 6001204 : 4E1E                		ldc	r14,gbr
 (1)  478/ 6001206 :                     	
-(1)  479/ 6001206 : 9098                		mov.l	#$F0,r0				; Interrupts OFF
+(1)  479/ 6001206 : 9080                		mov.l	#$F0,r0				; Interrupts OFF
 (1)  480/ 6001208 : 400E                		ldc	r0,sr
-(1)  481/ 600120A : 9197                		mov.l	#_CCR,r1			; Set this cache mode
+(1)  481/ 600120A : 917F                		mov.l	#_CCR,r1			; Set this cache mode
 (1)  482/ 600120C : E000                		mov	#0,r0
 (1)  483/ 600120E : 2101                		mov.w	r0,@r1
 (1)  484/ 6001210 : E019                		mov	#$19,r0
 (1)  485/ 6001212 : 2101                		mov.w	r0,@r1
-(1)  486/ 6001214 : D137                		mov	#_sysreg,r1
+(1)  486/ 6001214 : D12F                		mov	#_sysreg,r1
 (1)  487/ 6001216 : E00A                		mov	#VIRQ_ON|CMDIRQ_ON,r0		; Enable these interrupts		
 (1)  488/ 6001218 : 8011                    		mov.b	r0,@(intmask,r1)
 (1)  489/ 600121A :                     
-(1)  490/ 600121A : D137                		mov 	#CACHE_START,r1			; Load 3D Routines on CACHE	
-(1)  491/ 600121C : D237                		mov 	#$C0000000,r2
-(1)  492/ 600121E : 938E                		mov 	#(CACHE_END-CACHE_START)/4,r3
+(1)  490/ 600121A : D12F                		mov 	#CACHE_START,r1			; Load 3D Routines on CACHE	
+(1)  491/ 600121C : D22F                		mov 	#$C0000000,r2
+(1)  492/ 600121E : 9376                		mov 	#(CACHE_END-CACHE_START)/4,r3
 (1)  493/ 6001220 :                     .copy:
 (1)  494/ 6001220 : 6016                		mov 	@r1+,r0
 (1)  495/ 6001222 : 2202                		mov 	r0,@r2
@@ -5993,788 +5995,786 @@ MD CODE uses: 2CBA
 (1)  503/ 6001232 :                     		
 (1)  504/ 6001232 :                     ; ------------------------------------------------
 (1)  505/ 6001232 :                     
-(1)  506/ 6001232 : D133                		mov	#Palette_Puyo,r1
-(1)  507/ 6001234 : 9384                		mov	#256,r3
+(1)  506/ 6001232 : D12B                		mov	#Palette_Puyo,r1
+(1)  507/ 6001234 : 936C                		mov	#256,r3
 (1)  508/ 6001236 : B9E3                		bsr	MarsVideo_LoadPal
 (1)  509/ 6001238 : E200                		mov	#0,r2
-(1)  510/ 600123A : 9082                		mov	#($1F<<10)|($E<<5),r0
-(1)  511/ 600123C : D131                		mov	#RAM_Mars_Palette,r1
+(1)  510/ 600123A : 906A                		mov	#($1F<<10)|($E<<5),r0
+(1)  511/ 600123C : D129                		mov	#RAM_Mars_Palette,r1
 (1)  512/ 600123E : 2101                		mov.w	r0,@r1
 (1)  513/ 6001240 :                     		
-(1)  514/ 6001240 : E100                		mov	#0,r1
-(1)  515/ 6001242 : D231                		mov	#WAV_LEFT,r2
-(1)  516/ 6001244 : D331                		mov	#WAV_LEFT_E,r3
-(1)  517/ 6001246 : 6423                		mov	r2,r4
-(1)  518/ 6001248 : 957A                		mov	#$100,r5
-(1)  519/ 600124A : E600                		mov	#0,r6
-(1)  520/ 600124C : BF90                		bsr	MarsSound_SetChannel
-(1)  521/ 600124E : E702                		mov	#%10,r7
-(1)  522/ 6001250 : E101                		mov	#1,r1
-(1)  523/ 6001252 : D22F                		mov	#WAV_RIGHT,r2
-(1)  524/ 6001254 : D32F                		mov	#WAV_RIGHT_E,r3
-(1)  525/ 6001256 : 6423                		mov	r2,r4
-(1)  526/ 6001258 : 9572                		mov	#$100,r5
-(1)  527/ 600125A : E600                		mov	#0,r6
-(1)  528/ 600125C : BF88                		bsr	MarsSound_SetChannel
-(1)  529/ 600125E : E701                		mov	#%01,r7
-(1)  530/ 6001260 :                     		
-(1)  531/ 6001260 :                     ; ------------------------------------------------
-(1)  532/ 6001260 :                     
-(1)  533/ 6001260 : 906C                		mov	#$FFFFFE92,r0
-(1)  534/ 6001262 : E108                		mov     #8,r1
-(1)  535/ 6001264 : 2010                		mov.b   r1,@r0
-(1)  536/ 6001266 : E119                		mov     #$19,r1
-(1)  537/ 6001268 : 2010                		mov.b   r1,@r0
-(1)  538/ 600126A : E020                		mov.l	#$20,r0			; Interrupts ON
-(1)  539/ 600126C : 400E                		ldc	r0,sr
-(1)  540/ 600126E :                     
-(1)  541/ 600126E :                     ; --------------------------------------------------------
-(1)  542/ 600126E :                     ; Loop
-(1)  543/ 600126E :                     ; --------------------------------------------------------
-(1)  544/ 600126E :                     
-(1)  545/ 600126E :                     master_loop:
-(1)  546/ 600126E : E000                		mov	#0,r0
-(1)  547/ 6001270 : D129                		mov	#_sysreg+comm14,r1
-(1)  548/ 6001272 : 2100                		mov.b	r0,@r1
-(1)  549/ 6001274 :                     .mstr_wait:
-(1)  550/ 6001274 : 6010                		mov.b	@r1,r0			; Any DRAW request?
-(1)  551/ 6001276 : 8800                		cmp/eq	#0,r0
-(1)  552/ 6001278 : 8B02                		bf	.mstr_free		; If !=0, start drawing
-(1)  553/ 600127A :                     ; 		mov	#$16,r0			; Small delay and retry
-(1)  554/ 600127A :                     ; .mstr_delay:
-(1)  555/ 600127A :                     ; 		nop
-(1)  556/ 600127A :                     ; 		dt	r0
-(1)  557/ 600127A :                     ; 		bf/s	.mstr_delay
-(1)  558/ 600127A : 0009                		nop
-(1)  559/ 600127C : AFFA                		bra	.mstr_wait
-(1)  560/ 600127E : 0009                		nop
-(1)  561/ 6001280 :                     
-(1)  562/ 6001280 :                     ; --------------------------------------------------------
-(1)  563/ 6001280 :                     ; Start building and drawing polygons
-(1)  564/ 6001280 :                     ; --------------------------------------------------------
-(1)  565/ 6001280 :                     
-(1)  566/ 6001280 :                     .mstr_free:
-(1)  567/ 6001280 : 905C                		mov.l	#$FFFFFE92,r0
-(1)  568/ 6001282 : E108                		mov	#8,r1
-(1)  569/ 6001284 : 2010                		mov.b	r1,@r0
-(1)  570/ 6001286 : E119                		mov	#$19,r1
-(1)  571/ 6001288 : 2010                		mov.b	r1,@r0
-(1)  572/ 600128A : BB5D                		bsr	MarsRndr_SetWatchdog
-(1)  573/ 600128C : 0009                		nop
-(1)  574/ 600128E : C509                		mov.w   @(marsGbl_PolyBuffNum,gbr),r0	; Start drawing polygons from the READ buffer
-(1)  575/ 6001290 : C801                		tst     #1,r0				; Check for which buffer to use
-(1)  576/ 6001292 : 8903                		bt	.page_2
-(1)  577/ 6001294 : DE21                		mov 	#RAM_Mars_PlgnList_0,r14
-(1)  578/ 6001296 : DD22                		mov	#RAM_Mars_PlgnNum_0,r13
-(1)  579/ 6001298 : A002                		bra	.cont_plgn
-(1)  580/ 600129A : 0009                		nop
-(1)  581/ 600129C :                     .page_2:
-(1)  582/ 600129C : DE21                		mov 	#RAM_Mars_PlgnList_1,r14
-(1)  583/ 600129E : DD22                		mov	#RAM_Mars_PlgnNum_1,r13
-(1)  584/ 60012A0 :                     .cont_plgn:
-(1)  585/ 60012A0 :                     
-(1)  586/ 60012A0 :                     	; r14 - Polygon pointers to read
-(1)  587/ 60012A0 :                     	; r13 - NumOf Polygons to use
-(1)  588/ 60012A0 : 6DD1                		mov.w	@r13,r13
-(1)  589/ 60012A2 : 4D15                		cmp/pl	r13
-(1)  590/ 60012A4 : 8B0C                		bf	.skip
-(1)  591/ 60012A6 :                     .loop:
-(1)  592/ 60012A6 : 2FE6                		mov	r14,@-r15
-(1)  593/ 60012A8 : 2FD6                		mov	r13,@-r15
-(1)  594/ 60012AA : 6EE2                		mov	@r14,r14			; Get location of the polygon
-(1)  595/ 60012AC : 4E15                		cmp/pl	r14
-(1)  596/ 60012AE : 8B02                		bf	.invalid
-(1)  597/ 60012B0 : D01E                		mov 	#MarsVideo_MakePolygon,r0
-(1)  598/ 60012B2 : 400B                		jsr	@r0
-(1)  599/ 60012B4 : 0009                		nop
-(1)  600/ 60012B6 :                     .invalid:
-(1)  601/ 60012B6 : 6DF6                		mov	@r15+,r13
-(1)  602/ 60012B8 : 6EF6                		mov	@r15+,r14
-(1)  603/ 60012BA : 4D10                		dt	r13
-(1)  604/ 60012BC : 8FF3                		bf/s	.loop
-(1)  605/ 60012BE : 7E04                		add	#4,r14
-(1)  606/ 60012C0 :                     .skip:
-(1)  607/ 60012C0 :                     
-(1)  608/ 60012C0 :                     	; --------------------------------------
-(1)  609/ 60012C0 :                     
-(1)  610/ 60012C0 : C50A                .wait_pz: 	mov.w	@(marsGbl_PzListCntr,gbr),r0	; Any polygons remaining on interrupt?
-(1)  611/ 60012C2 : 8800                		cmp/eq	#0,r0
-(1)  612/ 60012C4 : 8BFC                		bf	.wait_pz
-(1)  613/ 60012C6 : C50B                .wait_task:	mov.w	@(marsGbl_DrwTask,gbr),r0	; Any draw task active?
-(1)  614/ 60012C8 : 8800                		cmp/eq	#0,r0
-(1)  615/ 60012CA : 8BFC                		bf	.wait_task
-(1)  616/ 60012CC : 913A                		mov.l   #$FFFFFE80,r1			; Stop watchdog
-(1)  617/ 60012CE : 903A                		mov.w   #$A518,r0
-(1)  618/ 60012D0 : 2101                		mov.w   r0,@r1
-(1)  619/ 60012D2 : B985                		bsr	MarsVideo_FrameSwap		; Swap frame (waits VBlank)
-(1)  620/ 60012D4 : 0009                		nop
-(1)  621/ 60012D6 :                     
-(1)  622/ 60012D6 :                     	; --------------------
-(1)  623/ 60012D6 :                     	; DEBUG counter
-(1)  624/ 60012D6 : D116                		mov	#_sysreg+comm4,r1
-(1)  625/ 60012D8 : 6011                		mov.w	@r1,r0
-(1)  626/ 60012DA : 7001                		add	#1,r0
-(1)  627/ 60012DC : 2101                		mov.w	r0,@r1
-(1)  628/ 60012DE :                     	; --------------------
-(1)  629/ 60012DE :                     	
-(1)  630/ 60012DE : AFC6                		bra	master_loop
-(1)  631/ 60012E0 : 0009                		nop
-(1)  632/ 60012E2 :                     		align 4
-(1)  633/ 60012E4 : 0604 0000 2000 4020 		ltorg
-                    534C 4156 0600 588C 
+(1)  514/ 6001240 :                     ; 		mov	#0,r1
+(1)  515/ 6001240 :                     ; 		mov	#WAV_LEFT,r2
+(1)  516/ 6001240 :                     ; 		mov	#WAV_LEFT_E,r3
+(1)  517/ 6001240 :                     ; 		mov	r2,r4
+(1)  518/ 6001240 :                     ; 		mov	#$100,r5
+(1)  519/ 6001240 :                     ; 		mov	#0,r6
+(1)  520/ 6001240 :                     ; 		bsr	MarsSound_SetChannel
+(1)  521/ 6001240 :                     ; 		mov	#%10,r7
+(1)  522/ 6001240 :                     ; 		mov	#1,r1
+(1)  523/ 6001240 :                     ; 		mov	#WAV_RIGHT,r2
+(1)  524/ 6001240 :                     ; 		mov	#WAV_RIGHT_E,r3
+(1)  525/ 6001240 :                     ; 		mov	r2,r4
+(1)  526/ 6001240 :                     ; 		mov	#$100,r5
+(1)  527/ 6001240 :                     ; 		mov	#0,r6
+(1)  528/ 6001240 :                     ; 		bsr	MarsSound_SetChannel
+(1)  529/ 6001240 :                     ; 		mov	#%01,r7
+(1)  530/ 6001240 :                     		
+(1)  531/ 6001240 :                     ; ------------------------------------------------
+(1)  532/ 6001240 :                     
+(1)  533/ 6001240 : 9064                		mov	#$FFFFFE92,r0
+(1)  534/ 6001242 : E108                		mov     #8,r1
+(1)  535/ 6001244 : 2010                		mov.b   r1,@r0
+(1)  536/ 6001246 : E119                		mov     #$19,r1
+(1)  537/ 6001248 : 2010                		mov.b   r1,@r0
+(1)  538/ 600124A : E020                		mov.l	#$20,r0			; Interrupts ON
+(1)  539/ 600124C : 400E                		ldc	r0,sr
+(1)  540/ 600124E :                     
+(1)  541/ 600124E :                     ; --------------------------------------------------------
+(1)  542/ 600124E :                     ; Loop
+(1)  543/ 600124E :                     ; --------------------------------------------------------
+(1)  544/ 600124E :                     
+(1)  545/ 600124E :                     master_loop:
+(1)  546/ 600124E : E000                		mov	#0,r0
+(1)  547/ 6001250 : D125                		mov	#_sysreg+comm14,r1
+(1)  548/ 6001252 : 2100                		mov.b	r0,@r1
+(1)  549/ 6001254 :                     .mstr_wait:
+(1)  550/ 6001254 : 6010                		mov.b	@r1,r0			; Any DRAW request?
+(1)  551/ 6001256 : 8800                		cmp/eq	#0,r0
+(1)  552/ 6001258 : 8B02                		bf	.mstr_free		; If !=0, start drawing
+(1)  553/ 600125A :                     ; 		mov	#$16,r0			; Small delay and retry
+(1)  554/ 600125A :                     ; .mstr_delay:
+(1)  555/ 600125A :                     ; 		nop
+(1)  556/ 600125A :                     ; 		dt	r0
+(1)  557/ 600125A :                     ; 		bf/s	.mstr_delay
+(1)  558/ 600125A : 0009                		nop
+(1)  559/ 600125C : AFFA                		bra	.mstr_wait
+(1)  560/ 600125E : 0009                		nop
+(1)  561/ 6001260 :                     
+(1)  562/ 6001260 :                     ; --------------------------------------------------------
+(1)  563/ 6001260 :                     ; Start building and drawing polygons
+(1)  564/ 6001260 :                     ; --------------------------------------------------------
+(1)  565/ 6001260 :                     
+(1)  566/ 6001260 :                     .mstr_free:
+(1)  567/ 6001260 : 9054                		mov.l	#$FFFFFE92,r0
+(1)  568/ 6001262 : E108                		mov	#8,r1
+(1)  569/ 6001264 : 2010                		mov.b	r1,@r0
+(1)  570/ 6001266 : E119                		mov	#$19,r1
+(1)  571/ 6001268 : 2010                		mov.b	r1,@r0
+(1)  572/ 600126A : BB6D                		bsr	MarsRndr_SetWatchdog
+(1)  573/ 600126C : 0009                		nop
+(1)  574/ 600126E : C509                		mov.w   @(marsGbl_PolyBuffNum,gbr),r0	; Start drawing polygons from the READ buffer
+(1)  575/ 6001270 : C801                		tst     #1,r0				; Check for which buffer to use
+(1)  576/ 6001272 : 8903                		bt	.page_2
+(1)  577/ 6001274 : DE1D                		mov 	#RAM_Mars_PlgnList_0,r14
+(1)  578/ 6001276 : DD1E                		mov	#RAM_Mars_PlgnNum_0,r13
+(1)  579/ 6001278 : A002                		bra	.cont_plgn
+(1)  580/ 600127A : 0009                		nop
+(1)  581/ 600127C :                     .page_2:
+(1)  582/ 600127C : DE1D                		mov 	#RAM_Mars_PlgnList_1,r14
+(1)  583/ 600127E : DD1E                		mov	#RAM_Mars_PlgnNum_1,r13
+(1)  584/ 6001280 :                     .cont_plgn:
+(1)  585/ 6001280 :                     
+(1)  586/ 6001280 :                     	; r14 - Polygon pointers to read
+(1)  587/ 6001280 :                     	; r13 - NumOf Polygons to use
+(1)  588/ 6001280 : 6DD1                		mov.w	@r13,r13
+(1)  589/ 6001282 : 4D15                		cmp/pl	r13
+(1)  590/ 6001284 : 8B0C                		bf	.skip
+(1)  591/ 6001286 :                     .loop:
+(1)  592/ 6001286 : 2FE6                		mov	r14,@-r15
+(1)  593/ 6001288 : 2FD6                		mov	r13,@-r15
+(1)  594/ 600128A : 6EE2                		mov	@r14,r14			; Get location of the polygon
+(1)  595/ 600128C : 4E15                		cmp/pl	r14
+(1)  596/ 600128E : 8B02                		bf	.invalid
+(1)  597/ 6001290 : D01A                		mov 	#MarsVideo_MakePolygon,r0
+(1)  598/ 6001292 : 400B                		jsr	@r0
+(1)  599/ 6001294 : 0009                		nop
+(1)  600/ 6001296 :                     .invalid:
+(1)  601/ 6001296 : 6DF6                		mov	@r15+,r13
+(1)  602/ 6001298 : 6EF6                		mov	@r15+,r14
+(1)  603/ 600129A : 4D10                		dt	r13
+(1)  604/ 600129C : 8FF3                		bf/s	.loop
+(1)  605/ 600129E : 7E04                		add	#4,r14
+(1)  606/ 60012A0 :                     .skip:
+(1)  607/ 60012A0 :                     
+(1)  608/ 60012A0 :                     	; --------------------------------------
+(1)  609/ 60012A0 :                     
+(1)  610/ 60012A0 : C50A                .wait_pz: 	mov.w	@(marsGbl_PzListCntr,gbr),r0	; Any polygons remaining on interrupt?
+(1)  611/ 60012A2 : 8800                		cmp/eq	#0,r0
+(1)  612/ 60012A4 : 8BFC                		bf	.wait_pz
+(1)  613/ 60012A6 : C50B                .wait_task:	mov.w	@(marsGbl_DrwTask,gbr),r0	; Any draw task active?
+(1)  614/ 60012A8 : 8800                		cmp/eq	#0,r0
+(1)  615/ 60012AA : 8BFC                		bf	.wait_task
+(1)  616/ 60012AC : 9132                		mov.l   #$FFFFFE80,r1			; Stop watchdog
+(1)  617/ 60012AE : 9032                		mov.w   #$A518,r0
+(1)  618/ 60012B0 : 2101                		mov.w   r0,@r1
+(1)  619/ 60012B2 : B995                		bsr	MarsVideo_FrameSwap		; Swap frame (waits VBlank)
+(1)  620/ 60012B4 : 0009                		nop
+(1)  621/ 60012B6 :                     
+(1)  622/ 60012B6 :                     	; --------------------
+(1)  623/ 60012B6 :                     	; DEBUG counter
+(1)  624/ 60012B6 : D112                		mov	#_sysreg+comm4,r1
+(1)  625/ 60012B8 : 6011                		mov.w	@r1,r0
+(1)  626/ 60012BA : 7001                		add	#1,r0
+(1)  627/ 60012BC : 2101                		mov.w	r0,@r1
+(1)  628/ 60012BE :                     	; --------------------
+(1)  629/ 60012BE :                     	
+(1)  630/ 60012BE : AFC6                		bra	master_loop
+(1)  631/ 60012C0 : 0009                		nop
+(1)  632/ 60012C2 :                     		align 4
+(1)  633/ 60012C4 : 0604 0000 2000 4020 		ltorg
+                    534C 4156 0600 585C 
                     2000 4000 0600 0998 
-                    C000 0000 0600 4008 
-                    0600 58CC 0209 9CC0 
-                    0219 9CC0 0219 9CC0 
-                    0229 9CC0 2000 402E 
-                    0600 5ACC 0600 9ACC 
-                    0600 6ACC 0600 9ACE 
+                    C000 0000 0600 3FD8 
+                    0600 589C 2000 402E 
+                    0600 5A9C 0600 9A9C 
+                    0600 6A9C 0600 9A9E 
                     C000 03EC 2000 4024 
                     FE10 FEE2 FEE4 00F0 
                     FE92 01CC 0100 7DC0 
                     FE80 A518           
-(1)  634/ 6001348 :                     
-(1)  635/ 6001348 :                     ; ====================================================================
-(1)  636/ 6001348 :                     ; ----------------------------------------------------------------
-(1)  637/ 6001348 :                     ; Slave entry
-(1)  638/ 6001348 :                     ; ----------------------------------------------------------------
-(1)  639/ 6001348 :                     
-(1)  640/ 6001348 :                     		align 4
-(1)  641/ 6001348 :                     SH2_S_Entry:
-(1)  642/ 6001348 : DE4A                		mov.l	#_sysreg,r14
-(1)  643/ 600134A : 4E1E                		ldc	r14,gbr
-(1)  644/ 600134C :                     
-(1)  645/ 600134C : 91BC                		mov.l   #$FFFFFE10,r1
-(1)  646/ 600134E : E000                		mov     #0,r0
-(1)  647/ 6001350 : 8010                		mov.b   r0,@(0,r1)
-(1)  648/ 6001352 : E0E2                		mov     #$FFFFFFE2,r0
-(1)  649/ 6001354 : 8017                		mov.b   r0,@(7,r1)
-(1)  650/ 6001356 : E000                		mov     #0,r0
-(1)  651/ 6001358 : 8014                		mov.b   r0,@(4,r1)
-(1)  652/ 600135A : E001                		mov     #1,r0
-(1)  653/ 600135C : 8015                		mov.b   r0,@(5,r1)
-(1)  654/ 600135E : E000                		mov     #0,r0
-(1)  655/ 6001360 : 8016                		mov.b   r0,@(6,r1)
-(1)  656/ 6001362 : E001                		mov     #1,r0
-(1)  657/ 6001364 : 8011                		mov.b   r0,@(1,r1)
-(1)  658/ 6001366 : E000                		mov     #0,r0
-(1)  659/ 6001368 : 8013                		mov.b   r0,@(3,r1)
-(1)  660/ 600136A : 8012                		mov.b   r0,@(2,r1)
-(1)  661/ 600136C : 90AD                		mov.l   #$FFFFFEE2,r0
-(1)  662/ 600136E : E150                		mov     #$50,r1
-(1)  663/ 6001370 : 2011                		mov.w   r1,@r0
-(1)  664/ 6001372 : 90AB                		mov.l   #$FFFFFEE4,r0
-(1)  665/ 6001374 : E148                		mov     #$120/4,r1		; VBR + this/4
-(1)  666/ 6001376 : 4118                		shll8   r1
-(1)  667/ 6001378 : 2011                		mov.w   r1,@r0
-(1)  668/ 600137A :                     		
-(1)  669/ 600137A :                     ; ------------------------------------------------
-(1)  670/ 600137A :                     ; Wait for Genesis, report to Master SH2
-(1)  671/ 600137A :                     ; ------------------------------------------------
-(1)  672/ 600137A :                     
-(1)  673/ 600137A :                     .wait_md:
-(1)  674/ 600137A : D23F                		mov 	#_sysreg+comm0,r2
-(1)  675/ 600137C : 6022                		mov.l	@r2,r0
-(1)  676/ 600137E : 8800                		cmp/eq	#0,r0
-(1)  677/ 6001380 : 8BFB                		bf	.wait_md
-(1)  678/ 6001382 : D03E                		mov.l	#"SLAV",r0
-(1)  679/ 6001384 : 1202                		mov.l	r0,@(8,r2)
-(1)  680/ 6001386 :                     
-(1)  681/ 6001386 :                     ; ====================================================================
-(1)  682/ 6001386 :                     ; ----------------------------------------------------------------
-(1)  683/ 6001386 :                     ; Slave main code
-(1)  684/ 6001386 :                     ; ----------------------------------------------------------------
-(1)  685/ 6001386 :                     
-(1)  686/ 6001386 :                     SH2_S_HotStart:
-(1)  687/ 6001386 : DF3E                		mov.l	#CS3|$3F000,r15			; Reset stack
-(1)  688/ 6001388 : DE3E                		mov.l	#RAM_Mars_Global,r14		; Reset gbr
-(1)  689/ 600138A : 4E1E                		ldc	r14,gbr
-(1)  690/ 600138C : 909F                		mov.l	#$F0,r0				; Interrupts OFF
-(1)  691/ 600138E : 400E                		ldc	r0,sr
-(1)  692/ 6001390 : 919E                		mov.l	#_CCR,r1			; Set this cache mode
-(1)  693/ 6001392 : E000                		mov	#0,r0
-(1)  694/ 6001394 : 2101                		mov.w	r0,@r1
-(1)  695/ 6001396 : E019                		mov	#$19,r0
-(1)  696/ 6001398 : 2101                		mov.w	r0,@r1
-(1)  697/ 600139A : D136                		mov	#_sysreg,r1
-(1)  698/ 600139C : E001                		mov.l	#VIRQ_ON||PWMIRQ_ON|CMDIRQ_ON,r0	; IRQ enable bits
-(1)  699/ 600139E : 8011                    		mov.b	r0,@(intmask,r1)			; clear IRQ ACK regs
-(1)  700/ 60013A0 :                     
-(1)  701/ 60013A0 :                     
-(1)  702/ 60013A0 :                     ; ------------------------------------------------
-(1)  703/ 60013A0 :                     ; REMINDER: In blender:
-(1)  704/ 60013A0 :                     ; 1 meter = $10000 (x/y/z model positions)
-(1)  705/ 60013A0 :                     ;
-(1)  706/ 60013A0 :                     
-(1)  707/ 60013A0 : B94C                		bsr	MarsMdl_Init
-(1)  708/ 60013A2 : 0009                		nop
-(1)  709/ 60013A4 : E020                		mov	#$20,r0			; Interrupts ON
-(1)  710/ 60013A6 : 400E                		ldc	r0,sr
-(1)  711/ 60013A8 : D137                		mov	#RAM_Mars_Objects,r1
-(1)  712/ 60013AA : D038                		mov	#TEST_MODEL,r0
-(1)  713/ 60013AC : 1104                		mov	r0,@(mdl_data,r1)
-(1)  714/ 60013AE : D038                		mov	#TEST_ANIMATION,r0
-(1)  715/ 60013B0 : 1100                		mov	r0,@(mdl_animdata,r1)
-(1)  716/ 60013B2 :                     		
-(1)  717/ 60013B2 :                     ; 		add	#sizeof_mdlobj,r1
-(1)  718/ 60013B2 :                     ; 		mov	#TEST_MODEL,r0
-(1)  719/ 60013B2 :                     ; 		mov	r0,@r1
-(1)  720/ 60013B2 :                     ; 		mov	#$20000,r0
-(1)  721/ 60013B2 :                     ; 		mov	r0,@(mdl_x_pos,r1)
-(1)  722/ 60013B2 :                     ; 		
-(1)  723/ 60013B2 :                     ; 		add	#sizeof_mdlobj,r1
-(1)  724/ 60013B2 :                     ; 		mov	#TEST_MODEL,r0
-(1)  725/ 60013B2 :                     ; 		mov	r0,@r1
-(1)  726/ 60013B2 :                     ; 		mov	#-$40000,r0
-(1)  727/ 60013B2 :                     ; 		mov	r0,@(mdl_z_pos,r1)		
-(1)  728/ 60013B2 :                     		
-(1)  729/ 60013B2 :                     ; --------------------------------------------------------
-(1)  730/ 60013B2 :                     ; Loop
-(1)  731/ 60013B2 :                     ; --------------------------------------------------------
-(1)  732/ 60013B2 :                     
-(1)  733/ 60013B2 :                     slave_loop:
-(1)  734/ 60013B2 : DE38                		mov	#_sysreg+comm15,r14		; Any request from MD?
-(1)  735/ 60013B4 : 60E0                		mov.b	@r14,r0
-(1)  736/ 60013B6 : 8800                		cmp/eq	#0,r0
-(1)  737/ 60013B8 : 8921                		bt	.no_requests
-(1)  738/ 60013BA :                     
-(1)  739/ 60013BA :                     ; --------------------------------------------
-(1)  740/ 60013BA :                     
-(1)  741/ 60013BA : D137                		mov	#_sysreg+comm8,r1
-(1)  742/ 60013BC : D237                		mov	#RAM_Mars_ObjCamera,r2
-(1)  743/ 60013BE :                     .transfer_loop:
-(1)  744/ 60013BE : 0009                		nop
-(1)  745/ 60013C0 : 0009                		nop
-(1)  746/ 60013C2 : 0009                		nop
-(1)  747/ 60013C4 : 0009                		nop
-(1)  748/ 60013C6 : 6011                		mov.w	@r1,r0
-(1)  749/ 60013C8 : 8800                		cmp/eq	#0,r0
-(1)  750/ 60013CA : 89F8                		bt	.transfer_loop
-(1)  751/ 60013CC : 8802                		cmp/eq	#2,r0
-(1)  752/ 60013CE : 8913                		bt	.trnsfr_done
-(1)  753/ 60013D0 : 8511                		mov.w	@(2,r1),r0
-(1)  754/ 60013D2 : 600D                		extu	r0,r0
-(1)  755/ 60013D4 : 4028                		shll16	r0
-(1)  756/ 60013D6 : 6303                		mov	r0,r3
-(1)  757/ 60013D8 : 8512                		mov.w	@(4,r1),r0
-(1)  758/ 60013DA : 600D                		extu	r0,r0
-(1)  759/ 60013DC : 203B                		or	r3,r0
-(1)  760/ 60013DE : 2202                		mov.l	r0,@r2
-(1)  761/ 60013E0 : 0009                		nop
-(1)  762/ 60013E2 : 0009                		nop
-(1)  763/ 60013E4 : 0009                		nop
-(1)  764/ 60013E6 : 0009                		nop
-(1)  765/ 60013E8 : E000                		mov	#0,r0
-(1)  766/ 60013EA : 2101                		mov.w	r0,@r1
-(1)  767/ 60013EC : 0009                		nop
-(1)  768/ 60013EE : 0009                		nop
-(1)  769/ 60013F0 : 0009                		nop
-(1)  770/ 60013F2 : 0009                		nop
-(1)  771/ 60013F4 : AFE3                		bra	.transfer_loop
-(1)  772/ 60013F6 : 7204                		add	#4,r2
-(1)  773/ 60013F8 :                     .trnsfr_done:
-(1)  774/ 60013F8 : E000                		mov	#0,r0
-(1)  775/ 60013FA : 2101                		mov.w	r0,@r1
-(1)  776/ 60013FC : 2E00                		mov.b	r0,@r14
-(1)  777/ 60013FE :                     ; 		mov.w	@(marsGbl_SlvDrawReq,gbr),r0
-(1)  778/ 60013FE :                     ; 		cmp/eq	#1,r0
-(1)  779/ 60013FE :                     ; 		bt	slave_loop
-(1)  780/ 60013FE :                     ;  		mov	#1,r0
-(1)  781/ 60013FE :                     ;  		mov.w	r0,@(marsGbl_SlvDrawReq,gbr)
-(1)  782/ 60013FE :                     .no_requests:
-(1)  783/ 60013FE :                     ;  		mov.w	@(marsGbl_SlvDrawReq,gbr),r0
-(1)  784/ 60013FE :                     ;  		cmp/eq	#0,r0
-(1)  785/ 60013FE :                     ;  		bt	slave_loop
-(1)  786/ 60013FE : D128                		mov.l	#_sysreg+comm14,r1		; Master CPU still drawing pieces?
-(1)  787/ 6001400 :                     .wait_master2:
-(1)  788/ 6001400 : 6010                		mov.b	@r1,r0
-(1)  789/ 6001402 : 8801                		cmp/eq	#1,r0
-(1)  790/ 6001404 : 89D5                		bt	slave_loop
-(1)  791/ 6001406 :                     		
-(1)  792/ 6001406 :                     ; --------------------------------------------------------
-(1)  793/ 6001406 :                     ; Start building polygons from models
-(1)  794/ 6001406 :                     ; --------------------------------------------------------
-(1)  795/ 6001406 :                     ; MOVED TO MD
-(1)  796/ 6001406 :                     ; 	Camera animation
-(1)  797/ 6001406 :                     ; 		mov.l	#_sysreg+comm14,r1		; Master CPU still drawing pieces?
-(1)  798/ 6001406 :                     ; 		mov.b	@r1,r0
-(1)  799/ 6001406 :                     ; 		cmp/eq	#1,r0
-(1)  800/ 6001406 :                     ; 		bt	slave_loop
-(1)  801/ 6001406 :                     ; 		mov	#RAM_Mars_ObjCamera,r14
-(1)  802/ 6001406 :                     
-(1)  803/ 6001406 :                     
-(1)  804/ 6001406 :                     ; ----------------------------------------
-(1)  805/ 6001406 :                     
-(1)  806/ 6001406 : D127                		mov	#_sysreg+comm6,r1		; DEBUG counter
-(1)  807/ 6001408 : 6011                		mov.w	@r1,r0
-(1)  808/ 600140A : 7001                		add	#1,r0
-(1)  809/ 600140C : 2101                		mov.w	r0,@r1
-(1)  810/ 600140E : E000                		mov	#0,r0
-(1)  811/ 6001410 : C108                		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
-(1)  812/ 6001412 : D125                		mov 	#RAM_Mars_Polygons_0,r1
-(1)  813/ 6001414 : C509                		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
-(1)  814/ 6001416 : C801                		tst     #1,r0
-(1)  815/ 6001418 : 8900                		bt	.go_mdl
-(1)  816/ 600141A : D124                		mov 	#RAM_Mars_Polygons_1,r1
-(1)  817/ 600141C :                     .go_mdl:
-(1)  818/ 600141C : 6013                		mov	r1,r0
-(1)  819/ 600141E : C203                		mov	r0,@(marsGbl_CurrFacePos,gbr)
-(1)  820/ 6001420 : D023                		mov	#RAM_Mars_Plgn_ZList,r0
-(1)  821/ 6001422 : C202                		mov	r0,@(marsGbl_CurrZList,gbr)
-(1)  822/ 6001424 :                     		
-(1)  823/ 6001424 :                     ; 		mov.l	#$FFFFFE92,r0			; Prepare watchdog on this CPU
-(1)  824/ 6001424 :                     ; 		mov	#8,r1
-(1)  825/ 6001424 :                     ; 		mov.b	r1,@r0
-(1)  826/ 6001424 :                     ; 		mov	#$19,r1
-(1)  827/ 6001424 :                     ; 		mov.b	r1,@r0
-(1)  828/ 6001424 :                     ; 		mov	#$FFFFFE80,r1
-(1)  829/ 6001424 :                     ; 		mov.w	#$5AFF,r0			; Interrupt priority(?)
-(1)  830/ 6001424 :                     ; 		mov.w	r0,@r1
-(1)  831/ 6001424 :                     ; 		mov.w	#$A538,r0			; Enable watchdog (Face autosort on the background)
-(1)  832/ 6001424 :                     ; 		mov.w	r0,@r1
-(1)  833/ 6001424 :                     
-(1)  834/ 6001424 : DE23                		mov	#RAM_Mars_Objects,r14
-(1)  835/ 6001426 : ED10                		mov	#MAX_MODELS,r13
-(1)  836/ 6001428 :                     .loop:
-(1)  837/ 6001428 : 50E4                		mov	@(mdl_data,r14),r0
-(1)  838/ 600142A : 8800                		cmp/eq	#0,r0
-(1)  839/ 600142C : 8903                		bt	.invlid
-(1)  840/ 600142E :                     		
-(1)  841/ 600142E :                     ; 	; WIP offbounds check for current object
-(1)  842/ 600142E :                     ; 		mov	#RAM_Mars_ObjCamera,r0
-(1)  843/ 600142E :                     ; 		mov	@(mdl_x_pos,r14),r1
-(1)  844/ 600142E :                     ; 		mov	@(mdl_y_pos,r14),r2
-(1)  845/ 600142E :                     ; 		mov	@(mdl_z_pos,r14),r3
-(1)  846/ 600142E :                     ; 		mov	@(cam_x_pos,r0),r4
-(1)  847/ 600142E :                     ; 		mov	@(cam_y_pos,r0),r5
-(1)  848/ 600142E :                     ; 		mov	@(cam_z_pos,r0),r6
-(1)  849/ 600142E :                     ; 		add	r4,r1
-(1)  850/ 600142E :                     ; 		add	r5,r2	
-(1)  851/ 600142E :                     ; 		add	r6,r3
-(1)  852/ 600142E :                     ; 		mov	#-$20000*3,r4
-(1)  853/ 600142E :                     ; 		mov	#-$20000*2,r5
-(1)  854/ 600142E :                     ; ; 		mov	#-$20000*4,r6
-(1)  855/ 600142E :                     ; 		neg	r4,r0
-(1)  856/ 600142E :                     ; 		cmp/gt	r4,r1			; X limits
-(1)  857/ 600142E :                     ; 		bf	.invlid
-(1)  858/ 600142E :                     ; 		cmp/ge	r0,r1
-(1)  859/ 600142E :                     ; 		bt	.invlid
-(1)  860/ 600142E :                     ; 		neg	r5,r0	
-(1)  861/ 600142E :                     ; 		cmp/gt	r5,r2			; Y limits
-(1)  862/ 600142E :                     ; 		bf	.invlid
-(1)  863/ 600142E :                     ; 		cmp/ge	r0,r2
-(1)  864/ 600142E :                     ; 		bt	.invlid
-(1)  865/ 600142E :                     ; 		neg	r6,r0	
-(1)  866/ 600142E :                     ; 		cmp/gt	r6,r3			; Z limits
-(1)  867/ 600142E :                     ; 		bf	.invlid
-(1)  868/ 600142E :                     ; 		cmp/ge	r0,r3
-(1)  869/ 600142E :                     ; 		bt	.invlid
-(1)  870/ 600142E :                     		
-(1)  871/ 600142E : 2FD6                		mov	r13,@-r15
-(1)  872/ 6001430 : B912                		bsr	MarsMdl_MakeModel
-(1)  873/ 6001432 : 0009                		nop
-(1)  874/ 6001434 : 6DF6                		mov	@r15+,r13
-(1)  875/ 6001436 :                     .invlid:
-(1)  876/ 6001436 : 4D10                		dt	r13
-(1)  877/ 6001438 : 8FF6                		bf/s	.loop
-(1)  878/ 600143A : 7E2C                		add	#sizeof_mdlobj,r14
-(1)  879/ 600143C :                     .skip:
-(1)  880/ 600143C :                     
-(1)  881/ 600143C :                     ; ----------------------------------------
-(1)  882/ 600143C :                     
-(1)  883/ 600143C : C509                		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
-(1)  884/ 600143E : C801                		tst     #1,r0
-(1)  885/ 6001440 : 8B05                		bf	.page_2
-(1)  886/ 6001442 : DE1D                		mov 	#RAM_Mars_PlgnList_0,r14
-(1)  887/ 6001444 : DD1D                		mov 	#RAM_Mars_PlgnNum_0,r13
-(1)  888/ 6001446 : B044                		bsr	slv_sort_z
-(1)  889/ 6001448 : 0009                		nop
-(1)  890/ 600144A : A004                		bra	.swap_now
-(1)  891/ 600144C : 0009                		nop
-(1)  892/ 600144E :                     .page_2:
-(1)  893/ 600144E : DE1C                		mov 	#RAM_Mars_PlgnList_1,r14
-(1)  894/ 6001450 : DD1C                		mov 	#RAM_Mars_PlgnNum_1,r13
-(1)  895/ 6001452 : B03E                		bsr	slv_sort_z
-(1)  896/ 6001454 : 0009                		nop
-(1)  897/ 6001456 :                     .swap_now:
-(1)  898/ 6001456 : 60D1                		mov.w	@r13,r0				; DEBUG: report number of faces
-(1)  899/ 6001458 : D107                		mov	#_sysreg+comm0,r1
-(1)  900/ 600145A : 2101                		mov.w	r0,@r1
-(1)  901/ 600145C :                     		
-(1)  902/ 600145C :                     	; Wait states
-(1)  903/ 600145C : D110                		mov.l	#_sysreg+comm14,r1		; Master CPU still drawing pieces?
-(1)  904/ 600145E :                     .wait_master:
-(1)  905/ 600145E : 6010                		mov.b	@r1,r0
-(1)  906/ 6001460 : 8801                		cmp/eq	#1,r0
-(1)  907/ 6001462 : 8905                		bt	.hold_on
-(1)  908/ 6001464 :                     ; 		mov.l   #$FFFFFE80,r1			; Stop watchdog
-(1)  909/ 6001464 :                     ; 		mov.w   #$A518,r0
-(1)  910/ 6001464 :                     ; 		mov.w   r0,@r1
-(1)  911/ 6001464 :                     
-(1)  912/ 6001464 : C509                		mov.w	@(marsGbl_PolyBuffNum,gbr),r0
-(1)  913/ 6001466 : CA01                 		xor	#1,r0
-(1)  914/ 6001468 : C109                 		mov.w	r0,@(marsGbl_PolyBuffNum,gbr)
-(1)  915/ 600146A :                     ;  		mov	#0,r0
-(1)  916/ 600146A :                     ;  		mov.w	r0,@(marsGbl_SlvDrawReq,gbr)
-(1)  917/ 600146A : E201                		mov	#1,r2				; Start drawing on Master
-(1)  918/ 600146C : D10C                		mov.l	#_sysreg+comm14,r1
-(1)  919/ 600146E : 2120                		mov.b	r2,@r1
-(1)  920/ 6001470 :                     
-(1)  921/ 6001470 :                     .hold_on:
-(1)  922/ 6001470 : AF9F                		bra	slave_loop
-(1)  923/ 6001472 : 0009                		nop
-(1)  924/ 6001474 :                     		align 4
-(1)  925/ 6001474 : 2000 4000 2000 4020 		ltorg
+(1)  634/ 6001318 :                     
+(1)  635/ 6001318 :                     ; ====================================================================
+(1)  636/ 6001318 :                     ; ----------------------------------------------------------------
+(1)  637/ 6001318 :                     ; Slave entry
+(1)  638/ 6001318 :                     ; ----------------------------------------------------------------
+(1)  639/ 6001318 :                     
+(1)  640/ 6001318 :                     		align 4
+(1)  641/ 6001318 :                     SH2_S_Entry:
+(1)  642/ 6001318 : DE4A                		mov.l	#_sysreg,r14
+(1)  643/ 600131A : 4E1E                		ldc	r14,gbr
+(1)  644/ 600131C :                     
+(1)  645/ 600131C : 91BC                		mov.l   #$FFFFFE10,r1
+(1)  646/ 600131E : E000                		mov     #0,r0
+(1)  647/ 6001320 : 8010                		mov.b   r0,@(0,r1)
+(1)  648/ 6001322 : E0E2                		mov     #$FFFFFFE2,r0
+(1)  649/ 6001324 : 8017                		mov.b   r0,@(7,r1)
+(1)  650/ 6001326 : E000                		mov     #0,r0
+(1)  651/ 6001328 : 8014                		mov.b   r0,@(4,r1)
+(1)  652/ 600132A : E001                		mov     #1,r0
+(1)  653/ 600132C : 8015                		mov.b   r0,@(5,r1)
+(1)  654/ 600132E : E000                		mov     #0,r0
+(1)  655/ 6001330 : 8016                		mov.b   r0,@(6,r1)
+(1)  656/ 6001332 : E001                		mov     #1,r0
+(1)  657/ 6001334 : 8011                		mov.b   r0,@(1,r1)
+(1)  658/ 6001336 : E000                		mov     #0,r0
+(1)  659/ 6001338 : 8013                		mov.b   r0,@(3,r1)
+(1)  660/ 600133A : 8012                		mov.b   r0,@(2,r1)
+(1)  661/ 600133C : 90AD                		mov.l   #$FFFFFEE2,r0
+(1)  662/ 600133E : E150                		mov     #$50,r1
+(1)  663/ 6001340 : 2011                		mov.w   r1,@r0
+(1)  664/ 6001342 : 90AB                		mov.l   #$FFFFFEE4,r0
+(1)  665/ 6001344 : E148                		mov     #$120/4,r1		; VBR + this/4
+(1)  666/ 6001346 : 4118                		shll8   r1
+(1)  667/ 6001348 : 2011                		mov.w   r1,@r0
+(1)  668/ 600134A :                     		
+(1)  669/ 600134A :                     ; ------------------------------------------------
+(1)  670/ 600134A :                     ; Wait for Genesis, report to Master SH2
+(1)  671/ 600134A :                     ; ------------------------------------------------
+(1)  672/ 600134A :                     
+(1)  673/ 600134A :                     .wait_md:
+(1)  674/ 600134A : D23F                		mov 	#_sysreg+comm0,r2
+(1)  675/ 600134C : 6022                		mov.l	@r2,r0
+(1)  676/ 600134E : 8800                		cmp/eq	#0,r0
+(1)  677/ 6001350 : 8BFB                		bf	.wait_md
+(1)  678/ 6001352 : D03E                		mov.l	#"SLAV",r0
+(1)  679/ 6001354 : 1202                		mov.l	r0,@(8,r2)
+(1)  680/ 6001356 :                     
+(1)  681/ 6001356 :                     ; ====================================================================
+(1)  682/ 6001356 :                     ; ----------------------------------------------------------------
+(1)  683/ 6001356 :                     ; Slave main code
+(1)  684/ 6001356 :                     ; ----------------------------------------------------------------
+(1)  685/ 6001356 :                     
+(1)  686/ 6001356 :                     SH2_S_HotStart:
+(1)  687/ 6001356 : DF3E                		mov.l	#CS3|$3F000,r15			; Reset stack
+(1)  688/ 6001358 : DE3E                		mov.l	#RAM_Mars_Global,r14		; Reset gbr
+(1)  689/ 600135A : 4E1E                		ldc	r14,gbr
+(1)  690/ 600135C : 909F                		mov.l	#$F0,r0				; Interrupts OFF
+(1)  691/ 600135E : 400E                		ldc	r0,sr
+(1)  692/ 6001360 : 919E                		mov.l	#_CCR,r1			; Set this cache mode
+(1)  693/ 6001362 : E000                		mov	#0,r0
+(1)  694/ 6001364 : 2101                		mov.w	r0,@r1
+(1)  695/ 6001366 : E019                		mov	#$19,r0
+(1)  696/ 6001368 : 2101                		mov.w	r0,@r1
+(1)  697/ 600136A : D136                		mov	#_sysreg,r1
+(1)  698/ 600136C : E001                		mov.l	#VIRQ_ON||PWMIRQ_ON|CMDIRQ_ON,r0	; IRQ enable bits
+(1)  699/ 600136E : 8011                    		mov.b	r0,@(intmask,r1)			; clear IRQ ACK regs
+(1)  700/ 6001370 :                     
+(1)  701/ 6001370 :                     
+(1)  702/ 6001370 :                     ; ------------------------------------------------
+(1)  703/ 6001370 :                     ; REMINDER: In blender:
+(1)  704/ 6001370 :                     ; 1 meter = $10000 (x/y/z model positions)
+(1)  705/ 6001370 :                     ;
+(1)  706/ 6001370 :                     
+(1)  707/ 6001370 : B964                		bsr	MarsMdl_Init
+(1)  708/ 6001372 : 0009                		nop
+(1)  709/ 6001374 : E020                		mov	#$20,r0			; Interrupts ON
+(1)  710/ 6001376 : 400E                		ldc	r0,sr
+(1)  711/ 6001378 : D137                		mov	#RAM_Mars_Objects,r1
+(1)  712/ 600137A : D038                		mov	#TEST_MODEL,r0
+(1)  713/ 600137C : 1104                		mov	r0,@(mdl_data,r1)
+(1)  714/ 600137E : D038                		mov	#TEST_ANIMATION,r0
+(1)  715/ 6001380 : 1100                		mov	r0,@(mdl_animdata,r1)
+(1)  716/ 6001382 :                     		
+(1)  717/ 6001382 :                     ; 		add	#sizeof_mdlobj,r1
+(1)  718/ 6001382 :                     ; 		mov	#TEST_MODEL,r0
+(1)  719/ 6001382 :                     ; 		mov	r0,@r1
+(1)  720/ 6001382 :                     ; 		mov	#$20000,r0
+(1)  721/ 6001382 :                     ; 		mov	r0,@(mdl_x_pos,r1)
+(1)  722/ 6001382 :                     ; 		
+(1)  723/ 6001382 :                     ; 		add	#sizeof_mdlobj,r1
+(1)  724/ 6001382 :                     ; 		mov	#TEST_MODEL,r0
+(1)  725/ 6001382 :                     ; 		mov	r0,@r1
+(1)  726/ 6001382 :                     ; 		mov	#-$40000,r0
+(1)  727/ 6001382 :                     ; 		mov	r0,@(mdl_z_pos,r1)		
+(1)  728/ 6001382 :                     		
+(1)  729/ 6001382 :                     ; --------------------------------------------------------
+(1)  730/ 6001382 :                     ; Loop
+(1)  731/ 6001382 :                     ; --------------------------------------------------------
+(1)  732/ 6001382 :                     
+(1)  733/ 6001382 :                     slave_loop:
+(1)  734/ 6001382 : DE38                		mov	#_sysreg+comm15,r14		; Any request from MD?
+(1)  735/ 6001384 : 60E0                		mov.b	@r14,r0
+(1)  736/ 6001386 : 8800                		cmp/eq	#0,r0
+(1)  737/ 6001388 : 8921                		bt	.no_requests
+(1)  738/ 600138A :                     
+(1)  739/ 600138A :                     ; --------------------------------------------
+(1)  740/ 600138A :                     
+(1)  741/ 600138A : D137                		mov	#_sysreg+comm8,r1
+(1)  742/ 600138C : D237                		mov	#RAM_Mars_ObjCamera,r2
+(1)  743/ 600138E :                     .transfer_loop:
+(1)  744/ 600138E : 0009                		nop
+(1)  745/ 6001390 : 0009                		nop
+(1)  746/ 6001392 : 0009                		nop
+(1)  747/ 6001394 : 0009                		nop
+(1)  748/ 6001396 : 6011                		mov.w	@r1,r0
+(1)  749/ 6001398 : 8800                		cmp/eq	#0,r0
+(1)  750/ 600139A : 89F8                		bt	.transfer_loop
+(1)  751/ 600139C : 8802                		cmp/eq	#2,r0
+(1)  752/ 600139E : 8913                		bt	.trnsfr_done
+(1)  753/ 60013A0 : 8511                		mov.w	@(2,r1),r0
+(1)  754/ 60013A2 : 600D                		extu	r0,r0
+(1)  755/ 60013A4 : 4028                		shll16	r0
+(1)  756/ 60013A6 : 6303                		mov	r0,r3
+(1)  757/ 60013A8 : 8512                		mov.w	@(4,r1),r0
+(1)  758/ 60013AA : 600D                		extu	r0,r0
+(1)  759/ 60013AC : 203B                		or	r3,r0
+(1)  760/ 60013AE : 2202                		mov.l	r0,@r2
+(1)  761/ 60013B0 : 0009                		nop
+(1)  762/ 60013B2 : 0009                		nop
+(1)  763/ 60013B4 : 0009                		nop
+(1)  764/ 60013B6 : 0009                		nop
+(1)  765/ 60013B8 : E000                		mov	#0,r0
+(1)  766/ 60013BA : 2101                		mov.w	r0,@r1
+(1)  767/ 60013BC : 0009                		nop
+(1)  768/ 60013BE : 0009                		nop
+(1)  769/ 60013C0 : 0009                		nop
+(1)  770/ 60013C2 : 0009                		nop
+(1)  771/ 60013C4 : AFE3                		bra	.transfer_loop
+(1)  772/ 60013C6 : 7204                		add	#4,r2
+(1)  773/ 60013C8 :                     .trnsfr_done:
+(1)  774/ 60013C8 : E000                		mov	#0,r0
+(1)  775/ 60013CA : 2101                		mov.w	r0,@r1
+(1)  776/ 60013CC : 2E00                		mov.b	r0,@r14
+(1)  777/ 60013CE :                     ; 		mov.w	@(marsGbl_SlvDrawReq,gbr),r0
+(1)  778/ 60013CE :                     ; 		cmp/eq	#1,r0
+(1)  779/ 60013CE :                     ; 		bt	slave_loop
+(1)  780/ 60013CE :                     ;  		mov	#1,r0
+(1)  781/ 60013CE :                     ;  		mov.w	r0,@(marsGbl_SlvDrawReq,gbr)
+(1)  782/ 60013CE :                     .no_requests:
+(1)  783/ 60013CE :                     ;  		mov.w	@(marsGbl_SlvDrawReq,gbr),r0
+(1)  784/ 60013CE :                     ;  		cmp/eq	#0,r0
+(1)  785/ 60013CE :                     ;  		bt	slave_loop
+(1)  786/ 60013CE : D128                		mov.l	#_sysreg+comm14,r1		; Master CPU still drawing pieces?
+(1)  787/ 60013D0 :                     .wait_master2:
+(1)  788/ 60013D0 : 6010                		mov.b	@r1,r0
+(1)  789/ 60013D2 : 8801                		cmp/eq	#1,r0
+(1)  790/ 60013D4 : 89D5                		bt	slave_loop
+(1)  791/ 60013D6 :                     		
+(1)  792/ 60013D6 :                     ; --------------------------------------------------------
+(1)  793/ 60013D6 :                     ; Start building polygons from models
+(1)  794/ 60013D6 :                     ; --------------------------------------------------------
+(1)  795/ 60013D6 :                     ; MOVED TO MD
+(1)  796/ 60013D6 :                     ; 	Camera animation
+(1)  797/ 60013D6 :                     ; 		mov.l	#_sysreg+comm14,r1		; Master CPU still drawing pieces?
+(1)  798/ 60013D6 :                     ; 		mov.b	@r1,r0
+(1)  799/ 60013D6 :                     ; 		cmp/eq	#1,r0
+(1)  800/ 60013D6 :                     ; 		bt	slave_loop
+(1)  801/ 60013D6 :                     ; 		mov	#RAM_Mars_ObjCamera,r14
+(1)  802/ 60013D6 :                     
+(1)  803/ 60013D6 :                     
+(1)  804/ 60013D6 :                     ; ----------------------------------------
+(1)  805/ 60013D6 :                     
+(1)  806/ 60013D6 : D127                		mov	#_sysreg+comm6,r1		; DEBUG counter
+(1)  807/ 60013D8 : 6011                		mov.w	@r1,r0
+(1)  808/ 60013DA : 7001                		add	#1,r0
+(1)  809/ 60013DC : 2101                		mov.w	r0,@r1
+(1)  810/ 60013DE : E000                		mov	#0,r0
+(1)  811/ 60013E0 : C108                		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
+(1)  812/ 60013E2 : D125                		mov 	#RAM_Mars_Polygons_0,r1
+(1)  813/ 60013E4 : C509                		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
+(1)  814/ 60013E6 : C801                		tst     #1,r0
+(1)  815/ 60013E8 : 8900                		bt	.go_mdl
+(1)  816/ 60013EA : D124                		mov 	#RAM_Mars_Polygons_1,r1
+(1)  817/ 60013EC :                     .go_mdl:
+(1)  818/ 60013EC : 6013                		mov	r1,r0
+(1)  819/ 60013EE : C203                		mov	r0,@(marsGbl_CurrFacePos,gbr)
+(1)  820/ 60013F0 : D023                		mov	#RAM_Mars_Plgn_ZList,r0
+(1)  821/ 60013F2 : C202                		mov	r0,@(marsGbl_CurrZList,gbr)
+(1)  822/ 60013F4 :                     		
+(1)  823/ 60013F4 :                     ; 		mov.l	#$FFFFFE92,r0			; Prepare watchdog on this CPU
+(1)  824/ 60013F4 :                     ; 		mov	#8,r1
+(1)  825/ 60013F4 :                     ; 		mov.b	r1,@r0
+(1)  826/ 60013F4 :                     ; 		mov	#$19,r1
+(1)  827/ 60013F4 :                     ; 		mov.b	r1,@r0
+(1)  828/ 60013F4 :                     ; 		mov	#$FFFFFE80,r1
+(1)  829/ 60013F4 :                     ; 		mov.w	#$5AFF,r0			; Interrupt priority(?)
+(1)  830/ 60013F4 :                     ; 		mov.w	r0,@r1
+(1)  831/ 60013F4 :                     ; 		mov.w	#$A538,r0			; Enable watchdog (Face autosort on the background)
+(1)  832/ 60013F4 :                     ; 		mov.w	r0,@r1
+(1)  833/ 60013F4 :                     
+(1)  834/ 60013F4 : DE23                		mov	#RAM_Mars_Objects,r14
+(1)  835/ 60013F6 : ED10                		mov	#MAX_MODELS,r13
+(1)  836/ 60013F8 :                     .loop:
+(1)  837/ 60013F8 : 50E4                		mov	@(mdl_data,r14),r0
+(1)  838/ 60013FA : 8800                		cmp/eq	#0,r0
+(1)  839/ 60013FC : 8903                		bt	.invlid
+(1)  840/ 60013FE :                     		
+(1)  841/ 60013FE :                     ; 	; WIP offbounds check for current object
+(1)  842/ 60013FE :                     ; 		mov	#RAM_Mars_ObjCamera,r0
+(1)  843/ 60013FE :                     ; 		mov	@(mdl_x_pos,r14),r1
+(1)  844/ 60013FE :                     ; 		mov	@(mdl_y_pos,r14),r2
+(1)  845/ 60013FE :                     ; 		mov	@(mdl_z_pos,r14),r3
+(1)  846/ 60013FE :                     ; 		mov	@(cam_x_pos,r0),r4
+(1)  847/ 60013FE :                     ; 		mov	@(cam_y_pos,r0),r5
+(1)  848/ 60013FE :                     ; 		mov	@(cam_z_pos,r0),r6
+(1)  849/ 60013FE :                     ; 		add	r4,r1
+(1)  850/ 60013FE :                     ; 		add	r5,r2	
+(1)  851/ 60013FE :                     ; 		add	r6,r3
+(1)  852/ 60013FE :                     ; 		mov	#-$20000*3,r4
+(1)  853/ 60013FE :                     ; 		mov	#-$20000*2,r5
+(1)  854/ 60013FE :                     ; ; 		mov	#-$20000*4,r6
+(1)  855/ 60013FE :                     ; 		neg	r4,r0
+(1)  856/ 60013FE :                     ; 		cmp/gt	r4,r1			; X limits
+(1)  857/ 60013FE :                     ; 		bf	.invlid
+(1)  858/ 60013FE :                     ; 		cmp/ge	r0,r1
+(1)  859/ 60013FE :                     ; 		bt	.invlid
+(1)  860/ 60013FE :                     ; 		neg	r5,r0	
+(1)  861/ 60013FE :                     ; 		cmp/gt	r5,r2			; Y limits
+(1)  862/ 60013FE :                     ; 		bf	.invlid
+(1)  863/ 60013FE :                     ; 		cmp/ge	r0,r2
+(1)  864/ 60013FE :                     ; 		bt	.invlid
+(1)  865/ 60013FE :                     ; 		neg	r6,r0	
+(1)  866/ 60013FE :                     ; 		cmp/gt	r6,r3			; Z limits
+(1)  867/ 60013FE :                     ; 		bf	.invlid
+(1)  868/ 60013FE :                     ; 		cmp/ge	r0,r3
+(1)  869/ 60013FE :                     ; 		bt	.invlid
+(1)  870/ 60013FE :                     		
+(1)  871/ 60013FE : 2FD6                		mov	r13,@-r15
+(1)  872/ 6001400 : B92A                		bsr	MarsMdl_MakeModel
+(1)  873/ 6001402 : 0009                		nop
+(1)  874/ 6001404 : 6DF6                		mov	@r15+,r13
+(1)  875/ 6001406 :                     .invlid:
+(1)  876/ 6001406 : 4D10                		dt	r13
+(1)  877/ 6001408 : 8FF6                		bf/s	.loop
+(1)  878/ 600140A : 7E2C                		add	#sizeof_mdlobj,r14
+(1)  879/ 600140C :                     .skip:
+(1)  880/ 600140C :                     
+(1)  881/ 600140C :                     ; ----------------------------------------
+(1)  882/ 600140C :                     
+(1)  883/ 600140C : C509                		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
+(1)  884/ 600140E : C801                		tst     #1,r0
+(1)  885/ 6001410 : 8B05                		bf	.page_2
+(1)  886/ 6001412 : DE1D                		mov 	#RAM_Mars_PlgnList_0,r14
+(1)  887/ 6001414 : DD1D                		mov 	#RAM_Mars_PlgnNum_0,r13
+(1)  888/ 6001416 : B044                		bsr	slv_sort_z
+(1)  889/ 6001418 : 0009                		nop
+(1)  890/ 600141A : A004                		bra	.swap_now
+(1)  891/ 600141C : 0009                		nop
+(1)  892/ 600141E :                     .page_2:
+(1)  893/ 600141E : DE1C                		mov 	#RAM_Mars_PlgnList_1,r14
+(1)  894/ 6001420 : DD1C                		mov 	#RAM_Mars_PlgnNum_1,r13
+(1)  895/ 6001422 : B03E                		bsr	slv_sort_z
+(1)  896/ 6001424 : 0009                		nop
+(1)  897/ 6001426 :                     .swap_now:
+(1)  898/ 6001426 : 60D1                		mov.w	@r13,r0				; DEBUG: report number of faces
+(1)  899/ 6001428 : D107                		mov	#_sysreg+comm0,r1
+(1)  900/ 600142A : 2101                		mov.w	r0,@r1
+(1)  901/ 600142C :                     		
+(1)  902/ 600142C :                     	; Wait states
+(1)  903/ 600142C : D110                		mov.l	#_sysreg+comm14,r1		; Master CPU still drawing pieces?
+(1)  904/ 600142E :                     .wait_master:
+(1)  905/ 600142E : 6010                		mov.b	@r1,r0
+(1)  906/ 6001430 : 8801                		cmp/eq	#1,r0
+(1)  907/ 6001432 : 8905                		bt	.hold_on
+(1)  908/ 6001434 :                     ; 		mov.l   #$FFFFFE80,r1			; Stop watchdog
+(1)  909/ 6001434 :                     ; 		mov.w   #$A518,r0
+(1)  910/ 6001434 :                     ; 		mov.w   r0,@r1
+(1)  911/ 6001434 :                     
+(1)  912/ 6001434 : C509                		mov.w	@(marsGbl_PolyBuffNum,gbr),r0
+(1)  913/ 6001436 : CA01                 		xor	#1,r0
+(1)  914/ 6001438 : C109                 		mov.w	r0,@(marsGbl_PolyBuffNum,gbr)
+(1)  915/ 600143A :                     ;  		mov	#0,r0
+(1)  916/ 600143A :                     ;  		mov.w	r0,@(marsGbl_SlvDrawReq,gbr)
+(1)  917/ 600143A : E201                		mov	#1,r2				; Start drawing on Master
+(1)  918/ 600143C : D10C                		mov.l	#_sysreg+comm14,r1
+(1)  919/ 600143E : 2120                		mov.b	r2,@r1
+(1)  920/ 6001440 :                     
+(1)  921/ 6001440 :                     .hold_on:
+(1)  922/ 6001440 : AF9F                		bra	slave_loop
+(1)  923/ 6001442 : 0009                		nop
+(1)  924/ 6001444 :                     		align 4
+(1)  925/ 6001444 : 2000 4000 2000 4020 		ltorg
                     534C 4156 0603 F000 
-                    0600 588C 0600 9B70 
-                    0600 3D94 0600 4208 
+                    0600 585C 0600 9B40 
+                    0600 3D64 0600 41D8 
                     2000 402F 2000 4028 
-                    0600 9AD0 2000 402E 
-                    2000 4026 0600 9E30 
-                    0601 7E30 0600 7ACC 
-                    0600 9B70 0600 5ACC 
-                    0600 9ACC 0600 6ACC 
-                    0600 9ACE FE10 FEE2 
+                    0600 9AA0 2000 402E 
+                    2000 4026 0600 9E00 
+                    0601 7E00 0600 7A9C 
+                    0600 9B40 0600 5A9C 
+                    0600 9A9C 0600 6A9C 
+                    0600 9A9E FE10 FEE2 
                     FEE4 00F0 FE92      
-(1)  926/ 60014D2 :                     
-(1)  927/ 60014D2 :                     ; --------------------------------------------------------
-(1)  928/ 60014D2 :                     ; Sort all faces in the current buffer
-(1)  929/ 60014D2 :                     ; 
-(1)  930/ 60014D2 :                     ; r14 - Polygon list
-(1)  931/ 60014D2 :                     ; r13 - Number of polygons processed
-(1)  932/ 60014D2 :                     ; --------------------------------------------------------
-(1)  933/ 60014D2 :                     
-(1)  934/ 60014D2 :                     ; Bubble sorting
-(1)  935/ 60014D2 :                     
-(1)  936/ 60014D2 :                     slv_sort_z:
-(1)  937/ 60014D2 : 4F22                		sts	pr,@-r15
-(1)  938/ 60014D4 : E000                		mov	#0,r0					; Reset current PlgnNum
-(1)  939/ 60014D6 : 2D01                		mov.w	r0,@r13
-(1)  940/ 60014D8 : DC19                		mov	#RAM_Mars_Plgn_ZList,r12	
-(1)  941/ 60014DA : EB02                		mov	#2,r11
-(1)  942/ 60014DC : C508                		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0		; Check number of faces to sort
-(1)  943/ 60014DE : 30B7                		cmp/gt	r11,r0
-(1)  944/ 60014E0 : 8B1C                		bf	.z_fewfaces
-(1)  945/ 60014E2 : 6B03                		mov	r0,r11
-(1)  946/ 60014E4 :                     		
-(1)  947/ 60014E4 :                     ; if faces > 2
-(1)  948/ 60014E4 :                     .z_normal:
-(1)  949/ 60014E4 : 9B2E                		mov	#MAX_FACES,r11
-(1)  950/ 60014E6 : 30B3                		cmp/ge	r11,r0
-(1)  951/ 60014E8 : 8B00                		bf	.z_ranout
-(1)  952/ 60014EA : 60B3                		mov	r11,r0
-(1)  953/ 60014EC :                     .z_ranout:
-(1)  954/ 60014EC : 6B03                		mov	r0,r11
-(1)  955/ 60014EE : 6A03                		mov	r0,r10
-(1)  956/ 60014F0 : 7AFF                		add	#-1,r10
-(1)  957/ 60014F2 : 67A3                		mov	r10,r7
-(1)  958/ 60014F4 : 77FF                		add	#-1,r7
-(1)  959/ 60014F6 : 4715                		cmp/pl	r7
-(1)  960/ 60014F8 : 8B1F                		bf	.z_end
-(1)  961/ 60014FA :                     .z_outer:
-(1)  962/ 60014FA : 68A3                		mov	r10,r8
-(1)  963/ 60014FC : 69C3                		mov	r12,r9
-(1)  964/ 60014FE :                     .z_inner:
-(1)  965/ 60014FE : 6092                		mov	@r9,r0
-(1)  966/ 6001500 : 5192                		mov	@(8,r9),r1
-(1)  967/ 6001502 : 3017                		cmp/gt	r1,r0
-(1)  968/ 6001504 : 8B05                		bf	.z_high
-(1)  969/ 6001506 : 2912                		mov	r1,@r9
-(1)  970/ 6001508 : 1902                		mov	r0,@(8,r9)
-(1)  971/ 600150A : 5091                		mov	@(4,r9),r0
-(1)  972/ 600150C : 5193                		mov	@($C,r9),r1
-(1)  973/ 600150E : 1911                		mov	r1,@(4,r9)
-(1)  974/ 6001510 : 1903                		mov	r0,@($C,r9)
-(1)  975/ 6001512 :                     .z_high:
-(1)  976/ 6001512 : 4810                		dt	r8
-(1)  977/ 6001514 : 8FF3                		bf/s	.z_inner
-(1)  978/ 6001516 : 7908                		add	#8,r9
-(1)  979/ 6001518 : 4710                		dt	r7
-(1)  980/ 600151A : 8BEE                		bf	.z_outer
-(1)  981/ 600151C :                     
-(1)  982/ 600151C :                     ; ----------------------------------------
-(1)  983/ 600151C :                     ; only 1 or 2 faces
-(1)  984/ 600151C :                     
-(1)  985/ 600151C :                     .z_fewfaces:
-(1)  986/ 600151C : 6AC3                		mov	r12,r10
-(1)  987/ 600151E : 69B3                		mov	r11,r9
-(1)  988/ 6001520 : E800                		mov	#0,r8
-(1)  989/ 6001522 :                     .next_face:
-(1)  990/ 6001522 : 57A1                		mov	@(4,r10),r7
-(1)  991/ 6001524 : 4715                		cmp/pl	r7
-(1)  992/ 6001526 : 8B04                		bf	.no_face
-(1)  993/ 6001528 : E000                		mov	#0,r0
-(1)  994/ 600152A : 1A01                		mov	r0,@(4,r10)
-(1)  995/ 600152C : 2E72                		mov	r7,@r14
-(1)  996/ 600152E : 7E04                		add	#4,r14
-(1)  997/ 6001530 : 7801                		add	#1,r8
-(1)  998/ 6001532 :                     .no_face:
-(1)  999/ 6001532 : 4910                		dt	r9
-(1) 1000/ 6001534 : 8FF5                		bf/s	.next_face
-(1) 1001/ 6001536 : 7A08                		add 	#8,r10
-(1) 1002/ 6001538 : 2D81                		mov.w	r8,@r13
-(1) 1003/ 600153A :                     .z_end:
-(1) 1004/ 600153A : 4F26                		lds	@r15+,pr
-(1) 1005/ 600153C : 000B                		rts
-(1) 1006/ 600153E : 0009                		nop
-(1) 1007/ 6001540 :                     		align 4
-(1) 1008/ 6001540 : 0600 7ACC 0400      		ltorg
-(1) 1009/ 6001546 :                     
-(1) 1010/ 6001546 :                     ; ----------------------------------------
-(1) 1011/ 6001546 :                     
-(1) 1012/ 6001546 :                     		ltorg
-(1) 1013/ 6001546 :                     
-(1) 1014/ 6001546 :                     ; =================================================================
-(1) 1015/ 6001546 :                     ; ------------------------------------------------
-(1) 1016/ 6001546 :                     ; Slave | Custom interrupt
-(1) 1017/ 6001546 :                     ; 
-(1) 1018/ 6001546 :                     ; Autosort faces on the background
-(1) 1019/ 6001546 :                     ; ------------------------------------------------
-(1) 1020/ 6001546 :                     
-(1) 1021/ 6001546 :                     s_irq_custom:
-(1) 1022/ 6001546 : 2F26                		mov	r2,@-r15
-(1) 1023/ 6001548 : 9120                		mov.l   #_FRT,r1
-(1) 1024/ 600154A : 8417                		mov.b   @(7,r1),r0
-(1) 1025/ 600154C : CA02                		xor     #2,r0
-(1) 1026/ 600154E : 8017                		mov.b   r0,@(7,r1)
-(1) 1027/ 6001550 :                     
-(1) 1028/ 6001550 :                     	; Sorting task start here
-(1) 1029/ 6001550 : C508                		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
-(1) 1030/ 6001552 : 8800                		cmp/eq	#0,r0
-(1) 1031/ 6001554 : 890B                		bt	.no_request
-(1) 1032/ 6001556 : 2F36                		mov	r3,@-r15
-(1) 1033/ 6001558 : 2F46                		mov	r4,@-r15
-(1) 1034/ 600155A : 2F56                		mov	r5,@-r15
-(1) 1035/ 600155C : 2F66                		mov	r6,@-r15
-(1) 1036/ 600155E : D10A                		mov	#CS3+$44,r1
-(1) 1037/ 6001560 : 6012                		mov	@r1,r0
-(1) 1038/ 6001562 : 7001                		add 	#1,r0
-(1) 1039/ 6001564 : 2102                		mov	r0,@r1
-(1) 1040/ 6001566 : 66F6                		mov	@r15+,r6
-(1) 1041/ 6001568 : 65F6                		mov	@r15+,r5
-(1) 1042/ 600156A : 64F6                		mov	@r15+,r4
-(1) 1043/ 600156C : 63F6                		mov	@r15+,r3
-(1) 1044/ 600156E :                     .no_request:
-(1) 1045/ 600156E :                     	; End
-(1) 1046/ 600156E :                     
-(1) 1047/ 600156E : 910E                		mov	#$FFFFFE80,r1
-(1) 1048/ 6001570 : 900E                		mov.w   #$A518,r0
-(1) 1049/ 6001572 : 2101                		mov.w   r0,@r1
-(1) 1050/ 6001574 : CB20                		or      #$20,r0
-(1) 1051/ 6001576 : 2101                		mov.w   r0,@r1
-(1) 1052/ 6001578 : E201                		mov	#1,r2
-(1) 1053/ 600157A : 900A                		mov.w   #$5A00,r0
-(1) 1054/ 600157C : 202B                		or	r2,r0
-(1) 1055/ 600157E : 2101                		mov.w	r0,@r1
-(1) 1056/ 6001580 : 62F6                		mov	@r15+,r2
-(1) 1057/ 6001582 : 000B                		rts
-(1) 1058/ 6001584 : 0009                		nop
-(1) 1059/ 6001586 :                     		align 4
-(1) 1060/ 6001588 : 0600 0044 FE10 FE80 		ltorg
+(1)  926/ 60014A2 :                     
+(1)  927/ 60014A2 :                     ; --------------------------------------------------------
+(1)  928/ 60014A2 :                     ; Sort all faces in the current buffer
+(1)  929/ 60014A2 :                     ; 
+(1)  930/ 60014A2 :                     ; r14 - Polygon list
+(1)  931/ 60014A2 :                     ; r13 - Number of polygons processed
+(1)  932/ 60014A2 :                     ; --------------------------------------------------------
+(1)  933/ 60014A2 :                     
+(1)  934/ 60014A2 :                     ; Bubble sorting
+(1)  935/ 60014A2 :                     
+(1)  936/ 60014A2 :                     slv_sort_z:
+(1)  937/ 60014A2 : 4F22                		sts	pr,@-r15
+(1)  938/ 60014A4 : E000                		mov	#0,r0					; Reset current PlgnNum
+(1)  939/ 60014A6 : 2D01                		mov.w	r0,@r13
+(1)  940/ 60014A8 : DC19                		mov	#RAM_Mars_Plgn_ZList,r12	
+(1)  941/ 60014AA : EB02                		mov	#2,r11
+(1)  942/ 60014AC : C508                		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0		; Check number of faces to sort
+(1)  943/ 60014AE : 30B7                		cmp/gt	r11,r0
+(1)  944/ 60014B0 : 8B1C                		bf	.z_fewfaces
+(1)  945/ 60014B2 : 6B03                		mov	r0,r11
+(1)  946/ 60014B4 :                     		
+(1)  947/ 60014B4 :                     ; if faces > 2
+(1)  948/ 60014B4 :                     .z_normal:
+(1)  949/ 60014B4 : 9B2E                		mov	#MAX_FACES,r11
+(1)  950/ 60014B6 : 30B3                		cmp/ge	r11,r0
+(1)  951/ 60014B8 : 8B00                		bf	.z_ranout
+(1)  952/ 60014BA : 60B3                		mov	r11,r0
+(1)  953/ 60014BC :                     .z_ranout:
+(1)  954/ 60014BC : 6B03                		mov	r0,r11
+(1)  955/ 60014BE : 6A03                		mov	r0,r10
+(1)  956/ 60014C0 : 7AFF                		add	#-1,r10
+(1)  957/ 60014C2 : 67A3                		mov	r10,r7
+(1)  958/ 60014C4 : 77FF                		add	#-1,r7
+(1)  959/ 60014C6 : 4715                		cmp/pl	r7
+(1)  960/ 60014C8 : 8B1F                		bf	.z_end
+(1)  961/ 60014CA :                     .z_outer:
+(1)  962/ 60014CA : 68A3                		mov	r10,r8
+(1)  963/ 60014CC : 69C3                		mov	r12,r9
+(1)  964/ 60014CE :                     .z_inner:
+(1)  965/ 60014CE : 6092                		mov	@r9,r0
+(1)  966/ 60014D0 : 5192                		mov	@(8,r9),r1
+(1)  967/ 60014D2 : 3017                		cmp/gt	r1,r0
+(1)  968/ 60014D4 : 8B05                		bf	.z_high
+(1)  969/ 60014D6 : 2912                		mov	r1,@r9
+(1)  970/ 60014D8 : 1902                		mov	r0,@(8,r9)
+(1)  971/ 60014DA : 5091                		mov	@(4,r9),r0
+(1)  972/ 60014DC : 5193                		mov	@($C,r9),r1
+(1)  973/ 60014DE : 1911                		mov	r1,@(4,r9)
+(1)  974/ 60014E0 : 1903                		mov	r0,@($C,r9)
+(1)  975/ 60014E2 :                     .z_high:
+(1)  976/ 60014E2 : 4810                		dt	r8
+(1)  977/ 60014E4 : 8FF3                		bf/s	.z_inner
+(1)  978/ 60014E6 : 7908                		add	#8,r9
+(1)  979/ 60014E8 : 4710                		dt	r7
+(1)  980/ 60014EA : 8BEE                		bf	.z_outer
+(1)  981/ 60014EC :                     
+(1)  982/ 60014EC :                     ; ----------------------------------------
+(1)  983/ 60014EC :                     ; only 1 or 2 faces
+(1)  984/ 60014EC :                     
+(1)  985/ 60014EC :                     .z_fewfaces:
+(1)  986/ 60014EC : 6AC3                		mov	r12,r10
+(1)  987/ 60014EE : 69B3                		mov	r11,r9
+(1)  988/ 60014F0 : E800                		mov	#0,r8
+(1)  989/ 60014F2 :                     .next_face:
+(1)  990/ 60014F2 : 57A1                		mov	@(4,r10),r7
+(1)  991/ 60014F4 : 4715                		cmp/pl	r7
+(1)  992/ 60014F6 : 8B04                		bf	.no_face
+(1)  993/ 60014F8 : E000                		mov	#0,r0
+(1)  994/ 60014FA : 1A01                		mov	r0,@(4,r10)
+(1)  995/ 60014FC : 2E72                		mov	r7,@r14
+(1)  996/ 60014FE : 7E04                		add	#4,r14
+(1)  997/ 6001500 : 7801                		add	#1,r8
+(1)  998/ 6001502 :                     .no_face:
+(1)  999/ 6001502 : 4910                		dt	r9
+(1) 1000/ 6001504 : 8FF5                		bf/s	.next_face
+(1) 1001/ 6001506 : 7A08                		add 	#8,r10
+(1) 1002/ 6001508 : 2D81                		mov.w	r8,@r13
+(1) 1003/ 600150A :                     .z_end:
+(1) 1004/ 600150A : 4F26                		lds	@r15+,pr
+(1) 1005/ 600150C : 000B                		rts
+(1) 1006/ 600150E : 0009                		nop
+(1) 1007/ 6001510 :                     		align 4
+(1) 1008/ 6001510 : 0600 7A9C 0400      		ltorg
+(1) 1009/ 6001516 :                     
+(1) 1010/ 6001516 :                     ; ----------------------------------------
+(1) 1011/ 6001516 :                     
+(1) 1012/ 6001516 :                     		ltorg
+(1) 1013/ 6001516 :                     
+(1) 1014/ 6001516 :                     ; =================================================================
+(1) 1015/ 6001516 :                     ; ------------------------------------------------
+(1) 1016/ 6001516 :                     ; Slave | Custom interrupt
+(1) 1017/ 6001516 :                     ; 
+(1) 1018/ 6001516 :                     ; Autosort faces on the background
+(1) 1019/ 6001516 :                     ; ------------------------------------------------
+(1) 1020/ 6001516 :                     
+(1) 1021/ 6001516 :                     s_irq_custom:
+(1) 1022/ 6001516 : 2F26                		mov	r2,@-r15
+(1) 1023/ 6001518 : 9120                		mov.l   #_FRT,r1
+(1) 1024/ 600151A : 8417                		mov.b   @(7,r1),r0
+(1) 1025/ 600151C : CA02                		xor     #2,r0
+(1) 1026/ 600151E : 8017                		mov.b   r0,@(7,r1)
+(1) 1027/ 6001520 :                     
+(1) 1028/ 6001520 :                     	; Sorting task start here
+(1) 1029/ 6001520 : C508                		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
+(1) 1030/ 6001522 : 8800                		cmp/eq	#0,r0
+(1) 1031/ 6001524 : 890B                		bt	.no_request
+(1) 1032/ 6001526 : 2F36                		mov	r3,@-r15
+(1) 1033/ 6001528 : 2F46                		mov	r4,@-r15
+(1) 1034/ 600152A : 2F56                		mov	r5,@-r15
+(1) 1035/ 600152C : 2F66                		mov	r6,@-r15
+(1) 1036/ 600152E : D10A                		mov	#CS3+$44,r1
+(1) 1037/ 6001530 : 6012                		mov	@r1,r0
+(1) 1038/ 6001532 : 7001                		add 	#1,r0
+(1) 1039/ 6001534 : 2102                		mov	r0,@r1
+(1) 1040/ 6001536 : 66F6                		mov	@r15+,r6
+(1) 1041/ 6001538 : 65F6                		mov	@r15+,r5
+(1) 1042/ 600153A : 64F6                		mov	@r15+,r4
+(1) 1043/ 600153C : 63F6                		mov	@r15+,r3
+(1) 1044/ 600153E :                     .no_request:
+(1) 1045/ 600153E :                     	; End
+(1) 1046/ 600153E :                     
+(1) 1047/ 600153E : 910E                		mov	#$FFFFFE80,r1
+(1) 1048/ 6001540 : 900E                		mov.w   #$A518,r0
+(1) 1049/ 6001542 : 2101                		mov.w   r0,@r1
+(1) 1050/ 6001544 : CB20                		or      #$20,r0
+(1) 1051/ 6001546 : 2101                		mov.w   r0,@r1
+(1) 1052/ 6001548 : E201                		mov	#1,r2
+(1) 1053/ 600154A : 900A                		mov.w   #$5A00,r0
+(1) 1054/ 600154C : 202B                		or	r2,r0
+(1) 1055/ 600154E : 2101                		mov.w	r0,@r1
+(1) 1056/ 6001550 : 62F6                		mov	@r15+,r2
+(1) 1057/ 6001552 : 000B                		rts
+(1) 1058/ 6001554 : 0009                		nop
+(1) 1059/ 6001556 :                     		align 4
+(1) 1060/ 6001558 : 0600 0044 FE10 FE80 		ltorg
                     A518 5A00           
-(1) 1061/ 6001594 :                     
-(1) 1062/ 6001594 :                     ; ====================================================================
-(1) 1063/ 6001594 :                     ; ----------------------------------------------------------------
-(1) 1064/ 6001594 :                     ; MARS DATA
-(1) 1065/ 6001594 :                     ; ----------------------------------------------------------------
-(1) 1066/ 6001594 :                     
-(1) 1067/ 6001594 :                     		align 4
-(1) 1068/ 6001594 :                     sin_table	binclude "system/mars/data/sinedata.bin"
-(1) 1069/ 6003D94 :                     		align 4
-(1) 1070/ 6003D94 :                     		include "data/mars_sdram.asm"
-(2)    1/ 6003D94 :                     ; ====================================================================
-(2)    2/ 6003D94 :                     ; ----------------------------------------------------------------
-(2)    3/ 6003D94 :                     ; SH2 SDRAM user data
-(2)    4/ 6003D94 :                     ; 
-(2)    5/ 6003D94 :                     ; This data is stored on SDRAM, it's always available to use
-(2)    6/ 6003D94 :                     ; and can be re-writeable
-(2)    7/ 6003D94 :                     ; ----------------------------------------------------------------
-(2)    8/ 6003D94 :                     
-(2)    9/ 6003D94 :                     		align 4
-(2)   10/ 6003D94 :                     TEST_MODEL:	binclude "data/mars/models/cube_head.bin"	; dc.w faces,vertices
-(2)   11/ 6003D98 : 0600 3DA8 0600 3E98 		dc.l .vert,.face,.vrtx,.mtrl			; dc.l vertices, faces, vertex, material
-                    0600 3F78 0600 4008 
-(2)   12/ 6003DA8 :                     .vert:		binclude "data/mars/models/cube_vert.bin"
-(2)   13/ 6003E98 :                     .face:		binclude "data/mars/models/cube_face.bin"
-(2)   14/ 6003F78 :                     .vrtx:		binclude "data/mars/models/cube_vrtx.bin"
-(2)   15/ 6004008 :                     .mtrl:		include "data/mars/models/cube_mtrl.asm"
-(3)    1/ 6004008 :                     
-(2)   16/ 6004008 :                     		align 4
-(2)   17/ 6004008 :                     Palette_Puyo:	binclude "data/mars/models/mtrl/marscity_pal.bin"
-(2)   18/ 6004206 :                     		align 4
-(2)   19/ 6004208 :                     TEST_ANIMATION:	binclude "data/mars/models/cube_anim.bin"
-(2)   20/ 600588C :                     
-(1) 1071/ 600588C :                     
-(1) 1072/ 600588C :                     ; ====================================================================
-(1) 1073/ 600588C :                     ; ----------------------------------------------------------------
-(1) 1074/ 600588C :                     ; MARS SH2 RAM
-(1) 1075/ 600588C :                     ; ----------------------------------------------------------------
-(1) 1076/ 600588C :                     
-(1) 1077/ 600588C :                     SH2_RAM:
-(1) 1078/ 600588C : (MACRO)             		struct SH2_RAM
-(1) 1078/ 600588C : =$600588C           GLBL_LASTPC     set *
-(1) 1078/    8E7C :                                     dephase
-(1) 1078/    8E7C : =$8E7C              GLBL_LASTORG    set *
-(1) 1078/ 600588C :                                     phase SH2_RAM
-(1) 1085/ 600588C :                     MarsRam_System	ds.b (sizeof_marssys-MarsRam_System)
-(1) 1086/ 60058CC :                     MarsRam_Video	ds.b (sizeof_marsvid-MarsRam_Video)
-(1) 1087/ 602B830 :                     MarsRam_Sound	ds.b (sizeof_marssnd-MarsRam_Sound)
-(1) 1088/ 602B950 :                     sizeof_marsram	ds.l 0
-(1) 1090/ 602B950 :                     
-(1) 1091/ 602B950 :                     .here:
-MARS RAM from 588C to 2B950
-(1) 1093/ 602B950 :                     		message "MARS RAM from \{((SH2_RAM)&$FFFFFF)} to \{((.here)&$FFFFFF)}"
-(1) 1095/ 602B950 : (MACRO)             		finish
-(1) 1095/ 600588C :                                     !org GLBL_LASTORG
-(1) 1095/ 600588C :                                     phase GLBL_LASTPC
-(1) 1096/ 600588C :                     		
-(1) 1097/ 600588C :                     ; ====================================================================
-(1) 1098/ 600588C :                     ; ----------------------------------------------------------------
-(1) 1099/ 600588C :                     ; MARS Sound RAM
-(1) 1100/ 600588C :                     ; ----------------------------------------------------------------
-(1) 1101/ 600588C :                     
-(1) 1102/ 600588C : (MACRO)             			struct MarsRam_Sound
-(1) 1102/ 600588C : =$600588C           GLBL_LASTPC     set *
-(1) 1102/    8E7C :                                     dephase
-(1) 1102/    8E7C : =$8E7C              GLBL_LASTORG    set *
-(1) 1102/ 602B830 :                                     phase MARSRAM_SOUND
-(1) 1103/ 602B830 :                     MARSSnd_Pwm		ds.b sizeof_sndchn*8
-(1) 1104/ 602B950 :                     sizeof_marssnd		ds.l 0
-(1) 1105/ 602B950 : (MACRO)             			finish
-(1) 1105/ 602B830 :                                     !org GLBL_LASTORG
-(1) 1105/ 600588C :                                     phase GLBL_LASTPC
-(1) 1106/ 600588C :                     
-(1) 1107/ 600588C :                     ; ====================================================================
-(1) 1108/ 600588C :                     ; ----------------------------------------------------------------
-(1) 1109/ 600588C :                     ; MARS Video RAM
-(1) 1110/ 600588C :                     ; ----------------------------------------------------------------
-(1) 1111/ 600588C :                     
-(1) 1112/ 600588C : (MACRO)             			struct MarsRam_Video
-(1) 1112/ 600588C : =$600588C           GLBL_LASTPC     set *
-(1) 1112/    8E7C :                                     dephase
-(1) 1112/    8E7C : =$8E7C              GLBL_LASTORG    set *
-(1) 1112/ 60058CC :                                     phase MARSRAM_VIDEO
-(1) 1113/ 60058CC :                     RAM_Mars_Palette	ds.w 256
-(1) 1114/ 6005ACC :                     RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer list(s)
-(1) 1115/ 6006ACC :                     RAM_Mars_PlgnList_1	ds.l MAX_FACES
-(1) 1116/ 6007ACC :                     RAM_Mars_Plgn_ZList	ds.l MAX_FACES*2		; Z value / foward faces | backward faces
-(1) 1117/ 6009ACC :                     RAM_Mars_PlgnNum_0	ds.w 1
-(1) 1118/ 6009ACE :                     RAM_Mars_PlgnNum_1	ds.w 1
-(1) 1119/ 6009AD0 :                     RAM_Mars_ObjCamera	ds.b sizeof_camera*4
-(1) 1120/ 6009B70 :                     RAM_Mars_Objects	ds.b sizeof_mdlobj*MAX_MODELS
-(1) 1121/ 6009E30 :                     RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
-(1) 1122/ 6017E30 :                     RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
-(1) 1123/ 6025E30 :                     RAM_Mars_VdpDrwList	ds.b sizeof_plypz*MAX_SVDP_PZ
-(1) 1124/ 602B830 :                     RAM_Mars_VdpDrwList_e	ds.l 0
-(1) 1125/ 602B830 :                     sizeof_marsvid		ds.l 0
-(1) 1126/ 602B830 : (MACRO)             			finish
-(1) 1126/ 60058CC :                                     !org GLBL_LASTORG
-(1) 1126/ 600588C :                                     phase GLBL_LASTPC
-(1) 1127/ 600588C :                     			
-(1) 1128/ 600588C :                     ; ====================================================================
-(1) 1129/ 600588C :                     ; ----------------------------------------------------------------
-(1) 1130/ 600588C :                     ; MARS System RAM
-(1) 1131/ 600588C :                     ; ----------------------------------------------------------------
-(1) 1132/ 600588C :                     
-(1) 1133/ 600588C : (MACRO)             			struct MarsRam_System
-(1) 1133/ 600588C : =$600588C           GLBL_LASTPC     set *
-(1) 1133/    8E7C :                                     dephase
-(1) 1133/    8E7C : =$8E7C              GLBL_LASTORG    set *
-(1) 1133/ 600588C :                                     phase MARSRAM_SYSTEM
-(1) 1134/ 600588C :                     RAM_Mars_Global		ds.w sizeof_MarsGbl		; keep it as a word
-(1) 1135/ 60058CC :                     sizeof_marssys		ds.l 0
-(1) 1136/ 60058CC : (MACRO)             			finish
-(1) 1136/ 600588C :                                     !org GLBL_LASTORG
-(1) 1136/ 600588C :                                     phase GLBL_LASTPC
-(1) 1137/ 600588C :                     
-      47/ 600588C :                     		ltorg
-      48/ 600588C :                     		cpu 68000
-      49/ 600588C :                     		padding off
-      50/    8E7C :                     		dephase
-      51/    8E7C :                     MARS_RAMDATA_E:
-      52/    8E7C :                     		align 4
-      53/    8E7C :                     
-      54/    8E7C :                     ; ====================================================================
-      55/    8E7C :                     ; MD DATA BANK
-      56/    8E7C :                     ; 
-      57/    8E7C :                     ; $900000 - $9FFFFF
-      58/    8E7C :                     ; ====================================================================
-      59/    8E7C :                     
-      60/    8E7C :                     		align 4
-      61/  908E7C :                     		phase $900000+*				; Only one currently
-      62/  908E7C :                     		include "data/md_bank0.asm"
-(1)    1/  908E7C :                     ; ====================================================================
-(1)    2/  908E7C :                     ; ----------------------------------------------------------------
-(1)    3/  908E7C :                     ; MD Data other than DMA graphics, 1MB maximum
-(1)    4/  908E7C :                     ; ----------------------------------------------------------------
-(1)    5/  908E7C :                     
-(1)    6/  908E7C :                     		align $8000
-(1)    7/  910000 :                     CAMERA_ANIM:	binclude "data/mars/models/camera_anim.bin"
-(1)    8/  910F04 :                     		align 4
-(1)    9/  910F04 :                     
-      63/   10F04 :                     		dephase
-      64/   10F04 :                     
-      65/   10F04 :                     ; ====================================================================
-      66/   10F04 :                     ; DATA for DMA transfers (bank-less but with the old limitations)
-      67/   10F04 :                     ; ====================================================================
-      68/   10F04 :                     
-      69/   10F04 :                     		align 4
-      70/   10F04 :                     		include "data/md_dmadata0.asm"
-(1)    1/   10F04 :                     ; ====================================================================
-(1)    2/   10F04 :                     ; ----------------------------------------------------------------
-(1)    3/   10F04 :                     ; Graphics data to be transfered with DMA
-(1)    4/   10F04 :                     ; ----------------------------------------------------------------
-(1)    5/   10F04 :                     
-(1)    6/   10F04 :                     		align $8000
-(1)    7/   18000 :                     MdGfx_Bg:
-(1)    8/   18000 :                     		binclude "data/md/bg/bg_art.bin"
-(1)    9/   1AEC0 :                     MdGfx_Bg_e:	align 2
-(1)   10/   1AEC0 :                     
-      71/   1AEC0 :                     		
-      72/   1AEC0 :                     ; ====================================================================
-      73/   1AEC0 :                     ; MARS ROM data (Acessed by SH2 only)
-      74/   1AEC0 :                     ; 
-      75/   1AEC0 :                     ; This will be gone if doing DMA transfers
-      76/   1AEC0 :                     ; ====================================================================
-      77/   1AEC0 :                     
-      78/ 201AEC0 :                     		phase CS1+*
-      79/ 201AEC0 :                     		align 4
-      80/ 201AEC0 :                     		include "data/mars_rom.asm"
-(1)    1/ 201AEC0 :                     ; ====================================================================
-(1)    2/ 201AEC0 :                     ; ----------------------------------------------------------------
-(1)    3/ 201AEC0 :                     ; SH2 ROM user data
-(1)    4/ 201AEC0 :                     ; 
-(1)    5/ 201AEC0 :                     ; If your data is too much for SDRAM, place it here.
-(1)    6/ 201AEC0 :                     ; Note that this section will be gone if the Genesis side is
-(1)    7/ 201AEC0 :                     ; perfoming a DMA ROM-to-VDP Transfer (setting RV=1)
-(1)    8/ 201AEC0 :                     ; 
-(1)    9/ 201AEC0 :                     ; also, reading from here is slow (supposedly)
-(1)   10/ 201AEC0 :                     ; ----------------------------------------------------------------
-(1)   11/ 201AEC0 :                     
-(1)   12/ 201AEC0 :                     		align 4
-(1)   13/ 201AEC0 :                     Textr_marscity:
-(1)   14/ 201AEC0 :                     		binclude "data/mars/models/mtrl/marscity_art.bin"
-(1)   15/ 2099CC0 :                     		align 4
-(1)   16/ 2099CC0 :                     		
-(1)   17/ 2099CC0 :                     WAV_LEFT:	binclude "data/mars/L.wav",$2C,$100000
-(1)   18/ 2199CC0 :                     WAV_LEFT_E:
-(1)   19/ 2199CC0 :                     		align 4
-(1)   20/ 2199CC0 :                     WAV_RIGHT:	binclude "data/mars/R.wav",$2C,$100000
-(1)   21/ 2299CC0 :                     WAV_RIGHT_E:
-(1)   22/ 2299CC0 :                     		align 4
-(1)   23/ 2299CC0 :                     
-      81/  299CC0 :                     		dephase
-      82/  299CC0 :                     
-      83/  299CC0 :                     ; ====================================================================
-      84/  299CC0 :                     ; ---------------------------------------------
-      85/  299CC0 :                     ; End
-      86/  299CC0 :                     ; ---------------------------------------------
-      87/  299CC0 :                     		
-      88/  299CC0 :                     ROM_END:
-      89/  299CC0 :                     ; 		rompad (ROM_END&$FF0000)+$40000
-      90/  299CC0 :                     		align $8000
-      91/  2A0000 :                     
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 2 - 1/5/2021 18:53:39
+(1) 1061/ 6001564 :                     
+(1) 1062/ 6001564 :                     ; ====================================================================
+(1) 1063/ 6001564 :                     ; ----------------------------------------------------------------
+(1) 1064/ 6001564 :                     ; MARS DATA
+(1) 1065/ 6001564 :                     ; ----------------------------------------------------------------
+(1) 1066/ 6001564 :                     
+(1) 1067/ 6001564 :                     		align 4
+(1) 1068/ 6001564 :                     sin_table	binclude "system/mars/data/sinedata.bin"
+(1) 1069/ 6003D64 :                     		align 4
+(1) 1070/ 6003D64 :                     		include "data/mars_sdram.asm"
+(2)    1/ 6003D64 :                     ; ====================================================================
+(2)    2/ 6003D64 :                     ; ----------------------------------------------------------------
+(2)    3/ 6003D64 :                     ; SH2 SDRAM user data
+(2)    4/ 6003D64 :                     ; 
+(2)    5/ 6003D64 :                     ; This data is stored on SDRAM, it's always available to use
+(2)    6/ 6003D64 :                     ; and can be re-writeable
+(2)    7/ 6003D64 :                     ; ----------------------------------------------------------------
+(2)    8/ 6003D64 :                     
+(2)    9/ 6003D64 :                     		align 4
+(2)   10/ 6003D64 :                     TEST_MODEL:	binclude "data/mars/models/cube_head.bin"	; dc.w faces,vertices
+(2)   11/ 6003D68 : 0600 3D78 0600 3E68 		dc.l .vert,.face,.vrtx,.mtrl			; dc.l vertices, faces, vertex, material
+                    0600 3F48 0600 3FD8 
+(2)   12/ 6003D78 :                     .vert:		binclude "data/mars/models/cube_vert.bin"
+(2)   13/ 6003E68 :                     .face:		binclude "data/mars/models/cube_face.bin"
+(2)   14/ 6003F48 :                     .vrtx:		binclude "data/mars/models/cube_vrtx.bin"
+(2)   15/ 6003FD8 :                     .mtrl:		include "data/mars/models/cube_mtrl.asm"
+(3)    1/ 6003FD8 :                     
+(2)   16/ 6003FD8 :                     		align 4
+(2)   17/ 6003FD8 :                     Palette_Puyo:	binclude "data/mars/models/mtrl/marscity_pal.bin"
+(2)   18/ 60041D6 :                     		align 4
+(2)   19/ 60041D8 :                     TEST_ANIMATION:	binclude "data/mars/models/cube_anim.bin"
+(2)   20/ 600585C :                     
+(1) 1071/ 600585C :                     
+(1) 1072/ 600585C :                     ; ====================================================================
+(1) 1073/ 600585C :                     ; ----------------------------------------------------------------
+(1) 1074/ 600585C :                     ; MARS SH2 RAM
+(1) 1075/ 600585C :                     ; ----------------------------------------------------------------
+(1) 1076/ 600585C :                     
+(1) 1077/ 600585C :                     SH2_RAM:
+(1) 1078/ 600585C : (MACRO)             		struct SH2_RAM
+(1) 1078/ 600585C : =$600585C           GLBL_LASTPC     set *
+(1) 1078/    8E4C :                                     dephase
+(1) 1078/    8E4C : =$8E4C              GLBL_LASTORG    set *
+(1) 1078/ 600585C :                                     phase SH2_RAM
+(1) 1085/ 600585C :                     MarsRam_System	ds.b (sizeof_marssys-MarsRam_System)
+(1) 1086/ 600589C :                     MarsRam_Video	ds.b (sizeof_marsvid-MarsRam_Video)
+(1) 1087/ 602B800 :                     MarsRam_Sound	ds.b (sizeof_marssnd-MarsRam_Sound)
+(1) 1088/ 602B920 :                     sizeof_marsram	ds.l 0
+(1) 1090/ 602B920 :                     
+(1) 1091/ 602B920 :                     .here:
+MARS RAM from 585C to 2B920
+(1) 1093/ 602B920 :                     		message "MARS RAM from \{((SH2_RAM)&$FFFFFF)} to \{((.here)&$FFFFFF)}"
+(1) 1095/ 602B920 : (MACRO)             		finish
+(1) 1095/ 600585C :                                     !org GLBL_LASTORG
+(1) 1095/ 600585C :                                     phase GLBL_LASTPC
+(1) 1096/ 600585C :                     		
+(1) 1097/ 600585C :                     ; ====================================================================
+(1) 1098/ 600585C :                     ; ----------------------------------------------------------------
+(1) 1099/ 600585C :                     ; MARS Sound RAM
+(1) 1100/ 600585C :                     ; ----------------------------------------------------------------
+(1) 1101/ 600585C :                     
+(1) 1102/ 600585C : (MACRO)             			struct MarsRam_Sound
+(1) 1102/ 600585C : =$600585C           GLBL_LASTPC     set *
+(1) 1102/    8E4C :                                     dephase
+(1) 1102/    8E4C : =$8E4C              GLBL_LASTORG    set *
+(1) 1102/ 602B800 :                                     phase MARSRAM_SOUND
+(1) 1103/ 602B800 :                     MARSSnd_Pwm		ds.b sizeof_sndchn*8
+(1) 1104/ 602B920 :                     sizeof_marssnd		ds.l 0
+(1) 1105/ 602B920 : (MACRO)             			finish
+(1) 1105/ 602B800 :                                     !org GLBL_LASTORG
+(1) 1105/ 600585C :                                     phase GLBL_LASTPC
+(1) 1106/ 600585C :                     
+(1) 1107/ 600585C :                     ; ====================================================================
+(1) 1108/ 600585C :                     ; ----------------------------------------------------------------
+(1) 1109/ 600585C :                     ; MARS Video RAM
+(1) 1110/ 600585C :                     ; ----------------------------------------------------------------
+(1) 1111/ 600585C :                     
+(1) 1112/ 600585C : (MACRO)             			struct MarsRam_Video
+(1) 1112/ 600585C : =$600585C           GLBL_LASTPC     set *
+(1) 1112/    8E4C :                                     dephase
+(1) 1112/    8E4C : =$8E4C              GLBL_LASTORG    set *
+(1) 1112/ 600589C :                                     phase MARSRAM_VIDEO
+(1) 1113/ 600589C :                     RAM_Mars_Palette	ds.w 256
+(1) 1114/ 6005A9C :                     RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer list(s)
+(1) 1115/ 6006A9C :                     RAM_Mars_PlgnList_1	ds.l MAX_FACES
+(1) 1116/ 6007A9C :                     RAM_Mars_Plgn_ZList	ds.l MAX_FACES*2		; Z value / foward faces | backward faces
+(1) 1117/ 6009A9C :                     RAM_Mars_PlgnNum_0	ds.w 1
+(1) 1118/ 6009A9E :                     RAM_Mars_PlgnNum_1	ds.w 1
+(1) 1119/ 6009AA0 :                     RAM_Mars_ObjCamera	ds.b sizeof_camera*4
+(1) 1120/ 6009B40 :                     RAM_Mars_Objects	ds.b sizeof_mdlobj*MAX_MODELS
+(1) 1121/ 6009E00 :                     RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
+(1) 1122/ 6017E00 :                     RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
+(1) 1123/ 6025E00 :                     RAM_Mars_VdpDrwList	ds.b sizeof_plypz*MAX_SVDP_PZ
+(1) 1124/ 602B800 :                     RAM_Mars_VdpDrwList_e	ds.l 0
+(1) 1125/ 602B800 :                     sizeof_marsvid		ds.l 0
+(1) 1126/ 602B800 : (MACRO)             			finish
+(1) 1126/ 600589C :                                     !org GLBL_LASTORG
+(1) 1126/ 600585C :                                     phase GLBL_LASTPC
+(1) 1127/ 600585C :                     			
+(1) 1128/ 600585C :                     ; ====================================================================
+(1) 1129/ 600585C :                     ; ----------------------------------------------------------------
+(1) 1130/ 600585C :                     ; MARS System RAM
+(1) 1131/ 600585C :                     ; ----------------------------------------------------------------
+(1) 1132/ 600585C :                     
+(1) 1133/ 600585C : (MACRO)             			struct MarsRam_System
+(1) 1133/ 600585C : =$600585C           GLBL_LASTPC     set *
+(1) 1133/    8E4C :                                     dephase
+(1) 1133/    8E4C : =$8E4C              GLBL_LASTORG    set *
+(1) 1133/ 600585C :                                     phase MARSRAM_SYSTEM
+(1) 1134/ 600585C :                     RAM_Mars_Global		ds.w sizeof_MarsGbl		; keep it as a word
+(1) 1135/ 600589C :                     sizeof_marssys		ds.l 0
+(1) 1136/ 600589C : (MACRO)             			finish
+(1) 1136/ 600585C :                                     !org GLBL_LASTORG
+(1) 1136/ 600585C :                                     phase GLBL_LASTPC
+(1) 1137/ 600585C :                     
+      47/ 600585C :                     		ltorg
+      48/ 600585C :                     		cpu 68000
+      49/ 600585C :                     		padding off
+      50/    8E4C :                     		dephase
+      51/    8E4C :                     MARS_RAMDATA_E:
+      52/    8E4C :                     		align 4
+      53/    8E4C :                     
+      54/    8E4C :                     ; ====================================================================
+      55/    8E4C :                     ; MD DATA BANK
+      56/    8E4C :                     ; 
+      57/    8E4C :                     ; $900000 - $9FFFFF
+      58/    8E4C :                     ; ====================================================================
+      59/    8E4C :                     
+      60/    8E4C :                     		align 4
+      61/  908E4C :                     		phase $900000+*				; Only one currently
+      62/  908E4C :                     		include "data/md_bank0.asm"
+(1)    1/  908E4C :                     ; ====================================================================
+(1)    2/  908E4C :                     ; ----------------------------------------------------------------
+(1)    3/  908E4C :                     ; MD Data other than DMA graphics, 1MB maximum
+(1)    4/  908E4C :                     ; ----------------------------------------------------------------
+(1)    5/  908E4C :                     
+(1)    6/  908E4C :                     		align 4
+(1)    7/  908E4C :                     CAMERA_ANIM:	binclude "data/mars/models/camera_anim.bin"
+(1)    8/  909D50 :                     		align 4
+(1)    9/  909D50 :                     
+      63/    9D50 :                     		dephase
+      64/    9D50 :                     
+      65/    9D50 :                     ; ====================================================================
+      66/    9D50 :                     ; DATA for DMA transfers (bank-less but with the old limitations)
+      67/    9D50 :                     ; ====================================================================
+      68/    9D50 :                     
+      69/    9D50 :                     		align 4
+      70/    9D50 :                     		include "data/md_dmadata0.asm"
+(1)    1/    9D50 :                     ; ====================================================================
+(1)    2/    9D50 :                     ; ----------------------------------------------------------------
+(1)    3/    9D50 :                     ; Graphics data to be transfered with DMA
+(1)    4/    9D50 :                     ; ----------------------------------------------------------------
+(1)    5/    9D50 :                     
+(1)    6/    9D50 :                     		align $8000
+(1)    7/   10000 :                     MdGfx_Bg:
+(1)    8/   10000 :                     		binclude "data/md/bg/bg_art.bin"
+(1)    9/   12EC0 :                     MdGfx_Bg_e:	align 2
+(1)   10/   12EC0 :                     
+      71/   12EC0 :                     		
+      72/   12EC0 :                     ; ====================================================================
+      73/   12EC0 :                     ; MARS ROM data (Acessed by SH2 only)
+      74/   12EC0 :                     ; 
+      75/   12EC0 :                     ; This will be gone if doing DMA transfers
+      76/   12EC0 :                     ; ====================================================================
+      77/   12EC0 :                     
+      78/ 2012EC0 :                     		phase CS1+*
+      79/ 2012EC0 :                     		align 4
+      80/ 2012EC0 :                     		include "data/mars_rom.asm"
+(1)    1/ 2012EC0 :                     ; ====================================================================
+(1)    2/ 2012EC0 :                     ; ----------------------------------------------------------------
+(1)    3/ 2012EC0 :                     ; SH2 ROM user data
+(1)    4/ 2012EC0 :                     ; 
+(1)    5/ 2012EC0 :                     ; If your data is too much for SDRAM, place it here.
+(1)    6/ 2012EC0 :                     ; Note that this section will be gone if the Genesis side is
+(1)    7/ 2012EC0 :                     ; perfoming a DMA ROM-to-VDP Transfer (setting RV=1)
+(1)    8/ 2012EC0 :                     ; 
+(1)    9/ 2012EC0 :                     ; also, reading from here is slow (supposedly)
+(1)   10/ 2012EC0 :                     ; ----------------------------------------------------------------
+(1)   11/ 2012EC0 :                     
+(1)   12/ 2012EC0 :                     		align 4
+(1)   13/ 2012EC0 :                     Textr_marscity:
+(1)   14/ 2012EC0 :                     		binclude "data/mars/models/mtrl/marscity_art.bin"
+(1)   15/ 2091CC0 :                     		align 4
+(1)   16/ 2091CC0 :                     		
+(1)   17/ 2091CC0 :                     ; WAV_LEFT:	binclude "data/mars/L.wav",$2C,$100000
+(1)   18/ 2091CC0 :                     ; WAV_LEFT_E:
+(1)   19/ 2091CC0 :                     ; 		align 4
+(1)   20/ 2091CC0 :                     ; WAV_RIGHT:	binclude "data/mars/R.wav",$2C,$100000
+(1)   21/ 2091CC0 :                     ; WAV_RIGHT_E:
+(1)   22/ 2091CC0 :                     ; 		align 4
+(1)   23/ 2091CC0 :                     
+      81/   91CC0 :                     		dephase
+      82/   91CC0 :                     
+      83/   91CC0 :                     ; ====================================================================
+      84/   91CC0 :                     ; ---------------------------------------------
+      85/   91CC0 :                     ; End
+      86/   91CC0 :                     ; ---------------------------------------------
+      87/   91CC0 :                     		
+      88/   91CC0 :                     ROM_END:
+      89/   91CC0 :                     ; 		rompad (ROM_END&$FF0000)+$40000
+      90/   91CC0 :                     		align $8000
+      91/   98000 :                     
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 2 - 1/5/2021 22:02:53
 
 
   symbol table (* = unused):
@@ -6801,7 +6801,7 @@ MARS RAM from 588C to 2B950
  CACHDDA_TOP :     FFFFFFFFC0000038 C |  CACHE_END :                60010C8 C |
  CACHE_START :              6000998 C |  CACH_CLRLINES :   FFFFFFFFC0000098 C |
  CACH_LNDRW_L :    FFFFFFFFC0000000 C |  CACH_LNDRW_S :    FFFFFFFFC0000038 C |
- CAMERA_ANIM :               910000 C |  CAM_ANIMDATA :                   0 C |
+ CAMERA_ANIM :               908E4C C |  CAM_ANIMDATA :                   0 C |
  CAM_ANIMFRAME :                  4 C | *CAM_ANIMSPD :                    C C |
  CAM_ANIMTIMER :                  8 C |  CAM_X_POS :                     10 C |
  CAM_X_ROT :                     1C C |  CAM_Y_POS :                     14 C |
@@ -6853,7 +6853,7 @@ MARS RAM from 588C to 2B950
 *FILLLENGTH :                     5 - | *FILLSTART :                      6 - |
  FM :                            80 - | *FRAMECTL :                       B - |
 *FS :                             1 - | *FULLPMMU :                       1 - |
- GLBL_LASTORG :                8E7C - |  GLBL_LASTPC :              600588C - |
+ GLBL_LASTORG :                8E4C - |  GLBL_LASTPC :              600585C - |
 *HAS64 :                          1 - | *HASDSP :                         0 - |
 *HASFPU :                         0 - | *HASPMMU :                        0 - |
 *HBLK :                          40 - | *HCOUNT :                         5 - |
@@ -6887,36 +6887,34 @@ MARS RAM from 588C to 2B950
  LITERAL_F_00000013_1 :                                    FFFFFFFFC000072C C |
  LITERAL_F_00000013_1.END :                                FFFFFFFFC0000730 C |
  LITERAL_F_00000014_1 :     6001140 C |  LITERAL_F_00000015_1 :     60011B0 C |
- LITERAL_F_00000016_1 :     60012F0 C |  LITERAL_F_00000017_1 :     6001300 C |
- LITERAL_F_00000018_1 :     6001304 C |  LITERAL_F_00000019_1 :     6001308 C |
- LITERAL_F_0000001A_1 :     600130C C |  LITERAL_F_0000001B_1 :     6001310 C |
- LITERAL_F_0000001C_1 :     6001314 C |  LITERAL_F_0000001D_1 :     600131C C |
- LITERAL_F_0000001E_1 :     6001320 C |  LITERAL_F_0000001F_1 :     6001324 C |
- LITERAL_F_00000020_1 :     6001328 C |  LITERAL_F_00000021_1 :     6001484 C |
- LITERAL_F_00000022_1 :     6001488 C |  LITERAL_F_00000023_1 :     600148C C |
- LITERAL_F_00000024_1 :     6001490 C |  LITERAL_F_00000025_1 :     600149C C |
- LITERAL_F_00000026_1 :     60014A8 C |  LITERAL_F_00000027_1 :     60014AC C |
- LITERAL_F_00000028_1 :     60014B0 C |  LITERAL_F_00000029_1 :     60014B4 C |
- LITERAL_F_0000002A_1 :     60014B8 C |  LITERAL_F_0000002B_1 :     60014BC C |
- LITERAL_F_0000002C_1 :     60014C0 C |  LITERAL_F_0000002D_1 :     60014C4 C |
- LITERAL_F_0000002E_1 :     6001540 C |  LITERAL_L_00008000_1 :     6000630 C |
+ LITERAL_F_00000016_1 :     60012D0 C |  LITERAL_F_00000017_1 :     60012E0 C |
+ LITERAL_F_00000018_1 :     60012E4 C |  LITERAL_F_00000019_1 :     60012EC C |
+ LITERAL_F_0000001A_1 :     60012F0 C |  LITERAL_F_0000001B_1 :     60012F4 C |
+ LITERAL_F_0000001C_1 :     60012F8 C |  LITERAL_F_0000001D_1 :     6001454 C |
+ LITERAL_F_0000001E_1 :     6001458 C |  LITERAL_F_0000001F_1 :     600145C C |
+ LITERAL_F_00000020_1 :     6001460 C |  LITERAL_F_00000021_1 :     600146C C |
+ LITERAL_F_00000022_1 :     6001478 C |  LITERAL_F_00000023_1 :     600147C C |
+ LITERAL_F_00000024_1 :     6001480 C |  LITERAL_F_00000025_1 :     6001484 C |
+ LITERAL_F_00000026_1 :     6001488 C |  LITERAL_F_00000027_1 :     600148C C |
+ LITERAL_F_00000028_1 :     6001490 C |  LITERAL_F_00000029_1 :     6001494 C |
+ LITERAL_F_0000002A_1 :     6001510 C |  LITERAL_L_00008000_1 :     6000630 C |
  LITERAL_L_0000E000_1 :     60007F4 C |
  LITERAL_L_0000FFFF_1 :                                    FFFFFFFFC00001AC C |
- LITERAL_L_00010000_1 :     6000938 C |  LITERAL_L_06000044_1 :     6001588 C |
- LITERAL_L_06000998_1 :     60012F8 C |  LITERAL_L_0603EFF8_1 :     6000550 C |
- LITERAL_L_0603F000_1 :     6001480 C |  LITERAL_L_0603FFF8_1 :     6000440 C |
- LITERAL_L_06040000_1 :     60012E4 C |  LITERAL_L_20004000_1 :     6000430 C |
+ LITERAL_L_00010000_1 :     6000938 C |  LITERAL_L_06000044_1 :     6001558 C |
+ LITERAL_L_06000998_1 :     60012D8 C |  LITERAL_L_0603EFF8_1 :     6000550 C |
+ LITERAL_L_0603F000_1 :     6001450 C |  LITERAL_L_0603FFF8_1 :     6000440 C |
+ LITERAL_L_06040000_1 :     60012C4 C |  LITERAL_L_20004000_1 :     6000430 C |
  LITERAL_L_20004000_2 :     6000540 C |  LITERAL_L_20004000_3 :     6000620 C |
- LITERAL_L_20004000_4 :     60011AC C |  LITERAL_L_20004000_5 :     60012F4 C |
- LITERAL_L_20004000_6 :     6001474 C |  LITERAL_L_20004016_1 :     600042C C |
+ LITERAL_L_20004000_4 :     60011AC C |  LITERAL_L_20004000_5 :     60012D4 C |
+ LITERAL_L_20004000_6 :     6001444 C |  LITERAL_L_20004016_1 :     600042C C |
  LITERAL_L_20004016_2 :     600053C C |  LITERAL_L_20004018_1 :     600041C C |
  LITERAL_L_20004018_2 :     6000538 C |  LITERAL_L_2000401A_1 :     6000418 C |
  LITERAL_L_2000401A_2 :     6000534 C |  LITERAL_L_2000401C_1 :     6000414 C |
- LITERAL_L_2000401C_2 :     6000530 C |  LITERAL_L_20004020_1 :     60012E8 C |
- LITERAL_L_20004020_2 :     6001478 C |  LITERAL_L_20004024_1 :     6001330 C |
- LITERAL_L_20004026_1 :     60014A4 C |  LITERAL_L_20004028_1 :     6001498 C |
- LITERAL_L_2000402E_1 :     6001318 C |  LITERAL_L_2000402E_2 :     60014A0 C |
- LITERAL_L_2000402F_1 :     6001494 C |  LITERAL_L_20004034_1 :     6001148 C |
+ LITERAL_L_2000401C_2 :     6000530 C |  LITERAL_L_20004020_1 :     60012C8 C |
+ LITERAL_L_20004020_2 :     6001448 C |  LITERAL_L_20004024_1 :     6001300 C |
+ LITERAL_L_20004026_1 :     6001474 C |  LITERAL_L_20004028_1 :     6001468 C |
+ LITERAL_L_2000402E_1 :     60012E8 C |  LITERAL_L_2000402E_2 :     6001470 C |
+ LITERAL_L_2000402F_1 :     6001464 C |  LITERAL_L_20004034_1 :     6001148 C |
  LITERAL_L_20004036_1 :     600114C C |  LITERAL_L_20004038_1 :     600052C C |
  LITERAL_L_20004038_2 :     6001144 C |  LITERAL_L_20004100_1 :     6000420 C |
  LITERAL_L_20004100_2 :     6000624 C |  LITERAL_L_20004100_3 :     6000988 C |
@@ -6926,12 +6924,12 @@ MARS RAM from 588C to 2B950
  LITERAL_L_24020200_1 :                                    FFFFFFFFC00003C8 C |
  LITERAL_L_36385550_1 :     6000434 C |  LITERAL_L_36385550_2 :     6000544 C |
  LITERAL_L_4D5F4F4B_1 :     600043C C |  LITERAL_L_4D5F4F4B_2 :     600054C C |
- LITERAL_L_534C4156_1 :     60012EC C |  LITERAL_L_534C4156_2 :     600147C C |
+ LITERAL_L_534C4156_1 :     60012CC C |  LITERAL_L_534C4156_2 :     600144C C |
  LITERAL_L_535F4F4B_1 :     6000438 C |  LITERAL_L_535F4F4B_2 :     6000548 C |
  LITERAL_L_7FFFFFFF_1 :     60007F8 C |
  LITERAL_L_7FFFFFFF_2 :                                    FFFFFFFFC0000524 C |
  LITERAL_L_FFFFFFFFC0000000_1 :                            FFFFFFFFC00001A8 C |
- LITERAL_L_FFFFFFFFC0000000_2 :                                     60012FC C |
+ LITERAL_L_FFFFFFFFC0000000_2 :                                     60012DC C |
  LITERAL_L_FFFFFFFFC0000038_1 :                            FFFFFFFFC00003D0 C |
  LITERAL_L_FFFFFFFFC0000038_2 :                            FFFFFFFFC0000518 C |
  LITERAL_L_FFFFFFFFC0000048_1 :                            FFFFFFFFC000051C C |
@@ -6945,7 +6943,7 @@ MARS RAM from 588C to 2B950
  LITERAL_L_FFFFFFFFC000008C_1 :                            FFFFFFFFC0000654 C |
  LITERAL_L_FFFFFFFFC0000094_1 :                            FFFFFFFFC0000658 C |
  LITERAL_L_FFFFFFFFC0000098_1 :                            FFFFFFFFC00000E4 C |
- LITERAL_L_FFFFFFFFC00003EC_1 :                                     600132C C |
+ LITERAL_L_FFFFFFFFC00003EC_1 :                                     60012FC C |
  LITERAL_L_FFFFFFFFFF000000_1 :                                     60011B4 C |
  LITERAL_W_0080_1 :         6000634 C |
  LITERAL_W_00A0_1 :                                        FFFFFFFFC00000EA C |
@@ -6955,36 +6953,36 @@ MARS RAM from 588C to 2B950
  LITERAL_W_00E0_3 :                                        FFFFFFFFC00003DC C |
  LITERAL_W_00E0_4 :                                        FFFFFFFFC0000532 C |
  LITERAL_W_00F0_1 :         600044E C |  LITERAL_W_00F0_2 :         600055A C |
- LITERAL_W_00F0_3 :         6000638 C |  LITERAL_W_00F0_4 :         600133A C |
- LITERAL_W_00F0_5 :         60014CE C |  LITERAL_W_00FF_1 :         600063A C |
+ LITERAL_W_00F0_3 :         6000638 C |  LITERAL_W_00F0_4 :         600130A C |
+ LITERAL_W_00F0_5 :         600149E C |  LITERAL_W_00FF_1 :         600063A C |
  LITERAL_W_00FF_2 :                                        FFFFFFFFC00003E2 C |
  LITERAL_W_0100_1 :         600044A C |  LITERAL_W_0100_2 :         6000636 C |
- LITERAL_W_0100_3 :         6001340 C |  LITERAL_W_0105_1 :         60011BA C |
+ LITERAL_W_0100_3 :         6001310 C |  LITERAL_W_0105_1 :         60011BA C |
  LITERAL_W_013F_1 :                                        FFFFFFFFC00003E4 C |
  LITERAL_W_0140_1 :                                        FFFFFFFFC00003DE C |
- LITERAL_W_01CC_1 :         600133E C |  LITERAL_W_0400_1 :         6000800 C |
- LITERAL_W_0400_2 :         6001544 C |  LITERAL_W_0415_1 :         60011B8 C |
+ LITERAL_W_01CC_1 :         600130E C |  LITERAL_W_0400_1 :         6000800 C |
+ LITERAL_W_0400_2 :         6001514 C |  LITERAL_W_0415_1 :         60011B8 C |
  LITERAL_W_07FF_1 :         6000946 C |  LITERAL_W_1FFF_1 :         6000802 C |
  LITERAL_W_44E0_1 :         6000450 C |  LITERAL_W_44E0_2 :         600055C C |
  LITERAL_W_56F1_1 :         600044C C |
  LITERAL_W_5A00_1 :                                        FFFFFFFFC00003EA C |
- LITERAL_W_5A00_2 :         6001592 C |
+ LITERAL_W_5A00_2 :         6001562 C |
  LITERAL_W_5A10_1 :                                        FFFFFFFFC00000F0 C |
- LITERAL_W_5AFF_1 :         6000992 C |  LITERAL_W_7DC0_1 :         6001342 C |
+ LITERAL_W_5AFF_1 :         6000992 C |  LITERAL_W_7DC0_1 :         6001312 C |
  LITERAL_W_A518_1 :                                        FFFFFFFFC00000EE C |
  LITERAL_W_A518_2 :                                        FFFFFFFFC00003E8 C |
- LITERAL_W_A518_3 :         6001346 C |  LITERAL_W_A518_4 :         6001590 C |
+ LITERAL_W_A518_3 :         6001316 C |  LITERAL_W_A518_4 :         6001560 C |
  LITERAL_W_A538_1 :         6000994 C |  LITERAL_W_F800_1 :         6000806 C |
  LITERAL_W_FE10_1 :         6000448 C |  LITERAL_W_FE10_2 :         6000558 C |
  LITERAL_W_FE10_3 :                                        FFFFFFFFC00000E8 C |
- LITERAL_W_FE10_4 :         6001334 C |  LITERAL_W_FE10_5 :         60014C8 C |
- LITERAL_W_FE10_6 :         600158C C |  LITERAL_W_FE80_1 :         6000990 C |
+ LITERAL_W_FE10_4 :         6001304 C |  LITERAL_W_FE10_5 :         6001498 C |
+ LITERAL_W_FE10_6 :         600155C C |  LITERAL_W_FE80_1 :         6000990 C |
  LITERAL_W_FE80_2 :                                        FFFFFFFFC00000EC C |
  LITERAL_W_FE80_3 :                                        FFFFFFFFC00003E6 C |
- LITERAL_W_FE80_4 :         6001344 C |  LITERAL_W_FE80_5 :         600158E C |
- LITERAL_W_FE92_1 :         600133C C |  LITERAL_W_FE92_2 :         60014D0 C |
- LITERAL_W_FEE2_1 :         6001336 C |  LITERAL_W_FEE2_2 :         60014CA C |
- LITERAL_W_FEE4_1 :         6001338 C |  LITERAL_W_FEE4_2 :         60014CC C |
+ LITERAL_W_FE80_4 :         6001314 C |  LITERAL_W_FE80_5 :         600155E C |
+ LITERAL_W_FE92_1 :         600130C C |  LITERAL_W_FE92_2 :         60014A0 C |
+ LITERAL_W_FEE2_1 :         6001306 C |  LITERAL_W_FEE2_2 :         600149A C |
+ LITERAL_W_FEE4_1 :         6001308 C |  LITERAL_W_FEE4_2 :         600149C C |
  LITERAL_W_FF00_1 :         6000944 C |
  LITERAL_W_FF00_2 :                                        FFFFFFFFC00003E0 C |
  LITERAL_W_FF00_3 :                                        FFFFFFFFC000065C C |
@@ -7020,16 +7018,16 @@ MARS RAM from 588C to 2B950
  MARSMDL_MAKEMODEL.WAIT_CAMANIM :                                   600069A C |
  MARSMDL_MAKEMODEL.X_LW :   6000762 C |  MARSMDL_MAKEMODEL.X_RW :   6000768 C |
  MARSMDL_MAKEMODEL.Y_LW :   600076E C |  MARSMDL_MAKEMODEL.Y_RW :   6000774 C |
- MARSRAM_SOUND :            602B830 C |  MARSRAM_SYSTEM :           600588C C |
- MARSRAM_VIDEO :            60058CC C |  MARSRNDR_SETWATCHDOG :     6000948 C |
+ MARSRAM_SOUND :            602B800 C |  MARSRAM_SYSTEM :           600585C C |
+ MARSRAM_VIDEO :            600589C C |  MARSRNDR_SETWATCHDOG :     6000948 C |
  MARSRNDR_SETWATCHDOG.WAIT_FB :                                     6000966 C |
- MARSSND_PWM :              602B830 C |  MARSSOUND_INIT :           6001150 C |
+ MARSSND_PWM :              602B800 C |  MARSSOUND_INIT :           6001150 C |
  MARSSOUND_PWM :            60010D0 C |  MARSSOUND_PWM.CHNOFF :     6001120 C |
  MARSSOUND_PWM.FULL :       6001128 C |  MARSSOUND_PWM.KEEP :       600111E C |
  MARSSOUND_PWM.NOEND :      60010FE C |  MARSSOUND_PWM.NOL :        600111A C |
  MARSSOUND_PWM.NOR :        6001114 C |  MARSSOUND_PWM.NXTCHN :     60010D8 C |
  MARSSOUND_PWM.READ :       6001104 C | *MARSSOUND_RUN :            60010C8 C |
- MARSSOUND_SETCHANNEL :     6001170 C |
+*MARSSOUND_SETCHANNEL :     6001170 C |
  MARSSOUND_SETCHANNEL.ENDMRK :                                      6001190 C |
 *MARSSOUND_SETPITCH :       60011A8 C | *MARSVIDEO_CLEARFRAME :     60005AC C |
  MARSVIDEO_CLEARFRAME.LOOP :                                        60005C0 C |
@@ -7062,13 +7060,13 @@ MARS RAM from 588C to 2B950
  MARS_ENTRY.INIT :              880 C |  MARS_ENTRY.NO_MARS :           8E6 C |
  MARS_ENTRY.RAMCODE :           84A C |  MARS_ENTRY.RESTARTICD :        85A C |
  MARS_ENTRY.WM :                892 C |  MARS_ENTRY.WS :                89C C |
- MARS_RAMDATA :                35F0 C |  MARS_RAMDATA_E :              8E7C C |
- MASTER_IRQ :               6000248 C |  MASTER_LOOP :              600126E C |
- MASTER_LOOP.CONT_PLGN :    60012A0 C |  MASTER_LOOP.INVALID :      60012B6 C |
- MASTER_LOOP.LOOP :         60012A6 C |  MASTER_LOOP.MSTR_FREE :    6001280 C |
- MASTER_LOOP.MSTR_WAIT :    6001274 C |  MASTER_LOOP.PAGE_2 :       600129C C |
- MASTER_LOOP.SKIP :         60012C0 C |  MASTER_LOOP.WAIT_PZ :      60012C0 C |
- MASTER_LOOP.WAIT_TASK :    60012C6 C |  MAX_FACES :                    400 - |
+ MARS_RAMDATA :                35F0 C |  MARS_RAMDATA_E :              8E4C C |
+ MASTER_IRQ :               6000248 C |  MASTER_LOOP :              600124E C |
+ MASTER_LOOP.CONT_PLGN :    6001280 C |  MASTER_LOOP.INVALID :      6001296 C |
+ MASTER_LOOP.LOOP :         6001286 C |  MASTER_LOOP.MSTR_FREE :    6001260 C |
+ MASTER_LOOP.MSTR_WAIT :    6001254 C |  MASTER_LOOP.PAGE_2 :       600127C C |
+ MASTER_LOOP.SKIP :         60012A0 C |  MASTER_LOOP.WAIT_PZ :      60012A0 C |
+ MASTER_LOOP.WAIT_TASK :    60012A6 C |  MAX_FACES :                    400 - |
  MAX_MDERAM :                   800 - |  MAX_MODELS :                    10 - |
  MAX_SVDP_PZ :                  180 - |  MAX_ZDIST :       FFFFFFFFFFFFF800 - |
  MCD :                            0 - |  MCHNSND_BANK :                   8 C |
@@ -7076,7 +7074,7 @@ MARS RAM from 588C to 2B950
  MCHNSND_FLAGS :                 1C C |  MCHNSND_LOOP :                  14 C |
  MCHNSND_PITCH :                 18 C |  MCHNSND_READ :                   4 C |
  MCHNSND_START :                  C C |  MCHNSND_VOL :                   20 C |
- MDGFX_BG :                   18000 C |  MDGFX_BG_E :                 1AEC0 C |
+ MDGFX_BG :                   10000 C |  MDGFX_BG_E :                 12EC0 C |
  MDLRD_ROTATE :             60008F8 C |  MDLRD_SETPERSP :           6000808 C |
  MDLRD_SETPERSP.INSIDE :    60008B0 C |  MDLRD_SETPERSP.ZMULTI :    60008C2 C |
  MDL_ANIMDATA :                   0 C |  MDL_ANIMFRAME :                  4 C |
@@ -7122,7 +7120,7 @@ MARS RAM from 588C to 2B950
  ON_PRESS :                       4 C | *PACKING :                        0 - |
 *PADDING :                        0 - | *PADDINGSOFAR :                   0 - |
  PAD_ID :                         0 C |  PAD_VER :                        1 C |
- PALETTE_PUYO :             6004008 C | *PEN :                           20 - |
+ PALETTE_PUYO :             6003FD8 C | *PEN :                           20 - |
  PLGN_SPRITE :                   20 - |  PLGN_TEXURE :                   80 - |
  PLGN_TRI :                      40 - |  PLYPZ_MTRL :                    34 C |
  PLYPZ_MTRLOPT :                 38 C |  PLYPZ_SRC_XL :                  14 C |
@@ -7144,13 +7142,13 @@ MARS RAM from 588C to 2B950
  RAM_BGCAMERA :    FFFFFFFFFFFF9A2A C |  RAM_EXRAMSUB :    FFFFFFFFFFFF93D6 C |
  RAM_FRAMECOUNT :  FFFFFFFFFFFF9218 C | *RAM_GAMEMODE :    FFFFFFFFFFFF9228 C |
  RAM_HBLANKGOTO :  FFFFFFFFFFFF9232 - |  RAM_INITFLUG :    FFFFFFFFFFFF9224 C |
- RAM_INPUTDATA :   FFFFFFFFFFFF9000 C |  RAM_MARS_GLOBAL :          600588C C |
- RAM_MARS_OBJCAMERA :       6009AD0 C |  RAM_MARS_OBJECTS :         6009B70 C |
- RAM_MARS_PALETTE :         60058CC C |  RAM_MARS_PLGNLIST_0 :      6005ACC C |
- RAM_MARS_PLGNLIST_1 :      6006ACC C |  RAM_MARS_PLGNNUM_0 :       6009ACC C |
- RAM_MARS_PLGNNUM_1 :       6009ACE C |  RAM_MARS_PLGN_ZLIST :      6007ACC C |
- RAM_MARS_POLYGONS_0 :      6009E30 C |  RAM_MARS_POLYGONS_1 :      6017E30 C |
- RAM_MARS_VDPDRWLIST :      6025E30 C |  RAM_MARS_VDPDRWLIST_E :    602B830 C |
+ RAM_INPUTDATA :   FFFFFFFFFFFF9000 C |  RAM_MARS_GLOBAL :          600585C C |
+ RAM_MARS_OBJCAMERA :       6009AA0 C |  RAM_MARS_OBJECTS :         6009B40 C |
+ RAM_MARS_PALETTE :         600589C C |  RAM_MARS_PLGNLIST_0 :      6005A9C C |
+ RAM_MARS_PLGNLIST_1 :      6006A9C C |  RAM_MARS_PLGNNUM_0 :       6009A9C C |
+ RAM_MARS_PLGNNUM_1 :       6009A9E C |  RAM_MARS_PLGN_ZLIST :      6007A9C C |
+ RAM_MARS_POLYGONS_0 :      6009E00 C |  RAM_MARS_POLYGONS_1 :      6017E00 C |
+ RAM_MARS_VDPDRWLIST :      6025E00 C |  RAM_MARS_VDPDRWLIST_E :    602B800 C |
  RAM_MDCAMERA :    FFFFFFFFFFFF99D6 C | *RAM_MDGLBEXMPL :  FFFFFFFFFFFF9A34 C |
  RAM_MDGLOBAL :    FFFFFFFFFFFF99D6 C |  RAM_MDMARSHINT :  FFFFFFFFFFFF9232 C |
  RAM_MDMARSVINT :  FFFFFFFFFFFF922C C |  RAM_MDMDLSUPD :   FFFFFFFFFFFF9A32 C |
@@ -7162,7 +7160,7 @@ MARS RAM from 588C to 2B950
  RAM_VBLANKGOTO :  FFFFFFFFFFFF922C - |  RAM_VDPREGS :     FFFFFFFFFFFF93BE C |
  RAM_VIDPRNTLIST : FFFFFFFFFFFF923E C |  RAM_VIDPRNTVRAM : FFFFFFFFFFFF923C C |
  RCHWIDTH :                      36 - | *RELAXED :                        0 - |
- ROM_END :                   299CC0 C |  SCREEN_HEIGHT :                 E0 - |
+ ROM_END :                    91CC0 C |  SCREEN_HEIGHT :                 E0 - |
  SCREEN_WIDTH :                 140 - |  SET_LEFT :        FFFFFFFFC0000534 C |
  SET_LEFT.LFT_OK : FFFFFFFFC0000556 C |
  SET_LEFT.LFT_SKIP :                                       FFFFFFFFC00005B6 C |
@@ -7172,31 +7170,31 @@ MARS RAM from 588C to 2B950
  SH2_ERROR :                600030C C |  SH2_MASTER :               6000000 C |
  SH2_M_ENTRY :              60011BC C |  SH2_M_ENTRY.WAIT_MD :      60011EC C |
  SH2_M_ENTRY.WAIT_SLAVE :   60011F6 C |  SH2_M_HOTSTART :           6001200 C |
- SH2_M_HOTSTART.COPY :      6001220 C |  SH2_RAM :                  600588C C |
- SH2_SLAVE :                6000124 C |  SH2_S_ENTRY :              6001348 C |
- SH2_S_ENTRY.WAIT_MD :      600137A C |  SH2_S_HOTSTART :           6001386 C |
-*SHIFT :                          3 - |  SIN_TABLE :                6001594 C |
+ SH2_M_HOTSTART.COPY :      6001220 C |  SH2_RAM :                  600585C C |
+ SH2_SLAVE :                6000124 C |  SH2_S_ENTRY :              6001318 C |
+ SH2_S_ENTRY.WAIT_MD :      600134A C |  SH2_S_HOTSTART :           6001356 C |
+*SHIFT :                          3 - |  SIN_TABLE :                6001564 C |
  SIZEOF_CAMERA :                 28 C |  SIZEOF_INPUT :                   6 C |
- SIZEOF_MARSGBL :                20 C | *SIZEOF_MARSRAM :           602B950 C |
- SIZEOF_MARSRAM.HERE :      602B950 C |  SIZEOF_MARSSND :           602B950 C |
- SIZEOF_MARSSYS :           60058CC C |  SIZEOF_MARSVID :           602B830 C |
+ SIZEOF_MARSGBL :                20 C | *SIZEOF_MARSRAM :           602B920 C |
+ SIZEOF_MARSRAM.HERE :      602B920 C |  SIZEOF_MARSSND :           602B920 C |
+ SIZEOF_MARSSYS :           600589C C |  SIZEOF_MARSVID :           602B800 C |
  SIZEOF_MDGLBL :   FFFFFFFFFFFF9A36 C |  SIZEOF_MDLOBJ :                 2C C |
  SIZEOF_MDRAM :    FFFFFFFFFFFF9A36 C |  SIZEOF_MDSND :    FFFFFFFFFFFF923C C |
  SIZEOF_MDSYS :    FFFFFFFFFFFF9238 C |  SIZEOF_MDVID :    FFFFFFFFFFFF93D6 C |
  SIZEOF_PLYPZ :                  3C C |  SIZEOF_POLYGN :                 38 C |
  SIZEOF_SNDCHN :                 24 C |  SLAVE_IRQ :                60002AC C |
- SLAVE_LOOP :               60013B2 C |  SLAVE_LOOP.GO_MDL :        600141C C |
- SLAVE_LOOP.HOLD_ON :       6001470 C |  SLAVE_LOOP.INVLID :        6001436 C |
- SLAVE_LOOP.LOOP :          6001428 C |  SLAVE_LOOP.NO_REQUESTS :   60013FE C |
- SLAVE_LOOP.PAGE_2 :        600144E C | *SLAVE_LOOP.SKIP :          600143C C |
- SLAVE_LOOP.SWAP_NOW :      6001456 C |  SLAVE_LOOP.TRANSFER_LOOP : 60013BE C |
- SLAVE_LOOP.TRNSFR_DONE :   60013F8 C | *SLAVE_LOOP.WAIT_MASTER :   600145E C |
-*SLAVE_LOOP.WAIT_MASTER2 :  6001400 C |  SLV_SORT_Z :               60014D2 C |
- SLV_SORT_Z.NEXT_FACE :     6001522 C |  SLV_SORT_Z.NO_FACE :       6001532 C |
- SLV_SORT_Z.Z_END :         600153A C |  SLV_SORT_Z.Z_FEWFACES :    600151C C |
- SLV_SORT_Z.Z_HIGH :        6001512 C |  SLV_SORT_Z.Z_INNER :       60014FE C |
-*SLV_SORT_Z.Z_NORMAL :      60014E4 C |  SLV_SORT_Z.Z_OUTER :       60014FA C |
- SLV_SORT_Z.Z_RANOUT :      60014EC C |  SNDWAVBANK :                   16C C |
+ SLAVE_LOOP :               6001382 C |  SLAVE_LOOP.GO_MDL :        60013EC C |
+ SLAVE_LOOP.HOLD_ON :       6001440 C |  SLAVE_LOOP.INVLID :        6001406 C |
+ SLAVE_LOOP.LOOP :          60013F8 C |  SLAVE_LOOP.NO_REQUESTS :   60013CE C |
+ SLAVE_LOOP.PAGE_2 :        600141E C | *SLAVE_LOOP.SKIP :          600140C C |
+ SLAVE_LOOP.SWAP_NOW :      6001426 C |  SLAVE_LOOP.TRANSFER_LOOP : 600138E C |
+ SLAVE_LOOP.TRNSFR_DONE :   60013C8 C | *SLAVE_LOOP.WAIT_MASTER :   600142E C |
+*SLAVE_LOOP.WAIT_MASTER2 :  60013D0 C |  SLV_SORT_Z :               60014A2 C |
+ SLV_SORT_Z.NEXT_FACE :     60014F2 C |  SLV_SORT_Z.NO_FACE :       6001502 C |
+ SLV_SORT_Z.Z_END :         600150A C |  SLV_SORT_Z.Z_FEWFACES :    60014EC C |
+ SLV_SORT_Z.Z_HIGH :        60014E2 C |  SLV_SORT_Z.Z_INNER :       60014CE C |
+*SLV_SORT_Z.Z_NORMAL :      60014B4 C |  SLV_SORT_Z.Z_OUTER :       60014CA C |
+ SLV_SORT_Z.Z_RANOUT :      60014BC C |  SNDWAVBANK :                   16C C |
 *SNDWAVCOPY :                   16D C |  SNDWAVEND :                    803 C |
  SNDWAVENDB :                   805 C |  SNDWAVFLAGS :                  80B C |
  SNDWAVLOOP :                   806 C |  SNDWAVLOOPB :                  808 C |
@@ -7232,16 +7230,16 @@ MARS RAM from 588C to 2B950
 *SYS_DATA_3 :                A10007 - | *SYS_EXRAM :                 200000 - |
 *SYS_IO :                    A10001 - | *SYS_TMSS :                  A14000 - |
  S_IRQ_BAD :                6000452 C |  S_IRQ_CMD :                6000494 C |
- S_IRQ_CUSTOM :             6001546 C |  S_IRQ_CUSTOM.NO_REQUEST :  600156E C |
+ S_IRQ_CUSTOM :             6001516 C |  S_IRQ_CUSTOM.NO_REQUEST :  600153E C |
  S_IRQ_H :                  60004B0 C |  S_IRQ_PWM :                6000458 C |
  S_IRQ_PWM.EXIT :           6000484 C |  S_IRQ_V :                  60004CC C |
  S_IRQ_VRES :               60004E0 C |  S_IRQ_VRES.MARS_RESET :    600051E C |
  S_IRQ_VRES.MD_RESET :      60004EC C |  S_IRQ_VRES.SH_WAIT :       60004F8 C |
- S_IRQ_VRES.VRESLOOP :      6000526 C |  TEST_ANIMATION :           6004208 C |
- TEST_MODEL :               6003D94 C |  TEST_MODEL.FACE :          6003E98 C |
- TEST_MODEL.MTRL :          6004008 C |  TEST_MODEL.VERT :          6003DA8 C |
- TEST_MODEL.VRTX :          6003F78 C | *TEXTR_MARSCITY :           201AEC0 C |
- TH :                      20000000 - | *TIME :                    18:53:39 - |
+ S_IRQ_VRES.VRESLOOP :      6000526 C |  TEST_ANIMATION :           60041D8 C |
+ TEST_MODEL :               6003D64 C |  TEST_MODEL.FACE :          6003E68 C |
+ TEST_MODEL.MTRL :          6003FD8 C |  TEST_MODEL.VERT :          6003D78 C |
+ TEST_MODEL.VRTX :          6003F48 C | *TEXTR_MARSCITY :           2012EC0 C |
+ TH :                      20000000 - | *TIME :                    22:02:53 - |
  TIMERCTL :                      30 - | *TRUE :                           1 - |
 *TVMODE :                         0 - |  VARNULLVRAM :                  7FF - |
  VAR_MOVESPD :                  400 - | *VBLK :                          80 - |
@@ -7283,8 +7281,6 @@ MARS RAM from 588C to 2B950
  VID_PICKLAYER.THISSZJ :     FF06A0 C |  VINTCLR :                       16 - |
 *VINTENBL :                      20 - |  VINT_DEFAULT :              FF024E C |
  VIRQ_ON :                        8 - |  VRESINTCLR :                    14 - |
- WAV_LEFT :                 2099CC0 C |  WAV_LEFT_E :               2199CC0 C |
- WAV_RIGHT :                2199CC0 C |  WAV_RIGHT_E :              2299CC0 C |
 *YM_CTRL_1 :                 A04000 - | *YM_CTRL_2 :                 A04002 - |
 *YM_DATA_1 :                 A04001 - | *YM_DATA_2 :                 A04003 - |
  Z80_BUS :                   A11100 - |  Z80_CODE :                  FF19E8 C |
@@ -7320,10 +7316,10 @@ MARS RAM from 588C to 2B950
 *_TCSR :                          1 - | *_TIER :                          0 - |
  _TOCR :                          7 - |  _VDPREG :                 20004100 - |
 
-    941 symbols
-    167 unused symbols
+    933 symbols
+    168 unused symbols
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 3 - 1/5/2021 18:53:39
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 3 - 1/5/2021 22:02:53
 
 
   defined macros:
@@ -7335,7 +7331,7 @@ ROMPAD                                | STRUCT
 
       6 macros
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 4 - 1/5/2021 18:53:39
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 4 - 1/5/2021 22:02:53
 
 
   defined functions:
@@ -7344,7 +7340,7 @@ ROMPAD                                | STRUCT
 NOTZ80                                | LOCATE                               
 MAPSIZE                               | DOUBLEWORD                           
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 5 - 1/5/2021 18:53:39
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 5 - 1/5/2021 22:02:53
 
 
   codepages:
@@ -7353,10 +7349,10 @@ MAPSIZE                               | DOUBLEWORD
 STANDARD (0 changed characters)
 
 
-0.12 seconds assembly time
+0.11 seconds assembly time
 
-   6566 lines source file
-   6684 lines incl. macro expansions
+   6568 lines source file
+   6686 lines incl. macro expansions
       7 passes
       0 errors
       0 warnings
