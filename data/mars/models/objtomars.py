@@ -106,7 +106,7 @@ while reading:
       z=float(point[2])*SCALE_SIZE
       mars_x=int(x)
       mars_z=int(z)
-      mars_y=int(y)*-1
+      mars_y=(int(y)*-1)+int(INCR_Y)
       
       #print(mars_x,mars_y,mars_z)
       

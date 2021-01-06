@@ -700,8 +700,9 @@ SH2_S_HotStart:
 
 
 ; ------------------------------------------------
-; REMINDER: In blender, each block is
-; 1 meter: $20000 pixels
+; REMINDER: In blender:
+; 1 meter = $10000 (x/y/z model positions)
+;
 
 		bsr	MarsMdl_Init
 		nop
@@ -709,8 +710,22 @@ SH2_S_HotStart:
 		ldc	r0,sr
 		mov	#RAM_Mars_Objects,r1
 		mov	#TEST_MODEL,r0
-		mov	r0,@r1
-
+		mov	r0,@(mdl_data,r1)
+		mov	#TEST_ANIMATION,r0
+		mov	r0,@(mdl_animdata,r1)
+		
+; 		add	#sizeof_mdlobj,r1
+; 		mov	#TEST_MODEL,r0
+; 		mov	r0,@r1
+; 		mov	#$20000,r0
+; 		mov	r0,@(mdl_x_pos,r1)
+; 		
+; 		add	#sizeof_mdlobj,r1
+; 		mov	#TEST_MODEL,r0
+; 		mov	r0,@r1
+; 		mov	#-$40000,r0
+; 		mov	r0,@(mdl_z_pos,r1)		
+		
 ; --------------------------------------------------------
 ; Loop
 ; --------------------------------------------------------
@@ -759,16 +774,21 @@ slave_loop:
 		mov	#0,r0
 		mov.w	r0,@r1
 		mov.b	r0,@r14
-		mov.w	@(marsGbl_SlvDrawReq,gbr),r0
+; 		mov.w	@(marsGbl_SlvDrawReq,gbr),r0
+; 		cmp/eq	#1,r0
+; 		bt	slave_loop
+;  		mov	#1,r0
+;  		mov.w	r0,@(marsGbl_SlvDrawReq,gbr)
+.no_requests:
+;  		mov.w	@(marsGbl_SlvDrawReq,gbr),r0
+;  		cmp/eq	#0,r0
+;  		bt	slave_loop
+		mov.l	#_sysreg+comm14,r1		; Master CPU still drawing pieces?
+.wait_master2:
+		mov.b	@r1,r0
 		cmp/eq	#1,r0
 		bt	slave_loop
- 		mov	#1,r0
- 		mov.w	r0,@(marsGbl_SlvDrawReq,gbr)
-.no_requests:
- 		mov.w	@(marsGbl_SlvDrawReq,gbr),r0
- 		cmp/eq	#0,r0
- 		bt	slave_loop
-
+		
 ; --------------------------------------------------------
 ; Start building polygons from models
 ; --------------------------------------------------------
@@ -779,41 +799,7 @@ slave_loop:
 ; 		cmp/eq	#1,r0
 ; 		bt	slave_loop
 ; 		mov	#RAM_Mars_ObjCamera,r14
-; 		mov	@(cam_animdata,r14),r13
-; 		cmp/pl	r13
-; 		bf	.no_camanim
-; 		mov	@(cam_animtimer,r14),r0
-; 		dt	r0
-; 		bt	.wait_camanim
-; 		mov	#500,r2				; TEMPORAL: max frames
-; 		mov	@(cam_animframe,r14),r0
-; 		mov	r0,r1
-; 		add	#1,r0
-; 		cmp/eq	r2,r0
-; 		bf	.on_frames
-; 		xor	r0,r0
-; .on_frames:
-; 		mov	r0,@(cam_animframe,r14)
-; 		mov	#$18,r0
-; 		mulu	r0,r1
-; 		sts	macl,r0 	
-; 		add	r0,r13
-; 		mov	@r13+,r1
-; 		mov	@r13+,r2
-; 		mov	@r13+,r3
-; 		mov	@r13+,r4
-; 		mov	@r13+,r5
-; 		mov	@r13+,r6
-; 		mov	r1,@(cam_x_pos,r14)
-; 		mov	r2,@(cam_y_pos,r14)
-; 		mov	r3,@(cam_z_pos,r14)
-; 		mov	r4,@(cam_x_rot,r14)
-; 		mov	r5,@(cam_y_rot,r14)
-; 		mov	r6,@(cam_z_rot,r14)
-; 		mov	#8,r0
-; .wait_camanim:
-; 		mov	r0,@(cam_animtimer,r14)	
-; .no_camanim:
+
 
 ; ----------------------------------------
 
@@ -834,16 +820,16 @@ slave_loop:
 		mov	#RAM_Mars_Plgn_ZList,r0
 		mov	r0,@(marsGbl_CurrZList,gbr)
 		
-		mov.l	#$FFFFFE92,r0			; Prepare watchdog on this CPU
-		mov	#8,r1
-		mov.b	r1,@r0
-		mov	#$19,r1
-		mov.b	r1,@r0
-		mov	#$FFFFFE80,r1
-		mov.w	#$5AFF,r0			; Interrupt priority(?)
-		mov.w	r0,@r1
-		mov.w	#$A538,r0			; Enable watchdog (Face autosort on the background)
-		mov.w	r0,@r1
+; 		mov.l	#$FFFFFE92,r0			; Prepare watchdog on this CPU
+; 		mov	#8,r1
+; 		mov.b	r1,@r0
+; 		mov	#$19,r1
+; 		mov.b	r1,@r0
+; 		mov	#$FFFFFE80,r1
+; 		mov.w	#$5AFF,r0			; Interrupt priority(?)
+; 		mov.w	r0,@r1
+; 		mov.w	#$A538,r0			; Enable watchdog (Face autosort on the background)
+; 		mov.w	r0,@r1
 
 		mov	#RAM_Mars_Objects,r14
 		mov	#MAX_MODELS,r13
@@ -883,12 +869,6 @@ slave_loop:
 ; 		bt	.invlid
 		
 		mov	r13,@-r15
-		mov	@(mdl_anim,r14),r13
-		cmp/pl	r13
-		bf	.no_anim
-		bsr	MarsMdl_Animate
-		nop
-.no_anim:
 		bsr	MarsMdl_MakeModel
 		nop
 		mov	@r15+,r13
@@ -925,17 +905,19 @@ slave_loop:
 		mov.b	@r1,r0
 		cmp/eq	#1,r0
 		bt	.hold_on
-		mov.l   #$FFFFFE80,r1			; Stop watchdog
-		mov.w   #$A518,r0
-		mov.w   r0,@r1
+; 		mov.l   #$FFFFFE80,r1			; Stop watchdog
+; 		mov.w   #$A518,r0
+; 		mov.w   r0,@r1
 
 		mov.w	@(marsGbl_PolyBuffNum,gbr),r0
  		xor	#1,r0
  		mov.w	r0,@(marsGbl_PolyBuffNum,gbr)
- 		mov	#0,r0
- 		mov.w	r0,@(marsGbl_SlvDrawReq,gbr)
-		bsr	Slv_SetMasterTask
-		mov	#1,r2
+;  		mov	#0,r0
+;  		mov.w	r0,@(marsGbl_SlvDrawReq,gbr)
+		mov	#1,r2				; Start drawing on Master
+		mov.l	#_sysreg+comm14,r1
+		mov.b	r2,@r1
+
 .hold_on:
 		bra	slave_loop
 		nop
@@ -1024,15 +1006,6 @@ slv_sort_z:
 		nop
 		align 4
 		ltorg
-
-; ----------------------------------------
-
-Slv_SetMasterTask:
-		mov.l	#_sysreg+comm14,r1
-		mov.b	r2,@r1
-		rts
-		nop
-		align 4
 
 ; ----------------------------------------
 

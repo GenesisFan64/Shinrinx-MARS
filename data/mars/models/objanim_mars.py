@@ -52,8 +52,8 @@ while reading:
   y_pos = int(float(point[2])*scale)*-1
   z_pos = int(float(point[3])*scale)*-1
   y_rot = int(float(point[4])*(scale*3))*-1
-  x_rot = int(float(point[5])*(scale*3))*-1
-  z_rot = int(float(point[6])*(scale*3))*-1
+  x_rot = int(float(point[5])*(scale*3))
+  z_rot = int(float(point[6])*(scale*3))
   
   out_anim.write( bytes([x_pos>>24&0xFF,x_pos>>16&0xFF,x_pos>>8&0xFF,x_pos&0xFF,
 			 y_pos>>24&0xFF,y_pos>>16&0xFF,y_pos>>8&0xFF,y_pos&0xFF,

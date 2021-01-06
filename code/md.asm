@@ -91,8 +91,8 @@ MD_Main:
 		move.w	#1,d2
 		bsr	Video_LoadArt
 		
-; 		move.l	#CAMERA_ANIM,(RAM_MdCamera+cam_animdata)
-		move.l	#0,(RAM_MdCamera+cam_animdata)
+		move.l	#CAMERA_ANIM,(RAM_MdCamera+cam_animdata)
+; 		move.l	#0,(RAM_MdCamera+cam_animdata)
 		
 		move.w	#1,(RAM_MdMdlsUpd).l
 
@@ -116,11 +116,9 @@ MD_Main:
 		lea	(RAM_MdCamera),a0
 		move.l	cam_animdata(a0),d0		; If 0 == No animation
 		beq.s	.no_camanim
-		
 		sub.l	#1,cam_animtimer(a0)
 		bpl.s	.no_camanim
-		move.l	#1,cam_animtimer(a0)
-
+		move.l	#1+1,cam_animtimer(a0)		; TEMPORAL timer
 		move.l	d0,a1
 		move.l	(a1)+,d1
 		move.l	cam_animframe(a0),d0
@@ -135,7 +133,9 @@ MD_Main:
 		move.l	(a1)+,cam_x_pos(a0)
 		move.l	(a1)+,cam_y_pos(a0)
 		move.l	(a1)+,cam_z_pos(a0)
-		move.l	(a1)+,cam_x_rot(a0)
+		move.l	(a1)+,d1
+		neg.l	d1
+		move.l	d1,cam_x_rot(a0)
 		move.l	(a1)+,cam_y_rot(a0)
 		move.l	(a1)+,cam_z_rot(a0)
 		move.l	cam_x_rot(a0),d0
@@ -316,7 +316,9 @@ str_Title:	dc.b "Project Shinrinx-MARS",0
 
 str_Status:
 		dc.b "\\w \\w \\w \\w         MD: \\l",$A
-		dc.b "\\w \\w \\w \\w",0
+		dc.b "\\w \\w \\w \\w",$A
+		dc.b "\\l \\l \\l",$A
+		dc.b "\\l \\l \\l",0
 		dc.l sysmars_reg+comm0
 		dc.l sysmars_reg+comm2
 		dc.l sysmars_reg+comm4
@@ -326,6 +328,12 @@ str_Status:
 		dc.l sysmars_reg+comm10
 		dc.l sysmars_reg+comm12
 		dc.l sysmars_reg+comm14
+		dc.l RAM_MdCamera+cam_x_pos
+		dc.l RAM_MdCamera+cam_y_pos
+		dc.l RAM_MdCamera+cam_z_pos
+		dc.l RAM_MdCamera+cam_x_rot
+		dc.l RAM_MdCamera+cam_y_rot
+		dc.l RAM_MdCamera+cam_z_rot
 		align 4
 		
 MdPal_Bg:

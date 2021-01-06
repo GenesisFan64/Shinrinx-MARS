@@ -16,3 +16,4 @@ TEST_MODEL:	binclude "data/mars/models/cube_head.bin"	; dc.w faces,vertices
 		align 4
 Palette_Puyo:	binclude "data/mars/models/mtrl/marscity_pal.bin"
 		align 4
+TEST_ANIMATION:	binclude "data/mars/models/cube_anim.bin"

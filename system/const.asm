@@ -196,10 +196,11 @@ sizeof_mdram	ds.l 0
 
 ; model objects
 		struct 0
+mdl_animdata	ds.l 1
+mdl_animframe	ds.l 1
+mdl_animtimer	ds.l 1
+mdl_animspd	ds.l 1
 mdl_data	ds.l 1
-mdl_anim 	ds.l 1
-mdl_frame	ds.l 1
-mdl_animcntr	ds.l 1			; Speed | Timer
 mdl_x_pos	ds.l 1
 mdl_y_pos	ds.l 1
 mdl_z_pos	ds.l 1

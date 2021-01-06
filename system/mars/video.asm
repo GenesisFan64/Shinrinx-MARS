@@ -18,7 +18,7 @@
 MAX_FACES		equ	1024	; Maximum polygon faces (models,sprites) to store on buffer
 MAX_SVDP_PZ		equ	384	; This list loops on both read and write, increase the value if needed
 MAX_MODELS		equ	16
-MAX_ZDIST		equ	-$300	; Max drawing distance (-Z max)
+MAX_ZDIST		equ	-$800	; Max drawing distance (-Z max)
 
 ; ----------------------------------------
 ; Variables
@@ -297,44 +297,6 @@ MarsMdl_Init:
 		ltorg
 
 ; ------------------------------------------------
-; MarsMdl_Animate
-; 
-; r14 - Current model address
-; r13 - Animation data pointer
-; ------------------------------------------------
-
-; location.x location.y location.z rotation_euler.x rotation_euler.y rotation_euler.z angle_y
-
-MarsMdl_Animate:
-		sts	pr,@-r15
-		
-; 		mov	@(mdl_frame
-; 		mov	#$18,r0
-; 		mulu	r0,r1
-; 		
-; 		mov	@r14+,r1
-; 		mov	@r14+,r2
-; 		mov	@r14+,r3	
-; 		mov	@r14+,r4
-; 		mov	@r14+,r5
-; 		mov	@r14+,r6
-; 		mov	r1,@(mdl_x_pos,r14)
-; 		mov	r1,@(mdl_x_pos,r14)
-; 		mov	r1,@(mdl_x_pos,r14)
-; 		mov	r1,@(mdl_x_pos,r14)
-; 		mov	r1,@(mdl_x_pos,r14)
-; 		mov	r1,@(mdl_x_pos,r14)
-; 		mov	r1,@(mdl_x_pos,r14)
-; 		mov	r1,@(mdl_x_pos,r14)
-; 		mov	r1,@(mdl_x_pos,r14)
-		
-		lds	@r15+,pr
-		rts
-		nop
-		align 4
-		ltorg
-
-; ------------------------------------------------
 ; MarsMdl_MakeModel
 ; 
 ; r14 - Current model address
@@ -342,6 +304,46 @@ MarsMdl_Animate:
 
 MarsMdl_MakeModel:
 		sts	pr,@-r15
+		mov	@(mdl_animdata,r14),r13
+		cmp/pl	r13
+		bf	.no_anim
+		mov	@(mdl_animtimer,r14),r0
+		add	#-1,r0
+		cmp/pl 	r0
+		bt	.wait_camanim
+		
+		mov	@r13+,r2
+		mov	@(mdl_animframe,r14),r0
+		add	#1,r0
+		cmp/eq	r2,r0
+		bf	.on_frames
+		xor	r0,r0
+.on_frames:
+		mov	r0,r1
+		mov	r0,@(mdl_animframe,r14)
+		mov	#$18,r0
+		mulu	r0,r1
+		sts	macl,r0 	
+		add	r0,r13
+		mov	@r13+,r1
+		mov	@r13+,r2
+		mov	@r13+,r3
+		mov	@r13+,r4
+		mov	@r13+,r5
+		mov	@r13+,r6
+; 		neg	r4,r4
+; 		neg	r6,r6
+		mov	r1,@(mdl_x_pos,r14)
+		mov	r2,@(mdl_y_pos,r14)
+		mov	r3,@(mdl_z_pos,r14)
+		mov	r4,@(mdl_x_rot,r14)
+		mov	r5,@(mdl_y_rot,r14)
+		mov	r6,@(mdl_z_rot,r14)
+		mov	#1,r0				; TEMPORAL timer
+.wait_camanim:
+		mov	r0,@(mdl_animtimer,r14)	
+.no_anim:
+
 		mov	@(marsGbl_CurrFacePos,gbr),r0
 		mov	r0,r13				; r13 - output faces
 		mov	@(mdl_data,r14),r12
@@ -584,21 +586,18 @@ mdlrd_setpersp:
 		mov	r2,r5
   		mov 	@(mdl_x_rot,r14),r0
 		shlr8	r0
-		exts	r0,r0
   		bsr	mdlrd_rotate
 		mov	r4,r6
    		mov	r7,r2
   		mov	r8,r6
   		mov 	@(mdl_y_rot,r14),r0
 		shlr8	r0
-		exts	r0,r0
   		bsr	mdlrd_rotate
    		mov	r3,r5
    		mov	r8,r4
    		mov	r2,r5
    		mov 	@(mdl_z_rot,r14),r0
 		shlr8	r0
-		exts	r0,r0
   		bsr	mdlrd_rotate
    		mov	r7,r6
    		mov	r7,r2
