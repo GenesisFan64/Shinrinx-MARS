@@ -1,7 +1,9 @@
 ; ====================================================================		
 ; ----------------------------------------------------------------
-; MARS SH2 Section, CODE for both CPUs
-; RAM and some DATA goes here
+; MARS SH2 Section
+; 
+; CODE for both CPUs
+; RAM and some DATA go here
 ; ----------------------------------------------------------------
 
 		phase CS3			; now we are at SDRAM
@@ -31,6 +33,7 @@ marsGbl_VIntFlag_M	ds.w 1		; Reset if VBlank finished on Master CPU
 marsGbl_VIntFlag_S	ds.w 1		; The same but for Slave CPU
 marsGbl_DivReq_M	ds.w 1		; Tell Watchdog we are in the middle of division (skips task)
 marsGbl_SlvDrawReq	ds.w 1		; Flag to draw models at the request from MD
+marsGbl_CurrFb		ds.w 1
 sizeof_MarsGbl		ds.l 0
 			finish
 			
@@ -132,23 +135,22 @@ m_irq_v:
 
 ; ----------------------------------
 ; Update Indexed-palette
-; (Only on VBlank)
 ; ----------------------------------
 		mov 	#_vdpreg,r1
 .min_r		mov.w	@(10,r1),r0		; Wait for FEN to clear
 		and	#%10,r0
 		cmp/eq	#2,r0
 		bt	.min_r
-		mov.l	r2,@-r15		; Send palette from ROM to Super VDP
+		mov.l	r2,@-r15
 		mov.l	r3,@-r15
 		mov.l	r4,@-r15
 		mov.l	r5,@-r15
 		mov.l	r6,@-r15
-		mov.l	#_vdpreg,r1		; Wait for palette access ok
+		mov.l	#_vdpreg,r1			; Wait for palette access ok
 .wait		mov.b	@(vdpsts,r1),r0
 		tst	#$20,r0
 		bt	.wait
-		mov.l	#RAM_Mars_Palette,r1	; Send palette from cache
+		mov.l	#RAM_Mars_Palette,r1		; Send palette stored on RAM
 		mov.l	#_palette,r2
  		mov.l	#256,r3
 		mov.l	#%0101011011110001,r4		; transfer size 2 / burst
@@ -182,7 +184,7 @@ m_irq_v:
 		
 ; =================================================================
 ; ------------------------------------------------
-; Master | VRES Interrupt
+; Master | VRES Interrupt (If user pressed RESET)
 ; ------------------------------------------------
 
 m_irq_vres:
@@ -232,11 +234,11 @@ m_irq_vres:
 
 ; =================================================================
 ; ------------------------------------------------
-; Master | Custom interrupt
+; Master | Watchdog interrupt
 ; ------------------------------------------------
 
 ; m_irq_custom:
-; moved to video.asm
+; see video.asm
 
 ; =================================================================
 ; ------------------------------------------------
@@ -289,7 +291,7 @@ s_irq_pwm:
 
 ; =================================================================
 ; ------------------------------------------------
-; Slave | CMD Interrupt
+; Slave | CMD Interrupt (MD request)
 ; ------------------------------------------------
 
 s_irq_cmd:
@@ -348,7 +350,7 @@ s_irq_v:
 
 ; =================================================================
 ; ------------------------------------------------
-; Slave | VRES Interrupt
+; Slave | VRES Interrupt (If user pressed RESET)
 ; ------------------------------------------------
 
 s_irq_vres:
@@ -370,7 +372,6 @@ s_irq_vres:
 		mov.l	@(comm0,gbr),r0
 		cmp/eq	r0,r1
 		bf	.sh_wait
-
 		mov.l	#CS3|$3F000-8,r15
 		mov.l	#SH2_S_HotStart,r0
 		mov.l	r0,@r15
@@ -395,7 +396,6 @@ s_irq_vres:
 		bra	.vresloop
 		nop
 		align 4
-
 		ltorg			; Save Slave IRQ literals
 
 ; ====================================================================
@@ -462,13 +462,6 @@ SH2_M_Entry:
 ; 
 ; This CPU is exclusively used for drawing polygons, to interact
 ; with models use the Slave CPU instead.
-; 
-; The polygons use 2 buffers:
-; The main loop builds the polygons for the next frame
-; (to the WRITE buffer)
-; And the special interrupt is used to draw polygons to the
-; framebuffer in this frame
-; (from the READ buffer)
 ; ----------------------------------------------------------------
 
 SH2_M_HotStart:
@@ -488,7 +481,7 @@ SH2_M_HotStart:
     		mov.b	r0,@(intmask,r1)
 
 		mov 	#CACHE_START,r1			; Load 3D Routines on CACHE	
-		mov 	#$C0000000,r2
+		mov 	#$C0000000,r2			; Those run more faster here supposedly...
 		mov 	#(CACHE_END-CACHE_START)/4,r3
 .copy:
 		mov 	@r1+,r0
@@ -496,9 +489,9 @@ SH2_M_HotStart:
 		add 	#4,r2
 		dt	r3
 		bf	.copy
-		bsr	MarsVideo_Init			; Init video
+		bsr	MarsVideo_Init			; Init Video
 		nop
-		bsr	MarsSound_Init			; Init sound
+		bsr	MarsSound_Init			; Init Sound
 		nop
 		
 ; ------------------------------------------------
@@ -530,7 +523,7 @@ SH2_M_HotStart:
 		
 ; ------------------------------------------------
 
-		mov	#$FFFFFE92,r0
+		mov	#$FFFFFE92,r0		; Stop watchdog
 		mov     #8,r1
 		mov.b   r1,@r0
 		mov     #$19,r1
@@ -547,7 +540,7 @@ master_loop:
 		mov	#_sysreg+comm14,r1
 		mov.b	r0,@r1
 .mstr_wait:
-		mov.b	@r1,r0			; Any DRAW request?
+		mov.b	@r1,r0			; Any request from Slave?
 		cmp/eq	#0,r0
 		bf	.mstr_free		; If !=0, start drawing
 ; 		mov	#$16,r0			; Small delay and retry
@@ -569,7 +562,7 @@ master_loop:
 		mov.b	r1,@r0
 		mov	#$19,r1
 		mov.b	r1,@r0
-		bsr	MarsRndr_SetWatchdog
+		bsr	MarsVideo_SetWatchdog
 		nop
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0	; Start drawing polygons from the READ buffer
 		tst     #1,r0				; Check for which buffer to use
@@ -583,8 +576,12 @@ master_loop:
 		mov	#RAM_Mars_PlgnNum_1,r13
 .cont_plgn:
 
-	; r14 - Polygon pointers to read
-	; r13 - NumOf Polygons to use
+	; While we are doing this, the watchdog is
+	; working on the background drawing the polygons
+	; using the "pieces" list (
+	; 
+	; r14 - Polygon pointers list
+	; r13 - Number of polygons to build
 		mov.w	@r13,r13
 		cmp/pl	r13
 		bf	.skip
@@ -606,8 +603,7 @@ master_loop:
 .skip:
 
 	; --------------------------------------
-
-.wait_pz: 	mov.w	@(marsGbl_PzListCntr,gbr),r0	; Any polygons remaining on interrupt?
+.wait_pz: 	mov.w	@(marsGbl_PzListCntr,gbr),r0	; Any pieces remaining on interrupt?
 		cmp/eq	#0,r0
 		bf	.wait_pz
 .wait_task:	mov.w	@(marsGbl_DrwTask,gbr),r0	; Any draw task active?
@@ -616,8 +612,11 @@ master_loop:
 		mov.l   #$FFFFFE80,r1			; Stop watchdog
 		mov.w   #$A518,r0
 		mov.w   r0,@r1
-		bsr	MarsVideo_FrameSwap		; Swap frame (waits VBlank)
-		nop
+		mov	#_vdpreg,r1			; Framebuffer swap request
+		mov.b	@(framectl,r1),r0
+		xor	#1,r0
+		mov.b	r0,@(framectl,r1)
+		mov.b	r0,@(marsGbl_CurrFb,gbr)
 
 	; --------------------
 	; DEBUG counter
@@ -700,10 +699,8 @@ SH2_S_HotStart:
 
 
 ; ------------------------------------------------
-; REMINDER: In blender:
-; 1 meter = $10000 (x/y/z model positions)
+; REMINDER: In blender, 1 meter = $10000
 ;
-
 		bsr	MarsMdl_Init
 		nop
 		mov	#$20,r0			; Interrupts ON
@@ -711,8 +708,8 @@ SH2_S_HotStart:
 		mov	#RAM_Mars_Objects,r1
 		mov	#TEST_MODEL,r0
 		mov	r0,@(mdl_data,r1)
-		mov	#TEST_ANIMATION,r0
-		mov	r0,@(mdl_animdata,r1)
+; 		mov	#TEST_ANIMATION,r0
+; 		mov	r0,@(mdl_animdata,r1)
 		
 ; 		add	#sizeof_mdlobj,r1
 ; 		mov	#TEST_MODEL,r0
@@ -792,14 +789,9 @@ slave_loop:
 ; --------------------------------------------------------
 ; Start building polygons from models
 ; --------------------------------------------------------
-; MOVED TO MD
-; 	Camera animation
-; 		mov.l	#_sysreg+comm14,r1		; Master CPU still drawing pieces?
-; 		mov.b	@r1,r0
-; 		cmp/eq	#1,r0
-; 		bt	slave_loop
-; 		mov	#RAM_Mars_ObjCamera,r14
 
+; CAMERA ANIMATION IS DONE ON
+; THE MD SIDE
 
 ; ----------------------------------------
 
@@ -869,7 +861,7 @@ slave_loop:
 ; 		bt	.invlid
 		
 		mov	r13,@-r15
-		bsr	MarsMdl_MakeModel
+		bsr	MarsMdl_ReadModel
 		nop
 		mov	@r15+,r13
 .invlid:
@@ -905,7 +897,7 @@ slave_loop:
 		mov.b	@r1,r0
 		cmp/eq	#1,r0
 		bt	.hold_on
-; 		mov.l   #$FFFFFE80,r1			; Stop watchdog
+; 		mov.l   #$FFFFFE80,r1			; Stop this watchdog
 ; 		mov.w   #$A518,r0
 ; 		mov.w   r0,@r1
 
@@ -917,7 +909,6 @@ slave_loop:
 		mov	#1,r2				; Start drawing on Master
 		mov.l	#_sysreg+comm14,r1
 		mov.b	r2,@r1
-
 .hold_on:
 		bra	slave_loop
 		nop

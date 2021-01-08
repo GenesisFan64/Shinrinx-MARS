@@ -27,7 +27,7 @@ if len(sys.argv) == 3:
   #CONVERT_TEX = sys.argv[2]
   INCR_Y = sys.argv[2]
 
-model_file    = open("mdl/"+projectname+".chan","r")
+model_file    = open("import/"+projectname+".chan","r")
 out_anim      = open(projectname+"_anim.bin","wb")
 vertex_list   = list()
 

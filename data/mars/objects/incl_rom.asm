@@ -1,11 +1,9 @@
 ; ====================================================================
 ; ----------------------------------------------------------------
-; MD ROM BANK other than DMA graphics, 1MB maximum
-; 
-; ($900000-$9FFFFF)
+; Put your model textures here
 ; ----------------------------------------------------------------
 
 		align 4
-		dc.b "MD ROM BANK 0"
-; CAMERA_ANIM:	binclude "data/mars/models/camera_anim.bin"
-; 		align 4
+Textr_marscity:
+		binclude "data/mars/objects/mtrl/marscity_art.bin"
+		align 4

@@ -21,7 +21,8 @@
 # ======================================================================
 
 import sys
-
+import os
+    
 # ======================================================================
 # -------------------------------------------------
 # Init
@@ -36,6 +37,7 @@ TAG_NOMATERIAL	  = "MARSNULL"		# random color mode
 TAG_MARSCOLOR	  = "MARSINDX"		# set specific pixel color (0-255)
 TAG_MARSINDX_LIST = "MARSLIST"          # set index color in the material (for animated stuff)
 TAG_TEXTUR        = "Textr_"		# tag for texture data in assembly
+TAG_OBJECTSDIR    = "import"		# folder name that stores your objs (and material)
 
 # ======================================================================
 # -------------------------------------------------
@@ -46,7 +48,7 @@ num_vert      = 0
 has_img       = False
 use_img       = False
 
-projectname   = sys.argv[1]
+object_name   = sys.argv[1]
 CONVERT_TEX=1
 
 INCR_Y=0
@@ -54,15 +56,18 @@ if len(sys.argv) == 3:
   #CONVERT_TEX = sys.argv[2]
   INCR_Y = sys.argv[2]
 
+if not os.path.exists("mdl/"+object_name):
+    os.makedirs("mdl/"+object_name)
+
 list_vertices = list()
 list_faces    = list()
-model_file    = open("mdl/"+projectname+".obj","r")
-material_file = open("mdl/"+projectname+".mtl","r")	# CHECK BELOW
-out_vertices  = open(projectname+"_vert.bin","wb")	# vertices (points)
-out_faces     = open(projectname+"_face.bin","wb")	# faces
-#out_vertex    = open(projectname+"_vrtx.bin","wb")	# texture vertex (MOVED)
-out_head      = open(projectname+"_head.bin","wb")	# header
-out_mtrl      = open(projectname+"_mtrl.asm","w")
+model_file    = open(TAG_OBJECTSDIR+"/"+object_name+".obj","r")
+material_file = open(TAG_OBJECTSDIR+"/"+object_name+".mtl","r")	# CHECK BELOW
+out_vertices  = open("mdl/"+object_name+"/"+"vert.bin","wb")	# vertices (points)
+out_faces     = open("mdl/"+object_name+"/"+"face.bin","wb")	# faces
+#out_vertex    = open(object_name+"_vrtx.bin","wb")	# texture vertex (MOVED TO BOTTOM)
+out_head      = open("mdl/"+object_name+"/"+"head.bin","wb")	# header
+out_mtrl      = open("mdl/"+object_name+"/"+"mtrl.asm","w")
 
 used_triangles= 0
 used_quads    = 0
@@ -75,7 +80,7 @@ random_color  = 1
 indx_color    = 0
 mtrl_curr     = 0
 mtrl_index    = 0
-
+    
 # ======================================================================
 # -------------------------------------------------
 # Getting data
@@ -225,7 +230,7 @@ while reading:
               # filename
               if b.find("map_Kd") == False:
                   tex_fname = b[7:].rstrip('\r\n')
-                  tex_file = open("mdl/"+tex_fname,"rb")
+                  tex_file = open(TAG_OBJECTSDIR+"/"+tex_fname,"rb")
                   # COPYPASTED
                   tex_file.seek(1)
                   color_type = ord(tex_file.read(1))
@@ -478,7 +483,7 @@ while reading:
 
 cntr = len(vertex_list)
 if cntr != 0:
-  out_vertex = open(projectname+"_vrtx.bin","wb")	# texture vertex
+  out_vertex = open("mdl/"+object_name+"/"+"vrtx.bin","wb")	# texture vertex
 
   x_tx = 0
   while cntr:

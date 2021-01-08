@@ -91,9 +91,8 @@ MD_Main:
 		move.w	#1,d2
 		bsr	Video_LoadArt
 		
-		move.l	#CAMERA_ANIM,(RAM_MdCamera+cam_animdata)
-; 		move.l	#0,(RAM_MdCamera+cam_animdata)
-		
+; 		move.l	#CAMERA_ANIM,(RAM_MdCamera+cam_animdata)
+		move.l	#0,(RAM_MdCamera+cam_animdata)
 		move.w	#1,(RAM_MdMdlsUpd).l
 
 ; ====================================================================
@@ -138,8 +137,6 @@ MD_Main:
 		move.l	d1,cam_x_rot(a0)
 		move.l	(a1)+,cam_y_rot(a0)
 		move.l	(a1)+,cam_z_rot(a0)
-		
-		
 		move.l	cam_x_rot(a0),d0
 		neg.l	d0
 		lsr.l	#8,d0

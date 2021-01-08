@@ -3,16 +3,13 @@
 ; 68000 RAM and constants
 ; ----------------------------------------------------------------
 
-MDRAM_START	equ $FFFF8800	; Start of working RAM (below is free)
-MAX_MDERAM	equ $800	; MAX RAM for Screen modes
+MDRAM_START	equ $FFFF8800		; Start of working RAM (below it can be CODE or decompressed data)
+MAX_MDERAM	equ $800		; MAX RAM for Screen Modes
 
 ; ====================================================================
 ; ----------------------------------------------------------------
-; VDP Video
+; MD Video
 ; ----------------------------------------------------------------
-
-Vdp_palette	equ $C0000000		; Palette
-Vdp_vsram	equ $40000010		; Vertical scroll
 
 ; ------------------------------------------------
 ; vdp_ctrl READ bits
@@ -109,15 +106,15 @@ sizeof_input	ds.l 0
 
 		struct RAM_MdSystem
 RAM_InputData	ds.b sizeof_input*4
-RAM_SaveData	ds.b $200		; Save data cache (if using SRAM)
+RAM_SaveData	ds.b $200			; Save data cache (if using SRAM)
 RAM_FrameCount	ds.l 1
 RAM_SysRandVal	ds.l 1
 RAM_SysRandSeed	ds.l 1
-RAM_initflug	ds.l 1			; "INIT"
-RAM_GameMode	ds.w 1			; Master game mode
-RAM_SysFlags	ds.w 1			; (byte)
-RAM_MdMarsVInt	ds.w 3			; JMP xxxx xxxx
-RAM_MdMarsHint	ds.w 3			; JMP xxxx xxxx
+RAM_initflug	ds.l 1				; "INIT"
+RAM_GameMode	ds.w 1				; Master game mode
+RAM_SysFlags	ds.w 1				; (it's a byte)
+RAM_MdMarsVInt	ds.w 3				; VBlank jump (JMP xxxx xxxx)
+RAM_MdMarsHint	ds.w 3				; HBlank jump (JMP xxxx xxxx)
 sizeof_mdsys	ds.l 0
 		finish
 
@@ -128,21 +125,21 @@ sizeof_mdsys	ds.l 0
 
 	; 68k side
 		struct RAM_MdSound
-RAM_SoundNull	ds.l 1
+RAM_SoundNull	ds.l 1				; (Unused)
 sizeof_mdsnd	ds.l 0
 		finish
 		
 	; Z80 side
 		struct $800
-sndWavStart	ds.b 2		; Start address (inside or outside z80)
-sndWavStartB	ds.b 1		; Start ROM bank * 8000h 
-sndWavEnd	ds.b 2		; End address
-sndWavEndB	ds.b 1		; End ROM bank *8000h
-sndWavLoop	ds.b 2		; Loop address
-sndWavLoopB	ds.b 1		; Loop ROM Bank * 8000h
-sndWavPitch	ds.b 2		; pitch speed
-sndWavFlags	ds.b 1		; playback flags
-sndWavReq	ds.b 1		; request byte
+sndWavStart	ds.b 2			; Start address (inside or outside z80)
+sndWavStartB	ds.b 1			; Start ROM bank * 8000h 
+sndWavEnd	ds.b 2			; End address
+sndWavEndB	ds.b 1			; End ROM bank *8000h
+sndWavLoop	ds.b 2			; Loop address
+sndWavLoopB	ds.b 1			; Loop ROM Bank * 8000h
+sndWavPitch	ds.b 2			; pitch speed
+sndWavFlags	ds.b 1			; playback flags
+sndWavReq	ds.b 1			; request byte
 		finish
 		
 ; ====================================================================
@@ -152,8 +149,8 @@ sndWavReq	ds.b 1		; request byte
 
 		struct RAM_MdVideo
 RAM_VidPrntVram	ds.w 1
-RAM_VidPrntList	ds.w 3*64		; vdp addr (LONG), type (WORD)
-RAM_VdpRegs	ds.b 24
+RAM_VidPrntList	ds.w 3*64		; Print Value list: Address, Type
+RAM_VdpRegs	ds.b 24			; Register cache
 sizeof_mdvid	ds.l 0
 		finish
 
@@ -191,7 +188,7 @@ sizeof_mdram	ds.l 0
 		
 ; ====================================================================
 ; ----------------------------------------------------------------
-; MARS shared constants
+; MD/MARS shared constants
 ; ----------------------------------------------------------------
 
 ; model objects
