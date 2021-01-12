@@ -1,6 +1,6 @@
 ; ====================================================================
 ; ----------------------------------------------------------------
-; 68000 RAM and constants
+; Shared RAM and constants
 ; ----------------------------------------------------------------
 
 MDRAM_START	equ $FFFF8800		; Start of working RAM (below it can be CODE or decompressed data)
@@ -193,10 +193,10 @@ sizeof_mdram	ds.l 0
 
 ; model objects
 		struct 0
-mdl_animdata	ds.l 1
-mdl_animframe	ds.l 1
-mdl_animtimer	ds.l 1
-mdl_animspd	ds.l 1
+; mdl_animdata	ds.l 1
+; mdl_animframe	ds.l 1
+; mdl_animtimer	ds.l 1
+; mdl_animspd	ds.l 1
 mdl_data	ds.l 1
 mdl_x_pos	ds.l 1
 mdl_y_pos	ds.l 1
@@ -220,4 +220,12 @@ cam_x_rot	ds.l 1
 cam_y_rot	ds.l 1
 cam_z_rot	ds.l 1
 sizeof_camera	ds.l 0
+		finish
+		
+		struct 0
+mdllay_data	ds.l 1
+mdllay_x	ds.l 1
+mdllay_y	ds.l 1
+mdllay_z	ds.l 1
+sizeof_layout	ds.l 0
 		finish

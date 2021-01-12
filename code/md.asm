@@ -231,7 +231,6 @@ MdMdl_Usercontrol:
 		lea	(RAM_MdCamera),a0
 		move.l	cam_x_rot(a0),d0
 		move.l	d6,d1
-		lsl.l	#8,d1
 		add.l	d1,d0
 		move.l	d0,cam_x_rot(a0)
 		lsr.l	#8,d0
@@ -245,7 +244,6 @@ MdMdl_Usercontrol:
 		lea	(RAM_MdCamera),a0
 		move.l	cam_x_rot(a0),d0
 		move.l	d5,d1
-		lsl.l	#8,d1
 		add.l	d1,d0
 		move.l	d0,cam_x_rot(a0)
 		lsr.l	#8,d0

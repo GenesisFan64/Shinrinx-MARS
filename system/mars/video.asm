@@ -15,10 +15,10 @@
 ; Settings
 ; ----------------------------------------
 
-MAX_FACES		equ	1024	; Maximum polygon faces (models,sprites) to store on buffer
-MAX_SVDP_PZ		equ	384	; This list loops on both read and write, increase the value if needed
-MAX_MODELS		equ	16
-MAX_ZDIST		equ	-$800	; Max drawing distance (-Z max)
+MAX_FACES	equ	1024		; Maximum polygon faces (models,sprites) to store on buffer
+MAX_SVDP_PZ	equ	384		; This list loops on both read and write, increase the value if needed
+MAX_MODELS	equ	16
+MAX_ZDIST	equ	-$400		; Max drawing distance (-Z max)
 
 ; ----------------------------------------
 ; Variables
@@ -69,7 +69,7 @@ sizeof_plypz	ds.l 0
 		finish
 
 		struct 0
-polygn_type	ds.l 1		; %MSTo oooo oooo oooo | Type bits and Material option (Width or PalIncr)
+polygn_type	ds.l 1		; %MST0 0000 wwww wwww | Type bits and Material option (Width or PalIncr)
 polygn_mtrl	ds.l 1		; Material Type: Color (0-255) or Texture data address
 polygn_points	ds.l 4*2	; X/Y positions
 polygn_srcpnts	ds.w 4*2	; X/Y texture points (16-bit), ignored on solidcolor
@@ -87,16 +87,15 @@ sizeof_polygn	ds.l 0
 MarsVideo_Init:
 		sts	pr,@-r15
 		mov	#_sysreg,r4
-		mov 	#FM,r0			; FB to MARS
+		mov 	#FM,r0			; SVDP permission for SH2 (here)
   		mov.b	r0,@(adapter,r4)
 		mov 	#_vdpreg,r4
-		bsr	.this_fb		; Init line table(s) and swap
+		bsr	.this_fb		; Init line tables for both framebuffers
 		nop
 		bsr	.this_fb
 		nop
-		mov	#1,r0			; Enable bitmap $01
+		mov	#1,r0			; Use bitmap mode $01
 		mov.b	r0,@(bitmapmd,r4)
-
 		lds	@r15+,pr
 		rts
 		nop
@@ -305,43 +304,43 @@ MarsMdl_Init:
 MarsMdl_ReadModel:
 		sts	pr,@-r15
 
-	; Animation...
-		mov	@(mdl_animdata,r14),r13
-		cmp/pl	r13
-		bf	.no_anim
-		mov	@(mdl_animtimer,r14),r0
-		add	#-1,r0
-		cmp/pl 	r0
-		bt	.wait_camanim
-		mov	@r13+,r2
-		mov	@(mdl_animframe,r14),r0
-		add	#1,r0
-		cmp/eq	r2,r0
-		bf	.on_frames
-		xor	r0,r0
-.on_frames:
-		mov	r0,r1
-		mov	r0,@(mdl_animframe,r14)
-		mov	#$18,r0
-		mulu	r0,r1
-		sts	macl,r0 	
-		add	r0,r13
-		mov	@r13+,r1
-		mov	@r13+,r2
-		mov	@r13+,r3
-		mov	@r13+,r4
-		mov	@r13+,r5
-		mov	@r13+,r6
-		mov	r1,@(mdl_x_pos,r14)
-		mov	r2,@(mdl_y_pos,r14)
-		mov	r3,@(mdl_z_pos,r14)
-		mov	r4,@(mdl_x_rot,r14)
-		mov	r5,@(mdl_y_rot,r14)
-		mov	r6,@(mdl_z_rot,r14)
-		mov	#1,r0				; TEMPORAL timer
-.wait_camanim:
-		mov	r0,@(mdl_animtimer,r14)	
-.no_anim:
+	; TODO: rework on this later
+; 		mov	@(mdl_animdata,r14),r13
+; 		cmp/pl	r13
+; 		bf	.no_anim
+; 		mov	@(mdl_animtimer,r14),r0
+; 		add	#-1,r0
+; 		cmp/pl 	r0
+; 		bt	.wait_camanim
+; 		mov	@r13+,r2
+; 		mov	@(mdl_animframe,r14),r0
+; 		add	#1,r0
+; 		cmp/eq	r2,r0
+; 		bf	.on_frames
+; 		xor	r0,r0
+; .on_frames:
+; 		mov	r0,r1
+; 		mov	r0,@(mdl_animframe,r14)
+; 		mov	#$18,r0
+; 		mulu	r0,r1
+; 		sts	macl,r0 	
+; 		add	r0,r13
+; 		mov	@r13+,r1
+; 		mov	@r13+,r2
+; 		mov	@r13+,r3
+; 		mov	@r13+,r4
+; 		mov	@r13+,r5
+; 		mov	@r13+,r6
+; 		mov	r1,@(mdl_x_pos,r14)
+; 		mov	r2,@(mdl_y_pos,r14)
+; 		mov	r3,@(mdl_z_pos,r14)
+; 		mov	r4,@(mdl_x_rot,r14)
+; 		mov	r5,@(mdl_y_rot,r14)
+; 		mov	r6,@(mdl_z_rot,r14)
+; 		mov	#1,r0				; TEMPORAL timer
+; .wait_camanim:
+; 		mov	r0,@(mdl_animtimer,r14)	
+; .no_anim:
 
 	; Now start reading
 		mov	@(marsGbl_CurrFacePos,gbr),r0
@@ -470,7 +469,7 @@ MarsMdl_ReadModel:
 		mov	@r4,r2
 		mov	@(4,r4),r3
 		mov	@(8,r4),r4
-		bsr	mdlrd_setpoints
+		bsr	mdlrd_setpoint
 		nop
 		mov	r2,@r1
 		mov	r3,@(4,r1)
@@ -489,7 +488,7 @@ MarsMdl_ReadModel:
 		mov	@r4,r2
 		mov	@(4,r4),r3
 		mov	@(8,r4),r4
-		bsr	mdlrd_setpoints
+		bsr	mdlrd_setpoint
 		nop
 		mov	r2,@r1
 		mov	r3,@(4,r1)
@@ -506,13 +505,13 @@ MarsMdl_ReadModel:
 		mov	@r15+,r9
 		mov	@r15+,r8
 		
-	; TODO: perspective is still bad, change this
-	; depending how you want to ignore faces closer to
-	; the camera:
+	; NOTE: if you don't like how the perspective works
+	; change this register depending how you want to ignore
+	; faces closer to the camera:
 	; 
-	; r5 - Back Z point (affine glitches)
-	; r6 - Front Z point (instant delete)
-		cmp/pl	r5
+	; r5 - Back Z point, keep affine limitations
+	; r6 - Front Z point, skip face but larger faces are affected
+		cmp/pz	r5
 		bt	.face_out
 		mov	#RAM_Mars_ObjCamera,r0
 		mov	@(cam_y_pos,r0),r7
@@ -575,11 +574,11 @@ MarsMdl_ReadModel:
 		ltorg
 
 ; ----------------------------------------	
-; Perspective X/Y/Z
+; Modify position to current point
 ; ----------------------------------------
 
 		align 4
-mdlrd_setpoints:
+mdlrd_setpoint:
 		sts	pr,@-r15
 		mov 	r5,@-r15
 		mov 	r6,@-r15
@@ -589,24 +588,24 @@ mdlrd_setpoints:
 		mov 	r10,@-r15
 		mov 	r11,@-r15
 		
-	; Model rotation
-		mov	r2,r5
+	; Object rotation
+		mov	r2,r5			; r5 - X
+		mov	r4,r6			; r6 - Z
   		mov 	@(mdl_x_rot,r14),r0
-		shlr8	r0
   		bsr	mdlrd_rotate
-		mov	r4,r6
+		shlr8	r0
    		mov	r7,r2
+   		mov	r3,r5
   		mov	r8,r6
   		mov 	@(mdl_y_rot,r14),r0
-		shlr8	r0
   		bsr	mdlrd_rotate
-   		mov	r3,r5
+		shlr8	r0
    		mov	r8,r4
    		mov	r2,r5
-   		mov 	@(mdl_z_rot,r14),r0
-		shlr8	r0
-  		bsr	mdlrd_rotate
    		mov	r7,r6
+   		mov 	@(mdl_z_rot,r14),r0
+  		bsr	mdlrd_rotate
+		shlr8	r0
    		mov	r7,r2
    		mov	r8,r3
 		mov	@(mdl_x_pos,r14),r0
@@ -639,53 +638,69 @@ mdlrd_setpoints:
 		shlr	r0
 		exts	r0,r0
 		add 	r0,r4
+
 		mov	r2,r5
-  		mov 	@(cam_x_rot,r11),r0
-		shlr8	r0
-  		bsr	mdlrd_rotate
 		mov	r4,r6
+  		mov 	@(cam_x_rot,r11),r0
+  		bsr	mdlrd_rotate
+		shlr8	r0
    		mov	r7,r2
+   		mov	r8,r4
+   		mov	r3,r5
   		mov	r8,r6
   		mov 	@(cam_y_rot,r11),r0
-		shlr8	r0
   		bsr	mdlrd_rotate
-   		mov	r3,r5
+		shlr8	r0
    		mov	r8,r4
    		mov	r2,r5
-   		mov 	@(cam_z_rot,r11),r0
-		shlr8	r0
-  		bsr	mdlrd_rotate
    		mov	r7,r6
+   		mov 	@(cam_z_rot,r11),r0
+  		bsr	mdlrd_rotate
+		shlr8	r0
    		mov	r7,r2
    		mov	r8,r3
 
-	; AFFINE perspective
-	; this is the best I can get...
-		mov	#256<<8,r5
+		mov 	#_JR,r8
+		mov	#256<<16,r7
 		neg	r4,r0		; reverse Z
 		cmp/pl	r0
 		bt	.inside
-		dmuls	r5,r3
-		sts	macl,r3
+		
+		mov	r4,r0
+		add 	#64,r0
+		shll16	r0
+		mov	r0,r5
 		dmuls	r5,r2
+		sts	mach,r0
 		sts	macl,r2
-		bra	.zmulti
-		nop
-.inside:
-		mov 	#_JR,r7
-		mov 	r0,@r7
-		mov 	r5,@(4,r7)
-		nop
-		mov 	@(4,r7),r5
+		xtrct	r0,r2
 		dmuls	r5,r3
+		sts	mach,r0
 		sts	macl,r3
-		dmuls	r5,r2
-		sts	macl,r2
-.zmulti:
-	rept 8
+		xtrct	r0,r3
+	rept 4
 		shar	r2
 		shar	r3
 	endm
+		bra	.zmulti
+		nop
+.inside:
+		add 	#64,r0
+		mov 	r0,@r8
+		mov 	r7,@(4,r8)
+		nop
+		mov 	@(4,r8),r7
+		dmuls	r7,r2
+		sts	mach,r0
+		sts	macl,r2
+		xtrct	r0,r2
+		dmuls	r7,r3
+		sts	mach,r0
+		sts	macl,r3
+		xtrct	r0,r3
+.zmulti:
+
+
 		mov	@r15+,r11
 		mov	@r15+,r10
 		mov	@r15+,r9
@@ -725,6 +740,7 @@ mdlrd_setpoints:
 		rts
 		nop
 		align 4
+		ltorg
 
 ; ------------------------------
 ; Rotate point
@@ -740,14 +756,13 @@ mdlrd_setpoints:
 ; ------------------------------
 
 mdlrd_rotate:
-   		shlr8	r0
     		mov	#$7FF,r7
     		and	r7,r0
    		shll2	r0
 		mov	#sin_table,r7
 		mov	#sin_table+$800,r8
-		mov	@(r0,r7),r9		; r3
-		mov	@(r0,r8),r10		; r4
+		mov	@(r0,r7),r9
+		mov	@(r0,r8),r10
 
 		dmuls	r5,r10		; x cos @
 		sts	macl,r7
@@ -765,49 +780,46 @@ mdlrd_rotate:
 		sts	mach,r0
 		xtrct	r0,r8
 		dmuls	r6,r10		; y cos @
-		sts	macl,r0
-		sts	mach,r10
-		xtrct	r10,r0
-		add	r0,r8
-
-; 		dmuls	r5,r4		; x cos @
-; 		sts	macl,r0
-; 		sts	mach,r1
-; 		xtrct	r1,r0
-; 		dmuls	r6,r3		; y sin @
-; 		sts	macl,r1
-; 		sts	mach,r2
-; 		xtrct	r2,r1
-; 		add	r1,r0
-; 		neg	r3,r3
-; 		dmuls	r5,r3		; x -sin @
-; 		sts	macl,r1
-; 		sts	mach,r2
-; 		xtrct	r2,r1
-; 		dmuls	r6,r4		; y cos @
-; 		sts	macl,r2
-; 		sts	mach,r3
-; 		xtrct	r3,r2
-; 		add	r2,r1
+		sts	macl,r9
+		sts	mach,r0
+		xtrct	r0,r9
+		add	r9,r8
  		rts
 		nop
 		align 4
 		
-; 		shll2	r0
-; 		mov	#$1FFF,r7
-; 		and	r7,r0
+;    		shlr8	r0
+;     		mov	#$7FF,r7
+;     		and	r7,r0
+;    		shll2	r0
 ; 		mov	#sin_table,r7
 ; 		mov	#sin_table+$800,r8
-; 		mov	@(r0,r7),r7
-; 		mov	@(r0,r8),r8
-; 		rts
+; 		mov	@(r0,r7),r9		; r3
+; 		mov	@(r0,r8),r10		; r4
+; 		dmuls	r5,r10		; x cos @
+; 		sts	macl,r7
+; 		sts	mach,r0
+; 		xtrct	r0,r7
+; 		dmuls	r6,r9		; y sin @
+; 		sts	macl,r8
+; 		sts	mach,r0
+; 		xtrct	r0,r8
+; 		add	r8,r7
+; 		neg	r9,r9
+; 		dmuls	r5,r9		; x -sin @
+; 		sts	macl,r8
+; 		sts	mach,r0
+; 		xtrct	r0,r8
+; 		dmuls	r6,r10		; y cos @
+; 		sts	macl,r9
+; 		sts	mach,r0
+; 		xtrct	r0,r9
+; 		add	r9,r8
+;  		rts
 ; 		nop
 ; 		align 4
-
-; ----------------------------------------
-
-		ltorg
-
+; 		ltorg
+	
 ; ------------------------------------------------
 ; MarsVideo_SetWatchdog
 ; 
