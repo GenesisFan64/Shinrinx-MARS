@@ -17,8 +17,8 @@
 
 MAX_FACES	equ	1024		; Maximum polygon faces (models,sprites) to store on buffer
 MAX_SVDP_PZ	equ	384		; This list loops on both read and write, increase the value if needed
-MAX_MODELS	equ	16
-MAX_ZDIST	equ	-$400		; Max drawing distance (-Z max)
+MAX_MODELS	equ	32
+MAX_ZDIST	equ	-$1800		; Max drawing distance (-Z max)
 
 ; ----------------------------------------
 ; Variables
@@ -296,6 +296,211 @@ MarsMdl_Init:
 		ltorg
 
 ; ------------------------------------------------
+; Object layout routines
+; ------------------------------------------------
+
+; r1 - layout data pointer
+MarsLay_Make:
+		mov	#RAM_Mars_ObjLayout,r14
+		mov	#RAM_Mars_ObjCamera,r13
+		xor	r0,r0
+		mov	r1,@(mdllay_data,r14)
+		mov	r0,@(mdllay_x_last,r14)
+		mov	r0,@(mdllay_y_last,r14)
+		mov	r0,@(mdllay_z_last,r14)
+		mov	r0,@(mdllay_x,r14)
+		mov	r0,@(mdllay_y,r14)
+		mov	r0,@(mdllay_z,r14)
+		mov	r1,r11
+
+MarsLay_Draw:
+		mov	#RAM_Mars_Objects,r10
+		mov	@(mdllay_xr_last,r14),r0
+		shlr16	r0
+		and	#$1F,r0
+		shll2	r0
+		mov	#.list,r1
+		mov	@(r0,r1),r0
+		jmp	@r0
+		nop
+.list:
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+		dc.l .front
+.right:
+		bra	*
+		nop
+
+.front:
+		mov	#0,r1
+		mov	#0,r2
+		mov	#-$200000,r3
+		mov	r1,r4
+		mov	r2,r5		
+		mov	#-$100000,r6
+		mov	@(mdllay_z_last,r14),r0
+		sub	r0,r3
+		mov	@(mdllay_x_last,r14),r0
+		add	r0,r1
+		
+		sts	pr,@-r15
+		mov	#TEST_MODEL,r7
+		bsr	.do_3piece
+		mov	r3,r8
+		mov	r8,r3
+		mov	#TEST_MODEL,r7
+		mov	#$100000,r0
+		add	r0,r1
+		bsr	.do_3piece
+		mov	r3,r8
+		mov	r8,r3
+		lds	@r15+,pr
+		rts
+		nop
+		align 4
+
+.do_3piece:
+		mov	r1,@(mdl_x_pos,r10)
+		mov	r2,@(mdl_y_pos,r10)
+		mov	r3,@(mdl_z_pos,r10)
+		mov	r7,@(mdl_data,r10)
+		add	#sizeof_mdlobj,r10
+		sub	r6,r3
+.do_2piece:
+		mov	r1,@(mdl_x_pos,r10)
+		mov	r2,@(mdl_y_pos,r10)
+		mov	r3,@(mdl_z_pos,r10)
+		mov	r7,@(mdl_data,r10)
+		add	#sizeof_mdlobj,r10
+		sub	r6,r3
+.do_1piece:
+		mov	r1,@(mdl_x_pos,r10)
+		mov	r2,@(mdl_y_pos,r10)
+		mov	r3,@(mdl_z_pos,r10)
+		mov	r7,@(mdl_data,r10)
+		add	#sizeof_mdlobj,r10
+		sub	r6,r3
+		rts
+		nop
+		align 4
+		
+; ----------------------------------------
+; Read layout
+; ----------------------------------------
+
+MarsLay_Read:
+		sts	pr,@-r15
+		mov	#RAM_Mars_ObjLayout,r14
+		mov	#RAM_Mars_ObjCamera,r13
+		mov	#RAM_Mars_Objects,r12
+		mov	@(mdllay_data,r14),r0
+		cmp/pl	r0
+		bf	.no_lay
+		mov	r0,r11
+
+		mov	#0,r10				; r10 - Update counter
+		mov	#-$100000,r9			;  r9 - MAX Z block size
+		mov	#-$100000,r8			;  r8 - MAX Y block size	
+		mov	#-$100000,r7			;  r7 - MAX X block size
+		mov	#-$10000,r6			;  r6 - X Rotation update point
+
+		mov	@(mdllay_z_last,r14),r5
+		mov	@(cam_z_pos,r13),r0
+		add	r9,r5
+		neg	r5,r4
+		cmp/gt	r5,r0
+		bf	.set_z_upd
+		cmp/ge	r4,r0
+		bf	.no_z_upd
+.set_z_upd:
+		and	r9,r0
+		mov	r0,@(mdllay_z_last,r14)
+		add	#1,r10
+.no_z_upd:
+
+		mov	@(mdllay_y_last,r14),r5
+		mov	@(cam_y_pos,r13),r0
+		add	r8,r5
+		neg	r5,r4
+		cmp/gt	r5,r0
+		bf	.set_y_upd
+		cmp/ge	r4,r0
+		bf	.no_y_upd
+.set_y_upd:
+		and	r8,r0
+		mov	r0,@(mdllay_y_last,r14)
+		add	#1,r10
+.no_y_upd:
+
+		mov	@(mdllay_x_last,r14),r5
+		mov	@(cam_x_pos,r13),r0
+		add	r7,r5
+		neg	r5,r4
+		cmp/gt	r5,r0
+		bf	.set_x_upd
+		cmp/ge	r4,r0
+		bf	.no_x_upd
+.set_x_upd:
+		and	r7,r0
+		mov	r0,@(mdllay_x_last,r14)
+		add	#1,r10
+.no_x_upd:
+
+		mov	@(mdllay_xr_last,r14),r5
+		mov	@(cam_x_rot,r13),r0
+		add	r6,r5
+		neg	r5,r4
+		cmp/gt	r5,r0
+		bf	.set_xr_upd
+		cmp/ge	r4,r0
+		bf	.no_xr_upd
+.set_xr_upd:
+		and	r6,r0
+		mov	r0,@(mdllay_xr_last,r14)
+		add	#1,r10
+.no_xr_upd:
+
+		cmp/pl	r10
+		bf	.no_lay
+		bsr	MarsLay_Draw
+		nop
+.no_lay:
+		lds	@r15+,pr
+		rts
+		nop
+		align 4
+		ltorg
+
+; ------------------------------------------------
 ; MarsMdl_ReadModel
 ; 
 ; r14 - Current model address
@@ -515,7 +720,10 @@ MarsMdl_ReadModel:
 		bt	.face_out
 		mov	#RAM_Mars_ObjCamera,r0
 		mov	@(cam_y_pos,r0),r7
-		shlr8	r7
+		shlr2	r7
+		shlr2	r7
+		shlr2	r7
+		shlr	r7
 		exts	r7,r7
 		cmp/pl	r7
 		bf	.revrscam
@@ -592,56 +800,58 @@ mdlrd_setpoint:
 		mov	r2,r5			; r5 - X
 		mov	r4,r6			; r6 - Z
   		mov 	@(mdl_x_rot,r14),r0
+  		shlr	r0
   		bsr	mdlrd_rotate
 		shlr8	r0
    		mov	r7,r2
    		mov	r3,r5
   		mov	r8,r6
   		mov 	@(mdl_y_rot,r14),r0
+  		shlr	r0
   		bsr	mdlrd_rotate
 		shlr8	r0
    		mov	r8,r4
    		mov	r2,r5
    		mov	r7,r6
    		mov 	@(mdl_z_rot,r14),r0
+  		shlr	r0
   		bsr	mdlrd_rotate
 		shlr8	r0
    		mov	r7,r2
    		mov	r8,r3
-		mov	@(mdl_x_pos,r14),r0
-		shlr8	r0
-		exts	r0,r0
-		add 	r0,r2
-		mov	@(mdl_y_pos,r14),r0
-		shlr8	r0
-		exts	r0,r0
-		add 	r0,r3
-		mov	@(mdl_z_pos,r14),r0
-		shlr8	r0
-		exts	r0,r0
-		add 	r0,r4
+		mov	@(mdl_x_pos,r14),r5
+		mov	@(mdl_y_pos,r14),r6
+		mov	@(mdl_z_pos,r14),r7
+		shlr8	r5
+		shlr8	r6
+		shlr8	r7
+		exts	r5,r5
+		exts	r6,r6		
+		exts	r7,r7		
+		add 	r5,r2
+		add 	r6,r3
+		add 	r7,r4
 
 	; Include camera changes
 		mov 	#RAM_Mars_ObjCamera,r11
-		mov	@(cam_x_pos,r11),r0
-		shlr8	r0
-		shlr	r0
-		exts	r0,r0
-		sub 	r0,r2
-		mov	@(cam_y_pos,r11),r0
-		shlr8	r0
-		shlr	r0
-		exts	r0,r0
-		sub 	r0,r3
-		mov	@(cam_z_pos,r11),r0
-		shlr8	r0
-		shlr	r0
-		exts	r0,r0
-		add 	r0,r4
+		
+		mov	@(cam_x_pos,r11),r5
+		mov	@(cam_y_pos,r11),r6
+		mov	@(cam_z_pos,r11),r7
+		shlr8	r5
+		shlr8	r6
+		shlr8	r7
+		exts	r5,r5
+		exts	r6,r6		
+		exts	r7,r7		
+		sub 	r5,r2
+		sub 	r6,r3
+		add 	r7,r4
 
 		mov	r2,r5
 		mov	r4,r6
   		mov 	@(cam_x_rot,r11),r0
+  		shlr2	r0
   		bsr	mdlrd_rotate
 		shlr8	r0
    		mov	r7,r2
@@ -649,26 +859,51 @@ mdlrd_setpoint:
    		mov	r3,r5
   		mov	r8,r6
   		mov 	@(cam_y_rot,r11),r0
+  		shlr2	r0
   		bsr	mdlrd_rotate
 		shlr8	r0
    		mov	r8,r4
    		mov	r2,r5
    		mov	r7,r6
    		mov 	@(cam_z_rot,r11),r0
+  		shlr2	r0
   		bsr	mdlrd_rotate
 		shlr8	r0
    		mov	r7,r2
    		mov	r8,r3
 
-		mov 	#_JR,r8
-		mov	#256<<16,r7
+		mov	#512<<16,r7
 		neg	r4,r0		; reverse Z
+; 		shll	r0
 		cmp/pl	r0
 		bt	.inside
 		
+; 		dmuls	r7,r4
+; 		sts	mach,r0
+; 		sts	macl,r4
+; 		xtrct	r0,r4
+; 		dmuls	r7,r3
+; 		sts	mach,r0
+; 		sts	macl,r3
+; 		xtrct	r0,r3
+; 		dmuls	r7,r2
+; 		sts	mach,r0
+; 		sts	macl,r2
+; 		xtrct	r0,r2
+		
+	; Perspective
+		mov	#$1FFF,r6
+		mov	@(cam_x_rot,r11),r5
+		and	r6,r5
+		shar	r5
+		shar	r5
+		shar	r5
+		shar	r5		
 		mov	r4,r0
 		add 	#64,r0
 		shll16	r0
+		add	r4,r0
+		add	r5,r0
 		mov	r0,r5
 		dmuls	r5,r2
 		sts	mach,r0
@@ -678,14 +913,21 @@ mdlrd_setpoint:
 		sts	mach,r0
 		sts	macl,r3
 		xtrct	r0,r3
-	rept 4
+; 		dmuls	r5,r4
+; 		sts	mach,r0
+; 		sts	macl,r4
+; 		xtrct	r0,r4
+	rept 3
 		shar	r2
 		shar	r3
 	endm
+		add	#-64,r4
 		bra	.zmulti
 		nop
 .inside:
+		mov 	#_JR,r8
 		add 	#64,r0
+; 		shar	r0
 		mov 	r0,@r8
 		mov 	r7,@(4,r8)
 		nop

@@ -66,7 +66,7 @@ material_file = open(TAG_OBJECTSDIR+"/"+object_name+".mtl","r")	# CHECK BELOW
 out_vertices  = open("mdl/"+object_name+"/"+"vert.bin","wb")	# vertices (points)
 out_faces     = open("mdl/"+object_name+"/"+"face.bin","wb")	# faces
 #out_vertex    = open(object_name+"_vrtx.bin","wb")	# texture vertex (MOVED TO BOTTOM)
-out_head      = open("mdl/"+object_name+"/"+"head.bin","wb")	# header
+out_head      = open("mdl/"+object_name+"/"+"head.asm","w")	# header
 out_mtrl      = open("mdl/"+object_name+"/"+"mtrl.asm","w")
 
 used_triangles= 0
@@ -179,7 +179,7 @@ while reading:
     a = mtlname[:8]
     
     if a == TAG_NOMATERIAL:
-      print("Material: Random")
+      print("RANDOM INDEX Material")
       has_img = False
       use_img = False
       random_mode = True
@@ -190,7 +190,7 @@ while reading:
       #out_mtrl.write("\t dc.l "+str(a[1])+","+str(0)+"\n")  <-- if needed
       #indx_color += 1
       indx_color = int(a[1])
-      print("Material: Color ID",indx_color)
+      print("INDEX Material: Color",indx_color)
       #img_width = 1
       #img_height = 1
       has_img = False
@@ -202,7 +202,7 @@ while reading:
       out_mtrl.write("\t dc.l "+str(a[1])+","+str(0)+"\n")
       mtrl_curr = mtrl_index
       mtrl_index += 1
-      print("Material: Color ID",indx_color)
+      print("INDEX Material: Color",indx_color)
       #img_width = 1
       #img_height = 1
       has_img = False
@@ -269,7 +269,7 @@ while reading:
                     outname = a[0]
 
                     if int(CONVERT_TEX) == True:
-                      print("Converting material:",mtlname)
+                      print("TEXTURE Material:",mtlname)
                       has_img = True
 
                       output_file = open("mtrl/"+outname+"_pal.bin","wb")
@@ -516,24 +516,32 @@ if a != 0:
 # End
 # ----------------------------
 
-out_head.write( bytes([
-	#used_triangles+used_quads >> 24 & 0xFF,
-	#used_triangles+used_quads >> 16 & 0xFF,
-	used_triangles+used_quads >> 8 & 0xFF,
-	used_triangles+used_quads & 0xFF,
-	#num_vert >> 24 & 0xFF,
-	#num_vert >> 16 & 0xFF,
-	num_vert >> 8 & 0xFF,
-	num_vert & 0xFF
-	]) )
+# generate include
+out_head.write("MarsObj_"+object_name+":\n")
+out_head.write("\t\tdc.w "+str(used_triangles+used_quads)+","+str(num_vert)+"\n") # numof_faces, numof_vertices
+out_head.write("\t\tdc.l .vert,.face,.vrtx,.mtrl\n")
+out_head.write('.vert:\t\tbinclude "data/mars/objects/mdl/'+object_name+'/vert.bin"\n')
+out_head.write('.face:\t\tbinclude "data/mars/objects/mdl/'+object_name+'/face.bin"\n')
+out_head.write('.vrtx:\t\tbinclude "data/mars/objects/mdl/'+object_name+'/vrtx.bin"\n')
+out_head.write('.mtrl:\t\tinclude "data/mars/objects/mdl/'+object_name+'/mtrl.asm"\n')
+out_head.write("\t\talign 4")
+print("Vert:",num_vert,"Face:",used_triangles+used_quads)
+print("Poly:",used_triangles,"Quad:",used_quads)
 
-print("Vertices:",num_vert)
-print("   Faces:",used_triangles+used_quads)
-print("Polygons:",used_triangles)
-print("   Quads:",used_quads)
-#print("Done.")
-
-#print(mtrl_tag)
+#out_head.write( bytes([
+	##used_triangles+used_quads >> 24 & 0xFF,
+	##used_triangles+used_quads >> 16 & 0xFF,
+	#used_triangles+used_quads >> 8 & 0xFF,
+	#used_triangles+used_quads & 0xFF,
+	##num_vert >> 24 & 0xFF,
+	##num_vert >> 16 & 0xFF,
+	#num_vert >> 8 & 0xFF,
+	#num_vert & 0xFF
+	#]) )
+#print("Vertices:",num_vert)
+#print("   Faces:",used_triangles+used_quads)
+#print("Polygons:",used_triangles)
+#print("   Quads:",used_quads)
 
 model_file.close()
 material_file.close()

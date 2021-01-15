@@ -227,5 +227,9 @@ mdllay_data	ds.l 1
 mdllay_x	ds.l 1
 mdllay_y	ds.l 1
 mdllay_z	ds.l 1
+mdllay_x_last	ds.l 1
+mdllay_y_last	ds.l 1
+mdllay_z_last	ds.l 1
+mdllay_xr_last	ds.l 1
 sizeof_layout	ds.l 0
 		finish
