@@ -138,7 +138,7 @@ MD_Main:
 		move.l	(a1)+,cam_y_rot(a0)
 		move.l	(a1)+,cam_z_rot(a0)
 		neg.l	d1
-		lsr.l	#6,d1
+		lsr.l	#7,d1
 		move.w	d1,(RAM_BgCamera).l
 		move.w	#1,(RAM_MdMdlsUpd).l
 .no_camanim:
@@ -231,7 +231,7 @@ MdMdl_Usercontrol:
 		move.l	d6,d1
 		add.l	d1,d0
 		move.l	d0,cam_x_rot(a0)
-		lsr.l	#6,d0
+		lsr.l	#7,d0
 		neg.l	d0
 		move.w	d0,(RAM_BgCamera).l
 .no_a:
@@ -243,7 +243,7 @@ MdMdl_Usercontrol:
 		move.l	d5,d1
 		add.l	d1,d0
 		move.l	d0,cam_x_rot(a0)
-		lsr.l	#6,d0
+		lsr.l	#7,d0
 		neg.l	d0
 		move.w	d0,(RAM_BgCamera).l
 .no_b:

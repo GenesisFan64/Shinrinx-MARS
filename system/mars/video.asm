@@ -18,7 +18,7 @@
 MAX_FACES	equ	1024		; Maximum polygon faces (models,sprites) to store on buffer
 MAX_SVDP_PZ	equ	384		; This list loops on both read and write, increase the value if needed
 MAX_MODELS	equ	32
-MAX_ZDIST	equ	-$1800		; Max drawing distance (-Z max)
+MAX_ZDIST	equ	-$1C00		; Max drawing distance (-Z max)
 
 ; ----------------------------------------
 ; Variables
@@ -279,27 +279,13 @@ MarsVideo_LoadPal:
 ; 3D MODEL RENDERER
 ; ----------------------------------------------------------------
 
-MarsMdl_Init:
-		sts	pr,@-r15
-		mov	#0,r0
-		mov	#RAM_Mars_Objects,r1
-		mov	#sizeof_mdlobj/4,r2
-.clnup:
-		mov	r0,@r1
-		dt	r2
-		bf/s	.clnup
-		add	#4,r1
-		lds	@r15+,pr
-		rts
-		nop
-		align 4
-		ltorg
-
 ; ------------------------------------------------
 ; Object layout routines
 ; ------------------------------------------------
 
 ; r1 - layout data pointer
+; TODO: improve this later
+
 MarsLay_Make:
 		mov	#RAM_Mars_ObjLayout,r14
 		mov	#RAM_Mars_ObjCamera,r13
@@ -315,9 +301,18 @@ MarsLay_Make:
 
 MarsLay_Draw:
 		mov	#RAM_Mars_Objects,r10
+		mov	r10,r2
+		mov	#sizeof_mdlobj,r3
+		mov	#0,r0
+		mov	#16,r4
+.clrold:
+		mov	r0,@(mdl_data,r2)
+		add	r3,r2
+		dt	r4
+		bf	.clrold
 		mov	@(mdllay_xr_last,r14),r0
 		shlr16	r0
-		and	#$1F,r0
+		and	#$3F,r0
 		shll2	r0
 		mov	#.list,r1
 		mov	@(r0,r1),r0
@@ -325,94 +320,272 @@ MarsLay_Draw:
 		nop
 .list:
 		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-		dc.l .front
-.right:
-		bra	*
-		nop
+		dc.l .front_fr
+		dc.l .front_fr
+		dc.l .front_fr
+		dc.l .front_fr
+		dc.l .front_fr
+		dc.l .front_fr
+		dc.l .front_fr
+		dc.l .front_fr
+		dc.l .front_fr
+		dc.l .front_fr
+		dc.l .front_fr
+		dc.l .front_fr
+		dc.l .front_fr
+		dc.l .front_fr
+		dc.l .front_fr
+		
+		dc.l .right_dw
+		dc.l .right_dw
+		dc.l .right_dw
+		dc.l .right_dw
+		dc.l .right_dw
+		dc.l .right_dw
+		dc.l .right_dw
+		dc.l .right_dw
+		dc.l .right_dw
+		dc.l .right_dw
+		dc.l .right_dw
+		dc.l .right_dw
+		dc.l .right_dw
+		dc.l .right_dw
+		dc.l .right_dw
+		dc.l .right_dw
+		
+		dc.l .down_left
+		dc.l .down_left
+		dc.l .down_left
+		dc.l .down_left
+		dc.l .down_left
+		dc.l .down_left
+		dc.l .down_left
+		dc.l .down_left
+		dc.l .down_left
+		dc.l .down_left
+		dc.l .down_left
+		dc.l .down_left
+		dc.l .down_left
+		dc.l .down_left
+		dc.l .down_left
+		dc.l .down_left
 
+		dc.l .front_lf
+		dc.l .front_lf
+		dc.l .front_lf
+		dc.l .front_lf
+		dc.l .front_lf
+		dc.l .front_lf
+		dc.l .front_lf
+		dc.l .front_lf
+		dc.l .front_lf
+		dc.l .front_lf
+		dc.l .front_lf
+		dc.l .front_lf
+		dc.l .front_lf
+		dc.l .front_lf
+		dc.l .front_lf
+		dc.l .front_lf
+
+.do_piece:
+		mov	#$100000,r6
+.nxt_one:
+		mov	r1,@(mdl_x_pos,r10)
+		mov	r2,@(mdl_y_pos,r10)
+		mov	r3,@(mdl_z_pos,r10)
+		mov	r4,@(mdl_data,r10)
+		add	#sizeof_mdlobj,r10
+		add	r6,r1
+		dt	r5
+		bf	.nxt_one
+		rts
+		nop
+		align 4
+
+; o X X X o
+; o X X X o
+; o X C X o
+; o - - - o
+; o o o o o
 .front:
-		mov	#0,r1
+		mov	#-$100000,r1
 		mov	#0,r2
 		mov	#-$200000,r3
-		mov	r1,r4
-		mov	r2,r5		
-		mov	#-$100000,r6
+		mov	#TEST_MODEL,r4
 		mov	@(mdllay_z_last,r14),r0
 		sub	r0,r3
 		mov	@(mdllay_x_last,r14),r0
 		add	r0,r1
-		
-		sts	pr,@-r15
-		mov	#TEST_MODEL,r7
-		bsr	.do_3piece
-		mov	r3,r8
-		mov	r8,r3
-		mov	#TEST_MODEL,r7
 		mov	#$100000,r0
-		add	r0,r1
-		bsr	.do_3piece
-		mov	r3,r8
-		mov	r8,r3
+
+		sts	pr,@-r15
+		mov	r1,r8		; Z outside
+		bsr	.do_piece
+		mov	#3,r5
+		mov	r8,r1
+		add	r0,r3
+		mov	r1,r8		; X outside (object 3)
+		bsr	.do_piece
+		mov	#3,r5
+		mov	r8,r1
+		add	r0,r3
+		mov	r1,r8
+		bsr	.do_piece
+		mov	#3,r5
+		mov	r8,r1
 		lds	@r15+,pr
 		rts
 		nop
 		align 4
 
-.do_3piece:
-		mov	r1,@(mdl_x_pos,r10)
-		mov	r2,@(mdl_y_pos,r10)
-		mov	r3,@(mdl_z_pos,r10)
-		mov	r7,@(mdl_data,r10)
-		add	#sizeof_mdlobj,r10
-		sub	r6,r3
-.do_2piece:
-		mov	r1,@(mdl_x_pos,r10)
-		mov	r2,@(mdl_y_pos,r10)
-		mov	r3,@(mdl_z_pos,r10)
-		mov	r7,@(mdl_data,r10)
-		add	#sizeof_mdlobj,r10
-		sub	r6,r3
-.do_1piece:
-		mov	r1,@(mdl_x_pos,r10)
-		mov	r2,@(mdl_y_pos,r10)
-		mov	r3,@(mdl_z_pos,r10)
-		mov	r7,@(mdl_data,r10)
-		add	#sizeof_mdlobj,r10
-		sub	r6,r3
+; front right view
+; o o X X X
+; o - X X X
+; o - C X X
+; o - - - o
+; o o o o o
+.front_fr:
+		mov	#0,r1
+		mov	#0,r2
+		mov	#-$200000,r3
+		mov	#TEST_MODEL,r4
+		mov	@(mdllay_z_last,r14),r0
+		sub	r0,r3
+		mov	@(mdllay_x_last,r14),r0
+		add	r0,r1
+		mov	#$100000,r0
+
+		sts	pr,@-r15
+		mov	r1,r8		; Z outside
+		bsr	.do_piece
+		mov	#3,r5
+		mov	r8,r1
+		add	r0,r3
+		mov	r1,r8		; X outside (object 3)
+		bsr	.do_piece
+		mov	#3,r5
+		mov	r8,r1
+		add	r0,r3
+		mov	r1,r8
+		bsr	.do_piece
+		mov	#3,r5
+		mov	r8,r1
+		lds	@r15+,pr
 		rts
 		nop
 		align 4
-		
+
+
+; right view/down
+; o o o o o
+; o - - - o
+; o - C X X
+; o - X X X
+; o o X X X
+.right_dw:
+		mov	#0,r1
+		mov	#0,r2
+		mov	#-$100000,r3
+		mov	#TEST_MODEL,r4
+		mov	@(mdllay_z_last,r14),r0
+		sub	r0,r3
+		mov	@(mdllay_x_last,r14),r0
+		add	r0,r1
+		mov	#$100000,r0
+
+		sts	pr,@-r15
+		mov	r1,r8		; Z outside
+		bsr	.do_piece
+		mov	#3,r5
+		mov	r8,r1
+		add	r0,r3
+		mov	r1,r8		; X outside (object 3)
+		bsr	.do_piece
+		mov	#3,r5
+		mov	r8,r1
+		add	r0,r3
+		mov	r1,r8
+		bsr	.do_piece
+		mov	#3,r5
+		mov	r8,r1
+		lds	@r15+,pr
+		rts
+		nop
+		align 4
+
+; o o o o o
+; o - - - o
+; X X C - o
+; X X X - o
+; X X X o o
+.down_left:
+		mov	#-$100000,r1
+		mov	#0,r2
+		mov	#-$100000,r3
+		mov	#TEST_MODEL,r4
+		mov	@(mdllay_z_last,r14),r0
+		sub	r0,r3
+		mov	@(mdllay_x_last,r14),r0
+		add	r0,r1
+		mov	#$100000,r0
+
+		sts	pr,@-r15
+		mov	r1,r8		; Z outside
+		bsr	.do_piece
+		mov	#3,r5
+		mov	r8,r1
+		add	r0,r3
+		mov	r1,r8		; X outside (object 3)
+		bsr	.do_piece
+		mov	#3,r5
+		mov	r8,r1
+		add	r0,r3
+		mov	r1,r8
+		bsr	.do_piece
+		mov	#3,r5
+		mov	r8,r1
+		lds	@r15+,pr
+		rts
+		nop
+		align 4
+
+
+; X X X o o
+; X X X - o
+; X X C - o
+; o - - - o
+; o o o o o
+.front_lf:
+		mov	#-$100000,r1
+		mov	#0,r2
+		mov	#-$200000,r3
+		mov	#TEST_MODEL,r4
+		mov	@(mdllay_z_last,r14),r0
+		sub	r0,r3
+		mov	@(mdllay_x_last,r14),r0
+		add	r0,r1
+		mov	#$100000,r0
+
+		sts	pr,@-r15
+		mov	r1,r8		; Z outside
+		bsr	.do_piece
+		mov	#3,r5
+		mov	r8,r1
+		add	r0,r3
+		mov	r1,r8		; X outside (object 3)
+		bsr	.do_piece
+		mov	#3,r5
+		mov	r8,r1
+		add	r0,r3
+		mov	r1,r8
+		bsr	.do_piece
+		mov	#3,r5
+		mov	r8,r1
+		lds	@r15+,pr
+		rts
+		nop
+		align 4
+
 ; ----------------------------------------
 ; Read layout
 ; ----------------------------------------
@@ -431,17 +604,21 @@ MarsLay_Read:
 		mov	#-$100000,r9			;  r9 - MAX Z block size
 		mov	#-$100000,r8			;  r8 - MAX Y block size	
 		mov	#-$100000,r7			;  r7 - MAX X block size
-		mov	#-$10000,r6			;  r6 - X Rotation update point
+		mov	#-$8000,r6			;  r6 - X Rotation update point
 
 		mov	@(mdllay_z_last,r14),r5
 		mov	@(cam_z_pos,r13),r0
-		add	r9,r5
-		neg	r5,r4
-		cmp/gt	r5,r0
-		bf	.set_z_upd
-		cmp/ge	r4,r0
-		bf	.no_z_upd
-.set_z_upd:
+		and	r9,r0
+		and	r9,r5
+		cmp/eq	r0,r5
+		bt	.no_z_upd
+; 		add	r9,r5
+; 		neg	r5,r4
+; 		cmp/gt	r5,r0
+; 		bf	.set_z_upd
+; 		cmp/ge	r4,r0
+; 		bf	.no_z_upd
+; .set_z_upd:
 		and	r9,r0
 		mov	r0,@(mdllay_z_last,r14)
 		add	#1,r10
@@ -449,13 +626,17 @@ MarsLay_Read:
 
 		mov	@(mdllay_y_last,r14),r5
 		mov	@(cam_y_pos,r13),r0
-		add	r8,r5
-		neg	r5,r4
-		cmp/gt	r5,r0
-		bf	.set_y_upd
-		cmp/ge	r4,r0
-		bf	.no_y_upd
-.set_y_upd:
+		and	r8,r0
+		and	r8,r5
+		cmp/eq	r0,r5
+		bt	.no_y_upd
+; 		add	r8,r5
+; 		neg	r5,r4
+; 		cmp/gt	r5,r0
+; 		bf	.set_y_upd
+; 		cmp/ge	r4,r0
+; 		bf	.no_y_upd
+; .set_y_upd:
 		and	r8,r0
 		mov	r0,@(mdllay_y_last,r14)
 		add	#1,r10
@@ -463,13 +644,17 @@ MarsLay_Read:
 
 		mov	@(mdllay_x_last,r14),r5
 		mov	@(cam_x_pos,r13),r0
-		add	r7,r5
-		neg	r5,r4
-		cmp/gt	r5,r0
-		bf	.set_x_upd
-		cmp/ge	r4,r0
-		bf	.no_x_upd
-.set_x_upd:
+		and	r7,r0
+		and	r7,r5
+		cmp/eq	r0,r5
+		bt	.no_x_upd
+; 		add	r7,r5
+; 		neg	r5,r4
+; 		cmp/gt	r5,r0
+; 		bf	.set_x_upd
+; 		cmp/ge	r4,r0
+; 		bf	.no_x_upd
+; .set_x_upd:
 		and	r7,r0
 		mov	r0,@(mdllay_x_last,r14)
 		add	#1,r10
@@ -477,13 +662,17 @@ MarsLay_Read:
 
 		mov	@(mdllay_xr_last,r14),r5
 		mov	@(cam_x_rot,r13),r0
-		add	r6,r5
-		neg	r5,r4
-		cmp/gt	r5,r0
-		bf	.set_xr_upd
-		cmp/ge	r4,r0
-		bf	.no_xr_upd
-.set_xr_upd:
+		and	r6,r0
+		and	r6,r5
+		cmp/eq	r0,r5
+		bt	.no_xr_upd
+; 		add	r6,r5
+; 		neg	r5,r4
+; 		cmp/gt	r5,r0
+; 		bf	.set_xr_upd
+; 		cmp/ge	r4,r0
+; 		bf	.no_xr_upd
+; .set_xr_upd:
 		and	r6,r0
 		mov	r0,@(mdllay_xr_last,r14)
 		add	#1,r10
@@ -505,6 +694,22 @@ MarsLay_Read:
 ; 
 ; r14 - Current model address
 ; ------------------------------------------------
+
+MarsMdl_Init:
+		sts	pr,@-r15
+		mov	#0,r0
+		mov	#RAM_Mars_Objects,r1
+		mov	#sizeof_mdlobj/4,r2
+.clnup:
+		mov	r0,@r1
+		dt	r2
+		bf/s	.clnup
+		add	#4,r1
+		lds	@r15+,pr
+		rts
+		nop
+		align 4
+		ltorg
 
 MarsMdl_ReadModel:
 		sts	pr,@-r15
@@ -800,6 +1005,7 @@ mdlrd_setpoint:
 		mov	r2,r5			; r5 - X
 		mov	r4,r6			; r6 - Z
   		mov 	@(mdl_x_rot,r14),r0
+  		shlr2	r0
   		shlr	r0
   		bsr	mdlrd_rotate
 		shlr8	r0
@@ -807,6 +1013,7 @@ mdlrd_setpoint:
    		mov	r3,r5
   		mov	r8,r6
   		mov 	@(mdl_y_rot,r14),r0
+  		shlr2	r0
   		shlr	r0
   		bsr	mdlrd_rotate
 		shlr8	r0
@@ -814,6 +1021,7 @@ mdlrd_setpoint:
    		mov	r2,r5
    		mov	r7,r6
    		mov 	@(mdl_z_rot,r14),r0
+  		shlr2	r0
   		shlr	r0
   		bsr	mdlrd_rotate
 		shlr8	r0
@@ -852,6 +1060,7 @@ mdlrd_setpoint:
 		mov	r4,r6
   		mov 	@(cam_x_rot,r11),r0
   		shlr2	r0
+  		shlr	r0
   		bsr	mdlrd_rotate
 		shlr8	r0
    		mov	r7,r2
@@ -860,6 +1069,7 @@ mdlrd_setpoint:
   		mov	r8,r6
   		mov 	@(cam_y_rot,r11),r0
   		shlr2	r0
+  		shlr	r0
   		bsr	mdlrd_rotate
 		shlr8	r0
    		mov	r8,r4
@@ -867,31 +1077,16 @@ mdlrd_setpoint:
    		mov	r7,r6
    		mov 	@(cam_z_rot,r11),r0
   		shlr2	r0
+  		shlr	r0
   		bsr	mdlrd_rotate
 		shlr8	r0
    		mov	r7,r2
    		mov	r8,r3
 
-		mov	#512<<16,r7
+	; Perspective
 		neg	r4,r0		; reverse Z
-; 		shll	r0
 		cmp/pl	r0
 		bt	.inside
-		
-; 		dmuls	r7,r4
-; 		sts	mach,r0
-; 		sts	macl,r4
-; 		xtrct	r0,r4
-; 		dmuls	r7,r3
-; 		sts	mach,r0
-; 		sts	macl,r3
-; 		xtrct	r0,r3
-; 		dmuls	r7,r2
-; 		sts	mach,r0
-; 		sts	macl,r2
-; 		xtrct	r0,r2
-		
-	; Perspective
 		mov	#$1FFF,r6
 		mov	@(cam_x_rot,r11),r5
 		and	r6,r5
@@ -913,10 +1108,6 @@ mdlrd_setpoint:
 		sts	mach,r0
 		sts	macl,r3
 		xtrct	r0,r3
-; 		dmuls	r5,r4
-; 		sts	mach,r0
-; 		sts	macl,r4
-; 		xtrct	r0,r4
 	rept 3
 		shar	r2
 		shar	r3
@@ -925,9 +1116,9 @@ mdlrd_setpoint:
 		bra	.zmulti
 		nop
 .inside:
+		mov	#512<<16,r7
 		mov 	#_JR,r8
 		add 	#64,r0
-; 		shar	r0
 		mov 	r0,@r8
 		mov 	r7,@(4,r8)
 		nop
@@ -941,7 +1132,6 @@ mdlrd_setpoint:
 		sts	macl,r3
 		xtrct	r0,r3
 .zmulti:
-
 
 		mov	@r15+,r11
 		mov	@r15+,r10

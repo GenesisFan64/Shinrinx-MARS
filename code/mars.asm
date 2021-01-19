@@ -268,7 +268,8 @@ s_irq_pwm:
 		mov.l	r7,@-r15
 		mov.l	r8,@-r15
 		sts	pr,@-r15
-		bsr	MarsSound_PWM
+		mov	#MarsSound_PWM,r0
+		jsr	@r0
 		nop
 		lds	@r15+,pr
 		mov.l	@r15+,r8
@@ -489,7 +490,8 @@ SH2_M_HotStart:
 		add 	#4,r2
 		dt	r3
 		bf	.copy
-		bsr	MarsVideo_Init			; Init Video
+		mov	#MarsVideo_Init,r0		; Init Video
+		jsr	@r0
 		nop
 		bsr	MarsSound_Init			; Init Sound
 		nop
@@ -498,7 +500,9 @@ SH2_M_HotStart:
 
 		mov	#Palette_Puyo,r1
 		mov	#256,r3
-		bsr	MarsVideo_LoadPal
+		mov	#MarsVideo_LoadPal,r0
+		jsr	@r0
+		nop
 		mov	#0,r2
 		mov	#($1F<<10)|($E<<5),r0
 		mov	#RAM_Mars_Palette,r1
@@ -706,7 +710,8 @@ SH2_S_HotStart:
 		mov	#$20,r0			; Interrupts ON
 		ldc	r0,sr
 		mov	#TEST_LAYOUT,r1
-		bsr	MarsLay_Make
+		mov	#MarsLay_Make,r0
+		jsr	@r0
 		nop
 		
 ; --------------------------------------------------------
