@@ -318,9 +318,24 @@ MarsLay_Draw:
 		mov	#0,r4
 		mov	@(mdllay_data,r14),r13
 		mov	@r13+,r12
-		mov	.incr_this,r0
-		add	r0,r13				; list center point
-		
+		mov	.center_val,r0			; list center point
+		add	r0,r13
+		mov	@(mdllay_x_last,r14),r1
+		mov	@(mdllay_z_last,r14),r2
+		mov	#LAY_WIDTH,r0
+		shlr16	r1
+		shlr16	r2
+		exts	r1,r1
+		exts	r2,r2
+	rept 3
+		shar	r1
+		shar	r2
+	endm
+		shar	r2			; extra shift
+		muls	r0,r2
+		sts	macl,r0
+		add	r1,r13
+		sub	r0,r13
 		mov	@(mdllay_xr_last,r14),r0
 		shlr16	r0
 		and	#$3F,r0
@@ -330,7 +345,7 @@ MarsLay_Draw:
 		jmp	@r0
 		nop
 		align 4
-.incr_this:	dc.l (LAY_WIDTH*$D)+(2*$D)
+.center_val:	dc.l (LAY_WIDTH*$D)+(2*$D)
 
 .list:
 		dc.l .front
@@ -367,7 +382,7 @@ MarsLay_Draw:
 		dc.l .right_dw
 		dc.l .right_dw
 		
-		dc.l .down_left
+		dc.l .down
 		dc.l .down_left
 		dc.l .down_left
 		dc.l .down_left
@@ -530,18 +545,50 @@ MarsLay_Draw:
 
 ; o o o o o
 ; o - - - o
+; o X C X o
+; o X X X o
+; o X X X o
+.down:
+		mov	#0,r1
+		mov	#0,r2
+		mov	#-$100000,r3
+		mov	@(mdllay_z_last,r14),r0
+		sub	r0,r3
+		mov	@(mdllay_x_last,r14),r0
+		add	r0,r1
+		mov	#(2*2)+(LAY_WIDTH*1),r0
+		add	r0,r13
+		mov	#$100000,r8
+		sts	pr,@-r15
+		bsr	.do_piece
+		mov	#3,r5
+		add	#LAY_WIDTH,r13
+		add	r8,r3
+		bsr	.do_piece
+		mov	#3,r5
+		add	#LAY_WIDTH,r13
+		add	r8,r3
+		bsr	.do_piece
+		mov	#3,r5
+		lds	@r15+,pr
+		rts
+		nop
+		align 4
+
+; o o o o o
+; o - - - o
 ; X X C - o
 ; X X X - o
 ; X X X o o
 .down_left:
 		mov	#-$100000,r1
 		mov	#0,r2
-		mov	#0,r3
+		mov	#-$100000,r3
 		mov	@(mdllay_z_last,r14),r0
 		sub	r0,r3
 		mov	@(mdllay_x_last,r14),r0
 		add	r0,r1
-		mov	#(1*2)+(LAY_WIDTH*2),r0
+		mov	#(1*2)+(LAY_WIDTH*1),r0
 		add	r0,r13
 		mov	#$100000,r8
 		sts	pr,@-r15

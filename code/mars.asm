@@ -6,8 +6,8 @@
 ; RAM and some DATA go here
 ; ----------------------------------------------------------------
 
-		phase CS3			; now we are at SDRAM
-		cpu SH7600			; should be SH7095 but ASL doesn't have it, this is close enough
+		phase CS3		; now we are at SDRAM
+		cpu SH7600		; should be SH7095 but ASL doesn't have it, this is close enough
 
 ; =================================================================
 
