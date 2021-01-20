@@ -1,5 +1,5 @@
 MarsObj_test:
-		dc.w 33,44
+		dc.w 9,28
 		dc.l .vert,.face,.vrtx,.mtrl
 .vert:		binclude "data/mars/objects/mdl/test/vert.bin"
 .face:		binclude "data/mars/objects/mdl/test/face.bin"

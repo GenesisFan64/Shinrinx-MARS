@@ -18,7 +18,9 @@
 MAX_FACES	equ	1024		; Maximum polygon faces (models,sprites) to store on buffer
 MAX_SVDP_PZ	equ	384		; This list loops on both read and write, increase the value if needed
 MAX_MODELS	equ	32
-MAX_ZDIST	equ	-$1C00		; Max drawing distance (-Z max)
+MAX_ZDIST	equ	-$2000		; Max drawing distance (-Z max)
+
+LAY_WIDTH	equ	$20*2
 
 ; ----------------------------------------
 ; Variables
@@ -310,6 +312,15 @@ MarsLay_Draw:
 		add	r3,r2
 		dt	r4
 		bf	.clrold
+
+	; r13 - Layout Ids
+	; r12 - Layout model list
+		mov	#0,r4
+		mov	@(mdllay_data,r14),r13
+		mov	@r13+,r12
+		mov	.incr_this,r0
+		add	r0,r13				; list center point
+		
 		mov	@(mdllay_xr_last,r14),r0
 		shlr16	r0
 		and	#$3F,r0
@@ -318,6 +329,9 @@ MarsLay_Draw:
 		mov	@(r0,r1),r0
 		jmp	@r0
 		nop
+		align 4
+.incr_this:	dc.l (LAY_WIDTH*$D)+(2*$D)
+
 .list:
 		dc.l .front
 		dc.l .front_fr
@@ -385,19 +399,34 @@ MarsLay_Draw:
 		dc.l .front_lf
 		dc.l .front_lf
 		dc.l .front_lf
-		dc.l .front_lf
+		dc.l .front
 
+; r5 - numof pieces
+; uses: r6,r7
 .do_piece:
+		mov	r1,r7
+		mov	r13,r9
 		mov	#$100000,r6
 .nxt_one:
+		xor	r4,r4
+		mov.w	@r13+,r0
+		and	#$3F,r0
+		cmp/pl 	r0
+		bf	.blank_mdl
+		add	#-1,r0
+		shll2	r0
+		mov	@(r12,r0),r4
+.blank_mdl:
 		mov	r1,@(mdl_x_pos,r10)
 		mov	r2,@(mdl_y_pos,r10)
 		mov	r3,@(mdl_z_pos,r10)
 		mov	r4,@(mdl_data,r10)
 		add	#sizeof_mdlobj,r10
-		add	r6,r1
 		dt	r5
-		bf	.nxt_one
+		bf/s	.nxt_one
+		add	r6,r1
+		mov	r9,r13
+		mov	r7,r1
 		rts
 		nop
 		align 4
@@ -411,28 +440,23 @@ MarsLay_Draw:
 		mov	#-$100000,r1
 		mov	#0,r2
 		mov	#-$200000,r3
-		mov	#TEST_MODEL,r4
 		mov	@(mdllay_z_last,r14),r0
 		sub	r0,r3
 		mov	@(mdllay_x_last,r14),r0
 		add	r0,r1
-		mov	#$100000,r0
-
+		add	#(1*2),r13
+		mov	#$100000,r8
 		sts	pr,@-r15
-		mov	r1,r8		; Z outside
 		bsr	.do_piece
 		mov	#3,r5
-		mov	r8,r1
-		add	r0,r3
-		mov	r1,r8		; X outside (object 3)
+		add	#LAY_WIDTH,r13
+		add	r8,r3
 		bsr	.do_piece
 		mov	#3,r5
-		mov	r8,r1
-		add	r0,r3
-		mov	r1,r8
+		add	#LAY_WIDTH,r13
+		add	r8,r3
 		bsr	.do_piece
 		mov	#3,r5
-		mov	r8,r1
 		lds	@r15+,pr
 		rts
 		nop
@@ -448,28 +472,23 @@ MarsLay_Draw:
 		mov	#0,r1
 		mov	#0,r2
 		mov	#-$200000,r3
-		mov	#TEST_MODEL,r4
 		mov	@(mdllay_z_last,r14),r0
 		sub	r0,r3
 		mov	@(mdllay_x_last,r14),r0
 		add	r0,r1
-		mov	#$100000,r0
-
+		add	#(2*2),r13
+		mov	#$100000,r8
 		sts	pr,@-r15
-		mov	r1,r8		; Z outside
 		bsr	.do_piece
 		mov	#3,r5
-		mov	r8,r1
-		add	r0,r3
-		mov	r1,r8		; X outside (object 3)
+		add	#LAY_WIDTH,r13
+		add	r8,r3
 		bsr	.do_piece
 		mov	#3,r5
-		mov	r8,r1
-		add	r0,r3
-		mov	r1,r8
+		add	#LAY_WIDTH,r13
+		add	r8,r3
 		bsr	.do_piece
 		mov	#3,r5
-		mov	r8,r1
 		lds	@r15+,pr
 		rts
 		nop
@@ -486,28 +505,24 @@ MarsLay_Draw:
 		mov	#0,r1
 		mov	#0,r2
 		mov	#-$100000,r3
-		mov	#TEST_MODEL,r4
 		mov	@(mdllay_z_last,r14),r0
 		sub	r0,r3
 		mov	@(mdllay_x_last,r14),r0
 		add	r0,r1
-		mov	#$100000,r0
-
+		mov	#(2*2)+(LAY_WIDTH),r0
+		add	r0,r13
+		mov	#$100000,r8
 		sts	pr,@-r15
-		mov	r1,r8		; Z outside
 		bsr	.do_piece
 		mov	#3,r5
-		mov	r8,r1
-		add	r0,r3
-		mov	r1,r8		; X outside (object 3)
+		add	#LAY_WIDTH,r13
+		add	r8,r3
 		bsr	.do_piece
 		mov	#3,r5
-		mov	r8,r1
-		add	r0,r3
-		mov	r1,r8
+		add	#LAY_WIDTH,r13
+		add	r8,r3
 		bsr	.do_piece
 		mov	#3,r5
-		mov	r8,r1
 		lds	@r15+,pr
 		rts
 		nop
@@ -521,29 +536,25 @@ MarsLay_Draw:
 .down_left:
 		mov	#-$100000,r1
 		mov	#0,r2
-		mov	#-$100000,r3
-		mov	#TEST_MODEL,r4
+		mov	#0,r3
 		mov	@(mdllay_z_last,r14),r0
 		sub	r0,r3
 		mov	@(mdllay_x_last,r14),r0
 		add	r0,r1
-		mov	#$100000,r0
-
+		mov	#(1*2)+(LAY_WIDTH*2),r0
+		add	r0,r13
+		mov	#$100000,r8
 		sts	pr,@-r15
-		mov	r1,r8		; Z outside
 		bsr	.do_piece
 		mov	#3,r5
-		mov	r8,r1
-		add	r0,r3
-		mov	r1,r8		; X outside (object 3)
+		add	#LAY_WIDTH,r13
+		add	r8,r3
 		bsr	.do_piece
 		mov	#3,r5
-		mov	r8,r1
-		add	r0,r3
-		mov	r1,r8
+		add	#LAY_WIDTH,r13
+		add	r8,r3
 		bsr	.do_piece
 		mov	#3,r5
-		mov	r8,r1
 		lds	@r15+,pr
 		rts
 		nop
@@ -559,28 +570,23 @@ MarsLay_Draw:
 		mov	#-$100000,r1
 		mov	#0,r2
 		mov	#-$200000,r3
-		mov	#TEST_MODEL,r4
 		mov	@(mdllay_z_last,r14),r0
 		sub	r0,r3
 		mov	@(mdllay_x_last,r14),r0
 		add	r0,r1
-		mov	#$100000,r0
-
+		add	#(1*2),r13
+		mov	#$100000,r8
 		sts	pr,@-r15
-		mov	r1,r8		; Z outside
 		bsr	.do_piece
 		mov	#3,r5
-		mov	r8,r1
-		add	r0,r3
-		mov	r1,r8		; X outside (object 3)
+		add	#LAY_WIDTH,r13
+		add	r8,r3
 		bsr	.do_piece
 		mov	#3,r5
-		mov	r8,r1
-		add	r0,r3
-		mov	r1,r8
+		add	#LAY_WIDTH,r13
+		add	r8,r3
 		bsr	.do_piece
 		mov	#3,r5
-		mov	r8,r1
 		lds	@r15+,pr
 		rts
 		nop
@@ -1093,7 +1099,7 @@ mdlrd_setpoint:
 		shar	r5
 		shar	r5
 		shar	r5
-		shar	r5		
+; 		shar	r5		
 		mov	r4,r0
 		add 	#64,r0
 		shll16	r0
