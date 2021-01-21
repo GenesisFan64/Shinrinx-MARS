@@ -18,9 +18,9 @@
 MAX_FACES	equ	1024		; Maximum polygon faces (models,sprites) to store on buffer
 MAX_SVDP_PZ	equ	384		; This list loops on both read and write, increase the value if needed
 MAX_MODELS	equ	32
-MAX_ZDIST	equ	-$2000		; Max drawing distance (-Z max)
+MAX_ZDIST	equ	-$1E00		; Max drawing distance (-Z max)
 
-LAY_WIDTH	equ	$20*2
+LAY_WIDTH	equ	$10*2
 
 ; ----------------------------------------
 ; Variables
@@ -345,7 +345,7 @@ MarsLay_Draw:
 		jmp	@r0
 		nop
 		align 4
-.center_val:	dc.l (LAY_WIDTH*$D)+(2*$D)
+.center_val:	dc.l (LAY_WIDTH*6)+(2*5)
 
 .list:
 		dc.l .front
@@ -419,32 +419,47 @@ MarsLay_Draw:
 ; r5 - numof pieces
 ; uses: r6,r7
 .do_piece:
-		mov	r1,r7
-		mov	r13,r9
+		mov	r1,@-r15
+		mov	r13,@-r15
 		mov	#$100000,r6
 .nxt_one:
 		xor	r4,r4
 		mov.w	@r13+,r0
-		and	#$3F,r0
 		cmp/pl 	r0
 		bf	.blank_mdl
+		mov	r0,r7
+		shlr8	r0
+		shlr2	r0
+		shlr	r0
+		and	#%11100,r0
+		mov	#.xrotlist,r8
+		mov	@(r8,r0),r8
+		mov	r7,r0
 		add	#-1,r0
 		shll2	r0
+		shll	r0
+		mov	#$1FFF,r7
+		and	r7,r0
 		mov	@(r12,r0),r4
 .blank_mdl:
 		mov	r1,@(mdl_x_pos,r10)
 		mov	r2,@(mdl_y_pos,r10)
 		mov	r3,@(mdl_z_pos,r10)
+		mov	r8,@(mdl_x_rot,r10)	
 		mov	r4,@(mdl_data,r10)
 		add	#sizeof_mdlobj,r10
 		dt	r5
 		bf/s	.nxt_one
 		add	r6,r1
-		mov	r9,r13
-		mov	r7,r1
+		mov	@r15+,r13
+		mov	@r15+,r1
 		rts
 		nop
 		align 4
+.xrotlist:	dc.l 0
+		dc.l $100000
+		dc.l $200000
+		dc.l $300000
 
 ; o X X X o
 ; o X X X o
@@ -460,16 +475,16 @@ MarsLay_Draw:
 		mov	@(mdllay_x_last,r14),r0
 		add	r0,r1
 		add	#(1*2),r13
-		mov	#$100000,r8
+		mov	#$100000,r11
 		sts	pr,@-r15
 		bsr	.do_piece
 		mov	#3,r5
 		add	#LAY_WIDTH,r13
-		add	r8,r3
+		add	r11,r3
 		bsr	.do_piece
 		mov	#3,r5
 		add	#LAY_WIDTH,r13
-		add	r8,r3
+		add	r11,r3
 		bsr	.do_piece
 		mov	#3,r5
 		lds	@r15+,pr
@@ -492,16 +507,16 @@ MarsLay_Draw:
 		mov	@(mdllay_x_last,r14),r0
 		add	r0,r1
 		add	#(2*2),r13
-		mov	#$100000,r8
+		mov	#$100000,r11
 		sts	pr,@-r15
 		bsr	.do_piece
 		mov	#3,r5
 		add	#LAY_WIDTH,r13
-		add	r8,r3
+		add	r11,r3
 		bsr	.do_piece
 		mov	#3,r5
 		add	#LAY_WIDTH,r13
-		add	r8,r3
+		add	r11,r3
 		bsr	.do_piece
 		mov	#3,r5
 		lds	@r15+,pr
@@ -526,16 +541,16 @@ MarsLay_Draw:
 		add	r0,r1
 		mov	#(2*2)+(LAY_WIDTH),r0
 		add	r0,r13
-		mov	#$100000,r8
+		mov	#$100000,r11
 		sts	pr,@-r15
 		bsr	.do_piece
 		mov	#3,r5
 		add	#LAY_WIDTH,r13
-		add	r8,r3
+		add	r11,r3
 		bsr	.do_piece
 		mov	#3,r5
 		add	#LAY_WIDTH,r13
-		add	r8,r3
+		add	r11,r3
 		bsr	.do_piece
 		mov	#3,r5
 		lds	@r15+,pr
@@ -558,16 +573,16 @@ MarsLay_Draw:
 		add	r0,r1
 		mov	#(2*2)+(LAY_WIDTH*1),r0
 		add	r0,r13
-		mov	#$100000,r8
+		mov	#$100000,r11
 		sts	pr,@-r15
 		bsr	.do_piece
 		mov	#3,r5
 		add	#LAY_WIDTH,r13
-		add	r8,r3
+		add	r11,r3
 		bsr	.do_piece
 		mov	#3,r5
 		add	#LAY_WIDTH,r13
-		add	r8,r3
+		add	r11,r3
 		bsr	.do_piece
 		mov	#3,r5
 		lds	@r15+,pr
@@ -590,16 +605,16 @@ MarsLay_Draw:
 		add	r0,r1
 		mov	#(1*2)+(LAY_WIDTH*1),r0
 		add	r0,r13
-		mov	#$100000,r8
+		mov	#$100000,r11
 		sts	pr,@-r15
 		bsr	.do_piece
 		mov	#3,r5
 		add	#LAY_WIDTH,r13
-		add	r8,r3
+		add	r11,r3
 		bsr	.do_piece
 		mov	#3,r5
 		add	#LAY_WIDTH,r13
-		add	r8,r3
+		add	r11,r3
 		bsr	.do_piece
 		mov	#3,r5
 		lds	@r15+,pr
@@ -622,16 +637,16 @@ MarsLay_Draw:
 		mov	@(mdllay_x_last,r14),r0
 		add	r0,r1
 		add	#(1*2),r13
-		mov	#$100000,r8
+		mov	#$100000,r11
 		sts	pr,@-r15
 		bsr	.do_piece
 		mov	#3,r5
 		add	#LAY_WIDTH,r13
-		add	r8,r3
+		add	r11,r3
 		bsr	.do_piece
 		mov	#3,r5
 		add	#LAY_WIDTH,r13
-		add	r8,r3
+		add	r11,r3
 		bsr	.do_piece
 		mov	#3,r5
 		lds	@r15+,pr
@@ -1587,7 +1602,7 @@ drwtsk1_vld_y:
 .tex_next_line:
 		cmp/pz	r9				; Y Line below 0?
 		bf	.tex_skip_line
-		mov	#SCREEN_HEIGHT,r0		; Y Line after 224?
+		mov	.val_scrnhght,r0		; Y Line after 224?
 		cmp/ge	r0,r9
 		bt	.tex_gonxtpz
 		mov	r2,@-r15
@@ -1597,6 +1612,7 @@ drwtsk1_vld_y:
 		mov	r7,@-r15
 		mov	r8,@-r15
 		mov	r10,@-r15
+		mov	r13,@-r15
 		mov	r1,r11			; r11 - X left copy
 		mov	r3,r12			; r12 - X right copy
 		shlr16	r11
@@ -1673,8 +1689,15 @@ drwtsk1_vld_y:
 		mov 	#_overwrite+$200,r10		; Point to first usable line
 		add 	r0,r10				; Add Y
 		add 	r11,r10				; Add X
+		
+		mov	#$1FFF,r2
 		mov	@(plypz_mtrl,r14),r11		; r11 - texture data
-		mov	@(plypz_mtrlopt,r14),r4		;  r4 - texture width
+		mov	@(plypz_mtrlopt,r14),r4		;  r4 - texture palincr|width
+		mov	r4,r13
+		shlr16	r4
+		and	r2,r4
+		mov	#$FF,r2
+		and	r2,r13
 .tex_xloop:
 		mov	r7,r2
 		shlr16	r2
@@ -1684,6 +1707,7 @@ drwtsk1_vld_y:
 		shlr16	r2
 		add	r2,r0
 		mov.b	@(r0,r11),r0			; Read pixel
+		add	r13,r0
 		mov.b	r0,@r10	   			; Write pixel
 		add 	#1,r10
 		add	r6,r5				; Update X
@@ -1691,6 +1715,7 @@ drwtsk1_vld_y:
 		bf/s	.tex_xloop
 		add	r8,r7				; Update Y
 .tex_upd_line:
+		mov	@r15+,r13
 		mov	@r15+,r10
 		mov	@r15+,r8
 		mov	@r15+,r7
@@ -1715,6 +1740,9 @@ drwtsk1_vld_y:
 
 		bra	drwsld_nextpz
 		nop
+		align 4
+
+.val_scrnhght	dc.l	SCREEN_HEIGHT
 
 ; ------------------------------------
 ; Solid Color

@@ -52,10 +52,13 @@ object_name   = sys.argv[1]
 CONVERT_TEX=1
 
 INCR_Y=0
+INDXBASE=0
 if len(sys.argv) == 3:
-  #CONVERT_TEX = sys.argv[2]
-  INCR_Y = sys.argv[2]
-
+  INCR_Y = sys.argv[3]
+if len(sys.argv) == 4:
+  INCR_Y = sys.argv[3]
+  INDXBASE = sys.argv[2]
+  
 if not os.path.exists("mdl/"+object_name):
     os.makedirs("mdl/"+object_name)
 
@@ -301,7 +304,10 @@ while reading:
                       has_img = False
                       random_mode = False
 
-                  out_mtrl.write("\t dc.l "+str(TAG_TEXTUR)+str(mtlname)+","+str(img_width)+"\n")
+                  out_mtrl.write("\t dc.l "+str(TAG_TEXTUR)+str(mtlname)+"\n")
+                  out_mtrl.write("\t dc.w "+str(img_width)+"\n")
+                  out_mtrl.write("\t dc.w "+str(INDXBASE)+"\n")
+                  
                   mtrl_curr = mtrl_index
                   mtrl_index += 1
                   tex_file.close()

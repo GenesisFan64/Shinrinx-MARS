@@ -23,7 +23,7 @@ sizeof_mdglbl	ds.l 0
 ; Variables
 ; ------------------------------------------------------
 
-var_MoveSpd	equ	$1000
+var_MoveSpd	equ	$2000
 
 ; ====================================================================
 ; ------------------------------------------------------
@@ -93,8 +93,19 @@ MD_Main:
 		
 ; 		move.l	#CAMERA_ANIM,(RAM_MdCamera+cam_animdata)
 		move.l	#0,(RAM_MdCamera+cam_animdata)
-		move.w	#1,(RAM_MdMdlsUpd).l
 
+		lea	(RAM_MdCamera),a0
+		moveq	#0,d0
+		move.l	d0,cam_x_pos(a0)
+		move.l	d0,cam_y_pos(a0)
+		move.l	d0,cam_x_rot(a0)
+		move.l	d0,cam_y_rot(a0)
+		move.l	d0,cam_z_rot(a0)
+		move.l	d0,cam_z_pos(a0)
+.no_c:
+
+		move.w	#1,(RAM_MdMdlsUpd).l
+		
 ; ====================================================================
 ; ------------------------------------------------------
 ; Loop
