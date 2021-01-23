@@ -6,6 +6,6 @@
 ; ----------------------------------------------------------------
 
 		align 4
-		dc.b "MD ROM BANK 0"
-; CAMERA_ANIM:	binclude "data/mars/models/camera_anim.bin"
-; 		align 4
+; 		dc.b "MD ROM BANK 0"
+CAMERA_ANIM:	binclude "data/mars/objects/anim/camera_anim.bin"
+		align 4

@@ -28,7 +28,7 @@ if len(sys.argv) == 3:
   INCR_Y = sys.argv[2]
 
 model_file    = open("import/"+projectname+".chan","r")
-out_anim      = open(projectname+"_anim.bin","wb")
+out_anim      = open("anim/"+projectname+"_anim.bin","wb")
 vertex_list   = list()
 
 # ======================================================================
@@ -37,7 +37,7 @@ vertex_list   = list()
 # -------------------------------------------------
 
 got_frames=0
-scale=0x20000
+scale=0x10000
 reading=True
 out_anim.write(bytes(4))		# first 4 bytes reserved
 while reading:
@@ -48,12 +48,12 @@ while reading:
     break
 
   point = text.split("\t")
-  x_pos = int(float(point[1])*scale)
-  y_pos = int(float(point[2])*scale)*-1
-  z_pos = int(float(point[3])*scale)*-1
-  y_rot = int(float(point[4])*scale)*-1
-  x_rot = int(float(point[5])*scale)
-  z_rot = int(float(point[6])*scale)
+  x_pos = int(float(point[1])*(scale*2))
+  y_pos = int(float(point[2])*(scale*2))*-1
+  z_pos = int(float(point[3])*(scale*2))*-1
+  y_rot = int(float(point[4])*(scale/5.624995))*-1
+  x_rot = int(float(point[5])*(scale/5.624995))
+  z_rot = int(float(point[6])*(scale/5.624995))
   
   out_anim.write( bytes([x_pos>>24&0xFF,x_pos>>16&0xFF,x_pos>>8&0xFF,x_pos&0xFF,
 			 y_pos>>24&0xFF,y_pos>>16&0xFF,y_pos>>8&0xFF,y_pos&0xFF,

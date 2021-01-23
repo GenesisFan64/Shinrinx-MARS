@@ -2,9 +2,12 @@
 ; Palettes
 ; --------------------------------------------------------
 
-Palette_Puyo:	binclude "data/mars/objects/mtrl/marscity_pal.bin"
+Palette_Puyo:	binclude "data/mars/objects/mtrl/marscity_sdram_pal.bin"
 		align 4
-		
+Textr_marscity:
+		binclude "data/mars/objects/mtrl/marscity_sdram_art.bin"
+		align 4
+
 ; --------------------------------------------------------
 ; Objects
 ; 

@@ -15,12 +15,12 @@
 ; Settings
 ; ----------------------------------------
 
-MAX_FACES	equ	1024		; Maximum polygon faces (models,sprites) to store on buffer
+MAX_FACES	equ	256		; Maximum polygon faces (models,sprites) to store on buffer
 MAX_SVDP_PZ	equ	384		; This list loops on both read and write, increase the value if needed
-MAX_MODELS	equ	32
+MAX_MODELS	equ	32		; Note: First 9 models are used for drawing layouts
 MAX_ZDIST	equ	-$1E00		; Max drawing distance (-Z max)
 
-LAY_WIDTH	equ	$10*2
+LAY_WIDTH	equ	$10*2		; Layout data width * 2
 
 ; ----------------------------------------
 ; Variables

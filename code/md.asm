@@ -23,7 +23,7 @@ sizeof_mdglbl	ds.l 0
 ; Variables
 ; ------------------------------------------------------
 
-var_MoveSpd	equ	$2000
+var_MoveSpd	equ	$1000
 
 ; ====================================================================
 ; ------------------------------------------------------
@@ -91,8 +91,8 @@ MD_Main:
 		move.w	#1,d2
 		bsr	Video_LoadArt
 		
-; 		move.l	#CAMERA_ANIM,(RAM_MdCamera+cam_animdata)
-		move.l	#0,(RAM_MdCamera+cam_animdata)
+		move.l	#CAMERA_ANIM,(RAM_MdCamera+cam_animdata)
+; 		move.l	#0,(RAM_MdCamera+cam_animdata)
 
 		lea	(RAM_MdCamera),a0
 		moveq	#0,d0

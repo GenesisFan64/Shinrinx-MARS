@@ -4,7 +4,7 @@
 # STABLE
 # 
 # Usage:
-# objtomars.py objname yadd
+# objtomars.py objname yadd indxstart
 # 
 # Material TAGS:
 # MARSNULL      - Pick random color from index palette
@@ -54,10 +54,10 @@ CONVERT_TEX=1
 INCR_Y=0
 INDXBASE=0
 if len(sys.argv) == 3:
-  INCR_Y = sys.argv[3]
+  INCR_Y = sys.argv[2]
 if len(sys.argv) == 4:
-  INCR_Y = sys.argv[3]
-  INDXBASE = sys.argv[2]
+  INCR_Y = sys.argv[2]
+  INDXBASE = sys.argv[3]
   
 if not os.path.exists("mdl/"+object_name):
     os.makedirs("mdl/"+object_name)
