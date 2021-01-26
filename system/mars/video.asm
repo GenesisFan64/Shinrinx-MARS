@@ -1161,7 +1161,7 @@ mdlrd_setpoint:
 		shar	r5
 		shar	r5
 		shar	r5
-; 		shar	r5		
+		shar	r5		
 		mov	r4,r0
 		add 	#64,r0
 		shll16	r0

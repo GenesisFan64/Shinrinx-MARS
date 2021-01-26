@@ -15,34 +15,25 @@
 ; --------------------------------------------------------
 
 System_Init:
-		move.w	#$2700,sr
+		move.w	#$2700,sr		; Disable interrupts
 		move.w	#$0100,(z80_bus).l	; Stop Z80
 .wait:
 		btst	#0,(z80_bus).l		; Wait for it
 		bne.s	.wait
 		moveq	#%01000000,d0		; Init ports, TH=1
-		move.b	d0,(sys_ctrl_1).l	
-		move.b	d0,(sys_ctrl_2).l
-		move.b	d0,(sys_ctrl_3).l
-		move.w	#0,(z80_bus).l
-		lea	(RAM_InputData),a0
+		move.b	d0,(sys_ctrl_1).l	; Controller 1
+		move.b	d0,(sys_ctrl_2).l	; Controller 2
+		move.b	d0,(sys_ctrl_3).l	; Modem
+		move.w	#0,(z80_bus).l		; Enable Z80
+		lea	(RAM_InputData),a0	; Clear input data buffer
 		move.w	#sizeof_input-1/2,d1
 		moveq	#0,d0
 .clrinput:
 		move.w	#0,(a0)+
 		dbf	d1,.clrinput
-		
-; 		lea	(RAM_MdSystem),a0
-; 		move.w	#(sizeof_mdsys/4)-1,d1
-; 		moveq	#0,d0
-; .clrinput:
-; 		move.w	d0,(a0)+
-; 		dbf	d1,.clrinput
-		move.w	#$4EF9,d0		; JMP opcode
- 		move.w	d0,(RAM_VBlankGoTo).l
-		move.w	d0,(RAM_HBlankGoTo).l
-		move.w	#$2000,sr
-		
+		move.w	#$4EF9,d0		; Set JMP opcode for the Hblank/VBlank jumps
+ 		move.w	d0,(RAM_MdMarsVInt).l
+		move.w	d0,(RAM_MdMarsHInt).l
 		move.l	#$56255769,d0
 		move.l	#$95116102,d1
 		move.l	d0,(RAM_SysRandVal).l
@@ -50,7 +41,9 @@ System_Init:
 		move.l	#VInt_Default,d0	; Set default ints
 		move.l	#Hint_Default,d1
 		bsr	System_SetInts
-		bra	System_SaveInit
+		move.w	#$2000,sr		; Enable interrupts
+		rts
+; 		bra	System_SaveInit
 		
 ; ====================================================================
 ; ----------------------------------------------------------------
@@ -97,13 +90,13 @@ System_SetInts:
 		beq.s	.novint
 		bmi.s	.novint
 		or.l	#$880000,d4
- 		move.l	d4,(RAM_VBlankGoTo+2).l
+ 		move.l	d4,(RAM_MdMarsVInt+2).l
 .novint:
 		move.l	d1,d4
 		beq.s	.nohint
 		bmi.s	.nohint
 		or.l	#$880000,d4
-		move.l	d4,(RAM_HBlankGoTo+2).l
+		move.l	d4,(RAM_MdMarsHInt+2).l
 .nohint:
 		rts
 
@@ -134,12 +127,14 @@ System_VSync:
 ; d4-d6,a4-a5
 ; --------------------------------------------------------
 
+; TODO: check if it still required to turn OFF the Z80
+; while reading input... It works fine on hardware though.
+
 System_Input:
 ; 		move.w	#$0100,(z80_bus).l	; Stop Z80
-; .wait:
+.wait:
 ; 		btst	#0,(z80_bus).l		; Wait for it
 ; 		bne.s	.wait
-		
 		lea	($A10003),a4
 		lea	(RAM_InputData),a5
 		bsr.s	.this_one
@@ -147,22 +142,17 @@ System_Input:
 		adda	#sizeof_input,a5
 ; 		bsr.s	.this_one
 ; 		move.w	#0,(z80_bus).l
-
-
-	; MARS only
-; 		lea	(sysmars_reg).l,a5
-; 		move.w	(Controller_1+on_hold),d4
-; 		move.w	(Controller_2+on_hold),d5
-; 		move.w	d4,comm12(a5)
-; 		move.w	d5,comm14(a5)
 ; 		rts
 
 ; --------------------------------------------------------	
-; do port
+; Read port
+; 
+; a4 - Current port
+; a5 - Output data
 ; --------------------------------------------------------
 
 .this_one:
-		bsr	.find_id
+		bsr	.pick_id
 		move.b	d4,pad_id(a5)
 		cmp.w	#$F,d4
 		beq.s	.exit
@@ -263,7 +253,7 @@ System_Input:
 ; Grab ID
 ; --------------------------------------------------------
 
-.find_id:
+.pick_id:
 		moveq	#0,d4
 		move.b	#%01110000,(a4)		; TH=1,TR=1,TL=1
 		nop
@@ -299,8 +289,8 @@ System_Input:
 ; 		add.w	d0,a6		; Add result to port
 ; 		bsr.s	.srch_pad
 ; 		move.b	d0,(a5)
-		move.w	#0,(z80_bus).l
-		rts
+; 		move.w	#0,(z80_bus).l
+; 		rts
 		
 ; --------------------------------------------------------
 ; System_SaveInit
@@ -311,8 +301,8 @@ System_Input:
 ; a4,d4-d5
 ; --------------------------------------------------------
 
+; TODO: Check if RV bit is required here...
 System_SaveInit:
-	if MCD=0
 		move.b	#1,(md_bank_sram).l
 		lea	($200001).l,a4
 		moveq	#0,d4
@@ -322,7 +312,6 @@ System_SaveInit:
 		adda	#2,a4
 		dbf	d5,.initsave
 		move.b	#0,(md_bank_sram).l
-	endif
 		rts
 
 ; ====================================================================
@@ -330,6 +319,7 @@ System_SaveInit:
 ; Game modes
 ; ----------------------------------------------------------------
 
+; Initialize current screen mode
 Mode_Init:
 		bsr	Video_Clear
 		lea	(RAM_ModeBuff),a4
@@ -368,53 +358,53 @@ HInt_Default:
 ; MARS ONLY
 ; ----------------------------------------------------------------
 		
-; --------------------------------------------------------
-; MdMars_SendData
+; ; --------------------------------------------------------
+; ; MdMars_SendData
+; ; 
+; ; Transfer data from 68k to SH2 using DREQ
+; ;
+; ; Input:
+; ; a0 - Input data
+; ; d0 | LONG - Output address (SH2 map)
+; ; d1 | WORD - Size
+; ;
+; ; Uses:
+; ; d4-d5,a4-a6
+; ; --------------------------------------------------------
 ; 
-; Transfer data from 68k to SH2 using DREQ
-;
-; Input:
-; a0 - Input data
-; d0 | LONG - Output address (SH2 map)
-; d1 | WORD - Size
-;
-; Uses:
-; d4-d5,a4-a6
-; --------------------------------------------------------
-
-; NOTE: broken
-
-MdMars_SendData:
-		lea	(sysmars_reg),a6
-		move.w	#0,dreqctl(a6)
-		move.w	d1,d4
-		lsr.w	#1,d4
-		move.w	d4,dreqlen(a6)
-		move.w	#%100,dreqctl(a6)
-		move.l	d0,d4
-		move.w	d4,dreqdest+2(a6)
-		swap	d4
-		move.w	d4,dreqdest(a6)
-
-		move.w	2(a6),d4		; CMD Interrupt
-		bset	#0,d4
-		move.w	d4,2(a6)
-		movea.l	a0,a4
-		lea	dreqfifo(a6),a5
-		move.w	d1,d5
-		lsr.w	#3,d5
-		sub.w	#1,d5
-.sendfifo:
-		move.w	(a4)+,(a5)
-		move.w	(a4)+,(a5)
-		move.w	(a4)+,(a5)
-		move.w	(a4)+,(a5)
-.full:
-		move.w	dreqctl(a6),d4
-		btst	#7,d4
-		bne.s	.full
-		dbra	d5,.sendfifo
-		rts
+; ; OLD AND BROKEN
+; 
+; MdMars_SendData:
+; 		lea	(sysmars_reg),a6
+; 		move.w	#0,dreqctl(a6)
+; 		move.w	d1,d4
+; 		lsr.w	#1,d4
+; 		move.w	d4,dreqlen(a6)
+; 		move.w	#%100,dreqctl(a6)
+; 		move.l	d0,d4
+; 		move.w	d4,dreqdest+2(a6)
+; 		swap	d4
+; 		move.w	d4,dreqdest(a6)
+; 
+; 		move.w	2(a6),d4		; CMD Interrupt
+; 		bset	#0,d4
+; 		move.w	d4,2(a6)
+; 		movea.l	a0,a4
+; 		lea	dreqfifo(a6),a5
+; 		move.w	d1,d5
+; 		lsr.w	#3,d5
+; 		sub.w	#1,d5
+; .sendfifo:
+; 		move.w	(a4)+,(a5)
+; 		move.w	(a4)+,(a5)
+; 		move.w	(a4)+,(a5)
+; 		move.w	(a4)+,(a5)
+; .full:
+; 		move.w	dreqctl(a6),d4
+; 		btst	#7,d4
+; 		bne.s	.full
+; 		dbra	d5,.sendfifo
+; 		rts
 
 ; --------------------------------------------------------
 		
@@ -422,3 +412,5 @@ MdMars_SendData:
 ; ----------------------------------------------------------------
 ; System data
 ; ----------------------------------------------------------------
+
+; Stuff like Sine data for MD will go here.

@@ -10,18 +10,15 @@ Features:
 - Model faces can use both triangles and quads
 - Materials are both solid color and textures in any size but limited to SVDP mode 1 (255 colors + transparent color)
 - Partial animation, it works but it's not perfect, Python script uses .chan animation files for animation
+- Layout support, to make big maps using separate model files
 
 Current issues:
 - Perspective is not perfect. It works well with solid colors but not for textures, Darxide and even the Zyrinx tech demo has problems with Perspective.
 - Texture points in triangles might not map correctly (not sure if it a bug in the script or a limitation of DDA)
 
-Planned:
-- Map-Layout support, to make a big map using separate model pieces
-
-
 Please note that current 32X emulators ignore critical parts of the system, these include:
-- FM bit: This bit tells which system side (Genesis or 32X) can read/write to the Super VDP (The framebuffer and 256-color palette), if a CPU with NO permission touches the Super VDP, it will freeze the entire system (32X or Genesis)
 - RV bit: This bit reverts the ROM map back to normal temporally, meant as a workaround for the DMA's ROM-to-VDP transfers, if you do any transfer without setting this bit, the DMA will transfer trash data (Also, your DMA transfer routines MUST be located on RAM), SH2 side: If the bit is set and tries to read from ROM, it will read trash data or freeze the CPU
+- FM bit: This bit tells which system side (Genesis or 32X) can read/write to the Super VDP (The framebuffer and 256-color palette), if a CPU with NO permission touches the Super VDP, it will freeze the entire system (32X or Genesis)
 - BUS fighting (SH2 side): If any of the CPU read the same adresss, you will get bad results, mostly a freeze.
 
 So if possible, please test this on real hardware. a prebuilt binary is located in the /out folder (rom_mars.bin) for testing, NTSC speed.

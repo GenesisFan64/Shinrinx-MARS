@@ -33,9 +33,9 @@
 		dc.l MD_ErrorTrap
 		dc.l MD_ErrorTrap
 		dc.l MD_ErrorTrap
-		dc.l RAM_HBlankGoTo		; RAM jump for HBlank (JMP xxxx xxxx)
+		dc.l RAM_MdMarsHInt		; RAM jump for HBlank (JMP xxxx xxxx)
 		dc.l MD_ErrorTrap
-		dc.l RAM_VBlankGoTo		; RAM jump for VBlank (JMP xxxx xxxx)
+		dc.l RAM_MdMarsVInt		; RAM jump for VBlank (JMP xxxx xxxx)
 		dc.l MD_ErrorTrap
 		dc.l MD_ErrorTrap
 		dc.l MD_ErrorTrap
@@ -121,9 +121,9 @@
 		jmp	($880000|MD_ErrorTrap).l
 		jmp	($880000|MD_ErrorTrap).l
 		jmp	($880000|MD_ErrorTrap).l
-		jmp	(RAM_HBlankGoTo).l			; RAM jump for HBlank (JMP xxxx xxxx)
+		jmp	(RAM_MdMarsHInt).l			; RAM jump for HBlank (JMP xxxx xxxx)
 		jmp	($880000|MD_ErrorTrap).l
-		jmp	(RAM_VBlankGoTo).l			; RAM jump for VBlank (JMP xxxx xxxx)
+		jmp	(RAM_MdMarsVInt).l			; RAM jump for VBlank (JMP xxxx xxxx)
 		jmp	($880000|MD_ErrorTrap).l
 		jmp	($880000|MD_ErrorTrap).l
 		jmp	($880000|MD_ErrorTrap).l
@@ -174,22 +174,42 @@
 
 ; ====================================================================
 ; ----------------------------------------------------------------
-; Entry point
+; Entry point, this must be located at $3F0
 ; 
-; must be at $3F0
+; Boot sequence returns this bit results
+; to the following registers:
+; 
+; d0: %h0000000 rsc000ti
+; 	h - Cold start / Hot Start
+; 	r - SDRAM Self Check pass or error
+; 	s - Security check pass or error
+; 	c - Checksum pass or error
+; 	t - TV mode pass or error
+; 	i - MARS ID pass or error
+; 
+; d1: %m0000000 jdk0vvv
+; 	m - MARS TV mode
+; 	j - Country: Japan / Overseas
+; 	d - MD TV mode
+; 	k - DISK connected: Yes / No
+; 	v - Version
+; 
+; Carry flag: "MARS ID" and Self Check report
+; 	cc: Test Passed
+; 	cs: Test failed
 ; ----------------------------------------------------------------
 
 MARS_Entry:
-		bcs	.no_mars		; if carry set, 32X is not present
-		move.l	#0,(RAM_initflug).l
-		btst	#15,d0
+		bcs	.no_mars		; if Carry set, 32X is not present
+		move.l	#0,(RAM_initflug).l	; Reset "INIT"
+		btst	#15,d0			; Soft reset?	
 		beq.s	.init
-		lea	(sysmars_reg).l,a5
-		btst.b	#0,adapter(a5)		; Adapter enable
-		bne	.adapterenable
-		move.l	#0,comm8(a5)
-		lea	.ramcode(pc),a0		; copy from ROM to WRAM
-		lea	($FF0000).l,a1
+		lea	(sysmars_reg).l,a5	; a5 - MARS register
+		btst.b	#0,adapter(a5)		; 32X enabled?
+		bne	.adapterenable		; If yes, start booting
+		move.l	#0,comm8(a5)		; If not: Tell every CPU we can't use 32X
+		lea	.ramcode(pc),a0		; Copy the adapter-retry code to RAM
+		lea	($FF0000).l,a1		; and jump there.
 		move.l	(a0)+,(a1)+
 		move.l	(a0)+,(a1)+
 		move.l	(a0)+,(a1)+
@@ -199,22 +219,22 @@ MARS_Entry:
 		move.l	(a0)+,(a1)+
 		move.l	(a0)+,(a1)+
 		lea	($FF0000).l,a0
-		jmp	(a0)			; jump workram
+		jmp	(a0)
 .ramcode:
-		move.b	#1,adapter(a5)		; MARS mode
-		lea	.restarticd(pc),a0
-		adda.l	#$880000,a0
+		move.b	#1,adapter(a5)		; Adapter enabled.
+		lea	.restarticd(pc),a0	; JUMP to the following code in
+		adda.l	#$880000,a0		; the new 68k location
 		jmp	(a0)
 .restarticd:
-		lea	($A10000).l,a5
-		move.l	#-64,a4
-		move.w	#3900,d7
-		lea	($880000+$6E4),a1
+		lea	($A10000).l,a5		; a5 - I/O area
+		move.l	#-64,a4			; a4 - $FFFFFF9C
+		move.w	#3900,d7		; d7 - loop this many times
+		lea	($880000+$6E4),a1	; Jump to ?res_wait (check ICD_MARS.PRG)
 		jmp	(a1)
 .adapterenable:
 		lea	(sysmars_reg),a5
-		btst.b	#1,adapter(a5)		; SH2 Reset
-		bne.s	.hotstart
+		btst.b	#1,adapter(a5)		; SH2 Reset request?
+		bne.s	.hotstart		; If not, we are on hotstart
 		bra.s	.restarticd
 
 ; ------------------------------------------------
@@ -222,61 +242,56 @@ MARS_Entry:
 ; ------------------------------------------------
 
 .init:
-		move.w	#$2700,sr
+		move.w	#$2700,sr			; Disable interrupts
 		lea	(sysmars_reg).l,a5
-		move.l	#"68UP",comm12(a5)			; Report to both SH2 we are done here
-.wm:		cmp.l	#"M_OK",comm0(a5)			; SH2 Master OK ?
+		move.l	#"68UP",comm12(a5)		; Report to everycpu we are active.
+.wm:		cmp.l	#"M_OK",comm0(a5)		; SH2 Master OK ?
 		bne.s	.wm
-.ws:		cmp.l	#"S_OK",comm4(a5)			; SH2 Slave OK ?
+.ws:		cmp.l	#"S_OK",comm4(a5)		; SH2 Slave OK ?
 		bne.s	.ws
-		moveq	#0,d0					; Reset comm values
+		moveq	#0,d0				; Reset comm values
 		move.l	d0,comm0(a5)
 		move.l	d0,comm4(a5)
 		move.l	d0,comm12(a5)
-		move.l	#"INIT",(RAM_initflug).l		; Set "INIT" as our boot flag
+		move.l	#"INIT",(RAM_initflug).l	; Set "INIT" as our boot flag
 .hotstart:
-		cmp.l	#"INIT",(RAM_initflug).l		; Did it write?
-		bne.s	.init					; Restart everything and try again.
-		bsr	MD_Init					; Minimal initialization
-		lea	Engine_Code(pc),a0			; Copy ALL our 68k code to RAM,
-		lea	($FF0000),a1				; we can use $880000 but there will be BUS fighting
-		move.w	#Engine_Code_end-Engine_Code/2,d0	; on every instruction (according to 32X.FAQ)
-.copyme:
-		move.w	(a0)+,(a1)+
-		dbf	d0,.copyme
-		jmp	(MD_Main).l				; $FF0000 + MD_Main
-
-; ====================================================================
-; ----------------------------------------------------------------
-; If 32X is not detected
-; ----------------------------------------------------------------
-
-.no_mars:
-		move.w	#$2700,sr				; Disable interrupts
-		move.l	#$C0000000,(vdp_ctrl).l			; Blue screen
-		move.w	#$0E00,(vdp_data).l
-		bra.s	*
+		cmp.l	#"INIT",(RAM_initflug).l	; Did it write?
+		bne.s	.init				; Restart everything and try again.
 		
-; ====================================================================
-; ----------------------------------------------------------------
-; Init MD
-; ----------------------------------------------------------------
-
-MD_Init:
-		moveq	#0,d0
+	; Initialize Genesis
+		moveq	#0,d0				; Clear USP
 		movea.l	d0,a6
 		move.l	a6,usp
-.waitframe:	move.w	(vdp_ctrl).l,d0		; Wait 1 frame
+.waitframe:	move.w	(vdp_ctrl).l,d0			; Wait a frame
 		btst	#bitVint,d0
 		beq.s	.waitframe
-		move.l	#$80048144,(vdp_ctrl).l	; Keep display
-		lea	($FFFF0000),a0		; Clean all RAM before $FFF000
+		move.l	#$80048144,(vdp_ctrl).l		; Keep display
+		lea	($FFFF0000),a0			; Clear all RAM until $FF00
 		move.w	#($F000/4)-1,d0
 .clrram:
 		clr.l	(a0)+
 		dbf	d0,.clrram
-		movem.l	($FF0000),d0-a6		; Clear registers (using 10 LONG zeros from already clean RAM)
-		rts
+		movem.l	($FF0000),d0-a6			; Clear registers (using zeros from RAM)
+		lea	Engine_Code(pc),a0		; Copy ALL our 68k code to RAM
+		lea	($FF0000),a1			; to prevent BUS-fighthing the ROM
+		move.w	#Engine_Code_end-Engine_Code/2,d0
+.copyme:
+		move.w	(a0)+,(a1)+
+		dbf	d0,.copyme
+		jmp	(MD_Main).l			; MD_Main located in ram
+
+; ====================================================================
+; ----------------------------------------------------------------
+; If 32X is not detected... 
+; 
+; This only works in emulators, though.
+; ----------------------------------------------------------------
+
+.no_mars:
+		move.w	#$2700,sr			; Disable interrupts
+		move.l	#$C0000000,(vdp_ctrl).l		; VDP: Point to Color 0
+		move.w	#$0E00,(vdp_data).l		; Write blue
+		bra.s	*				; Infinite loop.
 
 ; ====================================================================
 ; ----------------------------------------------------------------

@@ -3,8 +3,8 @@
 ; Shared RAM and constants
 ; ----------------------------------------------------------------
 
-MDRAM_START	equ $FFFF8800		; Start of working RAM (below it can be CODE or decompressed data)
-MAX_MDERAM	equ $800		; MAX RAM for Screen Modes
+MDRAM_START	equ $FFFF8800		; Start of working RAM (below it, is free for CODE or decompression output)
+MAX_MDERAM	equ $800		; MAX RAM for current screen mode (title,menu,or gameplay...)
 
 ; ====================================================================
 ; ----------------------------------------------------------------
@@ -43,6 +43,7 @@ bitV30		equ 3
 ; Contoller reading (call System_Input first)
 ; --------------------------------------------------------
 
+; call System_Input first:
 Controller_1	equ RAM_InputData
 Controller_2	equ RAM_InputData+sizeof_input
 
@@ -81,8 +82,6 @@ bitJoyMode	equ 3
 ; Others
 ; --------------------------------------------------------
 
-RAM_VBlankGoTo	equ RAM_MdMarsVInt
-RAM_HBlankGoTo	equ RAM_MdMarsHInt
 varNullVram	equ $7FF		; Used in some Video routines
 
 ; ====================================================================
@@ -90,12 +89,12 @@ varNullVram	equ $7FF		; Used in some Video routines
 ; Structures
 ; ----------------------------------------------------------------
 
-; Controller
+; Controller buffer data (after calling System_Input)
 		struct 0
-pad_id		ds.b 1
-pad_ver		ds.b 1
-on_hold		ds.w 1
-on_press	ds.w 1
+pad_id		ds.b 1			; Controller ID
+pad_ver		ds.b 1			; Controller type/revision: 0-3button 1-6button
+on_hold		ds.w 1			; User HOLD bits
+on_press	ds.w 1			; User PRESSED bits
 sizeof_input	ds.l 0
 		finish
 
@@ -106,30 +105,33 @@ sizeof_input	ds.l 0
 
 		struct RAM_MdSystem
 RAM_InputData	ds.b sizeof_input*4
-RAM_SaveData	ds.b $200			; Save data cache (if using SRAM)
-RAM_FrameCount	ds.l 1
-RAM_SysRandVal	ds.l 1
-RAM_SysRandSeed	ds.l 1
-RAM_initflug	ds.l 1				; "INIT"
-RAM_GameMode	ds.w 1				; Master game mode
-RAM_SysFlags	ds.w 1				; (it's a byte)
-RAM_MdMarsVInt	ds.w 3				; VBlank jump (JMP xxxx xxxx)
-RAM_MdMarsHint	ds.w 3				; HBlank jump (JMP xxxx xxxx)
+RAM_SaveData	ds.b $200		; Save data cache (if using SRAM)
+RAM_FrameCount	ds.l 1			; Framecount
+RAM_SysRandVal	ds.l 1			; Random value
+RAM_SysRandSeed	ds.l 1			; Randomness seed
+RAM_initflug	ds.l 1			; "INIT" flag
+RAM_SysFlags	ds.w 1			; Game engine flags (note: it's a byte)
+RAM_MdMarsVInt	ds.w 3			; VBlank jump (JMP xxxx xxxx)
+RAM_MdMarsHint	ds.w 3			; HBlank jump (JMP xxxx xxxx)
 sizeof_mdsys	ds.l 0
 		finish
 
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; Sound 68k RAM
+; 
+; This needs to be rewritten...
 ; ----------------------------------------------------------------
 
 	; 68k side
+	; Nothing here yet...
 		struct RAM_MdSound
-RAM_SoundNull	ds.l 1				; (Unused)
+RAM_SoundNull	ds.l 1				; filler
 sizeof_mdsnd	ds.l 0
 		finish
 		
 	; Z80 side
+	; TODO: remove this later
 		struct $800
 sndWavStart	ds.b 2			; Start address (inside or outside z80)
 sndWavStartB	ds.b 1			; Start ROM bank * 8000h 
@@ -148,9 +150,9 @@ sndWavReq	ds.b 1			; request byte
 ; ----------------------------------------------------------------
 
 		struct RAM_MdVideo
-RAM_VidPrntVram	ds.w 1
-RAM_VidPrntList	ds.w 3*64		; Print Value list: Address, Type
-RAM_VdpRegs	ds.b 24			; Register cache
+RAM_VidPrntVram	ds.w 1		; Default VRAM location for ASCII text used by Video_Print
+RAM_VidPrntList	ds.w 3*64	; Video_Print list: Address, Type
+RAM_VdpRegs	ds.b 24		; VDP Register cache
 sizeof_mdvid	ds.l 0
 		finish
 
@@ -163,7 +165,7 @@ sizeof_mdvid	ds.l 0
 ; ----------------------------------------------------------------
 
 		struct MDRAM_START
-	if MOMPASS=1					; First pass, empty sizes
+	if MOMPASS=1				; First pass: empty sizes
 RAM_ModeBuff	ds.l 0
 RAM_MdSystem	ds.l 0
 RAM_MdSound	ds.l 0
@@ -172,11 +174,11 @@ RAM_ExRamSub	ds.l 0
 RAM_MdGlobal	ds.l 0
 sizeof_mdram	ds.l 0
 	else
-RAM_ModeBuff	ds.b MAX_MDERAM				; Second pass, sizes are set
+RAM_ModeBuff	ds.b MAX_MDERAM			; Second pass: sizes are set
 RAM_MdSystem	ds.b sizeof_mdsys-RAM_MdSystem
 RAM_MdSound	ds.b sizeof_mdsnd-RAM_MdSound
 RAM_MdVideo	ds.b sizeof_mdvid-RAM_MdVideo
-RAM_ExRamSub	ds.w $300				; (MANUAL SIZE) routines for doing ROM-to-VDP DMA tasks
+RAM_ExRamSub	ds.w $300			; (MANUAL SIZE) DMA routines that set RV=1
 RAM_MdGlobal	ds.b sizeof_mdglbl-RAM_MdGlobal
 sizeof_mdram	ds.l 0
 	endif
@@ -193,43 +195,43 @@ sizeof_mdram	ds.l 0
 
 ; model objects
 		struct 0
-; mdl_animdata	ds.l 1
-; mdl_animframe	ds.l 1
-; mdl_animtimer	ds.l 1
-; mdl_animspd	ds.l 1
-mdl_data	ds.l 1
-mdl_x_pos	ds.l 1
-mdl_y_pos	ds.l 1
-mdl_z_pos	ds.l 1
-mdl_x_rot	ds.l 1
-mdl_y_rot	ds.l 1
-mdl_z_rot	ds.l 1
+; mdl_animdata	ds.l 1			; Model animation data pointer, zero: no animation
+; mdl_animframe	ds.l 1			; Current frame in animation
+; mdl_animtimer	ds.l 1			; Animation timer
+; mdl_animspd	ds.l 1			; Animation speed
+mdl_data	ds.l 1			; Model data pointer, zero: model disabled
+mdl_x_pos	ds.l 1			; X position $000000.00
+mdl_y_pos	ds.l 1			; Y position $000000.00
+mdl_z_pos	ds.l 1			; Z position $000000.00
+mdl_x_rot	ds.l 1			; X rotation $000000.00
+mdl_y_rot	ds.l 1			; Y rotation $000000.00
+mdl_z_rot	ds.l 1			; Z rotation $000000.00
 sizeof_mdlobj	ds.l 0
 		finish
 		
 ; field view camera
 		struct 0
-cam_animdata	ds.l 1
-cam_animframe	ds.l 1
-cam_animtimer	ds.l 1
-cam_animspd	ds.l 1
-cam_x_pos	ds.l 1
-cam_y_pos	ds.l 1
-cam_z_pos	ds.l 1
-cam_x_rot	ds.l 1
-cam_y_rot	ds.l 1
-cam_z_rot	ds.l 1
+cam_animdata	ds.l 1			; Model animation data pointer, zero: no animation
+cam_animframe	ds.l 1			; Current frame in animation
+cam_animtimer	ds.l 1			; Animation timer
+cam_animspd	ds.l 1			; Animation speed
+cam_x_pos	ds.l 1			; X position $000000.00
+cam_y_pos	ds.l 1			; Y position $000000.00
+cam_z_pos	ds.l 1			; Z position $000000.00
+cam_x_rot	ds.l 1			; X rotation $000000.00
+cam_y_rot	ds.l 1			; Y rotation $000000.00
+cam_z_rot	ds.l 1			; Z rotation $000000.00
 sizeof_camera	ds.l 0
 		finish
 		
 		struct 0
-mdllay_data	ds.l 1
-mdllay_x	ds.l 1
-mdllay_y	ds.l 1
-mdllay_z	ds.l 1
-mdllay_x_last	ds.l 1
-mdllay_y_last	ds.l 1
-mdllay_z_last	ds.l 1
-mdllay_xr_last	ds.l 1
+mdllay_data	ds.l 1			; Model layout data, zero: Don't use layout
+mdllay_x	ds.l 1			; X position
+mdllay_y	ds.l 1			; Y position
+mdllay_z	ds.l 1			; Z position
+mdllay_x_last	ds.l 1			; LAST saved X position
+mdllay_y_last	ds.l 1			; LAST saved Y position
+mdllay_z_last	ds.l 1			; LAST saved Z position
+mdllay_xr_last	ds.l 1			; LAST saved X rotation
 sizeof_layout	ds.l 0
 		finish

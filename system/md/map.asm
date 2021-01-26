@@ -1,9 +1,9 @@
 ; ====================================================================
 ; ----------------------------------------------------------------
-; Genesis / Mega drive 68k map
+; Genesis / MegaDrive 68k map
 ; ----------------------------------------------------------------
 
-sys_exram	equ	$200000		; External RAM
+sys_exram	equ	$200000		; External RAM (Ex. Save data)
 z80_cpu		equ	$A00000		; Z80 CPU, size: $2000
 ym_ctrl_1	equ	$A04000		; YM2612 reg 1
 ym_data_1	equ	$A04001		; YM2612 reg 2
@@ -33,31 +33,14 @@ zym_ctrl_1	equ	$4000		; YM2612 reg 1
 zym_data_1	equ	$4001		; YM2612 reg 2
 zym_ctrl_2	equ	$4002		; YM2612 reg 1
 zym_data_2	equ	$4003		; YM2612 reg 2
-zbank		equ	$6000		; ROM BANK 24bits %XXXXXXXX X0000000 00000000
+zbank		equ	$6000		; Z80 ROM BANK 24bits %XXXXXXXX X0000000 00000000
 zvdp_data	equ	$7F00		; video data port
 zvdp_ctrl	equ	$7F04		; video control port
 zpsg_ctrl	equ	$7F11		; PSG control
 
 ; ----------------------------------------------------------------
-; If a SEGA CD is attached
+; 32X registers
 ; ----------------------------------------------------------------
 
-syscd_prgram	equ	$020000		; SubCPU PRG-RAM, up to $1FFFF, banked
-syscd_wordram	equ	$200000		; WORD-RAM seen in MAIN-CPU
-syscd_bus	equ	$A12000		; WORD | Sub-CPU BUS/RESET
-syscd_memory	equ	$A12003		; BYTE | Sub-CPU memory mode
-syscd_cdcmode	equ	$A12004		; WORD | CDC Mode
-syscd_hint	equ	$A12006		; WORD | VDP HBlank jump ($FFxxxx)
-syscd_cdchost	equ	$A12008		; WORD | CDC Host
-syscd_stopwtch	equ	$A12008		; WORD | Stopwatch
-syscd_comm_m	equ	$A1200E		; BYTE | MainCPU R/W comm byte
-syscd_comm_s	equ	$A1200F		; BYTE | Sub-CPU Read comm byte
-syscd_args_m	equ	$A12010		; DATA | comm R/W list, max size: $E
-syscd_args_s	equ	$A12020		; DATA | comm Read list, max size: $E
-
-; ----------------------------------------------------------------
-; If a 32X is attached
-; ----------------------------------------------------------------
-
-sysmars_ID	equ	$A130EC		; MARS ID "MARS"
-sysmars_reg	equ	$A15100		; MARS 32X buffer (check for mars_ID first)
+sysmars_ID	equ	$A130EC		; MARS ID "MARS" string
+sysmars_reg	equ	$A15100		; MARS 32X section (check for mars_ID first)

@@ -26,14 +26,13 @@ marsGbl_PlyPzList_W	ds.l 1		; Current graphic piece to write
 marsGbl_CurrZList	ds.l 1		; Current Zsort entry
 marsGbl_CurrFacePos	ds.l 1		; Current top face of the list while reading model data
 marsGbl_MdlFacesCntr	ds.w 1		; And the number of faces stored on that list
-marsGbl_PolyBuffNum	ds.w 1		; Buffer switcher: READ/WRITE or WRITE/READ
+marsGbl_PolyBuffNum	ds.w 1		; PolygonBuffer switch: READ/WRITE or WRITE/READ
 marsGbl_PzListCntr	ds.w 1		; Number of graphic pieces to draw
-marsGbl_DrwTask		ds.w 1		; Drawing task for Watchdog
-marsGbl_VIntFlag_M	ds.w 1		; Reset if VBlank finished on Master CPU
-marsGbl_VIntFlag_S	ds.w 1		; The same but for Slave CPU
-marsGbl_DivReq_M	ds.w 1		; Tell Watchdog we are in the middle of division (skips task)
-marsGbl_SlvDrawReq	ds.w 1		; Flag to draw models at the request from MD
-marsGbl_CurrFb		ds.w 1
+marsGbl_DrwTask		ds.w 1		; Current Drawing task for Watchdog
+marsGbl_VIntFlag_M	ds.w 1		; Sets to 0 if VBlank finished on Master CPU
+marsGbl_VIntFlag_S	ds.w 1		; Same thing but for the Slave CPU
+marsGbl_DivReq_M	ds.w 1		; Flag to tell Watchdog we are in the middle of division (prevent conflict)
+marsGbl_CurrFb		ds.w 1		; Current framebuffer number
 sizeof_MarsGbl		ds.l 0
 			finish
 			
@@ -137,7 +136,7 @@ m_irq_v:
 ; Update Indexed-palette
 ; ----------------------------------
 		mov 	#_vdpreg,r1
-.min_r		mov.w	@(10,r1),r0		; Wait for FEN to clear
+.min_r		mov.w	@(10,r1),r0			; Wait for FEN to clear
 		and	#%10,r0
 		cmp/eq	#2,r0
 		bt	.min_r
@@ -184,7 +183,7 @@ m_irq_v:
 		
 ; =================================================================
 ; ------------------------------------------------
-; Master | VRES Interrupt (If user pressed RESET)
+; Master | VRES Interrupt (Pressed RESET on Genesis)
 ; ------------------------------------------------
 
 m_irq_vres:
@@ -351,7 +350,7 @@ s_irq_v:
 
 ; =================================================================
 ; ------------------------------------------------
-; Slave | VRES Interrupt (If user pressed RESET)
+; Slave | VRES Interrupt (Pressed RESET on Genesis)
 ; ------------------------------------------------
 
 s_irq_vres:
