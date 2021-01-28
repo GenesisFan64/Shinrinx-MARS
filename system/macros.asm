@@ -21,7 +21,7 @@
 ; ---------------------------------------------
 
 doubleword 	function l,r,(l<<16&$FFFF0000|r&$FFFF)			; LLLL RRRR
-mapsize		function l,r,( ((l-1)/8)<<16&$FFFF0000|((r-1)/8)&$FFFF ); for cell w/h use doubleword
+mapsize		function l,r,(((l-1)/8)<<16&$FFFF0000|((r-1)/8)&$FFFF)	; for cells w/h use doubleword
 locate		function a,b,c,(c&$FF)|(b<<8&$FF00)|(a<<16&$FF0000)	; VDP locate: Layer|X pos|Y pos for some video routines
 
 ; ====================================================================

@@ -176,8 +176,8 @@
 ; ----------------------------------------------------------------
 ; Entry point, this must be located at $3F0
 ; 
-; Boot sequence returns this bit results
-; to the following registers:
+; After the 32X's internal initializacion finishes,
+; It returns the following stuff:
 ; 
 ; d0: %h0000000 rsc000ti
 ; 	h - Cold start / Hot Start
@@ -194,22 +194,22 @@
 ; 	k - DISK connected: Yes / No
 ; 	v - Version
 ; 
-; Carry flag: "MARS ID" and Self Check report
-; 	cc: Test Passed
+; Carry flag: "MARS ID" and Self Check result
+; 	cc: Test passed
 ; 	cs: Test failed
 ; ----------------------------------------------------------------
 
 MARS_Entry:
-		bcs	.no_mars		; if Carry set, 32X is not present
-		move.l	#0,(RAM_initflug).l	; Reset "INIT"
-		btst	#15,d0			; Soft reset?	
+		bcs	.no_mars			; if Carry set, 32X is not present
+		move.l	#0,(RAM_initflug).l		; Reset "INIT" flag
+		btst	#15,d0				; Soft reset?	
 		beq.s	.init
-		lea	(sysmars_reg).l,a5	; a5 - MARS register
-		btst.b	#0,adapter(a5)		; 32X enabled?
-		bne	.adapterenable		; If yes, start booting
-		move.l	#0,comm8(a5)		; If not: Tell every CPU we can't use 32X
-		lea	.ramcode(pc),a0		; Copy the adapter-retry code to RAM
-		lea	($FF0000).l,a1		; and jump there.
+		lea	(sysmars_reg).l,a5		; a5 - MARS register
+		btst.b	#0,adapter(a5)			; 32X enabled?
+		bne	.adapterenable			; If yes, start booting
+		move.l	#0,comm8(a5)			; If not, we can't use 32X or something went wrong
+		lea	.ramcode(pc),a0			; Copy the adapter-retry code to RAM
+		lea	($FF0000).l,a1			; and jump there.
 		move.l	(a0)+,(a1)+
 		move.l	(a0)+,(a1)+
 		move.l	(a0)+,(a1)+
@@ -221,20 +221,20 @@ MARS_Entry:
 		lea	($FF0000).l,a0
 		jmp	(a0)
 .ramcode:
-		move.b	#1,adapter(a5)		; Adapter enabled.
-		lea	.restarticd(pc),a0	; JUMP to the following code in
-		adda.l	#$880000,a0		; the new 68k location
+		move.b	#1,adapter(a5)			; Enable adapter.
+		lea	.restarticd(pc),a0		; JUMP to the following code in
+		adda.l	#$880000,a0			; the new 68k location
 		jmp	(a0)
 .restarticd:
-		lea	($A10000).l,a5		; a5 - I/O area
-		move.l	#-64,a4			; a4 - $FFFFFF9C
-		move.w	#3900,d7		; d7 - loop this many times
-		lea	($880000+$6E4),a1	; Jump to ?res_wait (check ICD_MARS.PRG)
+		lea	($A10000).l,a5			; a5 - MD's I/O area base
+		move.l	#-64,a4				; a4 - $FFFFFF9C
+		move.w	#3900,d7			; d7 - loop this many times
+		lea	($880000+$6E4),a1		; Jump to ?res_wait (check ICD_MARS.PRG)
 		jmp	(a1)
 .adapterenable:
 		lea	(sysmars_reg),a5
-		btst.b	#1,adapter(a5)		; SH2 Reset request?
-		bne.s	.hotstart		; If not, we are on hotstart
+		btst.b	#1,adapter(a5)			; SH2 Reset request?
+		bne.s	.hotstart			; If not, we are on hotstart
 		bra.s	.restarticd
 
 ; ------------------------------------------------
@@ -244,10 +244,10 @@ MARS_Entry:
 .init:
 		move.w	#$2700,sr			; Disable interrupts
 		lea	(sysmars_reg).l,a5
-		move.l	#"68UP",comm12(a5)		; Report to everycpu we are active.
-.wm:		cmp.l	#"M_OK",comm0(a5)		; SH2 Master OK ?
+		move.l	#"68UP",comm12(a5)		; comm12: Report to every CPU we are active.
+.wm:		cmp.l	#"M_OK",comm0(a5)		; SH2 Master active?
 		bne.s	.wm
-.ws:		cmp.l	#"S_OK",comm4(a5)		; SH2 Slave OK ?
+.ws:		cmp.l	#"S_OK",comm4(a5)		; SH2 Slave active?
 		bne.s	.ws
 		moveq	#0,d0				; Reset comm values
 		move.l	d0,comm0(a5)
@@ -256,7 +256,7 @@ MARS_Entry:
 		move.l	#"INIT",(RAM_initflug).l	; Set "INIT" as our boot flag
 .hotstart:
 		cmp.l	#"INIT",(RAM_initflug).l	; Did it write?
-		bne.s	.init				; Restart everything and try again.
+		bne.s	.init				; If not, restart everything and try again.
 		
 	; Initialize Genesis
 		moveq	#0,d0				; Clear USP
@@ -266,14 +266,14 @@ MARS_Entry:
 		btst	#bitVint,d0
 		beq.s	.waitframe
 		move.l	#$80048144,(vdp_ctrl).l		; Keep display
-		lea	($FFFF0000),a0			; Clear all RAM until $FF00
+		lea	($FF0000),a0			; Clear all RAM until $FFFF00
 		move.w	#($F000/4)-1,d0
 .clrram:
 		clr.l	(a0)+
 		dbf	d0,.clrram
 		movem.l	($FF0000),d0-a6			; Clear registers (using zeros from RAM)
-		lea	Engine_Code(pc),a0		; Copy ALL our 68k code to RAM
-		lea	($FF0000),a1			; to prevent BUS-fighthing the ROM
+		lea	Engine_Code(pc),a0		; Now copy ALL our 68k code to RAM, to prevent BUS-fighthing the
+		lea	($FF0000),a1			; ROM area (speed-up purposes)
 		move.w	#Engine_Code_end-Engine_Code/2,d0
 .copyme:
 		move.w	(a0)+,(a1)+

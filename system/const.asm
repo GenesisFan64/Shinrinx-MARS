@@ -3,7 +3,7 @@
 ; Shared RAM and constants
 ; ----------------------------------------------------------------
 
-MDRAM_START	equ $FFFF8800		; Start of working RAM (below it, is free for CODE or decompression output)
+MDRAM_START	equ $FFFF8800		; Start of working MD RAM (below it is free for CODE or decompression output)
 MAX_MDERAM	equ $800		; MAX RAM for current screen mode (title,menu,or gameplay...)
 
 ; ====================================================================
@@ -43,7 +43,7 @@ bitV30		equ 3
 ; Contoller reading (call System_Input first)
 ; --------------------------------------------------------
 
-; call System_Input first:
+; call System_Input first, structure is below
 Controller_1	equ RAM_InputData
 Controller_2	equ RAM_InputData+sizeof_input
 
@@ -119,9 +119,10 @@ sizeof_mdsys	ds.l 0
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; Sound 68k RAM
-; 
-; This needs to be rewritten...
 ; ----------------------------------------------------------------
+
+; This needs to be rewritten...
+; it's very old
 
 	; 68k side
 	; Nothing here yet...

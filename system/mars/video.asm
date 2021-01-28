@@ -441,6 +441,8 @@ MarsLay_Draw:
 		mov	#$1FFF,r7
 		and	r7,r0
 		mov	@(r12,r0),r4
+		mov	#$40000000,r0
+		or	r0,r4
 .blank_mdl:
 		mov	r1,@(mdl_x_pos,r10)
 		mov	r2,@(mdl_y_pos,r10)
@@ -470,10 +472,6 @@ MarsLay_Draw:
 		mov	#-$100000,r1
 		mov	#0,r2
 		mov	#-$200000,r3
-		mov	@(mdllay_z_last,r14),r0
-		sub	r0,r3
-		mov	@(mdllay_x_last,r14),r0
-		add	r0,r1
 		add	#(1*2),r13
 		mov	#$100000,r11
 		sts	pr,@-r15
@@ -502,10 +500,6 @@ MarsLay_Draw:
 		mov	#0,r1
 		mov	#0,r2
 		mov	#-$200000,r3
-		mov	@(mdllay_z_last,r14),r0
-		sub	r0,r3
-		mov	@(mdllay_x_last,r14),r0
-		add	r0,r1
 		add	#(2*2),r13
 		mov	#$100000,r11
 		sts	pr,@-r15
@@ -535,10 +529,6 @@ MarsLay_Draw:
 		mov	#0,r1
 		mov	#0,r2
 		mov	#-$100000,r3
-		mov	@(mdllay_z_last,r14),r0
-		sub	r0,r3
-		mov	@(mdllay_x_last,r14),r0
-		add	r0,r1
 		mov	#(2*2)+(LAY_WIDTH),r0
 		add	r0,r13
 		mov	#$100000,r11
@@ -567,10 +557,6 @@ MarsLay_Draw:
 		mov	#0,r1
 		mov	#0,r2
 		mov	#-$100000,r3
-		mov	@(mdllay_z_last,r14),r0
-		sub	r0,r3
-		mov	@(mdllay_x_last,r14),r0
-		add	r0,r1
 		mov	#(2*2)+(LAY_WIDTH*1),r0
 		add	r0,r13
 		mov	#$100000,r11
@@ -599,10 +585,6 @@ MarsLay_Draw:
 		mov	#-$100000,r1
 		mov	#0,r2
 		mov	#-$100000,r3
-		mov	@(mdllay_z_last,r14),r0
-		sub	r0,r3
-		mov	@(mdllay_x_last,r14),r0
-		add	r0,r1
 		mov	#(1*2)+(LAY_WIDTH*1),r0
 		add	r0,r13
 		mov	#$100000,r11
@@ -632,10 +614,6 @@ MarsLay_Draw:
 		mov	#-$100000,r1
 		mov	#0,r2
 		mov	#-$200000,r3
-		mov	@(mdllay_z_last,r14),r0
-		sub	r0,r3
-		mov	@(mdllay_x_last,r14),r0
-		add	r0,r1
 		add	#(1*2),r13
 		mov	#$100000,r11
 		sts	pr,@-r15
@@ -823,7 +801,9 @@ MarsMdl_ReadModel:
 	; Now start reading
 		mov	@(marsGbl_CurrFacePos,gbr),r0
 		mov	r0,r13				; r13 - output faces
+		mov	#$3FFFFFFF,r0
 		mov	@(mdl_data,r14),r12		; r12 - model header
+		and	r0,r12
 		mov 	@(8,r12),r11			; r11 - face data
 		mov 	@(4,r12),r10			; r10 - vertice data (X,Y,Z)
 		mov.w	@r12,r9				;  r9 - Number of faces used on model
@@ -1110,16 +1090,24 @@ mdlrd_setpoint:
 
 	; Include camera changes
 		mov 	#RAM_Mars_ObjCamera,r11
-		
 		mov	@(cam_x_pos,r11),r5
 		mov	@(cam_y_pos,r11),r6
 		mov	@(cam_z_pos,r11),r7
+		mov	@(mdl_data,r14),r0		; Layout object?
+		shll	r0
+		cmp/pl	r0
+		bt	.lay_move
+		mov	#$FFFFF,r0			; Limit camera movement
+		and	r0,r5
+; 		and	r0,r6
+		and	r0,r7
+.lay_move:
 		shlr8	r5
 		shlr8	r6
 		shlr8	r7
 		exts	r5,r5
 		exts	r6,r6		
-		exts	r7,r7		
+		exts	r7,r7
 		sub 	r5,r2
 		sub 	r6,r3
 		add 	r7,r4
