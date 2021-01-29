@@ -760,43 +760,42 @@ MarsMdl_Init:
 MarsMdl_ReadModel:
 		sts	pr,@-r15
 
-	; TODO: rework on this later
-; 		mov	@(mdl_animdata,r14),r13
-; 		cmp/pl	r13
-; 		bf	.no_anim
-; 		mov	@(mdl_animtimer,r14),r0
-; 		add	#-1,r0
-; 		cmp/pl 	r0
-; 		bt	.wait_camanim
-; 		mov	@r13+,r2
-; 		mov	@(mdl_animframe,r14),r0
-; 		add	#1,r0
-; 		cmp/eq	r2,r0
-; 		bf	.on_frames
-; 		xor	r0,r0
-; .on_frames:
-; 		mov	r0,r1
-; 		mov	r0,@(mdl_animframe,r14)
-; 		mov	#$18,r0
-; 		mulu	r0,r1
-; 		sts	macl,r0 	
-; 		add	r0,r13
-; 		mov	@r13+,r1
-; 		mov	@r13+,r2
-; 		mov	@r13+,r3
-; 		mov	@r13+,r4
-; 		mov	@r13+,r5
-; 		mov	@r13+,r6
-; 		mov	r1,@(mdl_x_pos,r14)
-; 		mov	r2,@(mdl_y_pos,r14)
-; 		mov	r3,@(mdl_z_pos,r14)
-; 		mov	r4,@(mdl_x_rot,r14)
-; 		mov	r5,@(mdl_y_rot,r14)
-; 		mov	r6,@(mdl_z_rot,r14)
-; 		mov	#1,r0				; TEMPORAL timer
-; .wait_camanim:
-; 		mov	r0,@(mdl_animtimer,r14)	
-; .no_anim:
+		mov	@(mdl_animdata,r14),r13
+		cmp/pl	r13
+		bf	.no_anim
+		mov	@(mdl_animtimer,r14),r0
+		add	#-1,r0
+		cmp/pl 	r0
+		bt	.wait_camanim
+		mov	@r13+,r2
+		mov	@(mdl_animframe,r14),r0
+		add	#1,r0
+		cmp/eq	r2,r0
+		bf	.on_frames
+		xor	r0,r0
+.on_frames:
+		mov	r0,r1
+		mov	r0,@(mdl_animframe,r14)
+		mov	#$18,r0
+		mulu	r0,r1
+		sts	macl,r0 	
+		add	r0,r13
+		mov	@r13+,r1
+		mov	@r13+,r2
+		mov	@r13+,r3
+		mov	@r13+,r4
+		mov	@r13+,r5
+		mov	@r13+,r6
+		mov	r1,@(mdl_x_pos,r14)
+		mov	r2,@(mdl_y_pos,r14)
+		mov	r3,@(mdl_z_pos,r14)
+		mov	r4,@(mdl_x_rot,r14)
+		mov	r5,@(mdl_y_rot,r14)
+		mov	r6,@(mdl_z_rot,r14)
+		mov	#1,r0				; TEMPORAL timer
+.wait_camanim:
+		mov	r0,@(mdl_animtimer,r14)	
+.no_anim:
 
 	; Now start reading
 		mov	@(marsGbl_CurrFacePos,gbr),r0
@@ -1326,8 +1325,8 @@ MarsVideo_SetWatchdog:
 		mov.w	r0,@(marsGbl_PzListCntr,gbr)
 
 		mov	#Cach_ClrLines,r1		; Line counter for the framebuffer-clear routine
-		mov	#$E0,r0
-		mov.w	r0,@r1
+		mov	#224,r0
+		mov	r0,@r1
 		mov	#8,r0				; Set drawing task to $08 (Clear framebuffer)
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 		mov	#_vdpreg,r1
@@ -1350,29 +1349,17 @@ MarsVideo_SetWatchdog:
 
 ; ====================================================================
 ; ----------------------------------------------------------------
-; Video CACHE routines
+; Video CACHE routines for Master CPU
 ; ----------------------------------------------------------------
 
 		align 4
-CACHE_START:
+CACHE_MASTER:
 		phase $C0000000
-
-; ------------------------------------------------
-
-Cach_LnDrw_L	ds.l 14			;
-Cach_LnDrw_S	ds.l 0			; Reads backwards
-CachDDA_Top	ds.l 2*2		; First 2 points
-CachDDA_Last	ds.l 2*2		; Triangle or Quad (+8)
-CachDDA_Src	ds.l 4*2
-CachDDA_Src_L	ds.l 4			; X/DX/Y/DX result for textures
-CachDDA_Src_R	ds.l 4
-Cach_ClrLines	ds.w 1
 
 ; ------------------------------------------------
 ; MASTER Background tasks
 ; ------------------------------------------------
 
-		align 4
 ; Cache_OnInterrupt:
 m_irq_custom:
 		mov	#$FFFFFE10,r1
@@ -1387,7 +1374,7 @@ m_irq_custom:
 ; TASK $08 - Clear Framebuffer
 ; --------------------------------
 
-.task_01:
+; .task_08:
 		mov	r2,@-r15
 		mov	#_vdpreg,r1
 		mov.b	@(marsGbl_CurrFb,gbr),r0
@@ -1412,11 +1399,11 @@ m_irq_custom:
 		mov.w   r0,@r1
 		mov.w   #$5A10,r0
 		mov.w   r0,@r1
-		mov	#Cach_ClrLines,r1	; Decrement number of lines to progress
-		mov.w	@r1,r0
+		mov	#Cach_ClrLines,r1	; Decrement a line to progress
+		mov	@r1,r0
 		dt	r0
 		bf/s	.on_clr
-		mov.w	r0,@r1
+		mov	r0,@r1
 		mov	#1,r0			; If done: set task $01
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 .on_clr:
@@ -1554,8 +1541,8 @@ drwtsk1_vld_y:
 		shlr16	r0
 		shlr8	r0
  		tst	#PLGN_TEXURE,r0			; Texture mode?
- 		bf	.texture_line
-		bra	.solid_color
+ 		bf	drwtsk_texmode
+		bra	drwtsk_solidmode
 		nop
 
 ; ------------------------------------
@@ -1573,26 +1560,25 @@ drwtsk1_vld_y:
 ; r10  - Number of lines
 ; ------------------------------------
 
-.tex_gonxtpz:
-		bra	drwsld_nextpz
-		nop
-.texture_line:
+drwtsk_texmode:
 		mov.w	@(marsGbl_DivReq_M,gbr),r0	; Waste interrupt if MarsVideo_MakePolygon is in the
 		cmp/eq	#1,r0				; middle of division
 		bf	.texvalid
 		bra	drwtask_return
 		nop
+		align 4
 .texvalid:
 		mov	@(plypz_src_xl,r14),r5		; Texture X left
 		mov	@(plypz_src_xr,r14),r6		; Texture X right
 		mov	@(plypz_src_yl,r14),r7		; Texture Y up
 		mov	@(plypz_src_yr,r14),r8		; Texture Y down
-.tex_next_line:
+
+drwsld_nxtline_tex:
 		cmp/pz	r9				; Y Line below 0?
-		bf	.tex_skip_line
-		mov	.val_scrnhght,r0		; Y Line after 224?
+		bf	drwsld_updline_tex
+		mov	drwtex_tagshght,r0		; Y Line after 224?
 		cmp/ge	r0,r9
-		bt	.tex_gonxtpz
+		bt	drwtex_gonxtpz
 		mov	r2,@-r15
 		mov	r4,@-r15
 		mov	r5,@-r15
@@ -1621,13 +1607,13 @@ drwtsk1_vld_y:
 		mov	r8,r7
 		mov	r0,r8
 .txrevers:
-		cmp/eq	r11,r12			; Same X position?
-		bt	.tex_upd_line
-		mov	#SCREEN_WIDTH,r0	; X right < 0?
+		cmp/eq	r11,r12				; Same X position?
+		bt	.tex_skip_line
+		mov	#SCREEN_WIDTH,r0		; X right < 0?
 		cmp/pl	r12
-		bf	.tex_upd_line
-		cmp/gt	r0,r11			; X left > 320?
-		bt	.tex_upd_line
+		bf	.tex_skip_line
+		cmp/gt	r0,r11				; X left > 320?
+		bt	.tex_skip_line
 		mov	r12,r2
 		mov 	r11,r0
 		sub 	r0,r2
@@ -1665,7 +1651,7 @@ drwtsk1_vld_y:
 .tl_fix:
 		sub 	r11,r12
 		cmp/pl	r12
-		bf	.tex_upd_line
+		bf	.tex_skip_line
 ; 		mov	#$10,r0				; (Limiter test)
 ; 		cmp/ge	r0,r12
 ; 		bf	.testlwrit
@@ -1702,7 +1688,7 @@ drwtsk1_vld_y:
 		dt	r12
 		bf/s	.tex_xloop
 		add	r8,r7				; Update Y
-.tex_upd_line:
+.tex_skip_line:
 		mov	@r15+,r13
 		mov	@r15+,r10
 		mov	@r15+,r8
@@ -1711,7 +1697,7 @@ drwtsk1_vld_y:
 		mov	@r15+,r5
 		mov	@r15+,r4
 		mov	@r15+,r2
-.tex_skip_line:
+drwsld_updline_tex:
 		mov	@(plypz_src_xl_dx,r14),r0	; Update DX postions
 		add	r0,r5
 		mov	@(plypz_src_xr_dx,r14),r0
@@ -1723,20 +1709,19 @@ drwtsk1_vld_y:
 		add	r2,r1				; Update X postions
 		add	r4,r3
 		dt	r10
-		bf/s	.tex_next_line
+		bf/s	drwsld_nxtline_tex
 		add	#1,r9
-
+drwtex_gonxtpz:
 		bra	drwsld_nextpz
 		nop
 		align 4
-
-.val_scrnhght	dc.l	SCREEN_HEIGHT
+drwtex_tagshght	dc.l	SCREEN_HEIGHT
 
 ; ------------------------------------
 ; Solid Color
 ; ------------------------------------
 
-.solid_color:
+drwtsk_solidmode:
 		mov	#$FF,r0
 		mov	@(plypz_mtrl,r14),r6
 		mov	@(plypz_mtrlopt,r14),r5
@@ -2410,8 +2395,33 @@ put_piece:
 		ltorg
 
 ; ------------------------------------------------
-; CACHE END
-; ------------------------------------------------
 
-.end:		phase CACHE_START+.end&$1FFF
-CACHE_END:
+		align 4
+Cach_LnDrw_L	ds.l 14			;
+Cach_LnDrw_S	ds.l 0			; Reads backwards
+CachDDA_Top	ds.l 2*2		; First 2 points
+CachDDA_Last	ds.l 2*2		; Triangle or Quad (+8)
+CachDDA_Src	ds.l 4*2
+CachDDA_Src_L	ds.l 4			; X/DX/Y/DX result for textures
+CachDDA_Src_R	ds.l 4
+Cach_ClrLines	ds.l 1
+
+; ------------------------------------------------
+.end:		phase CACHE_MASTER+.end&$1FFF
+CACHE_MASTER_E:
+		align 4
+
+; ====================================================================
+; ----------------------------------------------------------------
+; Video CACHE routines for Slave CPU
+; ----------------------------------------------------------------
+
+		align 4
+CACHE_SLAVE:
+		phase $C0000000
+; ------------------------------------------------
+		dc.b "SLAVE CODE GOES HERE"
+; ------------------------------------------------
+.end:		phase CACHE_SLAVE+.end&$1FFF
+CACHE_SLAVE_E:
+

@@ -1,10 +1,62 @@
 ; ====================================================================
 ; ----------------------------------------------------------------
-; Shared RAM and constants
+; Constants shared for both CPUs
 ; ----------------------------------------------------------------
 
 MDRAM_START	equ $FFFF8800		; Start of working MD RAM (below it is free for CODE or decompression output)
 MAX_MDERAM	equ $800		; MAX RAM for current screen mode (title,menu,or gameplay...)
+
+; ====================================================================
+; ----------------------------------------------------------------
+; MD/MARS shared constants
+; ----------------------------------------------------------------
+
+; MD to MARS custom FIFO section
+MAX_MDTSKARG	equ 8			; MAX MD task arguments
+MAX_MDTASKS	equ 8			; MAX MD tasks
+
+; model objects
+		struct 0
+mdl_data	ds.l 1			; Model data pointer, zero: model disabled
+mdl_x_pos	ds.l 1			; X position $000000.00
+mdl_y_pos	ds.l 1			; Y position $000000.00
+mdl_z_pos	ds.l 1			; Z position $000000.00
+mdl_x_rot	ds.l 1			; X rotation $000000.00
+mdl_y_rot	ds.l 1			; Y rotation $000000.00
+mdl_z_rot	ds.l 1			; Z rotation $000000.00
+mdl_animdata	ds.l 1			; Model animation data pointer, zero: no animation
+mdl_animframe	ds.l 1			; Current frame in animation
+mdl_animtimer	ds.l 1			; Animation timer
+mdl_animspd	ds.l 1			; Animation speed
+sizeof_mdlobj	ds.l 0
+		finish
+		
+; field view camera
+		struct 0
+cam_x_pos	ds.l 1			; X position $000000.00
+cam_y_pos	ds.l 1			; Y position $000000.00
+cam_z_pos	ds.l 1			; Z position $000000.00
+cam_x_rot	ds.l 1			; X rotation $000000.00
+cam_y_rot	ds.l 1			; Y rotation $000000.00
+cam_z_rot	ds.l 1			; Z rotation $000000.00
+cam_animdata	ds.l 1			; Model animation data pointer, zero: no animation
+cam_animframe	ds.l 1			; Current frame in animation
+cam_animtimer	ds.l 1			; Animation timer
+cam_animspd	ds.l 1			; Animation speed
+sizeof_camera	ds.l 0
+		finish
+		
+		struct 0
+mdllay_data	ds.l 1			; Model layout data, zero: Don't use layout
+mdllay_x	ds.l 1			; X position
+mdllay_y	ds.l 1			; Y position
+mdllay_z	ds.l 1			; Z position
+mdllay_x_last	ds.l 1			; LAST saved X position
+mdllay_y_last	ds.l 1			; LAST saved Y position
+mdllay_z_last	ds.l 1			; LAST saved Z position
+mdllay_xr_last	ds.l 1			; LAST saved X rotation
+sizeof_layout	ds.l 0
+		finish
 
 ; ====================================================================
 ; ----------------------------------------------------------------
@@ -106,6 +158,7 @@ sizeof_input	ds.l 0
 		struct RAM_MdSystem
 RAM_InputData	ds.b sizeof_input*4
 RAM_SaveData	ds.b $200		; Save data cache (if using SRAM)
+RAM_FifoToMars	ds.l MAX_MDTSKARG	; Data section to be sent to 32X
 RAM_FrameCount	ds.l 1			; Framecount
 RAM_SysRandVal	ds.l 1			; Random value
 RAM_SysRandSeed	ds.l 1			; Randomness seed
@@ -187,52 +240,4 @@ sizeof_mdram	ds.l 0
 	if MOMPASS=7
 		message "MD RAM ends at: \{((sizeof_mdram)&$FFFFFF)}"
 	endif
-		finish
-		
-; ====================================================================
-; ----------------------------------------------------------------
-; MD/MARS shared constants
-; ----------------------------------------------------------------
-
-; model objects
-		struct 0
-; mdl_animdata	ds.l 1			; Model animation data pointer, zero: no animation
-; mdl_animframe	ds.l 1			; Current frame in animation
-; mdl_animtimer	ds.l 1			; Animation timer
-; mdl_animspd	ds.l 1			; Animation speed
-mdl_data	ds.l 1			; Model data pointer, zero: model disabled
-mdl_x_pos	ds.l 1			; X position $000000.00
-mdl_y_pos	ds.l 1			; Y position $000000.00
-mdl_z_pos	ds.l 1			; Z position $000000.00
-mdl_x_rot	ds.l 1			; X rotation $000000.00
-mdl_y_rot	ds.l 1			; Y rotation $000000.00
-mdl_z_rot	ds.l 1			; Z rotation $000000.00
-sizeof_mdlobj	ds.l 0
-		finish
-		
-; field view camera
-		struct 0
-cam_animdata	ds.l 1			; Model animation data pointer, zero: no animation
-cam_animframe	ds.l 1			; Current frame in animation
-cam_animtimer	ds.l 1			; Animation timer
-cam_animspd	ds.l 1			; Animation speed
-cam_x_pos	ds.l 1			; X position $000000.00
-cam_y_pos	ds.l 1			; Y position $000000.00
-cam_z_pos	ds.l 1			; Z position $000000.00
-cam_x_rot	ds.l 1			; X rotation $000000.00
-cam_y_rot	ds.l 1			; Y rotation $000000.00
-cam_z_rot	ds.l 1			; Z rotation $000000.00
-sizeof_camera	ds.l 0
-		finish
-		
-		struct 0
-mdllay_data	ds.l 1			; Model layout data, zero: Don't use layout
-mdllay_x	ds.l 1			; X position
-mdllay_y	ds.l 1			; Y position
-mdllay_z	ds.l 1			; Z position
-mdllay_x_last	ds.l 1			; LAST saved X position
-mdllay_y_last	ds.l 1			; LAST saved Y position
-mdllay_z_last	ds.l 1			; LAST saved Z position
-mdllay_xr_last	ds.l 1			; LAST saved X rotation
-sizeof_layout	ds.l 0
 		finish

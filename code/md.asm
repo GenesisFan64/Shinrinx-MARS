@@ -153,14 +153,24 @@ MD_Main:
 		move.w	d1,(RAM_BgCamera).l
 		move.w	#1,(RAM_MdMdlsUpd).l
 .no_camanim:
-
+		move.w	(RAM_BgCamera).l,(RAM_BgCamCurr).l
 
 	; Foward/Backward/Left/Right
 		bsr	MdMdl_Usercontrol
 		tst.w	(RAM_MdMdlsUpd).l
 		beq	.loop
 		clr.w	(RAM_MdMdlsUpd).l
-		bsr	MdMars_TrsnfrMdls
+		
+		lea	(RAM_MdCamera),a0
+		move.l	#1,d0			; Slave task 1, set camera
+		move.l	#0,d1			; Camera slot (TODO)	
+		move.l	cam_x_pos(a0),d2	; X pos
+		move.l	cam_y_pos(a0),d3	; Y pos
+		move.l	cam_z_pos(a0),d4	; Z pos
+		move.l	cam_x_rot(a0),d5	; X rot
+		move.l	cam_y_rot(a0),d6	; Y rot
+		move.l	cam_z_rot(a0),d7	; Z rot
+		bsr	MdToMarsTask_Single
 		bra	.loop
 		
 ; ====================================================================
@@ -168,32 +178,32 @@ MD_Main:
 ; Subroutines
 ; ------------------------------------------------------
 
-MdMars_TrsnfrMdls:
+MdToMarsTask_Single:
+		movem.l	d0-d7,(RAM_FifoToMars).l	; Send variables to RAM
 		lea	(sysmars_reg),a0
-		tst.b	comm15(a0)
-		bne	.no_start
+.is_busy:	move.b	comm15(a0),d0
+		bmi.s	.is_busy
 		move.b	#1,comm15(a0)
-		lea	(sysmars_reg+comm8),a0
-		lea	(RAM_MdCamera),a1
-		move.w	#(sizeof_camera/4)-1,d2
+		move.w	(sysmars_reg+standby).l,d0	; SLAVE CMD interrupt
+		bset	#1,d0
+		move.w	d0,(sysmars_reg+standby).l
+		lea	(sysmars_reg+comm8),a0		; a0 - comm8
+		lea	(RAM_FifoToMars),a1
+		move.w	#MAX_MDTSKARG-1,d2
 .paste:
 		nop
 		nop
-		nop
-		move.w	(a0),d0
+		move.w	(a0),d0				; wait if free
 		bne.s	.paste
 		move.w	(a1)+,d0
 		move.w	d0,2(a0)
 		move.w	(a1)+,d0
 		move.w	d0,4(a0)
-		move.w	#1,(a0)
+		move.w	#1,(a0)				; send it
 		dbf	d2,.paste
-
-.busy_2:
-		move.w	(a0),d0				; Wait Slave response
+.busy_2:	move.w	(a0),d0				; last wait
 		bne.s	.busy_2
-		move.w	#2,(a0)				; Transfer finish
-		move.w	(RAM_BgCamera).l,(RAM_BgCamCurr).l
+		move.w	#2,(a0)				; send finished
 .no_start:
 		rts
 

@@ -94,7 +94,7 @@ _overwrite:	equ	CS2|TH+$20000	; Overwrite, all $00 bytes are skipped
 
 _SERIAL		equ	$FFFFFE00	; Serial Control
 _FRT		equ	$FFFFFE10	; Free run timer
-_TIER		equ	$00		; Timer interrup enable register
+_TIER		equ	$00		; Timer interrupt enable register
 _TCSR		equ	$01		; Timer control & status register
 _FRC_H		equ	$02		; free running counter High
 _FRC_L		equ	$03		; free running counter Low
