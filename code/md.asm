@@ -121,7 +121,7 @@ MD_Main:
 		lea	str_Status(pc),a0
 		move.l	#locate(0,0,0),d0
 		bsr	Video_Print
-		
+
 	; Camera animation
 		lea	(RAM_MdCamera),a0
 		move.l	cam_animdata(a0),d0		; If 0 == No animation
@@ -162,50 +162,21 @@ MD_Main:
 		clr.w	(RAM_MdMdlsUpd).l
 		
 		lea	(RAM_MdCamera),a0
-		move.l	#1,d0			; Slave task 1, set camera
-		move.l	#0,d1			; Camera slot (TODO)	
-		move.l	cam_x_pos(a0),d2	; X pos
-		move.l	cam_y_pos(a0),d3	; Y pos
-		move.l	cam_z_pos(a0),d4	; Z pos
-		move.l	cam_x_rot(a0),d5	; X rot
-		move.l	cam_y_rot(a0),d6	; Y rot
-		move.l	cam_z_rot(a0),d7	; Z rot
-		bsr	MdToMarsTask_Single
+		move.l	#1,d0				; Slave task 1, set camera
+		move.l	#0,d1				; Camera slot (TODO)	
+		move.l	cam_x_pos(a0),d2		; X pos
+		move.l	cam_y_pos(a0),d3		; Y pos
+		move.l	cam_z_pos(a0),d4		; Z pos
+		move.l	cam_x_rot(a0),d5		; X rot
+		move.l	cam_y_rot(a0),d6		; Y rot
+		move.l	cam_z_rot(a0),d7		; Z rot
+		bsr	System_MdToMars_Add
 		bra	.loop
 		
 ; ====================================================================
 ; ------------------------------------------------------
 ; Subroutines
 ; ------------------------------------------------------
-
-MdToMarsTask_Single:
-		movem.l	d0-d7,(RAM_FifoToMars).l	; Send variables to RAM
-		lea	(sysmars_reg),a0
-.is_busy:	move.b	comm15(a0),d0
-		bmi.s	.is_busy
-		move.b	#1,comm15(a0)
-		move.w	(sysmars_reg+standby).l,d0	; SLAVE CMD interrupt
-		bset	#1,d0
-		move.w	d0,(sysmars_reg+standby).l
-		lea	(sysmars_reg+comm8),a0		; a0 - comm8
-		lea	(RAM_FifoToMars),a1
-		move.w	#MAX_MDTSKARG-1,d2
-.paste:
-		nop
-		nop
-		move.w	(a0),d0				; wait if free
-		bne.s	.paste
-		move.w	(a1)+,d0
-		move.w	d0,2(a0)
-		move.w	(a1)+,d0
-		move.w	d0,4(a0)
-		move.w	#1,(a0)				; send it
-		dbf	d2,.paste
-.busy_2:	move.w	(a0),d0				; last wait
-		bne.s	.busy_2
-		move.w	#2,(a0)				; send finished
-.no_start:
-		rts
 
 MdMdl_Usercontrol:
 		move.l	#var_MoveSpd,d5

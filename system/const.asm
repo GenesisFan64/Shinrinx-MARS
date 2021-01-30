@@ -13,7 +13,7 @@ MAX_MDERAM	equ $800		; MAX RAM for current screen mode (title,menu,or gameplay..
 
 ; MD to MARS custom FIFO section
 MAX_MDTSKARG	equ 8			; MAX MD task arguments
-MAX_MDTASKS	equ 8			; MAX MD tasks
+MAX_MDTASKS	equ 16			; MAX MD tasks
 
 ; model objects
 		struct 0
@@ -157,15 +157,17 @@ sizeof_input	ds.l 0
 
 		struct RAM_MdSystem
 RAM_InputData	ds.b sizeof_input*4
-RAM_SaveData	ds.b $200		; Save data cache (if using SRAM)
-RAM_FifoToMars	ds.l MAX_MDTSKARG	; Data section to be sent to 32X
-RAM_FrameCount	ds.l 1			; Framecount
-RAM_SysRandVal	ds.l 1			; Random value
-RAM_SysRandSeed	ds.l 1			; Randomness seed
-RAM_initflug	ds.l 1			; "INIT" flag
-RAM_SysFlags	ds.w 1			; Game engine flags (note: it's a byte)
-RAM_MdMarsVInt	ds.w 3			; VBlank jump (JMP xxxx xxxx)
-RAM_MdMarsHint	ds.w 3			; HBlank jump (JMP xxxx xxxx)
+RAM_SaveData	ds.b $200			; Save data cache (if using SRAM)
+RAM_FifoToMars	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Data section to be sent to 32X
+RAM_FrameCount	ds.l 1				; Framecount
+RAM_SysRandVal	ds.l 1				; Random value
+RAM_SysRandSeed	ds.l 1				; Randomness seed
+RAM_initflug	ds.l 1				; "INIT" flag
+RAM_SysFlags	ds.w 1				; Game engine flags (note: it's a byte)
+RAM_MdMarsVInt	ds.w 3				; VBlank jump (JMP xxxx xxxx)
+RAM_MdMarsHint	ds.w 3				; HBlank jump (JMP xxxx xxxx)
+RAM_FifoMarsCnt	ds.w 1				; Task slot
+RAM_FifoMarsWrt	ds.w 1				; mid-write flag
 sizeof_mdsys	ds.l 0
 		finish
 

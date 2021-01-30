@@ -304,28 +304,20 @@ s_irq_cmd:
 		mov	r3,@-r15
 		mov	@(marsGbl_MdTasksFifo_Wr,gbr),r0
 		mov	r0,r2
-		mov	#_sysreg+comm15,r1
-		mov.b	@r1,r0
-		cmp/eq	#1,r0
-		bf	.dont_reset
 
 	; comm8: Command/status (writes both ways)
 		mov	#_sysreg+comm8,r1
 .transfer_loop:
-		nop
-		nop
 		mov.w	@r1,r0
-		cmp/eq	#0,r0			; Got 0? (waiting)
-		bt	.transfer_loop
-		cmp/eq	#2,r0			; Got 2? (finish)
+		cmp/eq	#2,r0		; Got 2? (finish)
 		bt	.trnsfr_done
-		nop
-		nop
-		mov.w	@(2,r1),r0		; comm10
+		cmp/eq	#1,r0		; Got 1? (copy data)
+		bf	.transfer_loop
+		mov.w	@(2,r1),r0	; comm10
 		extu	r0,r0
 		shll16	r0
 		mov	r0,r3
-		mov.w	@(4,r1),r0		; comm12
+		mov.w	@(4,r1),r0	; comm12
 		extu	r0,r0
 		or	r3,r0
 		mov	r0,@r2
@@ -334,18 +326,13 @@ s_irq_cmd:
 		add	#4,r2
 		mov	#RAM_Mars_MdTasksFifo_e,r0
 		cmp/ge	r0,r2
-		bf	.dont_reset
+		bf	.transfer_loop
 		mov	#RAM_Mars_MdTasksFifo,r2
-.dont_reset:
 		bra	.transfer_loop
 		nop
-
 .trnsfr_done:
 		mov	#0,r0
 		mov.w	r0,@r1			; close tasks
-		mov	#_sysreg+comm15,r1
-		mov	#0,r0
-		mov.b	r0,@r1
 		mov	r2,r0
 		mov	r0,@(marsGbl_MdTasksFifo_Wr,gbr)
 
@@ -790,7 +777,7 @@ slave_loop:
 		mov	@(marsGbl_MdTasksFifo_Wr,gbr),r0
 		cmp/eq	r14,r0
 		bt	.no_requests
-		mov	#_sysreg+comm15,r1	; Tell MD we are busy
+		mov	#_sysreg+comm15,r1		; Tell MD we are busy
 		mov	#-1,r0
 		mov.b	r0,@r1
 .next_req:
@@ -816,7 +803,7 @@ slave_loop:
 		bf	.next_req
 		mov	r14,r0
 		mov	r0,@(marsGbl_MdTasksFifo_Rd,gbr)
-		mov	#_sysreg+comm15,r1	; Now we can do more tasks
+		mov	#_sysreg+comm15,r1		; Now we are free
 		mov	#0,r0
 		mov.b	r0,@r1
 .no_requests:

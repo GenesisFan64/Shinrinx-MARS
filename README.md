@@ -9,7 +9,7 @@ Features:
 - Reads model objects, a Python script is used to convert .obj models to the format used in the renderer
 - Model faces can use both triangles and quads
 - Materials are both solid color and textures in any size but limited to SVDP mode 1 (255 colors + transparent color)
-- Partial animation, it works but it's not perfect, Python script uses .chan animation files for animation
+- Animation, for both Objects and Camera, Python converts .chan animation files for use in the renderer
 - Layout support, to make big maps using separate model files
 
 Current issues:

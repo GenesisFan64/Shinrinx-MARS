@@ -114,6 +114,7 @@ System_VSync:
 		btst	#bitVint,d4
 		beq.s	System_VSync
 		bsr	System_Input
+		bsr	System_MdMars_SendAll
 		add.l	#1,(RAM_FrameCount).l
 .inside:	move.w	(vdp_ctrl),d4
 		btst	#bitVint,d4
@@ -314,6 +315,59 @@ System_SaveInit:
 		move.b	#0,(md_bank_sram).l
 		rts
 
+; --------------------------------------------------------
+; System_MdToMarsTasks
+;
+; Transfer list of MD requests to the 32X
+; --------------------------------------------------------
+
+System_MdToMars_Add:
+		cmp.w	#(MAX_MDTSKARG*MAX_MDTASKS)*4,(RAM_FifoMarsCnt).w
+		bge.s	.ran_out
+		move.w	#1,(RAM_FifoMarsWrt).w
+		lea	(RAM_FifoToMars).l,a6
+		adda	(RAM_FifoMarsCnt).w,a6
+		movem.l	d0-d7,(a6)			; Send variables to RAM
+		add.w	#MAX_MDTSKARG*4,(RAM_FifoMarsCnt).w
+		move.w	#0,(RAM_FifoMarsWrt).w
+.ran_out
+		rts
+
+; VBlank only
+System_MdMars_SendAll:
+		tst.w	(RAM_FifoMarsWrt).w
+		bne.s	.mid_write
+		lea	(sysmars_reg),a5
+.is_busy:	move.b	comm15(a5),d0
+		bne.s	.is_busy
+		clr.w	(RAM_FifoMarsCnt).w
+		lea	(RAM_FifoToMars),a6
+		move.w	standby(a5),d0			; SLAVE CMD interrupt
+		bset	#1,d0
+		move.w	d0,standby(a5)
+		lea	(sysmars_reg+comm8),a5		; a5 - comm8
+		move.w	#(MAX_MDTSKARG)-1,d2
+.paste:
+		nop
+		nop
+		move.w	(a5),d0				; stop until CMD is ready
+		bne.s	.paste
+		move.w	(a6),d0				; comm10: left LONG
+		move.w	d0,2(a5)
+		move.w	2(a6),d0			; comm12: right LONG
+		move.w	d0,4(a5)
+		clr.l	(a6)+				; remove from our buffer
+		move.w	#1,(a5)				; send PASS tag
+		dbf	d2,.paste
+.busy_2:
+		nop
+		nop
+		move.w	(a5),d0				; last wait
+		bne.s	.busy_2
+		move.w	#2,(a5)				; send DONE tag
+.mid_write:
+		rts
+
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; Game modes
@@ -342,6 +396,7 @@ Mode_Init:
 VInt_Default:
 		movem.l	d0-a6,-(sp)
 		bsr	System_Input
+		bsr	System_MdMars_SendAll
 		add.l	#1,(RAM_FrameCount).l
 		movem.l	(sp)+,d0-a6		
 		rte
