@@ -114,7 +114,6 @@ System_VSync:
 		btst	#bitVint,d4
 		beq.s	System_VSync
 		bsr	System_Input
-		bsr	System_MdMars_SendAll
 		add.l	#1,(RAM_FrameCount).l
 .inside:	move.w	(vdp_ctrl),d4
 		btst	#bitVint,d4
@@ -321,50 +320,70 @@ System_SaveInit:
 ; Transfer list of MD requests to the 32X
 ; --------------------------------------------------------
 
-System_MdToMars_Add:
+; ------------------------------------------------
+; Add task for 32X
+; ------------------------------------------------
+
+System_MdMars_Add:
 		cmp.w	#(MAX_MDTSKARG*MAX_MDTASKS)*4,(RAM_FifoMarsCnt).w
 		bge.s	.ran_out
 		move.w	#1,(RAM_FifoMarsWrt).w
 		lea	(RAM_FifoToMars).l,a6
 		adda	(RAM_FifoMarsCnt).w,a6
-		movem.l	d0-d7,(a6)			; Send variables to RAM
-		add.w	#MAX_MDTSKARG*4,(RAM_FifoMarsCnt).w
+		movem.l	d0-d7,(a6)				; Send variables to RAM
+		add.w	#MAX_MDTSKARG*4,(RAM_FifoMarsCnt).w	; TODO: add limit check
 		move.w	#0,(RAM_FifoMarsWrt).w
 .ran_out
 		rts
 
-; VBlank only
-System_MdMars_SendAll:
-		tst.w	(RAM_FifoMarsWrt).w
+; ------------------------------------------------
+; Send requests buf skip if busy
+; ------------------------------------------------
+
+System_MdMars_SendDrop:
+		move.b	(sysmars_reg+comm15),d0
 		bne.s	.mid_write
+		bra	SysMdMars_Go
+.mid_write:
+		rts
+System_MdMars_SendWait:
+		move.b	(sysmars_reg+comm15),d0
+		bne.s	System_MdMars_SendWait
+		bra	SysMdMars_Go	
+SysMdMars_Go:
 		lea	(sysmars_reg),a5
-.is_busy:	move.b	comm15(a5),d0
-		bne.s	.is_busy
-		clr.w	(RAM_FifoMarsCnt).w
-		lea	(RAM_FifoToMars),a6
+		move.w	sr,d7
+		move.w	#$2700,sr
 		move.w	standby(a5),d0			; SLAVE CMD interrupt
 		bset	#1,d0
 		move.w	d0,standby(a5)
-		lea	(sysmars_reg+comm8),a5		; a5 - comm8
+.wait_cmd:	move.w	standby(a5),d0
+		btst    #1,d0
+		bne.s   .wait_cmd
+		lea	(sysmars_reg+comm8),a4		; a4 - comm8
+		clr.w	(RAM_FifoMarsCnt).w
+		lea	(RAM_FifoToMars),a6
 		move.w	#(MAX_MDTSKARG)-1,d2
 .paste:
 		nop
 		nop
-		move.w	(a5),d0				; stop until CMD is ready
+		nop
+		move.b	(a4),d0			; stop until CMD is waiting
 		bne.s	.paste
-		move.w	(a6),d0				; comm10: left LONG
-		move.w	d0,2(a5)
-		move.w	2(a6),d0			; comm12: right LONG
-		move.w	d0,4(a5)
-		clr.l	(a6)+				; remove from our buffer
-		move.w	#1,(a5)				; send PASS tag
+		move.l	(a6)+,d0
+		move.w	d0,4(a4)
+		swap	d0
+		move.w	d0,2(a4)
+		move.b	#1,(a4)			; send PASS tag
 		dbf	d2,.paste
 .busy_2:
 		nop
 		nop
-		move.w	(a5),d0				; last wait
+		nop
+		move.b	(a4),d0			; last wait
 		bne.s	.busy_2
-		move.w	#2,(a5)				; send DONE tag
+		move.b	#2,(a4)			; send FINISH tag
+		move.w	d7,sr
 .mid_write:
 		rts
 
@@ -396,7 +415,6 @@ Mode_Init:
 VInt_Default:
 		movem.l	d0-a6,-(sp)
 		bsr	System_Input
-		bsr	System_MdMars_SendAll
 		add.l	#1,(RAM_FrameCount).l
 		movem.l	(sp)+,d0-a6		
 		rte

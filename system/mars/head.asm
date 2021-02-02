@@ -117,8 +117,9 @@ master_irq:
 		mov	#int_m_list,r1
 		add	r1,r0
 		mov	@r0,r1
+		mov	#$F0,r0
 		jsr	@r1
-		nop
+		ldc	r0,sr
 		
 		lds.l	@r15+,pr
 		mov.l	@r15+,r1
@@ -155,15 +156,16 @@ slave_irq:
 		mov.l	r0,@-r15
 		mov.l	r1,@-r15
 		sts.l	pr,@-r15
-	
+
 		stc	sr,r0
 		shlr2	r0
 		and	#$3C,r0
 		mov	#int_s_list,r1
 		add	r1,r0
 		mov	@r0,r1
+		mov	#$F0,r0
 		jsr	@r1
-		nop
+		ldc	r0,sr
 		
 		lds.l	@r15+,pr
 		mov.l	@r15+,r1

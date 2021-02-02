@@ -25,8 +25,8 @@ marsGbl_PlyPzList_R	ds.l 1		; Current graphic piece to draw
 marsGbl_PlyPzList_W	ds.l 1		; Current graphic piece to write
 marsGbl_CurrZList	ds.l 1		; Current Zsort entry
 marsGbl_CurrFacePos	ds.l 1		; Current top face of the list while reading model data
-marsGbl_MdTasksFifo_Rd	ds.l 1		; Requests from Genesis FIFO reading point
-marsGbl_MdTasksFifo_Wr	ds.l 1		; and writing point
+marsGbl_MdTaskList_Sw	ds.w 1		; Requests from Genesis FIFO reading point
+marsGbl_MdTaskList_Rq	ds.w 1		; and writing point
 marsGbl_MdlFacesCntr	ds.w 1		; And the number of faces stored on that list
 marsGbl_PolyBuffNum	ds.w 1		; PolygonBuffer switch: READ/WRITE or WRITE/READ
 marsGbl_PzListCntr	ds.w 1		; Number of graphic pieces to draw
@@ -192,6 +192,12 @@ m_irq_vres:
 		mov.l	#_sysreg,r0
 		ldc	r0,gbr
 		mov.w	r0,@(vresintclr,gbr)	; V interrupt clear
+		nop
+		nop
+		nop
+		nop
+		mov	#$F0,r0
+		ldc	r0,sr
 		mov.b	@(dreqctl,gbr),r0
 		tst	#1,r0
 		bf	.mars_reset
@@ -295,24 +301,42 @@ s_irq_pwm:
 ; ------------------------------------------------
 ; Slave | CMD Interrupt
 ; 
-; Add request from MD to here to be processed
-; later.
+; Process request from MD
 ; ------------------------------------------------
 
+; TODO: make a check for VISUAL or SOUND tasks
 s_irq_cmd:
 		mov	r2,@-r15
 		mov	r3,@-r15
-		mov	@(marsGbl_MdTasksFifo_Wr,gbr),r0
-		mov	r0,r2
+		mov	r4,@-r15
+		mov	#_FRT,r1
+		mov.b	@(7,r1),r0
+		xor	#2,r0
+		mov.b	r0,@(7,r1)
+		mov	#_sysreg+cmdintclr,r1
+		mov.w	r0,@r1
 
-	; comm8: Command/status (writes both ways)
+		mov	#0,r0
+		mov	#_sysreg+comm15,r1
+		mov.b	r0,@r1
+		mov	#RAM_Mars_MdTasksFifo_1,r2
+		mov.w	@(marsGbl_MdTaskList_Sw,gbr),r0
+		tst     #1,r0
+		bt	.this_fifo
+		mov	#RAM_Mars_MdTasksFifo_2,r2
+.this_fifo:
 		mov	#_sysreg+comm8,r1
-.transfer_loop:
-		mov.w	@r1,r0
+.next_long:
+		mov	#4*60,r4	; r4 - TIMEOUT COUNTER if on HW gets stuck
+.retry:
+		dt	r4
+		bt	.trnsfr_fail
+		nop
+		mov.b	@r1,r0
 		cmp/eq	#2,r0		; Got 2? (finish)
 		bt	.trnsfr_done
 		cmp/eq	#1,r0		; Got 1? (copy data)
-		bf	.transfer_loop
+		bf	.retry
 		mov.w	@(2,r1),r0	; comm10
 		extu	r0,r0
 		shll16	r0
@@ -322,35 +346,42 @@ s_irq_cmd:
 		or	r3,r0
 		mov	r0,@r2
 		mov	#0,r0
-		mov.w	r0,@r1
-		add	#4,r2
-		mov	#RAM_Mars_MdTasksFifo_e,r0
-		cmp/ge	r0,r2
-		bf	.transfer_loop
-		mov	#RAM_Mars_MdTasksFifo,r2
-		bra	.transfer_loop
+		mov.b	r0,@r1
 		nop
+		nop
+		bra	.next_long
+		add	#4,r2
 .trnsfr_done:
 		mov	#0,r0
-		mov.w	r0,@r1			; close tasks
-		mov	r2,r0
-		mov	r0,@(marsGbl_MdTasksFifo_Wr,gbr)
-
-; 		mov	#CS3|$40,r1
-; 		mov	@r1,r0
-; 		add	#1,r0
-; 		mov	r0,@r1
-		mov	#_FRT,r1
-		mov.b	@(7,r1),r0
-		xor	#2,r0
-		mov.b	r0,@(7,r1)
-		mov	#_sysreg+cmdintclr,r1
-		mov.w	r0,@r1
+		mov.b	r0,@r1				; close tasks
+		nop
+		nop
+		mov	#1,r0
+.trnsfr_fail:
+		mov	#_sysreg+comm15,r1
+		mov.b	r0,@r1
+		mov 	@r15+,r4		
 		mov 	@r15+,r3
 		mov 	@r15+,r2
 		rts
 		nop
 		align 4
+
+; REFERENCE FOR FIFO (TODO)
+; 		mov	#_DMASOURCE0,r1
+; 		mov	#$44E0,r0
+; 		mov	r0,@($C,r1)		; _DMACHANNEL0
+; 		mov	#$20004012,r0
+; 		mov	r0,@r1			; _DMASOURCE0 = DREQ FIFO
+; 		mov	#CS3|$1A0000,r0		; TODO: read/write switch
+; 		mov	r0,@(4,r1)		; _DMADEST0
+; 		mov	#$20004010,r0
+; 		mov	r0,@(8,r1)		; _DMASOURCE0 = DREQ len
+; 		mov	@($C,r1),r0		; null read(?)
+; 		mov	#$44E1,r0
+; 		mov	r0,@($C,r1)		; _DMACHANNEL0		
+; 		mov	#1,r0
+; 		mov	r0,@($30,r1)		; _DMAOPERATION = 1
 
 ; =================================================================
 ; ------------------------------------------------
@@ -399,6 +430,12 @@ s_irq_vres:
 		mov.l	#_sysreg,r0
 		ldc	r0,gbr
 		mov.w	r0,@(vresintclr,gbr)	; V interrupt clear
+		nop
+		nop
+		nop
+		nop
+		mov	#$F0,r0
+		ldc	r0,sr
 		mov.b	@(dreqctl,gbr),r0
 		tst	#1,r0
 		bf	.mars_reset
@@ -658,10 +695,10 @@ master_loop:
 
 	; --------------------
 	; DEBUG counter
-		mov	#_sysreg+comm4,r1
-		mov.w	@r1,r0
-		add	#1,r0
-		mov.w	r0,@r1
+; 		mov	#_sysreg+comm4,r1
+; 		mov.w	@r1,r0
+; 		add	#1,r0
+; 		mov.w	r0,@r1
 	; --------------------
 	
 		bra	master_loop
@@ -742,9 +779,6 @@ SH2_S_HotStart:
 		add 	#4,r2
 		dt	r3
 		bf	.copy
-		mov	#RAM_Mars_MdTasksFifo,r0
-		mov	r0,@(marsGbl_MdTasksFifo_Rd,gbr)
-		mov	r0,@(marsGbl_MdTasksFifo_Wr,gbr)
 
 ; ------------------------------------------------
 ; REMINDER: In blender, 1 meter = $10000
@@ -772,41 +806,37 @@ SH2_S_HotStart:
 ; --------------------------------------------------------
 
 slave_loop:
-		mov	@(marsGbl_MdTasksFifo_Rd,gbr),r0
-		mov	r0,r14
-		mov	@(marsGbl_MdTasksFifo_Wr,gbr),r0
-		cmp/eq	r14,r0
-		bt	.no_requests
-		mov	#_sysreg+comm15,r1		; Tell MD we are busy
-		mov	#-1,r0
-		mov.b	r0,@r1
+		mov	#_sysreg+comm15,r1
+		mov.b	@r1,r0
+		cmp/eq	#0,r0
+		bt	.no_req
+		mov	#1,r13				; NUMOF_tasks (TODO)
+		mov	#RAM_Mars_MdTasksFifo_1,r14
+		mov.w	@(marsGbl_MdTaskList_Sw,gbr),r0
+		tst     #1,r0
+		bf	.next_req
+		mov	#RAM_Mars_MdTasksFifo_2,r14
 .next_req:
+		mov	r13,@-r15
 		mov	@r14,r0
 		shll2	r0
 		mov	#slv_task_list,r1
 		mov	@(r1,r0),r0
 		jsr	@r0
 		nop
-		mov	#CS3|$44,r1
-		mov	@r1,r0
-		add	#1,r0
-		mov	r0,@r1
 		mov	#MAX_MDTSKARG*4,r0
-		add	r0,r14
-		mov	#RAM_Mars_MdTasksFifo_e,r0
-		cmp/ge	r0,r14
-		bf	.dont_reset
-		mov	#RAM_Mars_MdTasksFifo,r14
-.dont_reset:
-		mov	@(marsGbl_MdTasksFifo_Wr,gbr),r0
-		cmp/eq	r0,r14
-		bf	.next_req
-		mov	r14,r0
-		mov	r0,@(marsGbl_MdTasksFifo_Rd,gbr)
-		mov	#_sysreg+comm15,r1		; Now we are free
+		mov	@r15+,r13
+; 		dt	r13
+; 		bf/s	.next_req
+; 		add	r0,r14
+; 
+		mov.w	@(marsGbl_MdTaskList_Sw,gbr),r0		; Swap polygon buffer
+ 		xor	#1,r0
+ 		mov.w	r0,@(marsGbl_MdTaskList_Sw,gbr)
 		mov	#0,r0
+		mov	#_sysreg+comm15,r1
 		mov.b	r0,@r1
-.no_requests:
+.no_req:
 
 ; --------------------------------------------------------
 ; Start building polygons from models
@@ -815,10 +845,6 @@ slave_loop:
 ; GENESIS SIDE
 ; --------------------------------------------------------
 
-		mov	#_sysreg+comm6,r1		; DEBUG counter
-		mov.w	@r1,r0
-		add	#1,r0
-		mov.w	r0,@r1
 		mov	#0,r0
 		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
 		mov 	#RAM_Mars_Polygons_0,r1
@@ -853,7 +879,6 @@ slave_loop:
 		bf/s	.loop
 		add	#sizeof_mdlobj,r14
 .skip:
-
 	; Start Zsorting faces
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		tst     #1,r0
@@ -870,9 +895,9 @@ slave_loop:
 		bsr	slv_sort_z
 		nop
 .swap_now:
-		mov.w	@r13,r0				; DEBUG: report number of faces
-		mov	#_sysreg+comm0,r1
-		mov.w	r0,@r1
+; 		mov.w	@r13,r0				; DEBUG: report number of faces
+; 		mov	#_sysreg+comm0,r1
+; 		mov.w	r0,@r1
 		
 	; Check if MASTER finished
 		mov.l	#_sysreg+comm14,r1		; Master CPU still drawing pieces?
@@ -932,7 +957,7 @@ slv_sort_z:
 		mov	@r9,r0
 		mov	@(8,r9),r1
 		cmp/gt	r1,r0
-		bf	.z_high
+		bf	.z_high			; bf=back to front, bt=front to back
 		mov	r1,@r9
 		mov	r0,@(8,r9)
 		mov	@(4,r9),r0
@@ -1056,11 +1081,11 @@ slv_task_01:
 ; ------------------------------------------------
 
 s_irq_custom:
-; 		mov	r2,@-r15
-; 		mov	#_FRT,r1
-; 		mov.b   @(7,r1),r0
-; 		xor     #2,r0
-; 		mov.b   r0,@(7,r1)
+		mov	r2,@-r15
+		mov	#_FRT,r1
+		mov.b   @(7,r1),r0
+		xor     #2,r0
+		mov.b   r0,@(7,r1)
 ; 
 ; 	; Sorting task start here
 ; 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
@@ -1081,16 +1106,16 @@ s_irq_custom:
 ; .no_request:
 ; 	; End
 ; 
-; 		mov	#$FFFFFE80,r1
-; 		mov.w   #$A518,r0
-; 		mov.w   r0,@r1
-; 		or      #$20,r0
-; 		mov.w   r0,@r1
-; 		mov	#1,r2
-; 		mov.w   #$5A00,r0
-; 		or	r2,r0
-; 		mov.w	r0,@r1
-; 		mov	@r15+,r2
+		mov	#$FFFFFE80,r1
+		mov.w   #$A518,r0
+		mov.w   r0,@r1
+		or      #$20,r0
+		mov.w   r0,@r1
+		mov	#1,r2
+		mov.w   #$5A00,r0
+		or	r2,r0
+		mov.w	r0,@r1
+		mov	@r15+,r2
 		rts
 		nop
 		align 4
@@ -1153,15 +1178,16 @@ RAM_Mars_Objects	ds.b sizeof_mdlobj*MAX_MODELS	; Objects list
 RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
 RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
 RAM_Mars_VdpDrwList	ds.b sizeof_plypz*MAX_SVDP_PZ	; Pieces list
+RAM_Mars_FbDrwnBuff	ds.b (SCREEN_WIDTH/8)*SCREEN_HEIGHT
 RAM_Mars_VdpDrwList_e	ds.l 0				; (end-of-list label)
 RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer list(s)
 RAM_Mars_PlgnList_1	ds.l MAX_FACES
 RAM_Mars_Plgn_ZList	ds.l MAX_FACES*2		; Z value / foward faces
-RAM_Mars_MdTasksFifo	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Request list from MD
-RAM_Mars_MdTasksFifo_e	ds.l 0
+RAM_Mars_MdTasksFifo_1	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Request list from MD for Normal tasks
+RAM_Mars_MdTasksFifo_2	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Two lists: Read/Write
 RAM_Mars_Palette	ds.w 256			; Indexed palette
 RAM_Mars_PlgnNum_0	ds.w 1				; Number of polygons to read, both buffers
-RAM_Mars_PlgnNum_1	ds.w 1				; 
+RAM_Mars_PlgnNum_1	ds.w 1				;
 sizeof_marsvid		ds.l 0
 			finish
 			

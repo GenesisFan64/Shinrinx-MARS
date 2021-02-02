@@ -15,12 +15,11 @@
 ; Settings
 ; ----------------------------------------
 
-MAX_FACES	equ	256		; Maximum polygon faces (models,sprites) to store on buffer
-MAX_SVDP_PZ	equ	384		; This list loops on both read and write, increase the value if needed
-MAX_MODELS	equ	32		; Note: First 9 models are used for drawing layouts
-MAX_ZDIST	equ	-$1E00		; Max drawing distance (-Z max)
-
-LAY_WIDTH	equ	$10*2		; Layout data width * 2
+MAX_FACES	equ	256	; Maximum polygon faces (models,sprites) to store on buffer
+MAX_SVDP_PZ	equ	384	; This list loops on both read and write, increase the value if needed
+MAX_MODELS	equ	32	; Note: First 9 models are used for drawing layouts
+MAX_ZDIST	equ	-$2000	; Max drawing distance (-Z max)
+LAY_WIDTH	equ	$10*2	; Layout data width * 2
 
 ; ----------------------------------------
 ; Variables
@@ -38,19 +37,8 @@ PLGN_SPRITE	equ	%00100000
 ; Structs
 ; ----------------------------------------
 
-; model objects
-; 		struct 0		; MOVED to system/const.asm (shared with MD)
-; mdl_data	ds.l 1
-; mdl_x_pos	ds.l 1
-; mdl_y_pos	ds.l 1
-; mdl_z_pos	ds.l 1
-; mdl_x_rot	ds.l 1
-; mdl_y_rot	ds.l 1
-; mdl_z_rot	ds.l 1
-; sizeof_mdlobj	ds.l 0
-; 		finish
+; Check system/const.asm for the rest of the structs
 
-; OUTPUT polygon piece data
 		struct 0
 plypz_ypos	ds.l 1			; Ytop | Ybottom
 plypz_xl	ds.l 1
@@ -80,10 +68,7 @@ sizeof_polygn	ds.l 0
 
 ; ====================================================================
 ; ----------------------------------------------------------------
-; Init Video
-; 
-; Uses:
-; a0-a2,d0-d1
+; Init MARS Video
 ; ----------------------------------------------------------------
 
 MarsVideo_Init:
@@ -118,7 +103,6 @@ MarsVideo_Init:
 		add	r3,r0
 		dt	r2
 		bf	.loop
-		
 .fb_wait1:	mov.w   @($A,r4),r0
 		tst     #2,r0
 		bf      .fb_wait1
@@ -135,50 +119,6 @@ MarsVideo_Init:
 		rts
 		nop
 		align 4
-
-; ------------------------------------
-; Generate division table
-; it's faster than doing on HW
-; everytime
-; 
-; r1 - x/?
-; r2 - Output
-; 
-; zero division will be a
-; copy of ??/1
-; 
-; Example:
-; 	mov	#RAM_YourDivTable,r0
-; 	mov	@(r0,r2),r0	; (??/xx) << 2
-; 	dmuls	r6,r0		; (xx/r0)
-; 	sts	macl,r6
-; 	sts	mach,r0
-; 	xtrct   r0,r6		; Result
-; ------------------------------------
-
-; Mars_MkDivTable:
-; 		mov	#$FFFFFF00,r6
-; 		mov	#MAX_DIVTABLE,r4
-; 		mov     #0,r5
-; 		shll16  r1
-; .loop:
-; 		mov	r5,r0
-; 		cmp/eq	#0,r0
-; 		bf	.dontzer
-; 		mov	#1,r0
-; .dontzer:
-; 		mov	r5,@r6
-; 		mov	r1,@(4,r6)
-; 		nop
-; 		mov	@(4,r6),r0
-; 		mov	r0,@r2
-; 		add     #4,r2
-; 		add     #1,r5
-; 		dt      r4
-; 		bf	.loop
-; 		rts
-; 		nop
-; 		align 4
 		
 ; ------------------------------------
 ; MarsVideo_ClearFrame
@@ -192,7 +132,7 @@ MarsVideo_ClearFrame:
 		and	#%10,r0
 		cmp/eq	#2,r0
 		bt	.wait2
-		
+
 		mov	#255,r2			; 256 words per pass
 		mov	#$100,r3		; Starting address
 		mov	#0,r4			; Clear to zero
@@ -244,9 +184,10 @@ MarsVideo_FrameSwap:
 ; ------------------------------------
 ; MarsVdp_LoadPal
 ; 
-; Load palette to RAM, the
-; Palette will be transfered on VBlank
-;
+; Load palette to RAM
+; then the Palette will be transfered
+; on VBlank
+; 
 ; Input:
 ; r1 - Data
 ; r2 - Start at
@@ -286,8 +227,6 @@ MarsVideo_LoadPal:
 ; ------------------------------------------------
 
 ; r1 - layout data pointer
-; TODO: improve this later
-
 MarsLay_Make:
 		mov	#RAM_Mars_ObjLayout,r14
 		mov	#RAM_Mars_ObjCamera,r13
@@ -300,7 +239,6 @@ MarsLay_Make:
 		mov	r0,@(mdllay_y,r14)
 		mov	r0,@(mdllay_z,r14)
 		mov	r1,r11
-
 MarsLay_Draw:
 		mov	#RAM_Mars_Objects,r10
 		mov	r10,r2
@@ -474,6 +412,7 @@ MarsLay_Draw:
 		mov	#-$200000,r3
 		add	#(1*2),r13
 		mov	#$100000,r11
+
 		sts	pr,@-r15
 		bsr	.do_piece
 		mov	#3,r5
@@ -1362,11 +1301,11 @@ CACHE_MASTER:
 
 ; Cache_OnInterrupt:
 m_irq_custom:
-		mov	#$FFFFFE10,r1
+		mov	#_FRT,r1
 		mov.b	@(7,r1), r0
 		xor	#2,r0
 		mov.b	r0,@(7,r1)
-		mov.w	@(marsGbl_DrwTask,gbr),r0	; Framebuffer clear request?
+		mov.w	@(marsGbl_DrwTask,gbr),r0	; Framebuffer clear request ($08)?
 		cmp/eq	#8,r0
 		bf	maindrw_tasks
 
@@ -1392,7 +1331,7 @@ m_irq_custom:
 		mov.w   r0,@(4,r1)
 		mov     #0,r0			; SVDP-fill pixel data and start filling
 		mov.w   r0,@(8,r1)		; After finishing, SVDP-address got updated
-		mov.l   #$FFFFFE80,r1		; Interrupt delay(?)
+		mov.l   #$FFFFFE80,r1
 		mov.w   #$A518,r0		; OFF
 		mov.w   r0,@r1
 		or      #$20,r0			; ON
@@ -1404,7 +1343,7 @@ m_irq_custom:
 		dt	r0
 		bf/s	.on_clr
 		mov	r0,@r1
-		mov	#1,r0			; If done: set task $01
+		mov	#1,r0			; If finished: set task $01
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 .on_clr:
 		mov	@r15+,r2
@@ -1660,10 +1599,9 @@ drwsld_nxtline_tex:
 		mov 	r9,r0				; Y position * $200
 		shll8	r0
 		shll	r0
-		mov 	#_overwrite+$200,r10		; Point to first usable line
+		mov 	#_overwrite+$200,r10		; Point to TOPLEFT in framebuffer
 		add 	r0,r10				; Add Y
 		add 	r11,r10				; Add X
-		
 		mov	#$1FFF,r2
 		mov	@(plypz_mtrl,r14),r11		; r11 - texture data
 		mov	@(plypz_mtrlopt,r14),r4		;  r4 - texture palincr|width

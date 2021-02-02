@@ -170,7 +170,8 @@ MD_Main:
 		move.l	cam_x_rot(a0),d5		; X rot
 		move.l	cam_y_rot(a0),d6		; Y rot
 		move.l	cam_z_rot(a0),d7		; Z rot
-		bsr	System_MdToMars_Add
+		bsr	System_MdMars_Add
+		bsr	System_MdMars_SendWait
 		bra	.loop
 		
 ; ====================================================================

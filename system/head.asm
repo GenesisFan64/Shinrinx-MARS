@@ -166,17 +166,17 @@
 		dc.l MARS_RAMDATA			; Set to 0 if SH2 code points to ROM
 		dc.l 0					; No info, set to zero.
 		dc.l MARS_RAMDATA_e-MARS_RAMDATA	; Set to 4 if SH2 code points to ROM
-		dc.l SH2_M_Entry			; Master SH2 PC
-		dc.l SH2_S_Entry			; Slave SH2 PC
-		dc.l SH2_Master				; Master SH2 default VBR
-		dc.l SH2_Slave				; Slave SH2 default VBR
+		dc.l SH2_M_Entry			; Master SH2 PC (SH2 map area)
+		dc.l SH2_S_Entry			; Slave SH2 PC (SH2 map area)
+		dc.l SH2_Master				; Master SH2 default VBR (Vector table)
+		dc.l SH2_Slave				; Slave SH2 default VBR (Vector table)
 		binclude "system/mars/data/security.bin"
 
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; Entry point, this must be located at $3F0
 ; 
-; After the 32X's internal initializacion finishes,
+; After the 32X's internal initialization finishes,
 ; It returns the following stuff:
 ; 
 ; d0: %h0000000 rsc000ti
@@ -229,7 +229,7 @@ MARS_Entry:
 		lea	($A10000).l,a5			; a5 - MD's I/O area base
 		move.l	#-64,a4				; a4 - $FFFFFF9C
 		move.w	#3900,d7			; d7 - loop this many times
-		lea	($880000+$6E4),a1		; Jump to ?res_wait (check ICD_MARS.PRG)
+		lea	($880000+$6E4),a1		; Jump to ?res_wait (check ICD_MARS.PRG for detail)
 		jmp	(a1)
 .adapterenable:
 		lea	(sysmars_reg),a5
@@ -266,14 +266,14 @@ MARS_Entry:
 		btst	#bitVint,d0
 		beq.s	.waitframe
 		move.l	#$80048144,(vdp_ctrl).l		; Keep display
-		lea	($FF0000),a0			; Clear all RAM until $FFFF00
+		lea	($FF0000),a0			; Clear RAM until $FFFF00
 		move.w	#($F000/4)-1,d0
 .clrram:
 		clr.l	(a0)+
 		dbf	d0,.clrram
 		movem.l	($FF0000),d0-a6			; Clear registers (using zeros from RAM)
-		lea	Engine_Code(pc),a0		; Now copy ALL our 68k code to RAM, to prevent BUS-fighthing the
-		lea	($FF0000),a1			; ROM area (speed-up purposes)
+		lea	Engine_Code(pc),a0		; Now copy ALL our 68k code to RAM, to prevent
+		lea	($FF0000),a1			; BUS-fighthing the ROM area (speed-up purposes)
 		move.w	#Engine_Code_end-Engine_Code/2,d0
 .copyme:
 		move.w	(a0)+,(a1)+

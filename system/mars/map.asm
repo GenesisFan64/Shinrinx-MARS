@@ -33,7 +33,6 @@ TH		equ	$20000000	; Cache-thru OR|value
 ; MARS System
 ; --------------------------------------------------------
 
-; Don't use DREQ, it's broken
 _sysreg		equ	$00004000|TH	; SYSREG. | MD SIDE: sysmars_reg
 adapter		equ	$00		; adapter control register
 intmask		equ	$01		; interrupt mask

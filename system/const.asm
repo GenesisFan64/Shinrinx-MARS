@@ -1,19 +1,13 @@
 ; ====================================================================
 ; ----------------------------------------------------------------
-; Constants shared for both CPUs
-; ----------------------------------------------------------------
-
-MDRAM_START	equ $FFFF8800		; Start of working MD RAM (below it is free for CODE or decompression output)
-MAX_MDERAM	equ $800		; MAX RAM for current screen mode (title,menu,or gameplay...)
-
-; ====================================================================
-; ----------------------------------------------------------------
 ; MD/MARS shared constants
 ; ----------------------------------------------------------------
 
 ; MD to MARS custom FIFO section
-MAX_MDTSKARG	equ 8			; MAX MD task arguments
-MAX_MDTASKS	equ 16			; MAX MD tasks
+MAX_MDTSKARG	equ 8			; MAX MD task arguments (LONGS)
+; MAX_MDPWMARG	equ 8			; MAX MD PWM tasks arguments (LONGS)
+MAX_MDTASKS	equ 8			; MAX requests from MD to here
+; MAX_MDPWMTSK	equ 8			; MAX PWM tasks from MD
 
 ; model objects
 		struct 0
@@ -131,9 +125,11 @@ bitJoyMode	equ 3
 
 ; ====================================================================
 ; --------------------------------------------------------
-; Others
+; Settings
 ; --------------------------------------------------------
 
+MDRAM_START	equ $FFFF8800		; Start of working MD RAM (below it is free for CODE or decompression output)
+MAX_MDERAM	equ $800		; MAX RAM for current screen mode (title,menu,or gameplay...)
 varNullVram	equ $7FF		; Used in some Video routines
 
 ; ====================================================================

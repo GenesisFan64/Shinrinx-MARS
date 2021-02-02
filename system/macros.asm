@@ -8,7 +8,7 @@
 ; --------------------------------------------------------
 
 		!org 0				; Start at 0
-		cpu 		68000		; BASE CPU is 68k (manually changed later)
+		cpu 		68000		; Current CPU is 68k, gets changed later
 		padding		off		; Dont pad dc.b
 		listing 	purecode	; Want listing file, but only the final code in expanded macros
 		supmode 	on 		; Supervisor mode
@@ -30,7 +30,7 @@ locate		function a,b,c,(c&$FF)|(b<<8&$FF00)|(a<<16&$FF0000)	; VDP locate: Layer|
 ; ---------------------------------------------
 
 ; -------------------------------------
-; Reserve memory space
+; Reserve memory section
 ; -------------------------------------
 
 struct		macro thisinput			; Reserve memory address
