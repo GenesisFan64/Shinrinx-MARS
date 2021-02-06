@@ -3,6 +3,8 @@
 ; Sound
 ; ----------------------------------------------------------------
 
+; TODO: Implement GEMA later.
+
 ; --------------------------------------------------------
 ; Init Sound
 ; 
@@ -36,9 +38,6 @@ Sound_Init:
 .copy:
 		move.b	(a0)+,(a1)+
 		dbf	d1,.copy
-		
-	; FM init stuff
-	; TODO
 
 	; Start Z80
 		move.w	#0,(z80_reset).l		; Reset request

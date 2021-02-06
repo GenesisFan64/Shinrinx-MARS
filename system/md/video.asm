@@ -3,10 +3,6 @@
 ; MD Video
 ; ----------------------------------------------------------------
 
-; ASSEMBLER FLAGS USED:
-; MCD  - Mega CD
-; MARS - 32X
-
 ; --------------------------------------------------------
 ; Init Video
 ; 
@@ -35,8 +31,8 @@ Video_Init:
 		dbf	d1,.loop
 .exit:
 
-	; 32X ONLY:
-	; Transfer DMA tasks to RAM
+	; Transfer the DMA tasks to RAM
+	; TODO: change this later, we are on RAM already...
 		lea	Video_RamCode(pc),a0
 		lea	(RAM_ExRamSub).w,a1
 		move.w	#((Video_RamCode_e-Video_RamCode)/2)-1,d0
@@ -83,7 +79,8 @@ Video_Clear:
 ; ---------------------------------
 ; Video_Update
 ; 
-; Update registers below $91
+; Copy our RAM reg settings to
+; VDP from $80 to $90
 ; 
 ; Uses:
 ; d4-d5,a4-a5
@@ -104,15 +101,18 @@ Video_Update:
 		
 ; --------------------------------------------------------
 ; Video_LoadPal
+; Load palette to VDP directly, waits VBLANK
 ; 
-; Load palette to VDP
-; 
+; Input:
 ; a0 - Palette data
 ; d0 - Start at
 ; d1 - Num of colors - 1
 ; 
 ; Uses:
 ; a4,d4
+; 
+; Note:
+; It will show dots on screen
 ; --------------------------------------------------------
 
 Video_LoadPal:
@@ -149,9 +149,7 @@ Video_LoadPal:
 Video_LoadMap:
 		lea	(vdp_data),a4
 		bsr	vid_PickLayer
-		
-	; Start here
-		move.w	d1,d5
+		move.w	d1,d5		; Start here
 .yloop:
 		swap	d5
 		move.l	d4,4(a4)
@@ -202,9 +200,7 @@ Video_LoadMap:
 Video_LoadMap_Vert:
 		lea	(vdp_data),a4
 		bsr	vid_PickLayer
-		
-	; Start here
-		move.l	d1,d5
+		move.l	d1,d5		; Start here
 		swap	d5
 .xloop:
 		swap	d5
@@ -262,13 +258,10 @@ Video_LoadMap_Vert:
 ; --------------------------------------------------------
 
 ; TODO: double interlace
-
 Video_AutoMap_Vert:
 		lea	(vdp_data),a4
 		bsr	vid_PickLayer
-		
-	; Start here
-		move.w	d2,d7
+		move.w	d2,d7		; Start here
 		move.l	d1,d5
 		swap	d5
 .xloop:
@@ -486,8 +479,7 @@ Video_Print:
 ; --------------------------------------------------------
 
 vid_PickLayer:
-	; Pick layer
-		move.l	d0,d6
+		move.l	d0,d6			; Pick layer
 		swap	d6
 		btst	#0,d6
 		beq.s	.plawnd
@@ -685,9 +677,7 @@ Video_LoadArt:
 
 ; ====================================================================
 ; --------------------------------------------------------
-; DMA ROM to VDP Transfers
-; 
-; These subroutines will be stored on RAM if using 32X
+; DMA ROM to VDP Transfers, sets RV=1
 ; --------------------------------------------------------
 
 Video_RamCode:

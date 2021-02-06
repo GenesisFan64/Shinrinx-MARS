@@ -3,10 +3,6 @@
 ; System
 ; ----------------------------------------------------------------
 
-; ASSEMBLER FLAGS USED:
-; MCD  - Mega CD
-; MARS - 32X
-
 ; --------------------------------------------------------
 ; Init System
 ; 
@@ -34,7 +30,7 @@ System_Init:
 		move.w	#$4EF9,d0		; Set JMP opcode for the Hblank/VBlank jumps
  		move.w	d0,(RAM_MdMarsVInt).l
 		move.w	d0,(RAM_MdMarsHInt).l
-		move.l	#$56255769,d0
+		move.l	#$56255769,d0		; Set these random values
 		move.l	#$95116102,d1
 		move.l	d0,(RAM_SysRandVal).l
 		move.l	d1,(RAM_SysRandSeed).l
@@ -44,84 +40,10 @@ System_Init:
 		move.w	#$2000,sr		; Enable interrupts
 		rts
 ; 		bra	System_SaveInit
-		
+
 ; ====================================================================
-; ----------------------------------------------------------------
-; System subroutines
-; ----------------------------------------------------------------
-
 ; --------------------------------------------------------
-; System_Random
-; 
-; Set random value
-; 
-; Output:
-; d0 | LONG
-; --------------------------------------------------------
-
-System_Random:
-		move.l	(RAM_SysRandSeed),d5
-		move.l	(RAM_SysRandVal),d4
-		rol.l	#1,d5
-		asr.l	#1,d4
-		add.l	d5,d4
-		move.l	d5,(RAM_SysRandSeed).l
-		move.l	d4,(RAM_SysRandVal).l
-		move.l	d4,d0
-		rts
-		
-; --------------------------------------------------------
-; System_SetInts
-; 
-; Set new interrputs
-; 
-; d0 | LONG - VBlank
-; d1 | LONG - HBlank
-;
-; Uses:
-; d4
-; 
-; Notes:
-; setting 0 or negative number will ignore changes
-; --------------------------------------------------------
-
-System_SetInts:
-		move.l	d0,d4
-		beq.s	.novint
-		bmi.s	.novint
-		or.l	#$880000,d4
- 		move.l	d4,(RAM_MdMarsVInt+2).l
-.novint:
-		move.l	d1,d4
-		beq.s	.nohint
-		bmi.s	.nohint
-		or.l	#$880000,d4
-		move.l	d4,(RAM_MdMarsHInt+2).l
-.nohint:
-		rts
-
-; --------------------------------------------------------
-; System_VSync
-; 
-; Waits for VBlank
-; 
-; Uses:
-; d4
-; --------------------------------------------------------
-
-System_VSync:
-		move.w	(vdp_ctrl),d4
-		btst	#bitVint,d4
-		beq.s	System_VSync
-		bsr	System_Input
-		add.l	#1,(RAM_FrameCount).l
-.inside:	move.w	(vdp_ctrl),d4
-		btst	#bitVint,d4
-		bne.s	.inside
-		rts
-		
-; --------------------------------------------------------
-; System_Input
+; System_Input (VBLANK ONLY)
 ; 
 ; Uses:
 ; d4-d6,a4-a5
@@ -291,7 +213,118 @@ System_Input:
 ; 		move.b	d0,(a5)
 ; 		move.w	#0,(z80_bus).l
 ; 		rts
+
+; ------------------------------------------------
+; Send requests to 32X
+; 
+; Uses comm8,comm10,comm12
+; ------------------------------------------------
+
+; Skip if busy
+System_MdMars_SendDrop:
+		move.b	(sysmars_reg+comm15),d0
+		bne.s	.mid_write
+		bra	SysMdMars_Go
+.mid_write:
+		rts
 		
+; Wait if Busy
+System_MdMars_SendWait:
+		move.b	(sysmars_reg+comm15),d0
+		bne.s	System_MdMars_SendWait
+		bra	SysMdMars_Go
+		
+; Send tasks now.
+SysMdMars_Go:
+		lea	(sysmars_reg),a5
+		move.w	sr,d7
+		move.w	#$2700,sr
+		lea	(sysmars_reg+comm8),a4	; a4 - comm8
+		clr.w	(RAM_FifoMarsCnt).w
+		lea	(RAM_FifoToMars),a6
+		move.w	#(MAX_MDTSKARG)-1,d2
+		move.w	#0,(a4)			; Mode 0: Request transfer + clear tag
+		move.w	standby(a5),d0		; SLAVE CMD interrupt
+		bset	#1,d0
+		move.w	d0,standby(a5)
+.wait_cmd:	move.w	standby(a5),d0
+		btst    #1,d0
+		bne.s   .wait_cmd
+.wait_start:
+		move.b	1(a4),d0
+		bmi.s	.mid_write
+		bne.s	.wait_start
+.copy_now:
+		move.l	(a6)+,d0
+		move.w	d0,4(a4)
+		swap	d0
+		move.w	d0,2(a4)
+		move.b	#1,1(a4)		; send PASS tag
+.copy_wait:	nop
+		move.b	1(a4),d0
+		bmi.s	.mid_write
+		bne.s	.copy_wait
+		dbf	d2,.copy_now
+		move.b	#2,1(a4)		; send FINISH tag
+		move.w	d7,sr
+.mid_write:
+		rts
+
+; ====================================================================
+; ----------------------------------------------------------------
+; System subroutines
+; ----------------------------------------------------------------
+
+; --------------------------------------------------------
+; System_Random
+; 
+; Set random value
+; 
+; Output:
+; d0 | LONG
+; --------------------------------------------------------
+
+System_Random:
+		move.l	(RAM_SysRandSeed),d5
+		move.l	(RAM_SysRandVal),d4
+		rol.l	#1,d5
+		asr.l	#1,d4
+		add.l	d5,d4
+		move.l	d5,(RAM_SysRandSeed).l
+		move.l	d4,(RAM_SysRandVal).l
+		move.l	d4,d0
+		rts
+		
+; --------------------------------------------------------
+; System_SetInts
+; 
+; Set new interrputs
+; 
+; d0 | LONG - VBlank
+; d1 | LONG - HBlank
+;
+; Uses:
+; d4
+; 
+; Notes:
+; setting 0 or negative number will ignore changes
+; --------------------------------------------------------
+
+System_SetInts:
+		move.l	d0,d4
+		beq.s	.novint
+		bmi.s	.novint
+		or.l	#$880000,d4
+ 		move.l	d4,(RAM_MdMarsVInt+2).l
+.novint:
+		move.l	d1,d4
+		beq.s	.nohint
+		bmi.s	.nohint
+		or.l	#$880000,d4
+		move.l	d4,(RAM_MdMarsHInt+2).l
+.nohint:
+		rts
+
 ; --------------------------------------------------------
 ; System_SaveInit
 ; 
@@ -315,13 +348,40 @@ System_SaveInit:
 		rts
 
 ; --------------------------------------------------------
+; System_VSync
+; 
+; Waits for VBlank manually
+; 
+; Uses:
+; d4
+; --------------------------------------------------------
+
+System_VSync:
+		move.w	(vdp_ctrl),d4
+		btst	#bitVint,d4
+		beq.s	System_VSync
+		bsr	System_Input
+		add.l	#1,(RAM_FrameCount).l
+.inside:	move.w	(vdp_ctrl),d4
+		btst	#bitVint,d4
+		bne.s	.inside
+		rts
+
+; --------------------------------------------------------
 ; System_MdToMarsTasks
 ;
 ; Transfer list of MD requests to the 32X
 ; --------------------------------------------------------
 
 ; ------------------------------------------------
-; Add task for 32X
+; Add task for 32X using d0-d7 registers
+; 
+; Input:
+;    d0 - Task ID
+; d1-d7 - Task arguments
+; 
+; Uses:
+; a6
 ; ------------------------------------------------
 
 System_MdMars_Add:
@@ -331,60 +391,9 @@ System_MdMars_Add:
 		lea	(RAM_FifoToMars).l,a6
 		adda	(RAM_FifoMarsCnt).w,a6
 		movem.l	d0-d7,(a6)				; Send variables to RAM
-		add.w	#MAX_MDTSKARG*4,(RAM_FifoMarsCnt).w	; TODO: add limit check
+		add.w	#MAX_MDTSKARG*4,(RAM_FifoMarsCnt).w
 		move.w	#0,(RAM_FifoMarsWrt).w
 .ran_out
-		rts
-
-; ------------------------------------------------
-; Send requests buf skip if busy
-; ------------------------------------------------
-
-System_MdMars_SendDrop:
-		move.b	(sysmars_reg+comm15),d0
-		bne.s	.mid_write
-		bra	SysMdMars_Go
-.mid_write:
-		rts
-System_MdMars_SendWait:
-		move.b	(sysmars_reg+comm15),d0
-		bne.s	System_MdMars_SendWait
-		bra	SysMdMars_Go	
-SysMdMars_Go:
-		lea	(sysmars_reg),a5
-		move.w	sr,d7
-		move.w	#$2700,sr
-		move.w	standby(a5),d0			; SLAVE CMD interrupt
-		bset	#1,d0
-		move.w	d0,standby(a5)
-.wait_cmd:	move.w	standby(a5),d0
-		btst    #1,d0
-		bne.s   .wait_cmd
-		lea	(sysmars_reg+comm8),a4		; a4 - comm8
-		clr.w	(RAM_FifoMarsCnt).w
-		lea	(RAM_FifoToMars),a6
-		move.w	#(MAX_MDTSKARG)-1,d2
-.paste:
-		nop
-		nop
-		nop
-		move.b	(a4),d0			; stop until CMD is waiting
-		bne.s	.paste
-		move.l	(a6)+,d0
-		move.w	d0,4(a4)
-		swap	d0
-		move.w	d0,2(a4)
-		move.b	#1,(a4)			; send PASS tag
-		dbf	d2,.paste
-.busy_2:
-		nop
-		nop
-		nop
-		move.b	(a4),d0			; last wait
-		bne.s	.busy_2
-		move.b	#2,(a4)			; send FINISH tag
-		move.w	d7,sr
-.mid_write:
 		rts
 
 ; ====================================================================
@@ -405,7 +414,7 @@ Mode_Init:
 		
 ; ====================================================================
 ; ----------------------------------------------------------------
-; System: default interrupts
+; Default interrupts
 ; ----------------------------------------------------------------
 
 ; --------------------------------------------------------
@@ -425,65 +434,10 @@ VInt_Default:
 
 HInt_Default:
 		rte
-	
-; ====================================================================
-; ----------------------------------------------------------------
-; MARS ONLY
-; ----------------------------------------------------------------
-		
-; ; --------------------------------------------------------
-; ; MdMars_SendData
-; ; 
-; ; Transfer data from 68k to SH2 using DREQ
-; ;
-; ; Input:
-; ; a0 - Input data
-; ; d0 | LONG - Output address (SH2 map)
-; ; d1 | WORD - Size
-; ;
-; ; Uses:
-; ; d4-d5,a4-a6
-; ; --------------------------------------------------------
-; 
-; ; OLD AND BROKEN
-; 
-; MdMars_SendData:
-; 		lea	(sysmars_reg),a6
-; 		move.w	#0,dreqctl(a6)
-; 		move.w	d1,d4
-; 		lsr.w	#1,d4
-; 		move.w	d4,dreqlen(a6)
-; 		move.w	#%100,dreqctl(a6)
-; 		move.l	d0,d4
-; 		move.w	d4,dreqdest+2(a6)
-; 		swap	d4
-; 		move.w	d4,dreqdest(a6)
-; 
-; 		move.w	2(a6),d4		; CMD Interrupt
-; 		bset	#0,d4
-; 		move.w	d4,2(a6)
-; 		movea.l	a0,a4
-; 		lea	dreqfifo(a6),a5
-; 		move.w	d1,d5
-; 		lsr.w	#3,d5
-; 		sub.w	#1,d5
-; .sendfifo:
-; 		move.w	(a4)+,(a5)
-; 		move.w	(a4)+,(a5)
-; 		move.w	(a4)+,(a5)
-; 		move.w	(a4)+,(a5)
-; .full:
-; 		move.w	dreqctl(a6),d4
-; 		btst	#7,d4
-; 		bne.s	.full
-; 		dbra	d5,.sendfifo
-; 		rts
-
-; --------------------------------------------------------
 		
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; System data
 ; ----------------------------------------------------------------
 
-; Stuff like Sine data for MD will go here.
+; Stuff like Sinewave data for MD will go here.

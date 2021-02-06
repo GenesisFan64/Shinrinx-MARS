@@ -42,5 +42,5 @@ zpsg_ctrl	equ	$7F11		; PSG control
 ; 32X registers
 ; ----------------------------------------------------------------
 
-sysmars_ID	equ	$A130EC		; MARS ID "MARS" string
-sysmars_reg	equ	$A15100		; MARS 32X section (check for mars_ID first)
+sysmars_ID	equ	$A130EC		; MARS ID "MARS" identifier
+sysmars_reg	equ	$A15100		; MARS 32X registers section, see system/mars/map.asm for variables

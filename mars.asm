@@ -1,6 +1,6 @@
 ; ===========================================================================
 ; +-----------------------------------------------------------------+
-; 32X GAME BASE
+; PROJECT SHINRINX
 ; 
 ; Started on 16/01/2020
 ; +-----------------------------------------------------------------+
@@ -22,17 +22,30 @@
 ; 68K CODE Section
 ; 
 ; Stored on RAM to prevent BUS fighting (Kolibri-style)
-; 
-; or if needed: remove the RAM-copying part from head.asm and
-; change the phase from $FF0000 to $880000 (Size: 512kb)
 ; ----------------------------------------------------------------
 
 Engine_Code:
 		phase $FF0000
-		include "code/md.asm"
+; --------------------------------------------------------
+; Include system features
+; --------------------------------------------------------
+
+		include	"system/md/system.asm"
+		include	"system/md/video.asm"
+		include	"system/md/sound.asm"
+		
+; --------------------------------------------------------
+; Initialize system
+; --------------------------------------------------------
+
+MD_Main:
+		bsr 	Sound_init
+		bsr 	Video_init
+		bsr	System_Init
+		include "code/md/gm_mode0.asm"
 		dephase
 Engine_Code_end:
-	if MOMPASS=7
+	if MOMPASS=6
 		message "MD CODE uses: \{Engine_Code_end-Engine_Code}"
 	endif
 	
@@ -51,29 +64,30 @@ MARS_RAMDATA:
 MARS_RAMDATA_E:
 		align 4
 
-; ====================================================================
-; MD DATA BANK
+; --------------------------------------------------------
+; SINGLE MD BANK
 ; 
 ; $900000 - $9FFFFF
-; ====================================================================
+; --------------------------------------------------------
 
 		align 4
 		phase $900000+*				; Only one currently
 		include "data/md_bank0.asm"
 		dephase
 
-; ====================================================================
-; DATA for DMA transfers (bank-less but with the old limitations)
-; ====================================================================
+; --------------------------------------------------------
+; DATA for DMA transfers, bank-less
+; --------------------------------------------------------
 
 		align 4
 		include "data/md_dmadata0.asm"
 		
-; ====================================================================
-; MARS ROM data (Acessed by SH2 only)
+; --------------------------------------------------------
+; MARS ROM data for SH2
 ; 
-; This will be gone if doing DMA transfers
-; ====================================================================
+; This section will be gone if RV=1
+; (doing any MD ROM-to-DMA transfer)
+; --------------------------------------------------------
 
 		phase CS1+*
 		align 4

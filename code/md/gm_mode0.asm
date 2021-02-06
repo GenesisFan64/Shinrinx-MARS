@@ -1,22 +1,7 @@
 ; ====================================================================
 ; ----------------------------------------------------------------
-; MD code (at $FF0000)
+; Game Mode 0
 ; ----------------------------------------------------------------
-
-; ====================================================================
-; ------------------------------------------------------
-; Global RAM
-; ------------------------------------------------------
-
-		struct RAM_MdGlobal
-RAM_MdCamera	ds.b sizeof_camera
-RAM_MdModels	ds.b sizeof_mdlobj		; info on /system/mars/video.asm
-RAM_BgCamera	ds.l 1
-RAM_BgCamCurr	ds.l 1
-RAM_MdMdlsUpd	ds.w 1
-RAM_MdGlbExmpl	ds.w 1
-sizeof_mdglbl	ds.l 0
-		finish
 
 ; ====================================================================
 ; ------------------------------------------------------
@@ -30,44 +15,32 @@ var_MoveSpd	equ	$1000
 ; Structs
 ; ------------------------------------------------------
 
-; 		struct 0
-; strc_xpos	ds.w 1
-; strc_ypos	ds.w 1
-; 		finish
+		struct 0
+strc_xpos	ds.w 1
+strc_ypos	ds.w 1
+		finish
 
 ; ====================================================================
 ; ------------------------------------------------------
-; RAM for current screen mode
+; This mode's RAM
 ; ------------------------------------------------------
 
-; 		struct RAM_ModeBuff
-; ScrnTest_Info	ds.w 1
-; 		finish
-
-; ====================================================================
-; --------------------------------------------------------
-; Include system features
-; --------------------------------------------------------
-
-		include	"system/md/system.asm"
-		include	"system/md/video.asm"
-		include	"system/md/sound.asm"
-
-; ====================================================================
-; --------------------------------------------------------
-; Initialize system
-; --------------------------------------------------------
-
-MD_Main:
-		bsr 	Sound_init
-		bsr 	Video_init
-		bsr	System_Init
+		struct RAM_ModeBuff
+RAM_MdCamera	ds.b sizeof_camera
+RAM_MdModels	ds.b sizeof_mdlobj		; info on /system/mars/video.asm
+RAM_BgCamera	ds.l 1
+RAM_BgCamCurr	ds.l 1
+RAM_MdMdlsUpd	ds.w 1
+RAM_MdGlbExmpl	ds.w 1
+sizeof_mdglbl	ds.l 0
+		finish
 		
 ; ====================================================================
 ; ------------------------------------------------------
 ; Code start
 ; ------------------------------------------------------
-	
+
+MD_GmMode0:
 		move.w	#$2700,sr
 		bsr	Mode_Init
 		bsr	Video_PrintInit
@@ -153,14 +126,12 @@ MD_Main:
 		move.w	d1,(RAM_BgCamera).l
 		move.w	#1,(RAM_MdMdlsUpd).l
 .no_camanim:
-		move.w	(RAM_BgCamera).l,(RAM_BgCamCurr).l
 
 	; Foward/Backward/Left/Right
 		bsr	MdMdl_Usercontrol
 		tst.w	(RAM_MdMdlsUpd).l
 		beq	.loop
 		clr.w	(RAM_MdMdlsUpd).l
-		
 		lea	(RAM_MdCamera),a0
 		move.l	#1,d0				; Slave task 1, set camera
 		move.l	#0,d1				; Camera slot (TODO)	
@@ -172,6 +143,7 @@ MD_Main:
 		move.l	cam_z_rot(a0),d7		; Z rot
 		bsr	System_MdMars_Add
 		bsr	System_MdMars_SendWait
+		move.w	(RAM_BgCamera).l,(RAM_BgCamCurr).l
 		bra	.loop
 		
 ; ====================================================================

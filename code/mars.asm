@@ -327,12 +327,13 @@ s_irq_cmd:
 .this_fifo:
 		mov	#_sysreg+comm8,r1
 .next_long:
-		mov	#4*60,r4	; r4 - TIMEOUT COUNTER if on HW gets stuck
+		mov	#60*2,r4	; r4 - TIMEOUT COUNTER if HW gets stuck
+		mov	#-1,r0
 .retry:
 		dt	r4
 		bt	.trnsfr_fail
 		nop
-		mov.b	@r1,r0
+		mov.b	@(1,r1),r0
 		cmp/eq	#2,r0		; Got 2? (finish)
 		bt	.trnsfr_done
 		cmp/eq	#1,r0		; Got 1? (copy data)
@@ -346,14 +347,14 @@ s_irq_cmd:
 		or	r3,r0
 		mov	r0,@r2
 		mov	#0,r0
-		mov.b	r0,@r1
+		mov.b	r0,@(1,r1)
 		nop
 		nop
 		bra	.next_long
 		add	#4,r2
 .trnsfr_done:
 		mov	#0,r0
-		mov.b	r0,@r1				; close tasks
+		mov.w	r0,@r1		; close tasks
 		nop
 		nop
 		mov	#1,r0
@@ -366,22 +367,6 @@ s_irq_cmd:
 		rts
 		nop
 		align 4
-
-; REFERENCE FOR FIFO (TODO)
-; 		mov	#_DMASOURCE0,r1
-; 		mov	#$44E0,r0
-; 		mov	r0,@($C,r1)		; _DMACHANNEL0
-; 		mov	#$20004012,r0
-; 		mov	r0,@r1			; _DMASOURCE0 = DREQ FIFO
-; 		mov	#CS3|$1A0000,r0		; TODO: read/write switch
-; 		mov	r0,@(4,r1)		; _DMADEST0
-; 		mov	#$20004010,r0
-; 		mov	r0,@(8,r1)		; _DMASOURCE0 = DREQ len
-; 		mov	@($C,r1),r0		; null read(?)
-; 		mov	#$44E1,r0
-; 		mov	r0,@($C,r1)		; _DMACHANNEL0		
-; 		mov	#1,r0
-; 		mov	r0,@($30,r1)		; _DMAOPERATION = 1
 
 ; =================================================================
 ; ------------------------------------------------
@@ -1151,7 +1136,7 @@ sizeof_marsram	ds.l 0
 	endif
 
 .here:
-	if MOMPASS=7
+	if MOMPASS=6
 		message "MARS RAM from \{((SH2_RAM)&$FFFFFF)} to \{((.here)&$FFFFFF)}"
 	endif
 		finish

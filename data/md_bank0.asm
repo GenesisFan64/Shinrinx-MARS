@@ -3,7 +3,7 @@
 ; Single 68k DATA BANK for MD ($900000-$9FFFFF)
 ; for stuff other than DMA transfers
 ; 
-; Maximum size: $FFFFF bytes
+; Maximum size: $0FFFFF bytes
 ; ----------------------------------------------------------------
 
 		align 4

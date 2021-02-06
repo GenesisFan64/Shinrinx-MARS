@@ -104,6 +104,9 @@ MarsSound_PWM:
 
 ; ------------------------------------------------
 ; Play wave
+; 
+; r3 - left wave
+; r4 - right wave
 ; ------------------------------------------------
 
 		mov	#_sysreg+monowidth,r1
@@ -111,7 +114,6 @@ MarsSound_PWM:
 		mov.b	@r1,r0
  		tst	#$80,r0
  		bf	.full
- 		
 		mov	#_sysreg+lchwidth,r1
 		mov	#_sysreg+rchwidth,r2
  		mov	r3,r0
@@ -141,7 +143,6 @@ MarsSound_PWM:
 MarsSound_Init:
 		sts	pr,@-r15
 		stc	gbr,@-r15
-
 		mov	#_sysreg,r0
 		ldc	r0,gbr
 		mov	#((((23011361<<1)/22050+1)>>1)+1),r0	; 32000 works but the CPU must be calm
@@ -152,7 +153,6 @@ MarsSound_Init:
 		mov.w	r0,@(monowidth,gbr)
 		mov.w	r0,@(monowidth,gbr)
 		mov.w	r0,@(monowidth,gbr)
-
 		ldc	@r15+,gbr
 		lds	@r15+,pr
 		rts

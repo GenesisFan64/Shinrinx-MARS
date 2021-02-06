@@ -1255,30 +1255,29 @@ mdlrd_rotate:
 MarsVideo_SetWatchdog:
 		stc	sr,@-r15
 		stc	sr,r0
-		or	#$F0,r0				; Disable interrupts
+		or	#$F0,r0				; Disable interrupts first
 		ldc	r0,sr
-		mov	#RAM_Mars_VdpDrwList,r0		; Prepare piece drawing list on both READ and WRITE pointers
-		mov	r0,@(marsGbl_PlyPzList_R,gbr)
+		mov	#RAM_Mars_VdpDrwList,r0		; Reset the piece-drawing pointer
+		mov	r0,@(marsGbl_PlyPzList_R,gbr)	; on both READ and WRITE pointers
 		mov	r0,@(marsGbl_PlyPzList_W,gbr)
 		mov	#0,r0				; Reset polygon pieces counter
 		mov.w	r0,@(marsGbl_PzListCntr,gbr)
-
 		mov	#Cach_ClrLines,r1		; Line counter for the framebuffer-clear routine
 		mov	#224,r0
 		mov	r0,@r1
-		mov	#8,r0				; Set drawing task to $08 (Clear framebuffer)
+		mov	#8,r0				; Set starting watchdog task to $08 (Clear framebuffer)
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 		mov	#_vdpreg,r1
 .wait_fb:
-		mov.w	@($A,r1), r0			; Framebuffer available?
+		mov.w	@($A,r1),r0			; Framebuffer available?
 		tst	#2,r0
 		bf	.wait_fb
 		mov.w	#$A1,r0				; Pre-start SVDP fill line at address $A1
 		mov.w	r0,@(6,r1)
 		mov	#$FFFFFE80,r1
-		mov.w	#$5AFF,r0			; Interrupt priority(?)
+		mov.w	#$5AFF,r0			; Watchdog wait timer
 		mov.w	r0,@r1
-		mov.w	#$A538,r0			; Enable watchdog (piece drawing routines)
+		mov.w	#$A538,r0			; Enable watchdog
 		mov.w	r0,@r1
 		ldc	@r15+,sr			; Restore interrupts
 		rts
