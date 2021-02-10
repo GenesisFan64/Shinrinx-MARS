@@ -6,6 +6,7 @@
 ; ----------------------------------------------------------------
 
 		align $8000
-MdGfx_Bg:
-		binclude "data/md/bg/bg_art.bin"
-MdGfx_Bg_e:	align 2
+		dc.b "MD DMA STUFF"
+; MdGfx_Bg:
+; 		binclude "data/md/bg/bg_art.bin"
+; MdGfx_Bg_e:	align 2

@@ -9,48 +9,7 @@ MAX_MDTSKARG	equ 8			; MAX MD task arguments (LONGS)
 MAX_MDTASKS	equ 8			; MAX requests from MD to here
 ; MAX_MDPWMTSK	equ 8			; MAX PWM tasks from MD
 
-; model objects
-		struct 0
-mdl_data	ds.l 1			; Model data pointer, zero: model disabled
-mdl_x_pos	ds.l 1			; X position $000000.00
-mdl_y_pos	ds.l 1			; Y position $000000.00
-mdl_z_pos	ds.l 1			; Z position $000000.00
-mdl_x_rot	ds.l 1			; X rotation $000000.00
-mdl_y_rot	ds.l 1			; Y rotation $000000.00
-mdl_z_rot	ds.l 1			; Z rotation $000000.00
-mdl_animdata	ds.l 1			; Model animation data pointer, zero: no animation
-mdl_animframe	ds.l 1			; Current frame in animation
-mdl_animtimer	ds.l 1			; Animation timer
-mdl_animspd	ds.l 1			; Animation speed
-sizeof_mdlobj	ds.l 0
-		finish
-		
-; field view camera
-		struct 0
-cam_x_pos	ds.l 1			; X position $000000.00
-cam_y_pos	ds.l 1			; Y position $000000.00
-cam_z_pos	ds.l 1			; Z position $000000.00
-cam_x_rot	ds.l 1			; X rotation $000000.00
-cam_y_rot	ds.l 1			; Y rotation $000000.00
-cam_z_rot	ds.l 1			; Z rotation $000000.00
-cam_animdata	ds.l 1			; Model animation data pointer, zero: no animation
-cam_animframe	ds.l 1			; Current frame in animation
-cam_animtimer	ds.l 1			; Animation timer
-cam_animspd	ds.l 1			; Animation speed
-sizeof_camera	ds.l 0
-		finish
-		
-		struct 0
-mdllay_data	ds.l 1			; Model layout data, zero: Don't use layout
-mdllay_x	ds.l 1			; X position
-mdllay_y	ds.l 1			; Y position
-mdllay_z	ds.l 1			; Z position
-mdllay_x_last	ds.l 1			; LAST saved X position
-mdllay_y_last	ds.l 1			; LAST saved Y position
-mdllay_z_last	ds.l 1			; LAST saved Z position
-mdllay_xr_last	ds.l 1			; LAST saved X rotation
-sizeof_layout	ds.l 0
-		finish
+
 
 ; ====================================================================
 ; ----------------------------------------------------------------
@@ -172,29 +131,10 @@ sizeof_mdsys	ds.l 0
 ; Sound 68k RAM
 ; ----------------------------------------------------------------
 
-; This needs to be rewritten...
-; it's very old
-
-	; 68k side
-	; Nothing here yet...
-		struct RAM_MdSound
-RAM_SoundNull	ds.l 1				; filler
-sizeof_mdsnd	ds.l 0
-		finish
-		
-	; Z80 side
-	; TODO: remove this later
-		struct $800
-sndWavStart	ds.b 2			; Start address (inside or outside z80)
-sndWavStartB	ds.b 1			; Start ROM bank * 8000h 
-sndWavEnd	ds.b 2			; End address
-sndWavEndB	ds.b 1			; End ROM bank *8000h
-sndWavLoop	ds.b 2			; Loop address
-sndWavLoopB	ds.b 1			; Loop ROM Bank * 8000h
-sndWavPitch	ds.b 2			; pitch speed
-sndWavFlags	ds.b 1			; playback flags
-sndWavReq	ds.b 1			; request byte
-		finish
+			struct RAM_MdSound
+RAM_SoundLastReg	ds.l 4
+sizeof_mdsnd		ds.l 0
+			finish
 		
 ; ====================================================================
 ; ----------------------------------------------------------------

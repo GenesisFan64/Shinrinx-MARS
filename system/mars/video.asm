@@ -16,8 +16,8 @@
 ; ----------------------------------------
 
 MAX_FACES	equ	256	; Maximum polygon faces (models,sprites) to store on buffer
-MAX_SVDP_PZ	equ	384	; This list loops on both read and write, increase the value if needed
-MAX_MODELS	equ	32	; Note: First 9 models are used for drawing layouts
+MAX_SVDP_PZ	equ	384	; This list is for both read and write, increase the value if needed
+MAX_MODELS	equ	64	; Note: First 9 models are reserved for layout map
 MAX_ZDIST	equ	-$2000	; Max drawing distance (-Z max)
 LAY_WIDTH	equ	$10*2	; Layout data width * 2
 
@@ -37,7 +37,48 @@ PLGN_SPRITE	equ	%00100000
 ; Structs
 ; ----------------------------------------
 
-; Check system/const.asm for the rest of the structs
+; model objects
+		struct 0
+mdl_data	ds.l 1			; Model data pointer, zero: model disabled
+mdl_x_pos	ds.l 1			; X position $000000.00
+mdl_y_pos	ds.l 1			; Y position $000000.00
+mdl_z_pos	ds.l 1			; Z position $000000.00
+mdl_x_rot	ds.l 1			; X rotation $000000.00
+mdl_y_rot	ds.l 1			; Y rotation $000000.00
+mdl_z_rot	ds.l 1			; Z rotation $000000.00
+mdl_animdata	ds.l 1			; Model animation data pointer, zero: no animation
+mdl_animframe	ds.l 1			; Current frame in animation
+mdl_animtimer	ds.l 1			; Animation timer
+mdl_animspd	ds.l 1			; Animation speed
+sizeof_mdlobj	ds.l 0
+		finish
+		
+; field view camera
+		struct 0
+cam_x_pos	ds.l 1			; X position $000000.00
+cam_y_pos	ds.l 1			; Y position $000000.00
+cam_z_pos	ds.l 1			; Z position $000000.00
+cam_x_rot	ds.l 1			; X rotation $000000.00
+cam_y_rot	ds.l 1			; Y rotation $000000.00
+cam_z_rot	ds.l 1			; Z rotation $000000.00
+cam_animdata	ds.l 1			; Model animation data pointer, zero: no animation
+cam_animframe	ds.l 1			; Current frame in animation
+cam_animtimer	ds.l 1			; Animation timer
+cam_animspd	ds.l 1			; Animation speed
+sizeof_camera	ds.l 0
+		finish
+		
+		struct 0
+mdllay_data	ds.l 1			; Model layout data, zero: Don't use layout
+mdllay_x	ds.l 1			; X position
+mdllay_y	ds.l 1			; Y position
+mdllay_z	ds.l 1			; Z position
+mdllay_x_last	ds.l 1			; LAST saved X position
+mdllay_y_last	ds.l 1			; LAST saved Y position
+mdllay_z_last	ds.l 1			; LAST saved Z position
+mdllay_xr_last	ds.l 1			; LAST saved X rotation
+sizeof_layout	ds.l 0
+		finish
 
 		struct 0
 plypz_ypos	ds.l 1			; Ytop | Ybottom
@@ -226,6 +267,109 @@ MarsVideo_LoadPal:
 ; Object layout routines
 ; ------------------------------------------------
 
+; ----------------------------------------
+; Read layout
+; ----------------------------------------
+
+MarsLay_Read:
+		sts	pr,@-r15
+		mov	#RAM_Mars_ObjLayout,r14
+		mov	#RAM_Mars_ObjCamera,r13
+		mov	#RAM_Mars_Objects,r12
+		mov	@(mdllay_data,r14),r0
+		cmp/pl	r0
+		bf	.no_lay
+		mov	r0,r11
+
+		mov	#0,r10				; r10 - Update counter
+		mov	#-$100000,r9			;  r9 - MAX Z block size
+		mov	#-$100000,r8			;  r8 - MAX Y block size	
+		mov	#-$100000,r7			;  r7 - MAX X block size
+		mov	#-$8000,r6			;  r6 - X Rotation update point
+
+		mov	@(mdllay_z_last,r14),r5
+		mov	@(cam_z_pos,r13),r0
+		and	r9,r0
+		and	r9,r5
+		cmp/eq	r0,r5
+		bt	.no_z_upd
+; 		add	r9,r5
+; 		neg	r5,r4
+; 		cmp/gt	r5,r0
+; 		bf	.set_z_upd
+; 		cmp/ge	r4,r0
+; 		bf	.no_z_upd
+; .set_z_upd:
+		and	r9,r0
+		mov	r0,@(mdllay_z_last,r14)
+		add	#1,r10
+.no_z_upd:
+
+		mov	@(mdllay_y_last,r14),r5
+		mov	@(cam_y_pos,r13),r0
+		and	r8,r0
+		and	r8,r5
+		cmp/eq	r0,r5
+		bt	.no_y_upd
+; 		add	r8,r5
+; 		neg	r5,r4
+; 		cmp/gt	r5,r0
+; 		bf	.set_y_upd
+; 		cmp/ge	r4,r0
+; 		bf	.no_y_upd
+; .set_y_upd:
+		and	r8,r0
+		mov	r0,@(mdllay_y_last,r14)
+		add	#1,r10
+.no_y_upd:
+
+		mov	@(mdllay_x_last,r14),r5
+		mov	@(cam_x_pos,r13),r0
+		and	r7,r0
+		and	r7,r5
+		cmp/eq	r0,r5
+		bt	.no_x_upd
+; 		add	r7,r5
+; 		neg	r5,r4
+; 		cmp/gt	r5,r0
+; 		bf	.set_x_upd
+; 		cmp/ge	r4,r0
+; 		bf	.no_x_upd
+; .set_x_upd:
+		and	r7,r0
+		mov	r0,@(mdllay_x_last,r14)
+		add	#1,r10
+.no_x_upd:
+
+		mov	@(mdllay_xr_last,r14),r5
+		mov	@(cam_x_rot,r13),r0
+		and	r6,r0
+		and	r6,r5
+		cmp/eq	r0,r5
+		bt	.no_xr_upd
+; 		add	r6,r5
+; 		neg	r5,r4
+; 		cmp/gt	r5,r0
+; 		bf	.set_xr_upd
+; 		cmp/ge	r4,r0
+; 		bf	.no_xr_upd
+; .set_xr_upd:
+		and	r6,r0
+		mov	r0,@(mdllay_xr_last,r14)
+		add	#1,r10
+.no_xr_upd:
+
+		cmp/pl	r10
+		bf	.no_lay
+		bsr	MarsLay_Draw
+		nop
+.no_lay:
+		lds	@r15+,pr
+		rts
+		nop
+		align 4
+		ltorg
+
 ; r1 - layout data pointer
 MarsLay_Make:
 		mov	#RAM_Mars_ObjLayout,r14
@@ -238,18 +382,23 @@ MarsLay_Make:
 		mov	r0,@(mdllay_x,r14)
 		mov	r0,@(mdllay_y,r14)
 		mov	r0,@(mdllay_z,r14)
-		mov	r1,r11
 MarsLay_Draw:
 		mov	#RAM_Mars_Objects,r10
 		mov	r10,r2
 		mov	#sizeof_mdlobj,r3
 		mov	#0,r0
-		mov	#16,r4
+		mov	#9,r4
 .clrold:
 		mov	r0,@(mdl_data,r2)
-		add	r3,r2
+		mov	r0,@(mdl_x_pos,r2)
+		mov	r0,@(mdl_y_pos,r2)
+		mov	r0,@(mdl_z_pos,r2)
+		mov	r0,@(mdl_x_rot,r2)
+		mov	r0,@(mdl_y_rot,r2)
+		mov	r0,@(mdl_z_rot,r2)
 		dt	r4
-		bf	.clrold
+		bf/s	.clrold
+		add	r3,r2
 
 	; r13 - Layout Ids
 	; r12 - Layout model list
@@ -570,127 +719,23 @@ MarsLay_Draw:
 		rts
 		nop
 		align 4
-
-; ----------------------------------------
-; Read layout
-; ----------------------------------------
-
-MarsLay_Read:
-		sts	pr,@-r15
-		mov	#RAM_Mars_ObjLayout,r14
-		mov	#RAM_Mars_ObjCamera,r13
-		mov	#RAM_Mars_Objects,r12
-		mov	@(mdllay_data,r14),r0
-		cmp/pl	r0
-		bf	.no_lay
-		mov	r0,r11
-
-		mov	#0,r10				; r10 - Update counter
-		mov	#-$100000,r9			;  r9 - MAX Z block size
-		mov	#-$100000,r8			;  r8 - MAX Y block size	
-		mov	#-$100000,r7			;  r7 - MAX X block size
-		mov	#-$8000,r6			;  r6 - X Rotation update point
-
-		mov	@(mdllay_z_last,r14),r5
-		mov	@(cam_z_pos,r13),r0
-		and	r9,r0
-		and	r9,r5
-		cmp/eq	r0,r5
-		bt	.no_z_upd
-; 		add	r9,r5
-; 		neg	r5,r4
-; 		cmp/gt	r5,r0
-; 		bf	.set_z_upd
-; 		cmp/ge	r4,r0
-; 		bf	.no_z_upd
-; .set_z_upd:
-		and	r9,r0
-		mov	r0,@(mdllay_z_last,r14)
-		add	#1,r10
-.no_z_upd:
-
-		mov	@(mdllay_y_last,r14),r5
-		mov	@(cam_y_pos,r13),r0
-		and	r8,r0
-		and	r8,r5
-		cmp/eq	r0,r5
-		bt	.no_y_upd
-; 		add	r8,r5
-; 		neg	r5,r4
-; 		cmp/gt	r5,r0
-; 		bf	.set_y_upd
-; 		cmp/ge	r4,r0
-; 		bf	.no_y_upd
-; .set_y_upd:
-		and	r8,r0
-		mov	r0,@(mdllay_y_last,r14)
-		add	#1,r10
-.no_y_upd:
-
-		mov	@(mdllay_x_last,r14),r5
-		mov	@(cam_x_pos,r13),r0
-		and	r7,r0
-		and	r7,r5
-		cmp/eq	r0,r5
-		bt	.no_x_upd
-; 		add	r7,r5
-; 		neg	r5,r4
-; 		cmp/gt	r5,r0
-; 		bf	.set_x_upd
-; 		cmp/ge	r4,r0
-; 		bf	.no_x_upd
-; .set_x_upd:
-		and	r7,r0
-		mov	r0,@(mdllay_x_last,r14)
-		add	#1,r10
-.no_x_upd:
-
-		mov	@(mdllay_xr_last,r14),r5
-		mov	@(cam_x_rot,r13),r0
-		and	r6,r0
-		and	r6,r5
-		cmp/eq	r0,r5
-		bt	.no_xr_upd
-; 		add	r6,r5
-; 		neg	r5,r4
-; 		cmp/gt	r5,r0
-; 		bf	.set_xr_upd
-; 		cmp/ge	r4,r0
-; 		bf	.no_xr_upd
-; .set_xr_upd:
-		and	r6,r0
-		mov	r0,@(mdllay_xr_last,r14)
-		add	#1,r10
-.no_xr_upd:
-
-		cmp/pl	r10
-		bf	.no_lay
-		bsr	MarsLay_Draw
-		nop
-.no_lay:
-		lds	@r15+,pr
-		rts
-		nop
-		align 4
 		ltorg
 
 ; ------------------------------------------------
-; MarsMdl_ReadModel
+; MarsMdl_Init
 ; 
-; r14 - Current model address
+; Reset ALL objects
 ; ------------------------------------------------
 
 MarsMdl_Init:
-		sts	pr,@-r15
-		mov	#0,r0
 		mov	#RAM_Mars_Objects,r1
-		mov	#sizeof_mdlobj/4,r2
+		mov	#(sizeof_mdlobj*MAX_MODELS)/4,r2
+		mov	#0,r0
 .clnup:
 		mov	r0,@r1
 		dt	r2
 		bf/s	.clnup
 		add	#4,r1
-		lds	@r15+,pr
 		rts
 		nop
 		align 4
@@ -725,6 +770,7 @@ MarsMdl_ReadModel:
 		mov	@r13+,r4
 		mov	@r13+,r5
 		mov	@r13+,r6
+		neg	r4,r4
 		mov	r1,@(mdl_x_pos,r14)
 		mov	r2,@(mdl_y_pos,r14)
 		mov	r3,@(mdl_z_pos,r14)
@@ -2357,8 +2403,8 @@ CACHE_MASTER_E:
 CACHE_SLAVE:
 		phase $C0000000
 ; ------------------------------------------------
-		dc.b "SLAVE CODE GOES HERE"
+		dc.b "SLAVE CACHE CODE GOES HERE"
 ; ------------------------------------------------
 .end:		phase CACHE_SLAVE+.end&$1FFF
 CACHE_SLAVE_E:
-
+		align 4

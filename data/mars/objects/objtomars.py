@@ -494,7 +494,7 @@ if cntr != 0:
   x_tx = 0
   while cntr:
     x_l = int(vertex_list[x_tx+2] * vertex_list[x_tx])
-    x_r = int(vertex_list[x_tx+3] * vertex_list[x_tx+1]) +1
+    x_r = int(vertex_list[x_tx+3] * vertex_list[x_tx+1])
     out_vertex.write( bytes([
     x_l>>8&0xFF,x_l&0xFF,
     x_r>>8&0xFF,x_r&0xFF]))

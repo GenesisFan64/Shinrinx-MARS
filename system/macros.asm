@@ -48,3 +48,30 @@ finish		macro				; Then finish custom struct.
 		!org GLBL_LASTORG
 		phase GLBL_LASTPC
 		endm
+
+; -------------------------------------
+; Custom ORG
+;
+; (from s2disasm)
+; -------------------------------------
+
+paddingSoFar set 0
+notZ80 function cpu,(cpu<>128)&&(cpu<>32988)
+org macro address
+	if notZ80(MOMCPU)
+		if address < *
+			error "too much stuff before org $\{address} ($\{(*-address)} bytes)"
+		elseif address > *
+paddingSoFar	set paddingSoFar + address - *
+			!org address
+		endif
+	else
+		if address < $
+			error "too much stuff before org 0\{address}h (0\{($-address)}h bytes)"
+		else
+			while address > $
+				db 0
+			endm
+		endif
+	endif
+    endm

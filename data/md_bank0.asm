@@ -9,3 +9,5 @@
 		align 4
 CAMERA_ANIM:	binclude "data/mars/objects/anim/camera_anim.bin"
 		align 4
+TEST_WAV:	binclude "data/sound/test.wav",$2C,$0BFFFF
+TEST_WAV_e:

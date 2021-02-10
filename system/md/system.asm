@@ -222,16 +222,22 @@ System_Input:
 
 ; Skip if busy
 System_MdMars_SendDrop:
-		move.b	(sysmars_reg+comm15),d0
+		lea	(sysmars_reg),a5
+		move.b	comm15(a5),d0
+		nop
+		nop
 		bne.s	.mid_write
 		bra	SysMdMars_Go
 .mid_write:
 		rts
 		
 ; Wait if Busy
-System_MdMars_SendWait:
-		move.b	(sysmars_reg+comm15),d0
-		bne.s	System_MdMars_SendWait
+System_MdMars_SendHold:
+		lea	(sysmars_reg),a5
+		move.b	comm15(a5),d0
+		nop
+		nop
+		bne.s	System_MdMars_SendHold
 		bra	SysMdMars_Go
 		
 ; Send tasks now.
@@ -242,8 +248,8 @@ SysMdMars_Go:
 		lea	(sysmars_reg+comm8),a4	; a4 - comm8
 		clr.w	(RAM_FifoMarsCnt).w
 		lea	(RAM_FifoToMars),a6
-		move.w	#(MAX_MDTSKARG)-1,d2
-		move.w	#0,(a4)			; Mode 0: Request transfer + clear tag
+		move.w	#(MAX_MDTSKARG*MAX_MDTASKS)-1,d2
+		move.w	#$0100,(a4)		; Mode 1: Task transfer request + clear tag
 		move.w	standby(a5),d0		; SLAVE CMD interrupt
 		bset	#1,d0
 		move.w	d0,standby(a5)
@@ -255,7 +261,9 @@ SysMdMars_Go:
 		bmi.s	.mid_write
 		bne.s	.wait_start
 .copy_now:
-		move.l	(a6)+,d0
+		move.l	(a6),d0
+		clr.l	(a6)
+		adda	#4,a6
 		move.w	d0,4(a4)
 		swap	d0
 		move.w	d0,2(a4)

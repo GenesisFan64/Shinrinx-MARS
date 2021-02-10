@@ -304,7 +304,6 @@ s_irq_pwm:
 ; Process request from MD
 ; ------------------------------------------------
 
-; TODO: make a check for VISUAL or SOUND tasks
 s_irq_cmd:
 		mov	r2,@-r15
 		mov	r3,@-r15
@@ -327,17 +326,14 @@ s_irq_cmd:
 .this_fifo:
 		mov	#_sysreg+comm8,r1
 .next_long:
-		mov	#60*2,r4	; r4 - TIMEOUT COUNTER if HW gets stuck
-		mov	#-1,r0
-.retry:
-		dt	r4
+		mov.b	@r1,r0
+		cmp/eq	#0,r0
 		bt	.trnsfr_fail
-		nop
 		mov.b	@(1,r1),r0
 		cmp/eq	#2,r0		; Got 2? (finish)
 		bt	.trnsfr_done
 		cmp/eq	#1,r0		; Got 1? (copy data)
-		bf	.retry
+		bf	.next_long
 		mov.w	@(2,r1),r0	; comm10
 		extu	r0,r0
 		shll16	r0
@@ -354,7 +350,7 @@ s_irq_cmd:
 		add	#4,r2
 .trnsfr_done:
 		mov	#0,r0
-		mov.w	r0,@r1		; close tasks
+		mov.w	r0,@r1			; Finish transfer + clear tag
 		nop
 		nop
 		mov	#1,r0
@@ -564,9 +560,10 @@ SH2_M_HotStart:
 		mov	#MarsVideo_LoadPal,r0
 		jsr	@r0
 		nop
-		mov	#0,r2
-		mov	#($1F<<10)|($E<<5),r0
 		mov	#RAM_Mars_Palette,r1
+		mov	#$7FFF,r2
+		mov.w	@r1,r0
+		and	r2,r0
 		mov.w	r0,@r1
 ; 		mov	#0,r1
 ; 		mov	#WAV_LEFT,r2
@@ -771,10 +768,6 @@ SH2_S_HotStart:
 		mov	#MarsMdl_Init,r0
 		jsr	@r0
 		nop
-		mov	#TEST_LAYOUT,r1
-		mov	#MarsLay_Make,r0
-		jsr	@r0
-		nop
 		
 ; ------------------------------------------------
 
@@ -795,7 +788,10 @@ slave_loop:
 		mov.b	@r1,r0
 		cmp/eq	#0,r0
 		bt	.no_req
-		mov	#1,r13				; NUMOF_tasks (TODO)
+		mov.w	@(marsGbl_MdTaskList_Sw,gbr),r0		; Swap polygon buffer
+ 		xor	#1,r0
+ 		mov.w	r0,@(marsGbl_MdTaskList_Sw,gbr)
+		mov	#MAX_MDTASKS,r13
 		mov	#RAM_Mars_MdTasksFifo_1,r14
 		mov.w	@(marsGbl_MdTaskList_Sw,gbr),r0
 		tst     #1,r0
@@ -809,15 +805,11 @@ slave_loop:
 		mov	@(r1,r0),r0
 		jsr	@r0
 		nop
-		mov	#MAX_MDTSKARG*4,r0
 		mov	@r15+,r13
-; 		dt	r13
-; 		bf/s	.next_req
-; 		add	r0,r14
-; 
-		mov.w	@(marsGbl_MdTaskList_Sw,gbr),r0		; Swap polygon buffer
- 		xor	#1,r0
- 		mov.w	r0,@(marsGbl_MdTaskList_Sw,gbr)
+		mov	#MAX_MDTSKARG*4,r0
+		dt	r13
+		bf/s	.next_req
+		add	r0,r14
 		mov	#0,r0
 		mov	#_sysreg+comm15,r1
 		mov.b	r0,@r1
@@ -994,24 +986,24 @@ slv_sort_z:
 		align 4
 slv_task_list:
 		dc.l slv_nulltask
-		dc.l slv_task_01
+		dc.l slv_task_01	; Load NEW object to specific slot
 		dc.l slv_nulltask
 		dc.l slv_nulltask
 
-		dc.l slv_nulltask
+		dc.l slv_task_04
 		dc.l slv_nulltask
 		dc.l slv_nulltask
 		dc.l slv_nulltask
 
-		dc.l slv_nulltask
-		dc.l slv_nulltask
+		dc.l slv_task_08	; Set layout data
+		dc.l slv_task_09	; Move camera
 		dc.l slv_nulltask
 		dc.l slv_nulltask
 		
 		dc.l slv_nulltask
 		dc.l slv_nulltask
 		dc.l slv_nulltask
-		dc.l slv_nulltask
+		dc.l slv_task_0F
 
 ; ------------------------------------------------
 ; Task $00
@@ -1023,18 +1015,117 @@ slv_nulltask:
 		align 4
 
 ; ------------------------------------------------
-; Task $01 - Modify camera
-; 
-; ($04,r14) - Camera slot
-; ($08,r14) - Camera X pos
-; ($0C,r14) - Camera Y pos
-; ($10,r14) - Camera Z pos
-; ($14,r14) - Camera X rot
-; ($18,r14) - Camera Y rot
-; ($1C,r14) - Camera Z rot
+; Task $01 - Set new object
+;
+; @($04,r14) - Object slot
+; @($08,r14) - Object data
 ; ------------------------------------------------
 
 slv_task_01:
+		mov	#RAM_Mars_Objects+(sizeof_mdlobj*9),r12
+		mov	r14,r13
+		add	#4,r13
+		mov	@r13+,r0
+		mov	#sizeof_mdlobj,r1
+		mulu	r1,r0
+		sts	macl,r0
+		add	r0,r12
+		xor	r0,r0
+		mov	@r13+,r1
+		mov	r1,@(mdl_data,r12)
+		mov	r0,@(mdl_x_pos,r12)
+		mov	r0,@(mdl_y_pos,r12)
+		mov	r0,@(mdl_z_pos,r12)
+		mov	r0,@(mdl_x_rot,r12)
+		mov	r0,@(mdl_y_rot,r12)
+		mov	r0,@(mdl_z_rot,r12)
+		rts
+		nop
+		align 4
+		
+; ------------------------------------------------
+; Task $04 - Move object
+; 
+; @($04,r14) - Object slot
+; @($08,r14) - Object X pos
+; @($0C,r14) - Object Y pos
+; @($10,r14) - Object Z pos
+; @($14,r14) - Object X rot
+; @($18,r14) - Object Y rot
+; @($1C,r14) - Object Z rot
+; ------------------------------------------------
+
+slv_task_04:
+		mov	#RAM_Mars_Objects+(sizeof_mdlobj*9),r12
+		mov	r14,r13
+		add	#4,r13
+		mov	@r13+,r0
+		mov	#sizeof_mdlobj,r1
+		mulu	r1,r0
+		sts	macl,r0
+		add	r0,r12
+		mov	@r13+,r1
+		mov	@r13+,r2
+		mov	@r13+,r3
+		mov	@r13+,r4
+		mov	@r13+,r5
+		mov	@r13+,r6
+		mov	r1,@(mdl_x_pos,r12)
+		mov	r2,@(mdl_y_pos,r12)
+		mov	r3,@(mdl_z_pos,r12)
+		mov	r4,@(mdl_x_rot,r12)
+		mov	r5,@(mdl_y_rot,r12)
+		mov	r6,@(mdl_z_rot,r12)
+		rts
+		nop
+		align 4
+
+; ------------------------------------------------
+; Task $0F - Clear ALL objects
+; ------------------------------------------------
+
+slv_task_0F:
+		sts	pr,@-r15
+		mov	#MarsMdl_Init,r0
+		jsr	@r0
+		mov	r14,@-r15
+		mov	@r15+,r14
+		lds	@r15+,pr
+		rts
+		nop
+		align 4
+
+; ------------------------------------------------
+; Task $08 - Set layout map
+; 
+; @($04,r14) - layout data
+; ------------------------------------------------
+
+slv_task_08:
+		sts	pr,@-r15
+		mov	@(4,r14),r1
+		mov	#MarsLay_Make,r0
+		jsr	@r0
+		mov	r14,@-r15
+		mov	@r15+,r14
+		lds	@r15+,pr
+		rts
+		nop
+		align 4
+		
+; ------------------------------------------------
+; Task $09 - Move camera
+; 
+; @($04,r14) - Camera slot (TODO)
+; @($08,r14) - Camera X pos
+; @($0C,r14) - Camera Y pos
+; @($10,r14) - Camera Z pos
+; @($14,r14) - Camera X rot
+; @($18,r14) - Camera Y rot
+; @($1C,r14) - Camera Z rot
+; ------------------------------------------------
+
+slv_task_09:
 		mov	#RAM_Mars_ObjCamera,r12
 		mov	r14,r13
 		add	#8,r13
