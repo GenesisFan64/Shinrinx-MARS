@@ -9,7 +9,7 @@
 		phase CS3		; now we are at SDRAM
 		cpu SH7600		; should be SH7095 but ASL doesn't have it, this is close enough
 
-; =================================================================
+; ====================================================================
 
 		include "system/mars/head.asm"
 
@@ -70,17 +70,22 @@ m_irq_bad:
 ; ------------------------------------------------
 
 m_irq_pwm:
+		mov	#_sysreg+monowidth,r1
+		mov.b	@r1,r0
+ 		tst	#$80,r0
+ 		bf	.exit
+		sts	pr,@-r15
+		mov	#MarsSound_PWM,r0
+		jsr	@r0
+		nop
+		lds	@r15+,pr
+.exit:
 		mov	#_FRT,r1
 		mov.b	@(7,r1),r0
 		xor	#2,r0
 		mov.b	r0,@(7,r1)
 		mov	#_sysreg+pwmintclr,r1
 		mov.w	r0,@r1
-		nop
-		nop
-		nop
-		nop
-		nop
 		rts
 		nop
 		align 4
@@ -263,36 +268,17 @@ s_irq_bad:
 ; ------------------------------------------------
 
 s_irq_pwm:
-		mov	#_sysreg+monowidth,r1
-		mov.b	@r1,r0
- 		tst	#$80,r0
- 		bf	.exit
-		mov.l	r2,@-r15
-		mov.l	r3,@-r15
-		mov.l	r4,@-r15
-		mov.l	r5,@-r15
-		mov.l	r6,@-r15
-		mov.l	r7,@-r15
-		mov.l	r8,@-r15
-		sts	pr,@-r15
-		mov	#MarsSound_PWM,r0
-		jsr	@r0
-		nop
-		lds	@r15+,pr
-		mov.l	@r15+,r8
-		mov.l	@r15+,r7
-		mov.l	@r15+,r6
-		mov.l	@r15+,r5
-		mov.l	@r15+,r4
-		mov.l	@r15+,r3
-		mov.l	@r15+,r2
-.exit:
 		mov	#_FRT,r1
 		mov.b	@(7,r1),r0
 		xor	#2,r0
 		mov.b	r0,@(7,r1)
 		mov	#_sysreg+pwmintclr,r1
 		mov.w	r0,@r1
+		nop
+		nop
+		nop
+		nop
+		nop
 		rts
 		nop
 		align 4
@@ -305,9 +291,6 @@ s_irq_pwm:
 ; ------------------------------------------------
 
 s_irq_cmd:
-		mov	r2,@-r15
-		mov	r3,@-r15
-		mov	r4,@-r15
 		mov	#_FRT,r1
 		mov.b	@(7,r1),r0
 		xor	#2,r0
@@ -315,48 +298,35 @@ s_irq_cmd:
 		mov	#_sysreg+cmdintclr,r1
 		mov.w	r0,@r1
 
-		mov	#0,r0
-		mov	#_sysreg+comm15,r1
-		mov.b	r0,@r1
-		mov	#RAM_Mars_MdTasksFifo_1,r2
+		mov	r2,@-r15
+		mov	r3,@-r15
+		mov	r4,@-r15
+		mov	r5,@-r15
+
+		mov	#_sysreg+comm8,r1
+		mov	#RAM_Mars_MdTasksFifo_1,r2	
 		mov.w	@(marsGbl_MdTaskList_Sw,gbr),r0
 		tst     #1,r0
-		bt	.this_fifo
+		bf	.trnsf
 		mov	#RAM_Mars_MdTasksFifo_2,r2
-.this_fifo:
-		mov	#_sysreg+comm8,r1
-.next_long:
-		mov.b	@r1,r0
+.trnsf:
+		mov.w	@(4,r1),r0
+		cmp/eq	#-1,r0
+		bt	.exit
 		cmp/eq	#0,r0
-		bt	.trnsfr_fail
-		mov.b	@(1,r1),r0
-		cmp/eq	#2,r0		; Got 2? (finish)
-		bt	.trnsfr_done
-		cmp/eq	#1,r0		; Got 1? (copy data)
-		bf	.next_long
-		mov.w	@(2,r1),r0	; comm10
-		extu	r0,r0
-		shll16	r0
-		mov	r0,r3
-		mov.w	@(4,r1),r0	; comm12
-		extu	r0,r0
-		or	r3,r0
+		bt	.trnsf
+		mov	@r1,r0
 		mov	r0,@r2
-		mov	#0,r0
-		mov.b	r0,@(1,r1)
-		nop
-		nop
-		bra	.next_long
 		add	#4,r2
-.trnsfr_done:
-		mov	#0,r0
-		mov.w	r0,@r1			; Finish transfer + clear tag
+		xor	r0,r0
+		mov.w	r0,@(4,r1)
 		nop
 		nop
-		mov	#1,r0
-.trnsfr_fail:
-		mov	#_sysreg+comm15,r1
-		mov.b	r0,@r1
+		bra	.trnsf
+		nop
+.exit:
+
+		mov 	@r15+,r5
 		mov 	@r15+,r4		
 		mov 	@r15+,r3
 		mov 	@r15+,r2
@@ -364,6 +334,41 @@ s_irq_cmd:
 		nop
 		align 4
 
+; 		mov.b	@(4,r1),r0
+; 		cmp/eq	#0,r0
+; 		bt	.trnsfr_done
+; 		mov.b	@(5,r1),r0	; Get tag
+; 		cmp/eq	#2,r0		; Got 2? (finish)
+; 		bt	.trnsfr_done
+; 		cmp/eq	#1,r0		; Got 1? (copy data)
+; 		bf	.next_long
+; .retry:
+; 		mov.w	@r1,r0		; comm8 - xxxx0000
+; 		extu	r0,r0
+; 		shll16	r0
+; 		mov	r0,r3
+; 		mov.w	@(2,r1),r0	; comm10 - 0000xxxx
+; 		extu	r0,r0
+; 		or	r3,r0
+; 		mov	r0,@r2
+; 		mov	@r2,r3
+; 		cmp/eq	r0,r3
+; 		bf	.retry
+; 		mov	#0,r0
+; 		mov.b	r0,@(5,r1)
+; 		nop
+; 		nop
+; 		bra	.next_long
+; 		add	#4,r2
+; .trnsfr_done:
+; 		mov	#0,r0
+; 		mov.w	r0,@(4,r1)		; Finish transfer + clear tag
+; 		nop
+; 		nop
+; 		mov	#_sysreg+comm15,r1
+; 		mov	#1,r0
+; 		mov.b	r0,@r1
+		
 ; =================================================================
 ; ------------------------------------------------
 ; Slave | HBlank
@@ -525,21 +530,21 @@ SH2_M_Entry:
 ; ----------------------------------------------------------------
 
 SH2_M_HotStart:
-		mov	#CS3|$40000,r15			; Stack again if coming from RESET
-		mov	#RAM_Mars_Global,r14		; GBR - Global values/variables
+		mov	#CS3|$40000,r15				; Stack again if coming from RESET
+		mov	#RAM_Mars_Global,r14			; GBR - Global values/variables
 		ldc	r14,gbr
-		mov	#$F0,r0				; Interrupts OFF
+		mov	#$F0,r0					; Interrupts OFF
 		ldc	r0,sr
 		mov	#_CCR,r1
-		mov	#0,r0				; Cache OFF
+		mov	#0,r0					; Cache OFF
 		mov.w	r0,@r1
-		mov	#%00011001,r0			; Cache purge / Two-way mode / Cache ON
+		mov	#%00011001,r0				; Cache purge / Two-way mode / Cache ON
 		mov.w	r0,@r1
 		mov	#_sysreg,r1
-		mov	#VIRQ_ON|CMDIRQ_ON,r0		; Enable these interrupts		
+		mov	#VIRQ_ON|CMDIRQ_ON|PWMIRQ_ON,r0		; Enable these interrupts		
     		mov.b	r0,@(intmask,r1)
-		mov 	#CACHE_MASTER,r1		; Load 3D Routines on CACHE	
-		mov 	#$C0000000,r2			; Those run more faster here supposedly...
+		mov 	#CACHE_MASTER,r1			; Load 3D Routines on CACHE	
+		mov 	#$C0000000,r2				; Those run more faster here supposedly...
 		mov 	#(CACHE_MASTER_E-CACHE_MASTER)/4,r3
 .copy:
 		mov 	@r1+,r0
@@ -555,32 +560,6 @@ SH2_M_HotStart:
 		nop
 		bsr	MarsSound_Init			; Init Sound
 		nop
-		mov	#Palette_Puyo,r1
-		mov	#256,r3
-		mov	#MarsVideo_LoadPal,r0
-		jsr	@r0
-		nop
-		mov	#RAM_Mars_Palette,r1
-		mov	#$7FFF,r2
-		mov.w	@r1,r0
-		and	r2,r0
-		mov.w	r0,@r1
-; 		mov	#0,r1
-; 		mov	#WAV_LEFT,r2
-; 		mov	#WAV_LEFT_E,r3
-; 		mov	r2,r4
-; 		mov	#$100,r5
-; 		mov	#0,r6
-; 		bsr	MarsSound_SetChannel
-; 		mov	#%10,r7
-; 		mov	#1,r1
-; 		mov	#WAV_RIGHT,r2
-; 		mov	#WAV_RIGHT_E,r3
-; 		mov	r2,r4
-; 		mov	#$100,r5
-; 		mov	#0,r6
-; 		bsr	MarsSound_SetChannel
-; 		mov	#%01,r7
 		
 ; ------------------------------------------------
 
@@ -750,7 +729,7 @@ SH2_S_HotStart:
 		mov	#%00011001,r0			; Cache purge / Two-way mode / Cache ON
 		mov.w	r0,@r1
 		mov	#_sysreg,r1
-		mov	#VIRQ_ON|PWMIRQ_ON|CMDIRQ_ON,r0	; Enable these interrupts		
+		mov	#VIRQ_ON|CMDIRQ_ON,r0		; Enable these interrupts		
     		mov.b	r0,@(intmask,r1)
 		mov 	#CACHE_SLAVE,r1			; Load 3D Routines on CACHE	
 		mov 	#$C0000000,r2			; Those run more faster here supposedly...
@@ -784,13 +763,13 @@ SH2_S_HotStart:
 ; --------------------------------------------------------
 
 slave_loop:
-		mov	#_sysreg+comm15,r1
-		mov.b	@r1,r0
-		cmp/eq	#0,r0
-		bt	.no_req
-		mov.w	@(marsGbl_MdTaskList_Sw,gbr),r0		; Swap polygon buffer
+		stc	sr,r1
+		mov	#$F0,r0
+		ldc	r0,sr
+		mov.w	@(marsGbl_MdTaskList_Sw,gbr),r0		; Swap tasks buffer
  		xor	#1,r0
  		mov.w	r0,@(marsGbl_MdTaskList_Sw,gbr)
+ 		ldc	r1,sr
 		mov	#MAX_MDTASKS,r13
 		mov	#RAM_Mars_MdTasksFifo_1,r14
 		mov.w	@(marsGbl_MdTaskList_Sw,gbr),r0
@@ -798,23 +777,34 @@ slave_loop:
 		bf	.next_req
 		mov	#RAM_Mars_MdTasksFifo_2,r14
 .next_req:
-		mov	r13,@-r15
 		mov	@r14,r0
-		shll2	r0
-		mov	#slv_task_list,r1
-		mov	@(r1,r0),r0
+		cmp/eq	#0,r0
+		bt	.no_task
+		mov	r13,@-r15
 		jsr	@r0
 		nop
 		mov	@r15+,r13
+		mov	#0,r0
+		mov	r0,@r14
+
+		mov	#_sysreg+comm15,r1
+		mov	#0,r0
+		mov.b	r0,@r1
+		mov	#_sysreg+comm2,r1
+		mov.w	@r1,r0
+		add	#1,r0
+		mov.w	r0,@r1
+.no_task:
 		mov	#MAX_MDTSKARG*4,r0
 		dt	r13
 		bf/s	.next_req
 		add	r0,r14
-		mov	#0,r0
-		mov	#_sysreg+comm15,r1
-		mov.b	r0,@r1
 .no_req:
-
+		mov	#_sysreg+comm0,r4
+		mov.w	@r4,r0
+		add	#1,r0
+		mov.w	r0,@r4
+		
 ; --------------------------------------------------------
 ; Start building polygons from models
 ; 
@@ -977,51 +967,124 @@ slv_sort_z:
 		align 4
 		ltorg
 
+; ====================================================================
 ; --------------------------------------------------------
-; Task list requested from MD
+; Task list for MD-to-MARS tasks, call these directly
+; in the Genesis side
 ; 
-; r14 - Current task and arguments
+; *** 68k EXAMPLES ***
+; 
+; Single task:
+; 	move.l	#CmdTaskMd_SetBitmap,d0	; 32X display OFF
+; 	moveq	#0,d1
+; 	bsr	System_MdMars_Call
+; 	
+; Queued task:
+; 	move.l	#CmdTaskMd_LoadSPal,d0	; Load palette
+; 	move.l	#Palette_Data,d1	; Color data
+; 	moveq	#0,d2			; Start from
+; 	move.w	#255,d3			; Number of colors
+; 	moveq	#0,d4			; OR value
+; 	move.w	#$7FFF,d5		; AND value for BG
+; 	bsr	System_MdMars_AddTask	; Insert task
+; 	; Then more tasks go here...
+; .wait:
+;	bsr	System_MdMars_CheckBusy	; Check if active
+; 	bne.s	.wait			; bne - busy
+; 	bsr	System_MdMars_SendAll	; Send all tasks
 ; --------------------------------------------------------
 
-		align 4
-slv_task_list:
-		dc.l slv_nulltask
-		dc.l slv_task_01	; Load NEW object to specific slot
-		dc.l slv_nulltask
-		dc.l slv_nulltask
-
-		dc.l slv_task_04
-		dc.l slv_nulltask
-		dc.l slv_nulltask
-		dc.l slv_nulltask
-
-		dc.l slv_task_08	; Set layout data
-		dc.l slv_task_09	; Move camera
-		dc.l slv_nulltask
-		dc.l slv_nulltask
+; 		align 4
+; slv_task_list:
+; 		dc.l slv_nulltask	; NULL entry
+; 		dc.l slv_task_01	; $01 - Load SuperVDP palette
+; 		dc.l slv_nulltask	; $02 - 
+; 		dc.l slv_nulltask	; $03 -
+; 		dc.l slv_task_04	; $04 - Load SuperVDP palette directly
+; 		dc.l slv_nulltask	; $05 - Load SuperVDP palette for fading
+; 		dc.l slv_nulltask	; $06 - SuperVDP Fade in
+; 		dc.l slv_nulltask	; $07 - SuperVDP Fade out
+; 
+; 		dc.l slv_task_08	; $08 - Load object to slot
+; 		dc.l slv_nulltask	; $09 - Autoload object (if Layout is active)
+; 		dc.l slv_task_0A	; $0A - Set object position and rotation
+; 		dc.l slv_nulltask	; $0B - Set object animation
+; 		dc.l slv_task_0C	; $0C - Set layout data
+; 		dc.l slv_task_0D	; $0D - Set camera poisition and rotation
+; 		dc.l slv_nulltask	; $0E - 
+; 		dc.l slv_task_0F	; $0F - Delete ALL objects (including Layout)
+; 
+; 		dc.l slv_nulltask	; $10 - 
+; 		dc.l slv_nulltask	; $11 - 
+; 		dc.l slv_nulltask	; $12 -
+; 		dc.l slv_nulltask	; $13 -
+; 		dc.l slv_nulltask	; $14 -
+; 		dc.l slv_nulltask	; $15 -
+; 		dc.l slv_nulltask	; $16 -
+; 		dc.l slv_nulltask	; $17 -
 		
-		dc.l slv_nulltask
-		dc.l slv_nulltask
-		dc.l slv_nulltask
-		dc.l slv_task_0F
+; ; ------------------------------------------------
+; ; Task $00
+; ; ------------------------------------------------
+; 
+; slv_nulltask:
+; 		rts
+; 		nop
+; 		align 4
 
 ; ------------------------------------------------
-; Task $00
+; Set SuperVDP bitmap value
+;
+; @($04,r14) - SuperVDP bitmap number (0-3)
 ; ------------------------------------------------
 
-slv_nulltask:
+CmdTaskMd_SetBitmap:
+		mov 	#_vdpreg,r1
+		mov	@($04,r14),r0
+		mov.b	r0,@(bitmapmd,r1)
 		rts
 		nop
 		align 4
 
 ; ------------------------------------------------
-; Task $01 - Set new object
+; Load palette to SuperVDP
+;
+; @($04,r14) - Palette data
+; @($08,r14) - Start from
+; @($0C,r14) - Number of colors
+; @($10,r14) - OR value
+; @($14,r14) - AND background value
+; ------------------------------------------------
+
+CmdTaskMd_LoadSPal:
+		sts	pr,@-r15
+		mov	r14,r13
+		add	#4,r13
+		mov	@r13+,r1
+		mov	@r13+,r2
+		mov	@r13+,r3
+		mov	@r13+,r4
+		mov	#MarsVideo_LoadPal,r0
+		jsr	@r0
+		nop
+; 		mov	@r13+,r1
+; 		mov	#RAM_Mars_Palette,r2
+; 		mov.w	@r2,r0
+; 		and	r1,r0
+; 		mov.w	r0,@r2
+		lds	@r15+,pr
+		rts
+		nop
+		align 4
+		
+; ------------------------------------------------
+; Make new object and insert it to specific slot
 ;
 ; @($04,r14) - Object slot
 ; @($08,r14) - Object data
 ; ------------------------------------------------
 
-slv_task_01:
+CmdTaskMd_ObjectSet:
 		mov	#RAM_Mars_Objects+(sizeof_mdlobj*9),r12
 		mov	r14,r13
 		add	#4,r13
@@ -1044,7 +1107,7 @@ slv_task_01:
 		align 4
 		
 ; ------------------------------------------------
-; Task $04 - Move object
+; Move/Rotate object from slot
 ; 
 ; @($04,r14) - Object slot
 ; @($08,r14) - Object X pos
@@ -1055,7 +1118,7 @@ slv_task_01:
 ; @($1C,r14) - Object Z rot
 ; ------------------------------------------------
 
-slv_task_04:
+CmdTaskMd_ObjectPos:
 		mov	#RAM_Mars_Objects+(sizeof_mdlobj*9),r12
 		mov	r14,r13
 		add	#4,r13
@@ -1081,10 +1144,10 @@ slv_task_04:
 		align 4
 
 ; ------------------------------------------------
-; Task $0F - Clear ALL objects
+; Clear ALL objects, including layout
 ; ------------------------------------------------
 
-slv_task_0F:
+CmdTaskMd_ObjectClrAll:
 		sts	pr,@-r15
 		mov	#MarsMdl_Init,r0
 		jsr	@r0
@@ -1096,12 +1159,12 @@ slv_task_0F:
 		align 4
 
 ; ------------------------------------------------
-; Task $08 - Set layout map
+; Set new map data
 ; 
 ; @($04,r14) - layout data
 ; ------------------------------------------------
 
-slv_task_08:
+CmdTaskMd_MapSet:
 		sts	pr,@-r15
 		mov	@(4,r14),r1
 		mov	#MarsLay_Make,r0
@@ -1114,7 +1177,7 @@ slv_task_08:
 		align 4
 		
 ; ------------------------------------------------
-; Task $09 - Move camera
+; Set camera position
 ; 
 ; @($04,r14) - Camera slot (TODO)
 ; @($08,r14) - Camera X pos
@@ -1125,7 +1188,7 @@ slv_task_08:
 ; @($1C,r14) - Camera Z rot
 ; ------------------------------------------------
 
-slv_task_09:
+CmdTaskMd_CameraPos:
 		mov	#RAM_Mars_ObjCamera,r12
 		mov	r14,r13
 		add	#8,r13
@@ -1144,6 +1207,64 @@ slv_task_09:
 		rts
 		nop
 		align 4
+
+; ------------------------------------------------
+; Set PWM to play
+; 
+; @($04,r14) - Channel slot
+; @($08,r14) - Start point
+; @($0C,r14) - End point
+; @($10,r14) - Loop point
+; @($14,r14) - Pitch
+; @($18,r14) - Volume
+; @($1C,r14) - Stereo output bits (%LR)
+; ------------------------------------------------
+
+CmdTaskMd_SetPWM:
+		sts	pr,@-r15
+		
+		mov	@($04,r14),r1
+		mov	@($08,r14),r2
+		mov	@($0C,r14),r3
+		mov	@($10,r14),r4
+		mov	@($14,r14),r5
+		mov	@($18,r14),r6
+		mov	@($1C,r14),r7
+		bsr	MarsSound_SetChannel
+		nop
+
+; 		mov	@($04,r14),r1
+; 		mov	@($08,r14),r2
+; 		mov	@($0C,r14),r3
+; 		mov	@($10,r14),r4
+; 		mov	@($14,r14),r5
+; 		mov	@($18,r14),r6
+; 		mov	@($1C,r14),r7
+; 		mov	#MarsSound_SetChannel,r0
+; 		jsr	@r0
+; 		nop
+		lds	@r15+,pr
+		rts
+		nop
+		align 4
+		
+; 		mov	#0,r1
+; 		mov	#WAV_LEFT,r2
+; 		mov	#WAV_LEFT_E,r3
+; 		mov	#WAV_LEFT,r4
+; 		mov	#$100,r5
+; 		mov	#0,r6
+; 		bsr	MarsSound_SetChannel
+; 		mov	#%10,r7
+
+; 		mov	#1,r1
+; 		mov	#WAV_RIGHT,r2
+; 		mov	#WAV_RIGHT_E,r3
+; 		mov	r2,r4
+; 		mov	#$100,r5
+; 		mov	#0,r6
+; 		bsr	MarsSound_SetChannel
+; 		mov	#%01,r7
 
 ; ----------------------------------------
 
@@ -1238,7 +1359,7 @@ sizeof_marsram	ds.l 0
 ; ----------------------------------------------------------------
 
 			struct MarsRam_Sound
-MARSSnd_Pwm		ds.b sizeof_sndchn*8
+MARSSnd_Pwm		ds.b sizeof_sndchn*MAX_PWMCHNL
 sizeof_marssnd		ds.l 0
 			finish
 

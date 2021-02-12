@@ -3,6 +3,8 @@
 ; MARS Sound
 ; ----------------------------------------------------------------
 
+MAX_PWMCHNL	equ	16
+
 ; 32X sound channel
 		struct 0
 mchnsnd_enbl	ds.l 1
@@ -40,6 +42,13 @@ MarsSound_Run:
 ; ----------------------------------------------------------------
 
 MarsSound_PWM:
+		mov.l	r2,@-r15
+		mov.l	r3,@-r15
+		mov.l	r4,@-r15
+		mov.l	r5,@-r15
+		mov.l	r6,@-r15
+		mov.l	r7,@-r15
+		mov.l	r8,@-r15
 		mov	#MarsSnd_Pwm,r7
 		mov 	#1,r3			; LEFT
 		mov 	#1,r4			; RIGHT
@@ -120,6 +129,14 @@ MarsSound_PWM:
  		mov.w	r0,@r1
  		mov	r4,r0
  		mov.w	r0,@r2
+ 		
+		mov.l	@r15+,r8
+		mov.l	@r15+,r7
+		mov.l	@r15+,r6
+		mov.l	@r15+,r5
+		mov.l	@r15+,r4
+		mov.l	@r15+,r3
+		mov.l	@r15+,r2
 		rts
 		nop
 		align 4
@@ -145,7 +162,7 @@ MarsSound_Init:
 		stc	gbr,@-r15
 		mov	#_sysreg,r0
 		ldc	r0,gbr
-		mov	#((((23011361<<1)/22050+1)>>1)+1),r0	; 32000 works but the CPU must be calm
+		mov	#((((23011361<<1)/22050+1)>>1)+1),r0	; 22050 best
 		mov.w	r0,@(cycle,gbr)
 		mov	#$0105,r0
 		mov.w	r0,@(timerctl,gbr)
@@ -174,15 +191,23 @@ MarsSound_Init:
 ; r7 | Flags (Currently: %xxxxxxLR)
 ; 
 ; Uses:
-; r0,r8
+; r0,r8-r9
 ; --------------------------------------------------------
 
 MarsSound_SetChannel:
+; 		stc	sr,r9
+; 		mov	#$F0,r0
+; 		ldc	r0,sr
 		mov	#MarsSnd_Pwm,r8
 		mov 	#sizeof_sndchn,r0
 		mulu	r1,r0
 		sts	macl,r0
 		add 	r0,r8
+		mov 	#0,r0
+		mov 	r0,@(mchnsnd_enbl,r8)
+		mov 	r0,@(mchnsnd_read,r8)
+		mov 	r0,@(mchnsnd_bank,r8)
+		
 		mov 	r5,@(mchnsnd_pitch,r8)
 		mov 	r6,@(mchnsnd_vol,r8)		
 		mov 	r7,@(mchnsnd_flags,r8)
@@ -205,20 +230,7 @@ MarsSound_SetChannel:
 		mov 	r0,@(mchnsnd_read,r8)
 		mov 	#1,r0
 		mov 	r0,@(mchnsnd_enbl,r8)
-		rts
-		nop
-		align 4
-
-; --------------------------------------------------------
-; Sound_SetPitch
-; 
-; Set pitch number
-; 
-; Input:
-; d0 | WORD - Pitch data
-; --------------------------------------------------------
-
-MarsSound_SetPitch:
+;  		ldc	r9,sr
 		rts
 		nop
 		align 4

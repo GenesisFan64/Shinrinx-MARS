@@ -122,7 +122,7 @@ MarsVideo_Init:
 		nop
 		bsr	.this_fb
 		nop
-		mov	#1,r0			; Use bitmap mode $01
+		mov	#1,r0
 		mov.b	r0,@(bitmapmd,r4)
 		lds	@r15+,pr
 		rts
@@ -230,29 +230,29 @@ MarsVideo_FrameSwap:
 ; on VBlank
 ; 
 ; Input:
-; r1 - Data
-; r2 - Start at
+; r1 - Palette data
+; r2 - Start index
 ; r3 - Number of colors
-; 
+; r4 - OR value ($0000 or $8000)
+;
 ; Uses:
 ; r0,r4-r6
 ; ------------------------------------
 
 MarsVideo_LoadPal:
-		mov 	r1,r4
-		mov 	#RAM_Mars_Palette,r5
+		mov 	r1,r5
+		mov 	#RAM_Mars_Palette,r6
 		mov 	r2,r0
 		shll	r0
-		add 	r0,r5
-		mov 	r3,r6
-		mov	#$8000,r7
+		add 	r0,r6
+		mov 	r3,r7
 .loop:
-		mov.w	@r4+,r0
-		or	r7,r0
-		mov.w	r0,@r5
-		add 	#2,r5
-		dt	r6
-		bf	.loop
+		mov.w	@r5+,r0
+		or	r4,r0
+		mov.w	r0,@r6
+		dt	r7
+		bf/s	.loop
+		add 	#2,r6
 		rts
 		nop
 		align 4
@@ -1123,7 +1123,8 @@ mdlrd_setpoint:
    		mov	r7,r2
    		mov	r8,r3
 
-	; Perspective
+	; Perspective projection
+	; NOT PERFECT, this is the best I got.
 		neg	r4,r0		; reverse Z
 		cmp/pl	r0
 		bt	.inside
@@ -1259,38 +1260,6 @@ mdlrd_rotate:
  		rts
 		nop
 		align 4
-		
-;    		shlr8	r0
-;     		mov	#$7FF,r7
-;     		and	r7,r0
-;    		shll2	r0
-; 		mov	#sin_table,r7
-; 		mov	#sin_table+$800,r8
-; 		mov	@(r0,r7),r9		; r3
-; 		mov	@(r0,r8),r10		; r4
-; 		dmuls	r5,r10		; x cos @
-; 		sts	macl,r7
-; 		sts	mach,r0
-; 		xtrct	r0,r7
-; 		dmuls	r6,r9		; y sin @
-; 		sts	macl,r8
-; 		sts	mach,r0
-; 		xtrct	r0,r8
-; 		add	r8,r7
-; 		neg	r9,r9
-; 		dmuls	r5,r9		; x -sin @
-; 		sts	macl,r8
-; 		sts	mach,r0
-; 		xtrct	r0,r8
-; 		dmuls	r6,r10		; y cos @
-; 		sts	macl,r9
-; 		sts	mach,r0
-; 		xtrct	r0,r9
-; 		add	r9,r8
-;  		rts
-; 		nop
-; 		align 4
-; 		ltorg
 	
 ; ------------------------------------------------
 ; MarsVideo_SetWatchdog

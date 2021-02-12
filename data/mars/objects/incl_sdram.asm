@@ -4,6 +4,8 @@
 
 Palette_Puyo:	binclude "data/mars/objects/mtrl/smok_pal.bin"
 		align 4
+Palette_Map:	binclude "data/mars/objects/mtrl/marscity_sdram_pal.bin"
+		align 4
 Textr_smok:
 		binclude "data/mars/objects/mtrl/smok_art.bin"
 		align 4

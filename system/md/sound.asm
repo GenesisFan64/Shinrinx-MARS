@@ -177,13 +177,13 @@ sndReq_scmd:
 		bra.s	sndReq_sbyte
 sndReq_slong:
 		bsr	sndReq_sbyte
-		asr.l	#8,d7
+		ror.l	#8,d7
 sndReq_saddr:
 		bsr	sndReq_sbyte
-		asr.l	#8,d7
+		ror.l	#8,d7
 sndReq_sword:
 		bsr	sndReq_sbyte
-		asr.l	#8,d7
+		ror.l	#8,d7
 sndReq_sbyte:
 		move.b	d7,(a6,d6.w)			; write byte
 		addq.b	#1,d6				; next fifo pos
@@ -284,7 +284,7 @@ testval2	dw 0
 
 z80_init:
 		call	gema_init		; Initilize VBLANK sound driver
-		call	dac_play
+; 		call	dac_play
 		ei
 		
 ; --------------------------------------------------------
@@ -335,6 +335,7 @@ drv_loop:
 ; 		djnz	$
 ; 		call	dac_me
 
+.next_cmd:
 		ld	a,(commZWrite)
 		ld	b,a
 		ld	a,(commZRead)
@@ -359,39 +360,39 @@ drv_loop:
 		ld	l,a
 		jp	(hl)
 .list:
-		dw .cmnd_0		; $00 / 0
+		dw .cmnd_0		; $00
 		dw .cmnd_0
 		dw .cmnd_0
 		dw .cmnd_0
-		dw .cmnd_0		; $04 / 4
+		dw .cmnd_0		; $04
 		dw .cmnd_0
 		dw .cmnd_0
 		dw .cmnd_0
-		dw .cmnd_0		; $08 / 8
+		dw .cmnd_0		; $08
 		dw .cmnd_0
 		dw .cmnd_0
 		dw .cmnd_0
-		dw .cmnd_0		; $0C / 12
+		dw .cmnd_0		; $0C
 		dw .cmnd_0
 		dw .cmnd_0
 		dw .cmnd_0
-		dw .cmnd_0		; $10 / 16
+		dw .cmnd_0		; $10
 		dw .cmnd_0
 		dw .cmnd_0
 		dw .cmnd_0
-		dw .cmnd_0		; $14 / 20
+		dw .cmnd_0		; $14
 		dw .cmnd_0
 		dw .cmnd_0
 		dw .cmnd_0
-		dw .cmnd_0		; $18 / 24
+		dw .cmnd_0		; $18
 		dw .cmnd_0
 		dw .cmnd_0
 		dw .cmnd_0
-		dw .cmnd_0		; $1C / 28
+		dw .cmnd_0		; $1C
 		dw .cmnd_0
 		dw .cmnd_0
 		dw .cmnd_0
-		dw .cmnd_0		; $20 / 32
+		dw .cmnd_0		; $20
 		dw .cmnd_wav_set	; $21
 		dw .cmnd_wav_pitch	; $22	
 
@@ -401,56 +402,56 @@ drv_loop:
 
 .cmnd_0:
 		jr	$
-		jp	drv_loop
+		jp	.next_cmd
 
 ; --------------------------------------------------------
 ; $21 - change current wave pitch
 ; --------------------------------------------------------
 
 .cmnd_wav_set:
-; 		ld	ix,wave_Start
-; 		call	get_cmdbyte
-; 		ld	(ix),a
-; 		inc	ix
-; 		call	get_cmdbyte
-; 		ld	(ix),a
-; 		inc	ix
-; 		call	get_cmdbyte
-; 		ld	(ix),a
-; 		inc	ix
+		ld	ix,wave_Start
+		call	get_cmdbyte
+		ld	(ix),a
+		inc	ix
+		call	get_cmdbyte
+		ld	(ix),a
+		inc	ix
+		call	get_cmdbyte
+		ld	(ix),a
+		inc	ix
 ; 
-; 		call	get_cmdbyte
-; 		ld	(ix),a
-; 		inc	ix
-; 		call	get_cmdbyte
-; 		ld	(ix),a
-; 		inc	ix
-; 		call	get_cmdbyte
-; 		ld	(ix),a
-; 		inc	ix
+		call	get_cmdbyte
+		ld	(ix),a
+		inc	ix
+		call	get_cmdbyte
+		ld	(ix),a
+		inc	ix
+		call	get_cmdbyte
+		ld	(ix),a
+		inc	ix
 ; 		
-; 		call	get_cmdbyte
-; 		ld	(ix),a
-; 		inc	ix
-; 		call	get_cmdbyte
-; 		ld	(ix),a
-; 		inc	ix
-; 		call	get_cmdbyte
-; 		ld	(ix),a
-; 		inc	ix
-; 
-; 		call	get_cmdbyte
-; 		ld	(ix),a
-; 		inc	ix
-; 		call	get_cmdbyte
-; 		ld	(ix),a
-; 		inc	ix
-; 		
-; 		ld	a,101b
-; 		ld	(ix),a
+		call	get_cmdbyte
+		ld	(ix),a
+		inc	ix
+		call	get_cmdbyte
+		ld	(ix),a
+		inc	ix
+		call	get_cmdbyte
+		ld	(ix),a
+		inc	ix
+
+		call	get_cmdbyte
+		ld	(ix),a
+		inc	ix
+		call	get_cmdbyte
+		ld	(ix),a
+		inc	ix
+		
+		ld	a,101b
+		ld	(ix),a
 		
 		call	dac_play
-		jp	drv_loop
+		jp	.next_cmd
 
 ; --------------------------------------------------------
 ; $22 - change current wave pitch
@@ -513,59 +514,6 @@ gema_init:
 		ld	bc,100h-1
 		ld	(hl),80h
 		ldir
-		ret
-
-CHBUFPTR	dw	0			; pointer to current channel's sequence buffer
-CHPATPTR	dw	0			; pointer to current channel's patch buffer
-
-updseq:
-		ld	ix,CCB
-		ld	hl,CH0BUF
-		ld	(CHBUFPTR),hl
-; 		ld 	hl,PATCHDATA
-		ld	(CHPATPTR),hl
-		ld	a,(currTickBits)
-		ld	c,a
-		ld	a,16
-		ld	b,0
-		jr	.updseqloop1
-.updseqloop:
-		call	dac_me
-		ld	de,32
-		add	ix,de
-		ld	hl,(CHBUFPTR)
-		ld	e,16
-		add	hl,de
-		ld	(CHBUFPTR),hl
-		ld	hl,(CHPATPTR)
-		ld	e,39
-		add	hl,de
-		ld	(CHPATPTR),hl
-.updseqloop1:
-		bit	4,(IX+CCBFLAGS)				; paused or free?
-		jr	z,.updseqloop2
-		bit	3,(IX+CCBFLAGS)				; sfx tempo bit?
-		jr	nz,.updseqsfx
-		bit	1,c
-		jr	nz,.updseqdoit
-		jr	.updseqloop2
-.updseqsfx:
-		bit	0,c
-		jr	z,.updseqloop2
-.updseqdoit:
-		call	dac_me
-		push	af
-		push	bc
-		call	dac_refill
-; 		call	sequencer
-		pop	bc
-		pop	af
-.updseqloop2:
-		inc	b
-		dec	a
-		jr	nz,.updseqloop
-		ret
-apply_bend:
 		ret
 		
 ; ====================================================================
@@ -683,6 +631,60 @@ do_multiply:
 		sla	e		; if more bits still set in A, DE*=2 and loop
 		rl	d
 		jr	.mul_add
+
+; --------------------------------------------------------
+
+CHBUFPTR	dw	0			; pointer to current channel's sequence buffer
+CHPATPTR	dw	0			; pointer to current channel's patch buffer
+updseq:
+		ld	ix,CCB
+		ld	hl,CH0BUF
+		ld	(CHBUFPTR),hl
+; 		ld 	hl,PATCHDATA
+		ld	(CHPATPTR),hl
+		ld	a,(currTickBits)
+		ld	c,a
+		ld	a,16
+		ld	b,0
+		jr	.updseqloop1
+.updseqloop:
+		call	dac_me
+		ld	de,32
+		add	ix,de
+		ld	hl,(CHBUFPTR)
+		ld	e,16
+		add	hl,de
+		ld	(CHBUFPTR),hl
+		ld	hl,(CHPATPTR)
+		ld	e,39
+		add	hl,de
+		ld	(CHPATPTR),hl
+.updseqloop1:
+		bit	4,(IX+CCBFLAGS)				; paused or free?
+		jr	z,.updseqloop2
+		bit	3,(IX+CCBFLAGS)				; sfx tempo bit?
+		jr	nz,.updseqsfx
+		bit	1,c
+		jr	nz,.updseqdoit
+		jr	.updseqloop2
+.updseqsfx:
+		bit	0,c
+		jr	z,.updseqloop2
+.updseqdoit:
+		call	dac_me
+		push	af
+		push	bc
+		call	dac_refill
+; 		call	sequencer
+		pop	bc
+		pop	af
+.updseqloop2:
+		inc	b
+		dec	a
+		jr	nz,.updseqloop
+		ret
+apply_bend:
+		ret
 
 ; --------------------------------------------------------
 ; transferRom
@@ -1034,6 +1036,7 @@ SndDrv_FmSet_2:
 ; --------------------------------------------------------
 
 dac_play:
+		di
 		dacStream False
 		exx
 		ld	bc,dWaveBuff>>8			; bc - WAVFIFO MSB
@@ -1052,6 +1055,7 @@ dac_play:
 		ld	(dDacFifoMid),a
 		call	dac_firstfill
 		dacStream True
+		ei
 		ret
 
 ; --------------------------------------------------------
@@ -1484,8 +1488,6 @@ psgFreq_List:
  		dw 8h
 		dw 0		; use +60 if using C-5 for tone 3 noise
 
-patch_Data	ds 40h*16
-
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; Z80 RAM
@@ -1616,9 +1618,9 @@ EXVTBLMARS	db 080H,0,050h,0,0,0,0
 ; --------------------------------------------------------
 ; WAVE playback
 ; 
-; START: 68k direct pointer ($xxxxxx)
-; LOOP:  sampleloop point
-; END:   sample length (endpointer-startpointer)
+; START: 68k direct pointer ($00xxxxxx)
+;   END: sample length (endpointer-startpointer)
+;  LOOP: sample position
 ; --------------------------------------------------------
 
 wave_Start	dw TEST_WAV&0FFFFh
@@ -1655,6 +1657,7 @@ PsgIns_04:	db 0,2,4,6,10
 ; FM Instruments
 ; ----------------------------------------------------
 
+patch_Data	;ds 40h*16
 ; .gsx instruments; filename,$2478,$20 ($28 for FM3 instruments)
 FmIns_Fm3_OpenHat:
 		binclude "data/sound/instr/fm/fm3_openhat.gsx",2478h,28h

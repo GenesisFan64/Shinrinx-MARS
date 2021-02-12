@@ -44,66 +44,75 @@ PatNum = ord(input_file.read(1)) | (ord(input_file.read(1)) << 8)
 addr_BlockList = 0xC0
 addr_PattList  = 0xC0+( (OrdNum) + (InsNum*4) + (SmpNum*4) )
 
+can_loop = False
+if len(sys.argv) > 2:
+	can_loop = True
+	loop_at = int(sys.argv[2])
+
 #======================================================================
 # -------------------------------------------------
 # Start
 # -------------------------------------------------
 
 #$00 - $77  | notas
-#$78 - $7F  | libres
+#$78 - $7F  | free
 #$FE        | note CUT (rest ===)
 #$FF        | note OFF (FM: key off)
 
-MAX_TIME = 0x7F				# MAX timer value
-MAX_CHAN = 18				# MAX channels to use (limit: 63)
-buff_Notes = [0]*(MAX_CHAN)		# mode, note, instr, volume, effects
+
+# 0x00      = next row and reset channel counter to 0-8
+# 0x01-0x7B = timer
+# 0x7C      = next 8 channels (can't go back)
+# 0x7D      = loop checkpoint
+# 0x7E      = end and loop track (set loop with 0x7D)
+# 0x7F      = end of track (NO loop)
+
+MAX_TIME = 0x7F
+MAX_CHAN = 18
 
 # -------------------------------------------------
-# build BLOCKS (pattern order)
-# -------------------------------------------------
+
+buff_Notes = [0]*(MAX_CHAN)				# mode, note, instr, volume, effects
+
+# build BLOCKS
+# TODO: manual user LOOP
 input_file.seek(addr_BlockList)
 for b in range(0,OrdNum):
 	a = ord(input_file.read(1))
 	out_blocks.write(bytes([a]))
 
-# -------------------------------------------------
-# build Patterns
-# -------------------------------------------------
-
-addr_PattInc = 0					# OUT header counter
+# build patterns
+curr_PattInc = 0					# OUT header counter
 numof_Patt   = PatNum
 out_patterns.write(bytes(numof_Patt*4))			# make room for pointers
-
 while numof_Patt:
-	# INPUT FILE: get pattern address
 	input_file.seek(addr_PattList)
 	addr_PattList += 4
 	addr_CurrPat = ord(input_file.read(1)) | ord(input_file.read(1)) << 8 | ord(input_file.read(1)) << 16 | ord(input_file.read(1)) << 24
 	input_file.seek(addr_CurrPat)
-
 	sizeof_Patt = ord(input_file.read(1)) | ord(input_file.read(1)) << 8
 	sizeof_Rows = ord(input_file.read(1)) | ord(input_file.read(1)) << 8
 	input_file.seek(4,True)
+
 	b = out_patterns.tell()
-	out_patterns.seek(addr_PattInc)
+	out_patterns.seek(curr_PattInc)
 	out_patterns.write(bytes([b&0xFF,(b>>8)&0xFF]))
 	out_patterns.write(bytes([sizeof_Rows&0xFF,(sizeof_Rows>>8)&0xFF]))
 	out_patterns.seek(b)
+	# ****************************************
 	
 	# ---------------------------
 	# read pattern head
 	# ---------------------------
-	set_RowEnd = False
+	wait_End = False
 	timerOut = 0
 	while sizeof_Rows:
 		a = ord(input_file.read(1))
-
-		# If 0x00 end-of-row / timer
 		if a == 0:
-			if set_RowEnd == True:				# if this 0x00 is end-of-row
-				set_RowEnd = False
+			if wait_End == True:
+				wait_End = False
 				out_patterns.write(bytes(1))
-			else:						# if this 0x00 is repeated
+			else:
 				if timerOut != 0:
 					out_patterns.seek(-1,True)
 				out_patterns.write(bytes([timerOut&0x7F]))
@@ -112,13 +121,10 @@ while numof_Patt:
 					timerOut = 0
 			sizeof_Rows -= 1
 
-		# If not 0x00, note data
+		# 0x01-0xFF
 		else:
-			timerOut = 0					# reset timer
-			b = (a-1) & 0x3F				# channelnumber-1 & 0x3F
-			
-			# if controlbit (0x80) active, next byte
-			# contains NEW note bits
+			timerOut = 0
+			b = (a-1) & 0x3F
 			if (a & 128) != 0:
 				a = 0xC0 | b
 				out_patterns.write(bytes([a&0xFF]))
@@ -128,8 +134,7 @@ while numof_Patt:
 			else:
 				a = 0x80 | b
 				out_patterns.write(bytes([a&0xFF]))
-				
-			
+			#print(b)
 			a = buff_Notes[b]
 			if (a & 1) != 0:
 				out_patterns.write(bytes([ord(input_file.read(1))&0xFF]))
@@ -140,10 +145,10 @@ while numof_Patt:
 			if (a & 8) != 0:
 				out_patterns.write(bytes([ord(input_file.read(1))&0xFF]))
 				out_patterns.write(bytes([ord(input_file.read(1))&0xFF]))
-			set_RowEnd = True # set next 0x00 as end-of-row
+			wait_End = True
 			
 	# Next block
-	addr_PattInc += 4
+	curr_PattInc += 4
 	numof_Patt -= 1
 		
 # ----------------------------

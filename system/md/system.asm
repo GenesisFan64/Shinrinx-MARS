@@ -214,75 +214,6 @@ System_Input:
 ; 		move.w	#0,(z80_bus).l
 ; 		rts
 
-; ------------------------------------------------
-; Send requests to 32X
-; 
-; Uses comm8,comm10,comm12
-; ------------------------------------------------
-
-; Skip if busy
-System_MdMars_SendDrop:
-		lea	(sysmars_reg),a5
-		move.b	comm15(a5),d0
-		nop
-		nop
-		bne.s	.mid_write
-		bra	SysMdMars_Go
-.mid_write:
-		rts
-		
-; Wait if Busy
-System_MdMars_SendHold:
-		lea	(sysmars_reg),a5
-		move.b	comm15(a5),d0
-		nop
-		nop
-		bne.s	System_MdMars_SendHold
-		bra	SysMdMars_Go
-		
-; Send tasks now.
-SysMdMars_Go:
-		lea	(sysmars_reg),a5
-		move.w	sr,d7
-		move.w	#$2700,sr
-		lea	(sysmars_reg+comm8),a4	; a4 - comm8
-		clr.w	(RAM_FifoMarsCnt).w
-		lea	(RAM_FifoToMars),a6
-		move.w	#(MAX_MDTSKARG*MAX_MDTASKS)-1,d2
-		move.w	#$0100,(a4)		; Mode 1: Task transfer request + clear tag
-		move.w	standby(a5),d0		; SLAVE CMD interrupt
-		bset	#1,d0
-		move.w	d0,standby(a5)
-.wait_cmd:	move.w	standby(a5),d0
-		btst    #1,d0
-		bne.s   .wait_cmd
-.wait_start:
-		move.b	1(a4),d0
-		bmi.s	.mid_write
-		bne.s	.wait_start
-.copy_now:
-		move.l	(a6),d0
-		clr.l	(a6)
-		adda	#4,a6
-		move.w	d0,4(a4)
-		swap	d0
-		move.w	d0,2(a4)
-		move.b	#1,1(a4)		; send PASS tag
-.copy_wait:	nop
-		move.b	1(a4),d0
-		bmi.s	.mid_write
-		bne.s	.copy_wait
-		dbf	d2,.copy_now
-		move.b	#2,1(a4)		; send FINISH tag
-		move.w	d7,sr
-.mid_write:
-		rts
-
-; ====================================================================
-; ----------------------------------------------------------------
-; System subroutines
-; ----------------------------------------------------------------
-
 ; --------------------------------------------------------
 ; System_Random
 ; 
@@ -375,11 +306,30 @@ System_VSync:
 		bne.s	.inside
 		rts
 
+; ====================================================================
 ; --------------------------------------------------------
-; System_MdToMarsTasks
-;
-; Transfer list of MD requests to the 32X
+; Routines to send task requests to 32X
+; 
+; Uses comm8,comm10,comm12
 ; --------------------------------------------------------
+
+; ------------------------------------------------
+; System_MdMars_Call
+; 
+; Do a single task, waits until it finishes
+; ------------------------------------------------
+
+System_MdMars_Call:
+		lea	(RAM_FifoMarsSgl),a6
+		lea	(sysmars_reg),a5
+		move.w	#1,(RAM_FifoMarsWrt).w
+		movem.l	d0-d7,(a6)
+		move.w	#0,(RAM_FifoMarsWrt).w
+		move.w	#MAX_MDTSKARG-1,d6
+.wait_l:	move.b	comm15(a5),d0
+		bne.s	.wait_l
+		bsr.s	sysMdMars_go
+		rts
 
 ; ------------------------------------------------
 ; Add task for 32X using d0-d7 registers
@@ -392,7 +342,7 @@ System_VSync:
 ; a6
 ; ------------------------------------------------
 
-System_MdMars_Add:
+System_MdMars_AddCall:
 		cmp.w	#(MAX_MDTSKARG*MAX_MDTASKS)*4,(RAM_FifoMarsCnt).w
 		bge.s	.ran_out
 		move.w	#1,(RAM_FifoMarsWrt).w
@@ -402,6 +352,68 @@ System_MdMars_Add:
 		add.w	#MAX_MDTSKARG*4,(RAM_FifoMarsCnt).w
 		move.w	#0,(RAM_FifoMarsWrt).w
 .ran_out
+		rts
+
+; ------------------------------------------------
+; System_MdMars_CheckBusy
+; 
+; Check if Slave CPU is busy doing the
+; past tasks before sending new ones
+; ------------------------------------------------
+
+System_MdMars_CheckBusy:
+		moveq	#0,d7
+		lea	(sysmars_reg),a6
+		move.b	comm15(a6),d7
+		beq.s	.hold
+		moveq	#-1,d7
+.hold:
+		rts
+
+; ------------------------------------------------
+; System_MdMars_SendAll
+;
+; Starts sending queued tasks to SH2
+; ------------------------------------------------
+
+System_MdMars_SendAll:
+		lea	(RAM_FifoToMars),a6
+		lea	(sysmars_reg),a5
+		move.w	(RAM_FifoMarsCnt).w,d6
+		lsr.w	#2,d6
+		sub.w	#1,d6
+		clr.w	(RAM_FifoMarsCnt).w
+.wait_l:	move.b	comm15(a5),d0
+		bne.s	.wait_l
+.wait_r:	move.b	comm15(a5),d0
+		bne.s	.wait_r
+		
+; ------------------------------------------------
+; a6 - Task id and arguments
+; a5 - sysmars_reg
+; d6 - NumOf longs to process
+sysMdMars_go:
+		move.w	sr,d7			; Backup current SR
+		move.w	#$2700,sr		; Disable interrupts
+
+		lea     comm8(a5),a4
+		move.w	#0,4(a4)
+		move.w	standby(a5),d0		; Request SLAVE CMD interrupt
+		bset	#1,d0
+		move.w	d0,standby(a5)
+.wait_cmd:	move.w	standby(a5),d0		; interrupt is ready?
+		btst    #1,d0
+		bne.s   .wait_cmd
+.next_l:
+		move.l  (a6),(a4)
+		clr.l	(a6)+
+		move.w	#1,4(a4)
+.wait:		tst.w	4(a4)
+		bne.s	.wait
+		dbf	d6,.next_l
+		move.w	#-1,4(a4)
+
+		move.w	d7,sr			; Restore SR
 		rts
 
 ; ====================================================================

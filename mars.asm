@@ -6,7 +6,7 @@
 ; +-----------------------------------------------------------------+
 
 		include	"system/macros.asm"	; Assembler macros
-		include	"system/const.asm"	; MD and MARS Variables are located here
+		include	"system/md/const.asm"	; MD and MARS Variables are located here
 		include	"system/md/map.asm"	; Genesis hardware map
 		include	"system/mars/map.asm"	; MARS map
 		
@@ -46,7 +46,7 @@ MD_Main:
 		dephase
 Engine_Code_end:
 	if MOMPASS=6
-		message "MD CODE uses: \{Engine_Code_end-Engine_Code}"
+		message "MD RAM CODE uses: \{Engine_Code_end-Engine_Code}"
 	endif
 	
 ; ====================================================================

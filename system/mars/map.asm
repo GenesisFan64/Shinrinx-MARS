@@ -26,6 +26,7 @@ _overwrite:	equ	CS2|TH+$20000	; Overwrite, $00-byte writes are ignored
 ; System
 ; ------------------------------------------------
 
+; _sysreg
 adapter		equ	$00		; adapter control register
 intmask		equ	$01		; interrupts mask
 standby		equ	$02		; CMD interrupt request bit by MD side (slave|master)
