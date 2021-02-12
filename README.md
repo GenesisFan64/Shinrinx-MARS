@@ -14,7 +14,7 @@ Features:
 
 Current issues:
 - NOT WORKING ON HARDWARE due to a problem with the MD-to-32X communication implemented, it will be fixed asap.
-- RESET has 90% chances on HW
+- RESET doesn't work properly on HW
 - Perspective is not perfect. It works well with solid colors but not for textures, Darxide and even the Zyrinx tech demo has problems with Perspective.
 - Texture points in triangles might not map correctly (not sure if it a bug in the script or a limitation of DDA)
 
