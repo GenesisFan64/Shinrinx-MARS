@@ -114,11 +114,11 @@ MD_GmMode0:
 ; 		moveq	#0,d1
 ; 		bsr	System_MdMars_Call
 		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
-		bsr	System_MdMars_AddCall
+		bsr	System_MdMars_SlvAddTask
 		move.l	#CmdTaskMd_ObjectSet,d0		; Set new object
 		moveq	#0,d1
 		move.l	#MARSOBJ_SMOK,d2
-		bsr	System_MdMars_AddCall
+		bsr	System_MdMars_SlvAddTask
 ; 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
 ; 		moveq	#1,d1
 ; 		bsr	System_MdMars_AddCall
@@ -129,7 +129,7 @@ MD_GmMode0:
 ; 		moveq	#0,d4
 ; 		move.w	#$7FFF,d5
 ; 		bsr	System_MdMars_AddCall
-		bsr	System_MdMars_SendAll
+		bsr	System_MdMars_SlvSendAll
 		move.w	#$100,(RAM_SndPitch).w
 		bsr	MdMdl_Update
 		bsr	.update
@@ -181,7 +181,7 @@ MD_GmMode0:
 		moveq	#0,d6
 		moveq	#%10,d7
 		move.l	#CmdTaskMd_SetPWM,d0
-		bsr	System_MdMars_AddCall
+		bsr	System_MdMars_SlvAddTask
 		moveq	#1,d1
 		move.l	#PWM_RIGHT,d2
 		move.l	#PWM_RIGHT_e,d3
@@ -190,8 +190,8 @@ MD_GmMode0:
 		moveq	#0,d6
 		moveq	#%01,d7
 		move.l	#CmdTaskMd_SetPWM,d0
-		bsr	System_MdMars_AddCall
-		bsr	System_MdMars_SendAll
+		bsr	System_MdMars_SlvAddTask
+		bsr	System_MdMars_SlvSendAll
 		
 .nox:
 		move.l	#CmdTaskMd_ObjectPos,d0		; Cmnd $0A: Modify object pos and rot
@@ -203,7 +203,8 @@ MD_GmMode0:
 		move.l	(RAM_RotX),d6
 		move.l	(RAM_RotX),d7
 		lsr.l	#2,d5
-		bsr	System_MdMars_Call
+		bsr	System_MdMars_SlvAddTask
+		bsr	System_MdMars_SlvSendAll
 		add.l	#$2000,(RAM_RotX)
 		rts
 .update:

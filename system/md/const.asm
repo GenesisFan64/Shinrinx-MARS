@@ -109,14 +109,16 @@ sizeof_input	ds.l 0
 		struct RAM_MdSystem
 RAM_InputData	ds.b sizeof_input*4		; Input data section
 RAM_SaveData	ds.b $200			; Save data cache (if using SRAM)
-RAM_FifoToMars	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Queue task list to be sent to 32X side
-RAM_FifoMarsSgl	ds.l MAX_MDTSKARG		; Single task only for 32X side
-; RAM_FifoMarsSnd	ds.l MAX_MDPWMARG*MAX_PWMCHNL
+RAM_MdMarsTskM	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Queue task list for MASTER SH2
+RAM_MdMarsTskS	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Queue task list for SLAVE SH2
+
+
 RAM_FrameCount	ds.l 1				; Frame counter
 RAM_SysRandVal	ds.l 1				; Random value
 RAM_SysRandSeed	ds.l 1				; Randomness seed
 RAM_initflug	ds.l 1				; "INIT" flag
-RAM_FifoMarsCnt	ds.w 1				; Queued Task slot
+RAM_MdMarsTCntM	ds.w 1				; Counter for MASTER CPU's task list
+RAM_MdMarsTCntS	ds.w 1				; Counter for SLAVE CPU's task list
 RAM_FifoMarsWrt	ds.w 1				; mid-write flag
 RAM_SysFlags	ds.w 1				; Game engine flags (note: it's a byte)
 RAM_MdMarsVInt	ds.w 3				; VBlank jump (JMP xxxx xxxx)

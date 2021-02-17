@@ -308,107 +308,89 @@ System_VSync:
 
 ; ====================================================================
 ; --------------------------------------------------------
-; Routines to send task requests to 32X
+; Routines to send task request from here to 32X
 ; 
 ; Uses comm8,comm10,comm12
 ; --------------------------------------------------------
 
 ; ------------------------------------------------
-; System_MdMars_Call
-; 
-; Do a single task, waits until it finishes
+; Single call only
 ; ------------------------------------------------
 
-; System_MdMars_Call:
-; 		lea	(RAM_FifoMarsSgl),a6
-; 		lea	(sysmars_reg),a5
-; 		move.w	#1,(RAM_FifoMarsWrt).w
-; 		movem.l	d0-d7,(a6)
-; 		move.w	#0,(RAM_FifoMarsWrt).w
-; 		move.w	#MAX_MDTSKARG-1,d6
-; .wait_l:	move.b	comm15(a5),d0
-; 		bne.s	.wait_l
-; 		bsr.s	sysMdMars_go
-; 		rts
+System_MdMars_MstAddTask:
+		lea	(RAM_MdMarsTskM).w,a6
+		lea	(RAM_MdMarsTCntM).w,a5
+		bra.s	sysMdMars_instask
+		
+System_MdMars_SlvAddTask:
+		lea	(RAM_MdMarsTskS).w,a6
+		lea	(RAM_MdMarsTCntS).w,a5
 
-; ------------------------------------------------
-; Add task for 32X using d0-d7 registers
-; 
-; Input:
-;    d0 - Task ID
-; d1-d7 - Task arguments
-; 
-; Uses:
-; a6
-; ------------------------------------------------
-
-System_MdMars_AddCall:
-		cmp.w	#(MAX_MDTSKARG*MAX_MDTASKS)*4,(RAM_FifoMarsCnt).w
+; a6 - task pointer and args
+; a5 - task list counter
+sysMdMars_instask:
+		cmp.w	#(MAX_MDTSKARG*MAX_MDTASKS)*4,(a5)
 		bge.s	.ran_out
 		move.w	#1,(RAM_FifoMarsWrt).w
-		lea	(RAM_FifoToMars).l,a6
-		adda	(RAM_FifoMarsCnt).w,a6
+		adda.w	(a5),a6
 		movem.l	d0-d7,(a6)				; Send variables to RAM
-		add.w	#MAX_MDTSKARG*4,(RAM_FifoMarsCnt).w
+		add.w	#MAX_MDTSKARG*4,(a5)
 		move.w	#0,(RAM_FifoMarsWrt).w
 .ran_out
 		rts
-
-; ; ------------------------------------------------
-; ; System_MdMars_CheckBusy
-; ; 
-; ; Check if Slave CPU is busy doing the
-; ; past tasks before sending new ones
-; ; ------------------------------------------------
+		
+; ------------------------------------------------
+; System_MdMars_DoTasksM
+; System_MdMars_DoTasksS
 ; 
-
-System_MdMars_Call:
-		bsr	System_MdMars_AddCall
-
-; ------------------------------------------------
-; System_MdMars_SendAll
-;
-; Starts sending queued tasks to SH2
+; Process all tasks
 ; ------------------------------------------------
 
-System_MdMars_SendAll:
-		lea	(RAM_FifoToMars),a6
+System_MdMars_MstSendAll:
+		lea	(RAM_MdMarsTskM),a6
+		clr.w	(RAM_MdMarsTCntM).w
+		move.w	#0,d6
+		bra.s	sysMdMars_sendAll
+		
+System_MdMars_SlvSendAll:
+		lea	(RAM_MdMarsTskS),a6
+		clr.w	(RAM_MdMarsTCntS).w
+		move.w	#1,d6
+
+sysMdMars_sendAll:
 		lea	(sysmars_reg),a5
-		clr.w	(RAM_FifoMarsCnt).w
 .wait_l:
 		nop
 		nop
-		move.b	comm15(a5),d0
+		move.b	comm15(a5),d4
 		bne.s	.wait_l
-
 		move.w	sr,d7
 		move.w	#$2700,sr
 		lea	comm8(a5),a4
 		move.w	#$0201,(a4)		; MD ready | SH busy (init)
-		move.w	standby(a5),d0		; SLAVE CMD interrupt
-		bset	#1,d0
-		move.w	d0,standby(a5)
-.wait_cmd:	move.w	standby(a5),d0
-		btst    #1,d0
+		move.w	standby(a5),d4		; SLAVE CMD interrupt
+		bset	d6,d4
+		move.w	d4,standby(a5)
+.wait_cmd:	move.w	standby(a5),d4
+		btst    d6,d4
 		bne.s   .wait_cmd
-		move.w	#(MAX_MDTSKARG*MAX_MDTASKS*4),d2
+		move.w	#(MAX_MDTSKARG*MAX_MDTASKS*4),d5
 .loop:
 		cmpi.b	#2,1(a4)		; SH ready?
 		bne.s	.loop
 		move.b	#1,(a4)			; MD is writing
-		tst.w	d2
+		tst.w	d5
 		beq.s	.exit
-		move.l	(a6),d0
+		move.l	(a6),d4
 		clr.l	(a6)+
-		move.w	d0,4(a4)
-		swap	d0
-		move.w	d0,2(a4)
+		move.w	d4,4(a4)
+		swap	d4
+		move.w	d4,2(a4)
 		move.b	#2,(a4)			; MD is free
-		sub.w	#4,d2
+		sub.w	#4,d5
 		bra.s	.loop
 .exit:	
 		move.b	#0,(a4)			; MD finished
-		
 		move.w	d7,sr
 .mid_write:
 		rts
