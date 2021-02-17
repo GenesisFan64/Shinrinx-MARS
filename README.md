@@ -13,8 +13,7 @@ Features:
 - Layout support, to make big maps using separate model files
 
 Current issues:
-- NOT WORKING ON HARDWARE due to a problem with the MD-to-32X communication implemented, it will be fixed asap.
-- RESET doesn't work properly on HW
+- RESET doesn't work properly on HW, might be because of outdated code from the 32XSDK
 - Perspective is not perfect. It works well with solid colors but not for textures, Darxide and even the Zyrinx tech demo has problems with Perspective.
 - Texture points in triangles might not map correctly (not sure if it a bug in the script or a limitation of DDA)
 

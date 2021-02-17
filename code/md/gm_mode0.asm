@@ -110,25 +110,25 @@ MD_GmMode0:
 		bmi	.mode0_loop
 		or.w	#$8000,(RAM_MdlCurrMd).w
 
-		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
-		moveq	#0,d1
-		bsr	System_MdMars_Call
+; 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
+; 		moveq	#0,d1
+; 		bsr	System_MdMars_Call
 		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
 		bsr	System_MdMars_AddCall
 		move.l	#CmdTaskMd_ObjectSet,d0		; Set new object
 		moveq	#0,d1
 		move.l	#MARSOBJ_SMOK,d2
 		bsr	System_MdMars_AddCall
-		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
-		moveq	#1,d1
-		bsr	System_MdMars_AddCall
-		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
-		move.l	#Palette_Puyo,d1
-		moveq	#0,d2
-		move.w	#255,d3
-		moveq	#0,d4
-		move.w	#$7FFF,d5
-		bsr	System_MdMars_AddCall
+; 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
+; 		moveq	#1,d1
+; 		bsr	System_MdMars_AddCall
+; 		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
+; 		move.l	#Palette_Puyo,d1
+; 		moveq	#0,d2
+; 		move.w	#255,d3
+; 		moveq	#0,d4
+; 		move.w	#$7FFF,d5
+; 		bsr	System_MdMars_AddCall
 		bsr	System_MdMars_SendAll
 		move.w	#$100,(RAM_SndPitch).w
 		bsr	MdMdl_Update

@@ -122,7 +122,7 @@ MarsVideo_Init:
 		nop
 		bsr	.this_fb
 		nop
-		mov	#1,r0
+		mov	#2,r0
 		mov.b	r0,@(bitmapmd,r4)
 		lds	@r15+,pr
 		rts

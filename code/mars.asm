@@ -302,29 +302,45 @@ s_irq_cmd:
 		mov	r3,@-r15
 		mov	r4,@-r15
 		mov	r5,@-r15
-
+		mov	#RAM_Mars_MdTasksFifo_1,r2
 		mov	#_sysreg+comm8,r1
-		mov	#RAM_Mars_MdTasksFifo_1,r2	
-		mov.w	@(marsGbl_MdTaskList_Sw,gbr),r0
-		tst     #1,r0
-		bf	.trnsf
-		mov	#RAM_Mars_MdTasksFifo_2,r2
-.trnsf:
-		mov.w	@(4,r1),r0
-		cmp/eq	#-1,r0
-		bt	.exit
-		cmp/eq	#0,r0
-		bt	.trnsf
-		mov	@r1,r0
-		mov	r0,@r2
+.next_comm:
+		mov	#2,r0		; SH is ready
+		mov.b	r0,@(1,r1)
+.wait_md_b:
+		mov.b	@(0,r1),r0	; get MD status
+		and	#$FF,r0
+		tst	r0,r0
+		bt	.finish
+		cmp/eq	#1,r0		; MD is writing?
+		bf	.wait_md_b
+		mov	#1,r0		; SH is busy
+		mov.b	r0,@(1,r1)
+.wait_md_c:
+		mov.b	@(0,r1),r0
+		and	#$FF,r0
+		tst	r0,r0
+		bt	.finish
+		cmp/eq	#2,r0		; MD is ready?
+		bf	.wait_md_c
+		mov.w	@(2,r1),r0	; comm10
+		mov.w	r0,@r2
+		mov.w	@(4,r1),r0	; comm12
+		mov.w	r0,@(2,r2)
+		
+		mov	#_sysreg+comm6,r4
+		mov.w	@r4,r0
+		add	#1,r0
+		mov.w	r0,@r4
+		
+		mov	#2,r0		; SH is ready
+		mov.b	r0,@(1,r1)
+		bra	.next_comm
 		add	#4,r2
-		xor	r0,r0
-		mov.w	r0,@(4,r1)
-		nop
-		nop
-		bra	.trnsf
-		nop
-.exit:
+.finish:
+		mov	#1,r0
+		mov	#_sysreg+comm15,r1
+		mov.b	r0,@r1
 
 		mov 	@r15+,r5
 		mov 	@r15+,r4		
@@ -763,42 +779,40 @@ SH2_S_HotStart:
 ; --------------------------------------------------------
 
 slave_loop:
-		stc	sr,r1
-		mov	#$F0,r0
-		ldc	r0,sr
-		mov.w	@(marsGbl_MdTaskList_Sw,gbr),r0		; Swap tasks buffer
- 		xor	#1,r0
- 		mov.w	r0,@(marsGbl_MdTaskList_Sw,gbr)
- 		ldc	r1,sr
-		mov	#MAX_MDTASKS,r13
+		mov	#_sysreg+comm15,r1
+		mov.b	@r1,r0
+		cmp/eq	#0,r0
+		bt	.no_req
+		mov	#MAX_MDTASKS,r13		; NUMOF_tasks (TODO)
 		mov	#RAM_Mars_MdTasksFifo_1,r14
-		mov.w	@(marsGbl_MdTaskList_Sw,gbr),r0
-		tst     #1,r0
-		bf	.next_req
-		mov	#RAM_Mars_MdTasksFifo_2,r14
 .next_req:
+		mov	r13,@-r15
+		mov	#_sysreg+comm2,r4
+		mov.w	@r4,r0
+		add	#1,r0
+		mov.w	r0,@r4
 		mov	@r14,r0
 		cmp/eq	#0,r0
 		bt	.no_task
-		mov	r13,@-r15
 		jsr	@r0
 		nop
-		mov	@r15+,r13
-		mov	#0,r0
+		xor	r0,r0
 		mov	r0,@r14
-
-		mov	#_sysreg+comm15,r1
-		mov	#0,r0
-		mov.b	r0,@r1
-		mov	#_sysreg+comm2,r1
-		mov.w	@r1,r0
+		mov	#_sysreg+comm4,r4
+		mov.w	@r4,r0
 		add	#1,r0
-		mov.w	r0,@r1
+		mov.w	r0,@r4
 .no_task:
+		nop
 		mov	#MAX_MDTSKARG*4,r0
+		mov	@r15+,r13
 		dt	r13
 		bf/s	.next_req
 		add	r0,r14
+
+		mov	#0,r0
+		mov	#_sysreg+comm15,r1
+		mov.b	r0,@r1
 .no_req:
 		mov	#_sysreg+comm0,r4
 		mov.w	@r4,r0
@@ -1040,6 +1054,9 @@ slv_sort_z:
 
 CmdTaskMd_SetBitmap:
 		mov 	#_vdpreg,r1
+.waitv		mov.w	@($A,r1),r0		; Wait for FEN to clear
+		cmp/pl	r0
+		bt	.waitv
 		mov	@($04,r14),r0
 		mov.b	r0,@(bitmapmd,r1)
 		rts
