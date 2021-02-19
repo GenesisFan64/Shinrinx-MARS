@@ -317,14 +317,71 @@ System_VSync:
 ; Single call only
 ; ------------------------------------------------
 
+; Add task to Master's queque
 System_MdMars_MstAddTask:
 		lea	(RAM_MdMarsTskM).w,a6
 		lea	(RAM_MdMarsTCntM).w,a5
-		bra.s	sysMdMars_instask
-		
+		bra	sysMdMars_instask
+
+; Add task to Slave's queque
 System_MdMars_SlvAddTask:
 		lea	(RAM_MdMarsTskS).w,a6
 		lea	(RAM_MdMarsTCntS).w,a5
+		bra	sysMdMars_instask
+
+; Single call for Master CPU
+System_MdMars_MstCall:
+		lea	(RAM_MdMarsTsSgl),a6
+		movem.l	d0-d7,(a6)
+		move.w	#(MAX_MDTSKARG*4),d6
+		moveq	#0,d5
+.wait_m:
+		nop
+		nop
+		move.b	(sysmars_reg+comm14),d4
+		and.w	#$80,d4
+		bne.s	.wait_m
+		bra.s	sysMdMars_Transfer
+
+; Single call for Slave CPU
+System_MdMars_SlvCall:
+		lea	(RAM_MdMarsTsSgl),a6
+		movem.l	d0-d7,(a6)
+		move.w	#(MAX_MDTSKARG*4),d6
+		moveq	#1,d5
+.wait_s:
+		nop
+		nop
+		move.b	(sysmars_reg+comm15),d4
+		and.w	#$80,d4
+		bne.s	.wait_s
+		bra.s	sysMdMars_Transfer
+
+System_MdMars_MstSendAll:
+		lea	(RAM_MdMarsTskM),a6
+		clr.w	(RAM_MdMarsTCntM).w
+		move.w	#(MAX_MDTSKARG*MAX_MDTASKS*4),d6
+		moveq	#0,d5
+.wait_m:
+		nop
+		nop
+		move.b	(sysmars_reg+comm14),d4
+		and.w	#$80,d4
+		bne.s	.wait_m
+		bra.s	sysMdMars_Transfer
+		
+System_MdMars_SlvSendAll:
+		lea	(RAM_MdMarsTskS),a6
+		clr.w	(RAM_MdMarsTCntS).w
+		move.w	#(MAX_MDTSKARG*MAX_MDTASKS*4),d6
+		moveq	#1,d5
+.wait_s:
+		nop
+		nop
+		move.b	(sysmars_reg+comm15),d4
+		and.w	#$80,d4
+		bne.s	.wait_s
+		bra.s	sysMdMars_Transfer
 
 ; a6 - task pointer and args
 ; a5 - task list counter
@@ -336,50 +393,33 @@ sysMdMars_instask:
 		movem.l	d0-d7,(a6)				; Send variables to RAM
 		add.w	#MAX_MDTSKARG*4,(a5)
 		move.w	#0,(RAM_FifoMarsWrt).w
-.ran_out
+.ran_out:
 		rts
-		
-; ------------------------------------------------
-; System_MdMars_DoTasksM
-; System_MdMars_DoTasksS
+
+; a6 - Task list and args
+; d6 - Data size
+; d5 - CMD Interrupt bitset value (0-Master/1-Slave)
 ; 
-; Process all tasks
-; ------------------------------------------------
-
-System_MdMars_MstSendAll:
-		lea	(RAM_MdMarsTskM),a6
-		clr.w	(RAM_MdMarsTCntM).w
-		move.w	#0,d6
-		bra.s	sysMdMars_sendAll
-		
-System_MdMars_SlvSendAll:
-		lea	(RAM_MdMarsTskS),a6
-		clr.w	(RAM_MdMarsTCntS).w
-		move.w	#1,d6
-
-sysMdMars_sendAll:
+; Test for comm14 or comm15
+; before calling here.
+sysMdMars_Transfer:
 		lea	(sysmars_reg),a5
-.wait_l:
-		nop
-		nop
-		move.b	comm15(a5),d4
-		bne.s	.wait_l
 		move.w	sr,d7
 		move.w	#$2700,sr
 		lea	comm8(a5),a4
 		move.w	#$0201,(a4)		; MD ready | SH busy (init)
 		move.w	standby(a5),d4		; SLAVE CMD interrupt
-		bset	d6,d4
+		bset	d5,d4
 		move.w	d4,standby(a5)
 .wait_cmd:	move.w	standby(a5),d4
-		btst    d6,d4
+		btst    d5,d4
 		bne.s   .wait_cmd
-		move.w	#(MAX_MDTSKARG*MAX_MDTASKS*4),d5
+
 .loop:
 		cmpi.b	#2,1(a4)		; SH ready?
 		bne.s	.loop
 		move.b	#1,(a4)			; MD is writing
-		tst.w	d5
+		tst.w	d6
 		beq.s	.exit
 		move.l	(a6),d4
 		clr.l	(a6)+
@@ -387,7 +427,7 @@ sysMdMars_sendAll:
 		swap	d4
 		move.w	d4,2(a4)
 		move.b	#2,(a4)			; MD is free
-		sub.w	#4,d5
+		sub.w	#4,d6
 		bra.s	.loop
 .exit:	
 		move.b	#0,(a4)			; MD finished

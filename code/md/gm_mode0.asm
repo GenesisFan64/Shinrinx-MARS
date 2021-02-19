@@ -85,13 +85,13 @@ MD_GmMode0:
 		move.w	#0,(vdp_data).l
 		move.w	d0,(vdp_data).l
 		lea	str_Status(pc),a0
-		move.l	#locate(0,1,23),d0
+		move.l	#locate(0,1,25),d0
 		bsr	Video_Print
 		move.w	(RAM_MdlCurrMd).w,d0
 		and.w	#$FF,d0
 		add.w	d0,d0
-		move.w	.list(pc,d0.w),d0
-		jsr	.list(pc,d0.w)
+		add.w	d0,d0
+		bsr	.mode0;.list(pc,d0.w)
 		bra	.loop
 
 ; ====================================================================
@@ -100,8 +100,8 @@ MD_GmMode0:
 ; ------------------------------------------------------
 
 .list:
-		dc.w	.mode0-.list
-; 		dc.w	.mode1-.list
+		bra.w	.mode0
+		bra.w	.mode0
 		
 ; --------------------------------------------------
 
@@ -112,23 +112,24 @@ MD_GmMode0:
 
 ; 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
 ; 		moveq	#0,d1
-; 		bsr	System_MdMars_Call
+; 		bsr	System_MdMars_MstCall
 		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
 		bsr	System_MdMars_SlvAddTask
 		move.l	#CmdTaskMd_ObjectSet,d0		; Set new object
 		moveq	#0,d1
 		move.l	#MARSOBJ_SMOK,d2
 		bsr	System_MdMars_SlvAddTask
-; 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
-; 		moveq	#1,d1
-; 		bsr	System_MdMars_AddCall
+
 ; 		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
 ; 		move.l	#Palette_Puyo,d1
 ; 		moveq	#0,d2
-; 		move.w	#255,d3
+; 		move.w	#256,d3
 ; 		moveq	#0,d4
-; 		move.w	#$7FFF,d5
-; 		bsr	System_MdMars_AddCall
+; 		bsr	System_MdMars_MstAddTask
+		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
+		moveq	#1,d1
+		bsr	System_MdMars_MstAddTask
+		bsr	System_MdMars_MstSendAll
 		bsr	System_MdMars_SlvSendAll
 		move.w	#$100,(RAM_SndPitch).w
 		bsr	MdMdl_Update
@@ -171,7 +172,7 @@ MD_GmMode0:
 .nod:
 
 		move.w	(Controller_1+on_press).l,d7
-		and	#JoyX,d7
+		and	#JoyA,d7
 		beq.s	.nox
 		moveq	#0,d1
 		move.l	#PWM_LEFT,d2
@@ -181,7 +182,7 @@ MD_GmMode0:
 		moveq	#0,d6
 		moveq	#%10,d7
 		move.l	#CmdTaskMd_SetPWM,d0
-		bsr	System_MdMars_SlvAddTask
+		bsr	System_MdMars_MstAddTask
 		moveq	#1,d1
 		move.l	#PWM_RIGHT,d2
 		move.l	#PWM_RIGHT_e,d3
@@ -190,8 +191,8 @@ MD_GmMode0:
 		moveq	#0,d6
 		moveq	#%01,d7
 		move.l	#CmdTaskMd_SetPWM,d0
-		bsr	System_MdMars_SlvAddTask
-		bsr	System_MdMars_SlvSendAll
+		bsr	System_MdMars_MstAddTask
+		bsr	System_MdMars_MstSendAll
 		
 .nox:
 		move.l	#CmdTaskMd_ObjectPos,d0		; Cmnd $0A: Modify object pos and rot
@@ -451,9 +452,7 @@ str_StatusPtch:	dc.b "\\w",0
 		
 str_Status:
 		dc.b "\\w \\w \\w \\w       MD: \\l",$A
-		dc.b "\\w \\w \\w \\w",$A
-		dc.b "\\l \\l \\l",$A
-		dc.b "\\l \\l \\l",0
+		dc.b "\\w \\w \\w \\w",0
 		dc.l sysmars_reg+comm0
 		dc.l sysmars_reg+comm2
 		dc.l sysmars_reg+comm4
@@ -463,12 +462,12 @@ str_Status:
 		dc.l sysmars_reg+comm10
 		dc.l sysmars_reg+comm12
 		dc.l sysmars_reg+comm14
-		dc.l RAM_MdCamera+cam2_x_pos
-		dc.l RAM_MdCamera+cam2_y_pos
-		dc.l RAM_MdCamera+cam2_z_pos
-		dc.l RAM_MdCamera+cam2_x_rot
-		dc.l RAM_MdCamera+cam2_y_rot
-		dc.l RAM_MdCamera+cam2_z_rot
+; 		dc.l RAM_MdCamera+cam2_x_pos
+; 		dc.l RAM_MdCamera+cam2_y_pos
+; 		dc.l RAM_MdCamera+cam2_z_pos
+; 		dc.l RAM_MdCamera+cam2_x_rot
+; 		dc.l RAM_MdCamera+cam2_y_rot
+; 		dc.l RAM_MdCamera+cam2_z_rot
 		align 4
 		
 ; MdPal_Bg:

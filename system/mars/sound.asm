@@ -130,6 +130,11 @@ MarsSound_PWM:
  		mov	r4,r0
  		mov.w	r0,@r2
  		
+		mov	#_sysreg+comm4,r1
+		mov.w	@r1,r0
+		add	#1,r0
+		mov.w	r0,@r1
+
 		mov.l	@r15+,r8
 		mov.l	@r15+,r7
 		mov.l	@r15+,r6

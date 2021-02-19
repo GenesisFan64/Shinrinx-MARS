@@ -35,6 +35,8 @@ marsGbl_VIntFlag_M	ds.w 1		; Sets to 0 if VBlank finished on Master CPU
 marsGbl_VIntFlag_S	ds.w 1		; Same thing but for the Slave CPU
 marsGbl_DivReq_M	ds.w 1		; Flag to tell Watchdog we are in the middle of division
 marsGbl_CurrFb		ds.w 1		; Current framebuffer number
+marsGbl_BitmapReq	ds.w 1		; Request for changing SVDP bitmap mode
+marsGbl_BitmapSet	ds.w 1		; bitmap mode to set on request
 sizeof_MarsGbl		ds.l 0
 			finish
 			
@@ -102,8 +104,58 @@ m_irq_cmd:
 		mov.b	r0,@(7,r1)
 		mov	#_sysreg+cmdintclr,r1
 		mov.w	r0,@r1
+		
+		mov	r2,@-r15
+		mov	r3,@-r15
+		stc	sr,@-r15
+		mov	#$F0,r0
+		ldc	r0,sr
+		mov	#RAM_Mars_MdTasksFifo_M,r2
+		mov	#_sysreg+comm8,r1
+.next_comm:
+		mov	#2,r0		; SH is ready
+		mov.b	r0,@(1,r1)
+.wait_md_b:
+		mov.b	@(0,r1),r0	; get MD status
+		and	#$FF,r0
+		tst	r0,r0
+		bt	.finish
+		cmp/eq	#1,r0		; MD is writing?
+		bf	.wait_md_b
+		mov	#1,r0		; SH is busy
+		mov.b	r0,@(1,r1)
+.wait_md_c:
+		mov.b	@(0,r1),r0
+		and	#$FF,r0
+		tst	r0,r0
+		bt	.finish
+		cmp/eq	#2,r0		; MD is ready?
+		bf	.wait_md_c
+		mov.w	@(2,r1),r0	; comm10
+		mov.w	r0,@r2
+		mov.w	@(4,r1),r0	; comm12
+		mov.w	r0,@(2,r2)
+		
+; 		mov	#_sysreg+comm6,r4
+; 		mov.w	@r4,r0
+; 		add	#1,r0
+; 		mov.w	r0,@r4
+		mov	#2,r0		; SH is ready
+		mov.b	r0,@(1,r1)
+		bra	.next_comm
+		add	#4,r2
+.finish:
+		mov	#_sysreg+comm14,r1
+		mov.b	@r1,r0
+		or	#$80,r0
+		mov.b	r0,@r1
+		ldc 	@r15+,sr
+		mov 	@r15+,r3
+		mov 	@r15+,r2
+		rts
 		nop
-		nop
+		align 4
+
 		nop
 		nop
 		nop
@@ -138,40 +190,46 @@ m_irq_h:
 ; ------------------------------------------------
 
 m_irq_v:
-
-; ----------------------------------
-; Update Indexed-palette
-; ----------------------------------
 		mov 	#_vdpreg,r1
-.min_r		mov.w	@(10,r1),r0			; Wait for FEN to clear
-		and	#%10,r0
-		cmp/eq	#2,r0
-		bt	.min_r
+.min_r		mov.w	@($A,r1),r0			; Wait for Framebuffer access
+		tst	#2,r0
+		bf	.min_r
+; 		mov.w	@(marsGbl_BitmapReq,gbr),r0	; bitmap change request?
+; 		cmp/eq	#1,r0
+; 		bf	.no_req
+; 		mov.w	@(marsGbl_BitmapSet,gbr),r0
+; 		mov.b	r0,@(bitmapmd,r1)
+; 		mov	#0,r0
+; 		mov.w	r0,@(marsGbl_BitmapReq,gbr)
+; .no_req:
 		mov.l	r2,@-r15
 		mov.l	r3,@-r15
 		mov.l	r4,@-r15
 		mov.l	r5,@-r15
 		mov.l	r6,@-r15
+		stc	sr,@-r15
+		mov	#$F0,r0
 		mov.l	#_vdpreg,r1			; Wait for palette access ok
 .wait		mov.b	@(vdpsts,r1),r0
 		tst	#$20,r0
 		bt	.wait
-		mov.l	#RAM_Mars_Palette,r1		; Send palette stored on RAM
-		mov.l	#_palette,r2
- 		mov.l	#256,r3
-		mov.l	#%0101011011110001,r4		; transfer size 2 / burst
-		mov.l	#_DMASOURCE0,r5 		; _DMASOURCE = $ffffff80
-		mov.l	#_DMAOPERATION,r6 		; _DMAOPERATION = $ffffffb0
-		mov.l	r1,@r5				; set source address
-		mov.l	r2,@(4,r5)			; set destination address
-		mov.l	r3,@(8,r5)			; set length
+		mov	#RAM_Mars_Palette,r1		; Send palette stored on RAM
+		mov	#_palette,r2
+ 		mov	#256,r3
+		mov	#%0101011011110001,r4		; transfer size 2 / burst
+		mov	#_DMASOURCE0,r5 		; _DMASOURCE = $ffffff80
+		mov	#_DMAOPERATION,r6 		; _DMAOPERATION = $ffffffb0
+		mov	r1,@r5				; set source address
+		mov	r2,@(4,r5)			; set destination address
+		mov	r3,@(8,r5)			; set length
 		xor	r0,r0
-		mov.l	r0,@r6				; Stop OPERATION
+		mov	r0,@r6				; Stop OPERATION
 		xor	r0,r0
-		mov.l	r0,@($C,r5)			; clear TE bit
-		mov.l	r4,@($C,r5)			; load mode
+		mov	r0,@($C,r5)			; clear TE bit
+		mov	r4,@($C,r5)			; load mode
 		add	#1,r0
 		mov.l	r0,@r6				; Start OPERATION
+		ldc	@r15+,sr
 		mov.l	@r15+,r6
 		mov.l	@r15+,r5
 		mov.l	@r15+,r4
@@ -300,9 +358,8 @@ s_irq_cmd:
 
 		mov	r2,@-r15
 		mov	r3,@-r15
-		mov	r4,@-r15
-		mov	r5,@-r15
-		mov	#RAM_Mars_MdTasksFifo_1,r2
+; 		mov	r4,@-r15
+		mov	#RAM_Mars_MdTasksFifo_S,r2
 		mov	#_sysreg+comm8,r1
 .next_comm:
 		mov	#2,r0		; SH is ready
@@ -328,62 +385,28 @@ s_irq_cmd:
 		mov.w	@(4,r1),r0	; comm12
 		mov.w	r0,@(2,r2)
 		
-		mov	#_sysreg+comm6,r4
-		mov.w	@r4,r0
-		add	#1,r0
-		mov.w	r0,@r4
-		
+; 		mov	#_sysreg+comm6,r4
+; 		mov.w	@r4,r0
+; 		add	#1,r0
+; 		mov.w	r0,@r4
 		mov	#2,r0		; SH is ready
 		mov.b	r0,@(1,r1)
 		bra	.next_comm
 		add	#4,r2
 .finish:
-		mov	#1,r0
 		mov	#_sysreg+comm15,r1
+		mov.b	@r1,r0
+		or	#$80,r0
 		mov.b	r0,@r1
-
-		mov 	@r15+,r5
-		mov 	@r15+,r4		
+; 		mov 	@r15+,r4		
 		mov 	@r15+,r3
 		mov 	@r15+,r2
+		nop
+		nop
+		nop
 		rts
 		nop
 		align 4
-
-; 		mov.b	@(4,r1),r0
-; 		cmp/eq	#0,r0
-; 		bt	.trnsfr_done
-; 		mov.b	@(5,r1),r0	; Get tag
-; 		cmp/eq	#2,r0		; Got 2? (finish)
-; 		bt	.trnsfr_done
-; 		cmp/eq	#1,r0		; Got 1? (copy data)
-; 		bf	.next_long
-; .retry:
-; 		mov.w	@r1,r0		; comm8 - xxxx0000
-; 		extu	r0,r0
-; 		shll16	r0
-; 		mov	r0,r3
-; 		mov.w	@(2,r1),r0	; comm10 - 0000xxxx
-; 		extu	r0,r0
-; 		or	r3,r0
-; 		mov	r0,@r2
-; 		mov	@r2,r3
-; 		cmp/eq	r0,r3
-; 		bf	.retry
-; 		mov	#0,r0
-; 		mov.b	r0,@(5,r1)
-; 		nop
-; 		nop
-; 		bra	.next_long
-; 		add	#4,r2
-; .trnsfr_done:
-; 		mov	#0,r0
-; 		mov.w	r0,@(4,r1)		; Finish transfer + clear tag
-; 		nop
-; 		nop
-; 		mov	#_sysreg+comm15,r1
-; 		mov	#1,r0
-; 		mov.b	r0,@r1
 		
 ; =================================================================
 ; ------------------------------------------------
@@ -536,7 +559,8 @@ SH2_M_Entry:
 		bf	.wait_slave
 		mov.l	#0,r0				; clear "SLAV"
 		mov.l	r0,@(8,r2)
-
+		mov.l	r0,@r2
+		
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; Master main code
@@ -579,6 +603,14 @@ SH2_M_HotStart:
 		
 ; ------------------------------------------------
 
+		mov	#Palette_Puyo,r1
+		mov	#0,r2
+		mov	#256,r3
+		mov	#0,r4
+		mov	#MarsVideo_LoadPal,r0
+		jsr	@r0
+		nop
+		
 		mov	#_CCR,r1
 		mov	#%00001000,r0			; Two-way mode
 		mov.w	r0,@r1
@@ -587,27 +619,74 @@ SH2_M_HotStart:
 		mov.l	#$20,r0				; Interrupts ON
 		ldc	r0,sr
 
+; 		mov	#Palette_Puyo,r1
+; 		mov	#0,r2
+; 		mov	#256,r3
+; 		mov	#0,r4
+; 		mov	#MarsVideo_LoadPal,r0
+; 		jsr	@r0
+; 		nop
+
 ; --------------------------------------------------------
 ; Loop
 ; --------------------------------------------------------
 
 master_loop:
-		mov	#0,r0
+		mov	#_sysreg+comm0,r4
+		mov.w	@r4,r0
+		add	#1,r0
+		mov.w	r0,@r4
+
 		mov	#_sysreg+comm14,r1
-		mov.b	r0,@r1
-.mstr_wait:
 		mov.b	@r1,r0			; Any request from Slave?
+		mov	r0,r2
+		and 	#$80,r0
 		cmp/eq	#0,r0
-		bf	.mstr_free		; If !=0, start drawing
+		bf	.md_req
+		mov	r2,r0
+		and	#$7F,r0
+		cmp/eq	#0,r0
+		bf	.draw_objects		; If !=0, start drawing
 		nop
-		bra	.mstr_wait
+		bra	master_loop
+		nop
+		align 4
+
+; Process Visual/Audio requests from Genesis
+.md_req:
+		stc	sr,@-r15
+		mov	#$F0,r0
+		ldc	r0,sr
+		mov	#MAX_MDTASKS,r13
+		mov	#RAM_Mars_MdTasksFifo_M,r14
+.next_req:
+		mov	r13,@-r15
+		mov	@r14,r0
+		cmp/eq	#0,r0
+		bt	.no_task
+		jsr	@r0
+		nop
+		xor	r0,r0
+		mov	r0,@r14
+.no_task:
+		mov	#MAX_MDTSKARG*4,r0
+		mov	@r15+,r13
+		dt	r13
+		bf/s	.next_req
+		add	r0,r14
+		mov	#_sysreg+comm14,r1
+		mov.b	@r1,r0
+		and	#$7F,r0
+		mov.b	r0,@r1
+		ldc 	@r15+,sr
+		bra	master_loop
 		nop
 
 ; --------------------------------------------------------
 ; Start building and drawing polygons
 ; --------------------------------------------------------
 
-.mstr_free:
+.draw_objects:
 		mov.l	#$FFFFFE92,r0
 		mov	#8,r1
 		mov.b	r1,@r0
@@ -678,6 +757,10 @@ master_loop:
 ; 		mov.w	r0,@r1
 	; --------------------
 	
+		mov	#_sysreg+comm14,r1
+		mov.b	@r1,r0
+		and	#$80,r0
+		mov.b	r0,@r1
 		bra	master_loop
 		nop
 		align 4
@@ -728,6 +811,12 @@ SH2_S_Entry:
 		mov.l	#"SLAV",r0
 		mov.l	r0,@(8,r2)
 
+		mov	#$FFFFFE80,r1
+		mov.w	#$5A7F,r0			; Watchdog wait timer
+		mov.w	r0,@r1
+		mov.w	#$A538,r0			; Watchdog ON
+		mov.w	r0,@r1
+		
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; Slave main code
@@ -781,16 +870,13 @@ SH2_S_HotStart:
 slave_loop:
 		mov	#_sysreg+comm15,r1
 		mov.b	@r1,r0
+		and	#$80,r0
 		cmp/eq	#0,r0
 		bt	.no_req
-		mov	#MAX_MDTASKS,r13		; NUMOF_tasks (TODO)
-		mov	#RAM_Mars_MdTasksFifo_1,r14
+		mov	#MAX_MDTASKS,r13
+		mov	#RAM_Mars_MdTasksFifo_S,r14
 .next_req:
 		mov	r13,@-r15
-		mov	#_sysreg+comm2,r4
-		mov.w	@r4,r0
-		add	#1,r0
-		mov.w	r0,@r4
 		mov	@r14,r0
 		cmp/eq	#0,r0
 		bt	.no_task
@@ -798,23 +884,19 @@ slave_loop:
 		nop
 		xor	r0,r0
 		mov	r0,@r14
-		mov	#_sysreg+comm4,r4
-		mov.w	@r4,r0
-		add	#1,r0
-		mov.w	r0,@r4
 .no_task:
-		nop
 		mov	#MAX_MDTSKARG*4,r0
 		mov	@r15+,r13
 		dt	r13
 		bf/s	.next_req
 		add	r0,r14
 
-		mov	#0,r0
 		mov	#_sysreg+comm15,r1
+		mov.b	@r1,r0
+		and	#$7F,r0
 		mov.b	r0,@r1
 .no_req:
-		mov	#_sysreg+comm0,r4
+		mov	#_sysreg+comm2,r4
 		mov.w	@r4,r0
 		add	#1,r0
 		mov.w	r0,@r4
@@ -884,14 +966,19 @@ slave_loop:
 		mov.l	#_sysreg+comm14,r1		; Master CPU still drawing pieces?
 .wait_master:
 		mov.b	@r1,r0
+		and	#$7F,r0
 		cmp/eq	#1,r0
 		bt	.still_drwing
 		mov.w	@(marsGbl_PolyBuffNum,gbr),r0	; Swap polygon buffer
  		xor	#1,r0
  		mov.w	r0,@(marsGbl_PolyBuffNum,gbr)
-		mov	#1,r2				; Start drawing on Master
-		mov.l	#_sysreg+comm14,r1
-		mov.b	r2,@r1
+ 		
+		mov	#_sysreg+comm14,r2
+ 		mov	#1,r1				; Set task $01 to Master
+		mov.b	@r2,r0
+		and	#$80,r0
+		or	r1,r0
+		mov.b	r0,@r2
 .still_drwing:
 		bra	slave_loop
 		nop
@@ -1008,43 +1095,11 @@ slv_sort_z:
 ; 	bsr	System_MdMars_SendAll	; Send all tasks
 ; --------------------------------------------------------
 
-; 		align 4
-; slv_task_list:
-; 		dc.l slv_nulltask	; NULL entry
-; 		dc.l slv_task_01	; $01 - Load SuperVDP palette
-; 		dc.l slv_nulltask	; $02 - 
-; 		dc.l slv_nulltask	; $03 -
-; 		dc.l slv_task_04	; $04 - Load SuperVDP palette directly
-; 		dc.l slv_nulltask	; $05 - Load SuperVDP palette for fading
-; 		dc.l slv_nulltask	; $06 - SuperVDP Fade in
-; 		dc.l slv_nulltask	; $07 - SuperVDP Fade out
-; 
-; 		dc.l slv_task_08	; $08 - Load object to slot
-; 		dc.l slv_nulltask	; $09 - Autoload object (if Layout is active)
-; 		dc.l slv_task_0A	; $0A - Set object position and rotation
-; 		dc.l slv_nulltask	; $0B - Set object animation
-; 		dc.l slv_task_0C	; $0C - Set layout data
-; 		dc.l slv_task_0D	; $0D - Set camera poisition and rotation
-; 		dc.l slv_nulltask	; $0E - 
-; 		dc.l slv_task_0F	; $0F - Delete ALL objects (including Layout)
-; 
-; 		dc.l slv_nulltask	; $10 - 
-; 		dc.l slv_nulltask	; $11 - 
-; 		dc.l slv_nulltask	; $12 -
-; 		dc.l slv_nulltask	; $13 -
-; 		dc.l slv_nulltask	; $14 -
-; 		dc.l slv_nulltask	; $15 -
-; 		dc.l slv_nulltask	; $16 -
-; 		dc.l slv_nulltask	; $17 -
-		
-; ; ------------------------------------------------
-; ; Task $00
-; ; ------------------------------------------------
-; 
-; slv_nulltask:
-; 		rts
-; 		nop
-; 		align 4
+		align 4
+
+; ------------------------------------------------
+; CALLS EXCLUSIVE TO MASTER CPU
+; ------------------------------------------------
 
 ; ------------------------------------------------
 ; Set SuperVDP bitmap value
@@ -1053,10 +1108,17 @@ slv_sort_z:
 ; ------------------------------------------------
 
 CmdTaskMd_SetBitmap:
+; 		mov.w	@(marsGbl_BitmapReq,gbr),r0	; Wait for the last request
+; 		cmp/eq	#1,r0
+; 		bt	CmdTaskMd_SetBitmap
+; 		mov	@($04,r14),r0
+; 		mov.w	r0,@(marsGbl_BitmapSet,gbr)
+; 		mov	#1,r0
+; 		mov.w	r0,@(marsGbl_BitmapReq,gbr)
 		mov 	#_vdpreg,r1
-.waitv		mov.w	@($A,r1),r0		; Wait for FEN to clear
-		cmp/pl	r0
-		bt	.waitv
+.wait_fb:	mov.w   @($A,r1),r0
+		tst     #2,r0
+		bf      .wait_fb
 		mov	@($04,r14),r0
 		mov.b	r0,@(bitmapmd,r1)
 		rts
@@ -1093,7 +1155,11 @@ CmdTaskMd_LoadSPal:
 		rts
 		nop
 		align 4
-		
+
+; ------------------------------------------------
+; CALLS EXCLUSIVE TO SLAVE CPU
+; ------------------------------------------------
+
 ; ------------------------------------------------
 ; Make new object and insert it to specific slot
 ;
@@ -1300,7 +1366,12 @@ s_irq_custom:
 		mov.b   @(7,r1),r0
 		xor     #2,r0
 		mov.b   r0,@(7,r1)
-; 
+
+		mov	#_sysreg+comm6,r1
+		mov.w	@r1,r0
+		add	#1,r0
+		mov.w	r0,@r1
+
 ; 	; Sorting task start here
 ; 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
 ; 		cmp/eq	#0,r0
@@ -1321,12 +1392,12 @@ s_irq_custom:
 ; 	; End
 ; 
 		mov	#$FFFFFE80,r1
-		mov.w   #$A518,r0
+		mov.w   #$A518,r0		; Watchdog OFF
 		mov.w   r0,@r1
 		or      #$20,r0
 		mov.w   r0,@r1
 		mov	#1,r2
-		mov.w   #$5A00,r0
+		mov.w   #$5A7F,r0		; Timer for next one
 		or	r2,r0
 		mov.w	r0,@r1
 		mov	@r15+,r2
@@ -1397,8 +1468,8 @@ RAM_Mars_VdpDrwList_e	ds.l 0				; (end-of-list label)
 RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer list(s)
 RAM_Mars_PlgnList_1	ds.l MAX_FACES
 RAM_Mars_Plgn_ZList	ds.l MAX_FACES*2		; Z value / foward faces
-RAM_Mars_MdTasksFifo_1	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Request list from MD for Normal tasks
-RAM_Mars_MdTasksFifo_2	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Two lists: Read/Write
+RAM_Mars_MdTasksFifo_M	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Request list for Master: SVDP and PWM interaction exclusive
+RAM_Mars_MdTasksFifo_S	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Request list for Slave: Controlling objects and camera
 RAM_Mars_Palette	ds.w 256			; Indexed palette
 RAM_Mars_PlgnNum_0	ds.w 1				; Number of polygons to read, both buffers
 RAM_Mars_PlgnNum_1	ds.w 1				;

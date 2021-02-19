@@ -115,14 +115,18 @@ sizeof_polygn	ds.l 0
 MarsVideo_Init:
 		sts	pr,@-r15
 		mov	#_sysreg,r4
-		mov 	#FM,r0			; SVDP permission for SH2 (here)
+		mov 	#FM,r0		; Set SVDP permission to SH2
   		mov.b	r0,@(adapter,r4)
 		mov 	#_vdpreg,r4
-		bsr	.this_fb		; Init line tables for both framebuffers
+		bsr	.this_fb	; Init line tables for both framebuffers
 		nop
 		bsr	.this_fb
 		nop
-		mov	#2,r0
+; 		mov	#2,r0
+; 		mov.w	r0,@(marsGbl_BitmapSet,gbr)
+; 		mov	#1,r0
+; 		mov.w	r0,@(marsGbl_BitmapReq,gbr)
+		mov	#1,r0
 		mov.b	r0,@(bitmapmd,r4)
 		lds	@r15+,pr
 		rts
@@ -135,16 +139,15 @@ MarsVideo_Init:
 
 .this_fb:
  		mov	#_framebuffer,r1
-		mov	#$200/2,r0		; START line data
-		mov	#240,r2			; Vertical lines to set
-		mov	r0,r3			; Increment value (copy from r0)
-.loop:
-		mov.w	r0,@r1
+		mov	#$200/2,r0	; START line data
+		mov	#240,r2		; Vertical lines to set
+		mov	r0,r3		; Increment by (copy from r0)
+.loop:		mov.w	r0,@r1
 		add	#2,r1
 		add	r3,r0
 		dt	r2
 		bf	.loop
-.fb_wait1:	mov.w   @($A,r4),r0
+.fb_wait1:	mov.w   @($A,r4),r0	; Swap for next table
 		tst     #2,r0
 		bf      .fb_wait1
 		mov.w   @($A,r4), r0
@@ -240,6 +243,9 @@ MarsVideo_FrameSwap:
 ; ------------------------------------
 
 MarsVideo_LoadPal:
+		stc	sr,@-r15
+		mov	#$F0,r0
+		ldc	r0,sr
 		mov 	r1,r5
 		mov 	#RAM_Mars_Palette,r6
 		mov 	r2,r0
@@ -253,6 +259,7 @@ MarsVideo_LoadPal:
 		dt	r7
 		bf/s	.loop
 		add 	#2,r6
+		ldc	@r15+,sr
 		rts
 		nop
 		align 4

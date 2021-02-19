@@ -5,7 +5,7 @@
 
 ; MD to MARS custom FIFO section
 MAX_MDTSKARG	equ 8			; MAX MD task arguments (LONGS)
-MAX_MDTASKS	equ 8			; MAX requests from MD to here
+MAX_MDTASKS	equ 16			; MAX requests from MD to here
 
 ; ====================================================================
 ; ----------------------------------------------------------------
@@ -111,8 +111,7 @@ RAM_InputData	ds.b sizeof_input*4		; Input data section
 RAM_SaveData	ds.b $200			; Save data cache (if using SRAM)
 RAM_MdMarsTskM	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Queue task list for MASTER SH2
 RAM_MdMarsTskS	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Queue task list for SLAVE SH2
-
-
+RAM_MdMarsTsSgl	ds.l MAX_MDTSKARG		; Single task request for 32X, shared for both Mst and Slv
 RAM_FrameCount	ds.l 1				; Frame counter
 RAM_SysRandVal	ds.l 1				; Random value
 RAM_SysRandSeed	ds.l 1				; Randomness seed
