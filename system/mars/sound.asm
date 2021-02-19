@@ -49,7 +49,7 @@ MarsSound_PWM:
 		mov.l	r6,@-r15
 		mov.l	r7,@-r15
 		mov.l	r8,@-r15
-		mov	#MarsSnd_Pwm,r7
+		mov	#MarsSnd_PwmChnls,r7
 		mov 	#1,r3			; LEFT
 		mov 	#1,r4			; RIGHT
 		mov 	#8,r5			; numof_chn
@@ -175,6 +175,17 @@ MarsSound_Init:
 		mov.w	r0,@(monowidth,gbr)
 		mov.w	r0,@(monowidth,gbr)
 		mov.w	r0,@(monowidth,gbr)
+		
+		mov	#0,r0
+		mov	#MarsSnd_PwmChnls,r1
+		mov	#MAX_PWMCHNL,r2
+		mov	#sizeof_sndchn,r3
+.clr_enbl:
+		mov	r0,@(mchnsnd_enbl,r1)
+		dt	r2
+		bf/s	.clr_enbl
+		add	r3,r1
+		
 		ldc	@r15+,gbr
 		lds	@r15+,pr
 		rts
@@ -203,7 +214,7 @@ MarsSound_SetChannel:
 ; 		stc	sr,r9
 ; 		mov	#$F0,r0
 ; 		ldc	r0,sr
-		mov	#MarsSnd_Pwm,r8
+		mov	#MarsSnd_PwmChnls,r8
 		mov 	#sizeof_sndchn,r0
 		mulu	r1,r0
 		sts	macl,r0

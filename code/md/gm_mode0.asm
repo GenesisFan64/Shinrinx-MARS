@@ -120,12 +120,12 @@ MD_GmMode0:
 		move.l	#MARSOBJ_SMOK,d2
 		bsr	System_MdMars_SlvAddTask
 
-; 		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
-; 		move.l	#Palette_Puyo,d1
-; 		moveq	#0,d2
-; 		move.w	#256,d3
-; 		moveq	#0,d4
-; 		bsr	System_MdMars_MstAddTask
+		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
+		move.l	#Palette_Puyo|TH,d1
+		moveq	#0,d2
+		move.w	#256,d3
+		moveq	#0,d4
+		bsr	System_MdMars_MstAddTask
 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
 		moveq	#1,d1
 		bsr	System_MdMars_MstAddTask

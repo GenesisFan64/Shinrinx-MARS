@@ -243,9 +243,11 @@ MarsVideo_FrameSwap:
 ; ------------------------------------
 
 MarsVideo_LoadPal:
-		stc	sr,@-r15
-		mov	#$F0,r0
-		ldc	r0,sr
+; 		mov.w	@(marsGbl_PalDmaMidWr,gbr),r0
+; 		cmp/eq	#1,r0
+; 		bt	MarsVideo_LoadPal
+		mov	#1,r0
+		mov.w	r0,@(marsGbl_PalDmaMidWr,gbr)
 		mov 	r1,r5
 		mov 	#RAM_Mars_Palette,r6
 		mov 	r2,r0
@@ -259,7 +261,8 @@ MarsVideo_LoadPal:
 		dt	r7
 		bf/s	.loop
 		add 	#2,r6
-		ldc	@r15+,sr
+		mov	#0,r0
+		mov.w	r0,@(marsGbl_PalDmaMidWr,gbr)
 		rts
 		nop
 		align 4

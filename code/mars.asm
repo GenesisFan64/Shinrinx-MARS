@@ -35,8 +35,7 @@ marsGbl_VIntFlag_M	ds.w 1		; Sets to 0 if VBlank finished on Master CPU
 marsGbl_VIntFlag_S	ds.w 1		; Same thing but for the Slave CPU
 marsGbl_DivReq_M	ds.w 1		; Flag to tell Watchdog we are in the middle of division
 marsGbl_CurrFb		ds.w 1		; Current framebuffer number
-marsGbl_BitmapReq	ds.w 1		; Request for changing SVDP bitmap mode
-marsGbl_BitmapSet	ds.w 1		; bitmap mode to set on request
+marsGbl_PalDmaMidWr	ds.w 1		; Enable this flag if modifing RAM_Mars_Palette
 sizeof_MarsGbl		ds.l 0
 			finish
 			
@@ -190,60 +189,68 @@ m_irq_h:
 ; ------------------------------------------------
 
 m_irq_v:
-		mov 	#_vdpreg,r1
-.min_r		mov.w	@($A,r1),r0			; Wait for Framebuffer access
-		tst	#2,r0
-		bf	.min_r
-; 		mov.w	@(marsGbl_BitmapReq,gbr),r0	; bitmap change request?
-; 		cmp/eq	#1,r0
-; 		bf	.no_req
-; 		mov.w	@(marsGbl_BitmapSet,gbr),r0
-; 		mov.b	r0,@(bitmapmd,r1)
-; 		mov	#0,r0
-; 		mov.w	r0,@(marsGbl_BitmapReq,gbr)
-; .no_req:
-		mov.l	r2,@-r15
-		mov.l	r3,@-r15
-		mov.l	r4,@-r15
-		mov.l	r5,@-r15
-		mov.l	r6,@-r15
-		stc	sr,@-r15
-		mov	#$F0,r0
-		mov.l	#_vdpreg,r1			; Wait for palette access ok
-.wait		mov.b	@(vdpsts,r1),r0
-		tst	#$20,r0
-		bt	.wait
-		mov	#RAM_Mars_Palette,r1		; Send palette stored on RAM
-		mov	#_palette,r2
- 		mov	#256,r3
-		mov	#%0101011011110001,r4		; transfer size 2 / burst
-		mov	#_DMASOURCE0,r5 		; _DMASOURCE = $ffffff80
-		mov	#_DMAOPERATION,r6 		; _DMAOPERATION = $ffffffb0
-		mov	r1,@r5				; set source address
-		mov	r2,@(4,r5)			; set destination address
-		mov	r3,@(8,r5)			; set length
-		xor	r0,r0
-		mov	r0,@r6				; Stop OPERATION
-		xor	r0,r0
-		mov	r0,@($C,r5)			; clear TE bit
-		mov	r4,@($C,r5)			; load mode
-		add	#1,r0
-		mov.l	r0,@r6				; Start OPERATION
-		ldc	@r15+,sr
-		mov.l	@r15+,r6
-		mov.l	@r15+,r5
-		mov.l	@r15+,r4
-		mov.l	@r15+,r3
-		mov.l	@r15+,r2
-		mov 	#0,r0				; Clear VintFlag for Master
-		mov.w	r0,@(marsGbl_VIntFlag_M,gbr)
 		mov	#_FRT,r1
 		mov.b	@(7,r1),r0
 		xor	#2,r0
 		mov.b	r0,@(7,r1)
 		mov	#_sysreg+vintclr,r1
-		rts
 		mov.w	r0,@r1
+
+	; TODO: DMA works but after the first
+	; pass it locks both SOURCE and DESTINATION
+	; data sections
+		mov	#_vdpreg,r1			; Wait for palette access ok
+.wait		mov.b	@(vdpsts,r1),r0
+		tst	#$20,r0
+		bt	.wait
+		stc	sr,@-r15
+		mov	r2,@-r15
+		mov	r3,@-r15
+		mov	r4,@-r15
+		mov	r5,@-r15
+		mov	r6,@-r15
+		mov	#$F0,r0
+		ldc	r0,sr
+		mov	#RAM_Mars_Palette,r1		; Send palette stored on RAM		
+		mov	#_palette,r2
+ 		mov	#256/16,r3		
+.copy_pal:
+	rept 16
+		mov.w	@r1+,r0
+		mov.w	r0,@r2
+		add	#2,r2
+	endm
+		dt	r3
+		bf	.copy_pal
+
+; 		mov	#RAM_Mars_Palette,r1		; Send palette stored on RAM
+; 		mov	#_palette,r2
+;  		mov	#256,r3
+; 		mov	#%0101011011110001,r4		; transfer size 2 / burst
+; 		mov	#_DMASOURCE0,r5 		; _DMASOURCE = $ffffff80
+; 		mov	#_DMAOPERATION,r6 		; _DMAOPERATION = $ffffffb0
+; 		mov	r1,@r5				; set source address
+; 		mov	r2,@(4,r5)			; set destination address
+; 		mov	r3,@(8,r5)			; set length
+; 		xor	r0,r0
+; 		mov	r0,@r6				; Stop OPERATION
+; 		xor	r0,r0
+; 		mov	r0,@($C,r5)			; clear TE bit
+; 		mov	r4,@($C,r5)			; load mode
+; 		add	#1,r0
+; 		mov	r0,@r6				; Start OPERATION
+		mov	@r15+,r6
+		mov	@r15+,r5
+		mov	@r15+,r4
+		mov	@r15+,r3
+		mov	@r15+,r2
+		ldc	@r15+,sr
+		
+.mid_pwrite:
+		mov 	#0,r0				; Clear VintFlag for Master
+		mov.w	r0,@(marsGbl_VIntFlag_M,gbr)
+		rts
+		nop
 		align 4
 		
 ; =================================================================
@@ -603,14 +610,6 @@ SH2_M_HotStart:
 		
 ; ------------------------------------------------
 
-		mov	#Palette_Puyo,r1
-		mov	#0,r2
-		mov	#256,r3
-		mov	#0,r4
-		mov	#MarsVideo_LoadPal,r0
-		jsr	@r0
-		nop
-		
 		mov	#_CCR,r1
 		mov	#%00001000,r0			; Two-way mode
 		mov.w	r0,@r1
@@ -619,13 +618,13 @@ SH2_M_HotStart:
 		mov.l	#$20,r0				; Interrupts ON
 		ldc	r0,sr
 
-; 		mov	#Palette_Puyo,r1
-; 		mov	#0,r2
-; 		mov	#256,r3
-; 		mov	#0,r4
-; 		mov	#MarsVideo_LoadPal,r0
-; 		jsr	@r0
-; 		nop
+		mov	#Palette_Map,r1
+		mov	#0,r2
+		mov	#256,r3
+		mov	#0,r4
+		mov	#MarsVideo_LoadPal,r0
+		jsr	@r0
+		nop
 
 ; --------------------------------------------------------
 ; Loop
@@ -1108,13 +1107,6 @@ slv_sort_z:
 ; ------------------------------------------------
 
 CmdTaskMd_SetBitmap:
-; 		mov.w	@(marsGbl_BitmapReq,gbr),r0	; Wait for the last request
-; 		cmp/eq	#1,r0
-; 		bt	CmdTaskMd_SetBitmap
-; 		mov	@($04,r14),r0
-; 		mov.w	r0,@(marsGbl_BitmapSet,gbr)
-; 		mov	#1,r0
-; 		mov.w	r0,@(marsGbl_BitmapReq,gbr)
 		mov 	#_vdpreg,r1
 .wait_fb:	mov.w   @($A,r1),r0
 		tst     #2,r0
@@ -1126,17 +1118,15 @@ CmdTaskMd_SetBitmap:
 		align 4
 
 ; ------------------------------------------------
-; Load palette to SuperVDP
+; Load palette to SuperVDP from MD
 ;
 ; @($04,r14) - Palette data
 ; @($08,r14) - Start from
 ; @($0C,r14) - Number of colors
 ; @($10,r14) - OR value
-; @($14,r14) - AND background value
 ; ------------------------------------------------
 
 CmdTaskMd_LoadSPal:
-		sts	pr,@-r15
 		mov	r14,r13
 		add	#4,r13
 		mov	@r13+,r1
@@ -1144,15 +1134,7 @@ CmdTaskMd_LoadSPal:
 		mov	@r13+,r3
 		mov	@r13+,r4
 		mov	#MarsVideo_LoadPal,r0
-		jsr	@r0
-		nop
-; 		mov	@r13+,r1
-; 		mov	#RAM_Mars_Palette,r2
-; 		mov.w	@r2,r0
-; 		and	r1,r0
-; 		mov.w	r0,@r2
-		lds	@r15+,pr
-		rts
+		jmp	@r0
 		nop
 		align 4
 
@@ -1447,7 +1429,7 @@ sizeof_marsram	ds.l 0
 ; ----------------------------------------------------------------
 
 			struct MarsRam_Sound
-MARSSnd_Pwm		ds.b sizeof_sndchn*MAX_PWMCHNL
+MarsSnd_PwmChnls	ds.b sizeof_sndchn*MAX_PWMCHNL
 sizeof_marssnd		ds.l 0
 			finish
 
