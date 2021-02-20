@@ -36,6 +36,7 @@ marsGbl_VIntFlag_S	ds.w 1		; Same thing but for the Slave CPU
 marsGbl_DivReq_M	ds.w 1		; Flag to tell Watchdog we are in the middle of division
 marsGbl_CurrFb		ds.w 1		; Current framebuffer number
 marsGbl_PalDmaMidWr	ds.w 1		; Enable this flag if modifing RAM_Mars_Palette
+marsGbl_ZSortReq	ds.w 1		; Flag to request Zsort in Slave's watchdogd
 sizeof_MarsGbl		ds.l 0
 			finish
 			
@@ -206,9 +207,9 @@ m_irq_v:
 		stc	sr,@-r15
 		mov	r2,@-r15
 		mov	r3,@-r15
-		mov	r4,@-r15
-		mov	r5,@-r15
-		mov	r6,@-r15
+; 		mov	r4,@-r15
+; 		mov	r5,@-r15
+; 		mov	r6,@-r15
 		mov	#$F0,r0
 		ldc	r0,sr
 		mov	#RAM_Mars_Palette,r1		; Send palette stored on RAM		
@@ -239,9 +240,9 @@ m_irq_v:
 ; 		mov	r4,@($C,r5)			; load mode
 ; 		add	#1,r0
 ; 		mov	r0,@r6				; Start OPERATION
-		mov	@r15+,r6
-		mov	@r15+,r5
-		mov	@r15+,r4
+; 		mov	@r15+,r6
+; 		mov	@r15+,r5
+; 		mov	@r15+,r4
 		mov	@r15+,r3
 		mov	@r15+,r2
 		ldc	@r15+,sr
@@ -618,13 +619,13 @@ SH2_M_HotStart:
 		mov.l	#$20,r0				; Interrupts ON
 		ldc	r0,sr
 
-		mov	#Palette_Map,r1
-		mov	#0,r2
-		mov	#256,r3
-		mov	#0,r4
-		mov	#MarsVideo_LoadPal,r0
-		jsr	@r0
-		nop
+; 		mov	#Palette_Map,r1
+; 		mov	#0,r2
+; 		mov	#256,r3
+; 		mov	#0,r4
+; 		mov	#MarsVideo_LoadPal,r0
+; 		jsr	@r0
+; 		nop
 
 ; --------------------------------------------------------
 ; Loop
@@ -644,14 +645,28 @@ master_loop:
 		bf	.md_req
 		mov	r2,r0
 		and	#$7F,r0
-		cmp/eq	#0,r0
-		bf	.draw_objects		; If !=0, start drawing
-		nop
-		bra	master_loop
+		shll2	r0
+		mov	#.list,r1
+		mov	@(r1,r0),r0
+		jmp	@r0
 		nop
 		align 4
 
+; ------------------------------------------------
+; Graphic processing list for Master
+; 
+; Draw polygons or draw a 3rd layer (planned)
+; ------------------------------------------------
+
+.list:
+		dc.l master_loop
+		dc.l .draw_objects
+		dc.l master_loop
+
+; ------------------------------------------------
 ; Process Visual/Audio requests from Genesis
+; ------------------------------------------------
+
 .md_req:
 		stc	sr,@-r15
 		mov	#$F0,r0
@@ -686,7 +701,7 @@ master_loop:
 ; --------------------------------------------------------
 
 .draw_objects:
-		mov.l	#$FFFFFE92,r0
+		mov	#$FFFFFE92,r0
 		mov	#8,r1
 		mov.b	r1,@r0
 		mov	#$19,r1
@@ -867,6 +882,12 @@ SH2_S_HotStart:
 ; --------------------------------------------------------
 
 slave_loop:
+
+; ------------------------------------------------
+; Process tasks other than visual or sound,
+; ex. object interaction or move the 3d camera
+; ------------------------------------------------
+
 		mov	#_sysreg+comm15,r1
 		mov.b	@r1,r0
 		and	#$80,r0
@@ -889,7 +910,6 @@ slave_loop:
 		dt	r13
 		bf/s	.next_req
 		add	r0,r14
-
 		mov	#_sysreg+comm15,r1
 		mov.b	@r1,r0
 		and	#$7F,r0
@@ -903,8 +923,7 @@ slave_loop:
 ; --------------------------------------------------------
 ; Start building polygons from models
 ; 
-; CAMERA ANIMATION IS DONE ON THE
-; GENESIS SIDE
+; CAMERA ANIMATION IS DONE ON THE 68K
 ; --------------------------------------------------------
 
 		mov	#0,r0
@@ -941,44 +960,40 @@ slave_loop:
 		bf/s	.loop
 		add	#sizeof_mdlobj,r14
 .skip:
-	; Start Zsorting faces
+
+; ----------------------------------------
+
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		tst     #1,r0
 		bf	.page_2
 		mov 	#RAM_Mars_PlgnList_0,r14
 		mov 	#RAM_Mars_PlgnNum_0,r13
-		bsr	slv_sort_z
-		nop
 		bra	.swap_now
 		nop
 .page_2:
 		mov 	#RAM_Mars_PlgnList_1,r14
 		mov 	#RAM_Mars_PlgnNum_1,r13
+.swap_now:
 		bsr	slv_sort_z
 		nop
-.swap_now:
-; 		mov.w	@r13,r0				; DEBUG: report number of faces
-; 		mov	#_sysreg+comm0,r1
-; 		mov.w	r0,@r1
-		
-	; Check if MASTER finished
+
+; ----------------------------------------
+
 		mov.l	#_sysreg+comm14,r1		; Master CPU still drawing pieces?
-.wait_master:
+.mstr_busy:
 		mov.b	@r1,r0
 		and	#$7F,r0
-		cmp/eq	#1,r0
-		bt	.still_drwing
+		cmp/eq	#0,r0
+		bf	slave_loop			; Skip frame
 		mov.w	@(marsGbl_PolyBuffNum,gbr),r0	; Swap polygon buffer
  		xor	#1,r0
  		mov.w	r0,@(marsGbl_PolyBuffNum,gbr)
- 		
 		mov	#_sysreg+comm14,r2
  		mov	#1,r1				; Set task $01 to Master
 		mov.b	@r2,r0
 		and	#$80,r0
 		or	r1,r0
 		mov.b	r0,@r2
-.still_drwing:
 		bra	slave_loop
 		nop
 		align 4
@@ -1147,6 +1162,9 @@ CmdTaskMd_LoadSPal:
 ;
 ; @($04,r14) - Object slot
 ; @($08,r14) - Object data
+; @($0C,r14) - Object options:
+;		$??????pp
+;		pp - index-add value
 ; ------------------------------------------------
 
 CmdTaskMd_ObjectSet:
@@ -1161,6 +1179,8 @@ CmdTaskMd_ObjectSet:
 		xor	r0,r0
 		mov	@r13+,r1
 		mov	r1,@(mdl_data,r12)
+		mov	@r13+,r1
+		mov	r1,@(mdl_option,r12)
 		mov	r0,@(mdl_x_pos,r12)
 		mov	r0,@(mdl_y_pos,r12)
 		mov	r0,@(mdl_z_pos,r12)
@@ -1337,9 +1357,7 @@ CmdTaskMd_SetPWM:
 
 ; =================================================================
 ; ------------------------------------------------
-; Slave | Custom interrupt
-; 
-; Autosort faces on the background
+; Slave | Watchdog interrupt
 ; ------------------------------------------------
 
 s_irq_custom:
@@ -1349,30 +1367,33 @@ s_irq_custom:
 		xor     #2,r0
 		mov.b   r0,@(7,r1)
 
-		mov	#_sysreg+comm6,r1
-		mov.w	@r1,r0
-		add	#1,r0
-		mov.w	r0,@r1
-
-; 	; Sorting task start here
-; 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
-; 		cmp/eq	#0,r0
-; 		bt	.no_request
-; 		mov	r3,@-r15
-; 		mov	r4,@-r15
-; 		mov	r5,@-r15
-; 		mov	r6,@-r15
-; 		mov	#CS3+$44,r1
-; 		mov	@r1,r0
-; 		add 	#1,r0
-; 		mov	r0,@r1
-; 		mov	@r15+,r6
-; 		mov	@r15+,r5
-; 		mov	@r15+,r4
-; 		mov	@r15+,r3
-; .no_request:
-; 	; End
+; 		mov.w	@(marsGbl_ZSortReq,gbr),r0
+; 		cmp/eq	#1,r0
+; 		bf	.no_req
+; 		xor	r0,r0
+; 		mov.w	r0,@(marsGbl_ZSortReq,gbr)
 ; 
+; ; 	; Sorting task start here
+; ; 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
+; ; 		cmp/eq	#0,r0
+; ; 		bt	.no_request
+; ; 		mov	r3,@-r15
+; ; 		mov	r4,@-r15
+; ; 		mov	r5,@-r15
+; ; 		mov	r6,@-r15
+; ; 		mov	#CS3+$44,r1
+; ; 		mov	@r1,r0
+; ; 		add 	#1,r0
+; ; 		mov	r0,@r1
+; ; 		mov	@r15+,r6
+; ; 		mov	@r15+,r5
+; ; 		mov	@r15+,r4
+; ; 		mov	@r15+,r3
+; ; .no_request:
+; ; 	; End
+; ; 
+; 
+; .no_req:
 		mov	#$FFFFFE80,r1
 		mov.w   #$A518,r0		; Watchdog OFF
 		mov.w   r0,@r1

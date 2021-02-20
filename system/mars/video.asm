@@ -39,7 +39,8 @@ PLGN_SPRITE	equ	%00100000
 
 ; model objects
 		struct 0
-mdl_data	ds.l 1			; Model data pointer, zero: model disabled
+mdl_data	ds.l 1			; Model data pointer, if zero: no model
+mdl_option	ds.l 1			; Model options: pixelvalue add
 mdl_x_pos	ds.l 1			; X position $000000.00
 mdl_y_pos	ds.l 1			; Y position $000000.00
 mdl_z_pos	ds.l 1			; Z position $000000.00
@@ -95,12 +96,12 @@ plypz_src_xr_dx	ds.l 1
 plypz_src_yr	ds.l 1
 plypz_src_yr_dx	ds.l 1
 plypz_mtrl	ds.l 1
-plypz_mtrlopt	ds.l 1			; Type | Option
+plypz_type	ds.l 1			; Type | Option
 sizeof_plypz	ds.l 0
 		finish
 
 		struct 0
-polygn_type	ds.l 1		; %MST0 0000 wwww wwww | Type bits and Material option (Width or PalIncr)
+polygn_type	ds.l 1		; %MSTw wwww xxxx aaaa | Type bits and Material option (Width or PalIncr)
 polygn_mtrl	ds.l 1		; Material Type: Color (0-255) or Texture data address
 polygn_points	ds.l 4*2	; X/Y positions
 polygn_srcpnts	ds.w 4*2	; X/Y texture points (16-bit), ignored on solidcolor
@@ -854,6 +855,9 @@ MarsMdl_ReadModel:
 		mov.w	r0,@r5
 .alluvdone:
 
+		mov	@(mdl_option,r14),r0
+		and	#$FF,r0
+		mov	r0,r1
 		mov	r4,r0
 		mov	#$1FFF,r5
 		and	r5,r0
@@ -866,6 +870,7 @@ MarsMdl_ReadModel:
 		shll16	r4
 		mov	@(4,r6),r0
 		or	r0,r4
+		add	r1,r4
 		mov	r4,@(polygn_type,r13)
 		mov	@r6,r0
 		mov	r0,@(polygn_mtrl,r13)
@@ -877,10 +882,15 @@ MarsMdl_ReadModel:
 ; --------------------------------
 
 .solid_type:
+
+		mov	@(mdl_option,r14),r0
+		and	#$FF,r0
+		mov	r0,r1
 		mov	r4,r0
 		mov	#$E000,r5
 		and	r5,r4
 		shll16	r4
+		add	r1,r4
 		mov	r4,@(polygn_type,r13)		; Set type 0 (tri) or quad (1)
 		and	#$FF,r0
 		mov	r0,@(polygn_mtrl,r13)		; Set pixel color (0-255)
@@ -1500,7 +1510,7 @@ drwtsk1_vld_y:
 		mov	@(plypz_xl_dx,r14),r2		; r2 - DX left
 		mov	@(plypz_xr,r14),r3		; r3 - X right
 		mov	@(plypz_xr_dx,r14),r4		; r4 - DX right
-		mov	@(plypz_mtrlopt,r14),r0		; Check material options
+		mov	@(plypz_type,r14),r0		; Check material options
 		shlr16	r0
 		shlr8	r0
  		tst	#PLGN_TEXURE,r0			; Texture mode?
@@ -1627,13 +1637,13 @@ drwsld_nxtline_tex:
 		add 	r0,r10				; Add Y
 		add 	r11,r10				; Add X
 		mov	#$1FFF,r2
+		mov	#$FF,r0
 		mov	@(plypz_mtrl,r14),r11		; r11 - texture data
-		mov	@(plypz_mtrlopt,r14),r4		;  r4 - texture palincr|width
+		mov	@(plypz_type,r14),r4		;  r4 - texture width|palinc
 		mov	r4,r13
 		shlr16	r4
 		and	r2,r4
-		mov	#$FF,r2
-		and	r2,r13
+		and	r0,r13
 .tex_xloop:
 		mov	r7,r2
 		shlr16	r2
@@ -1643,7 +1653,11 @@ drwsld_nxtline_tex:
 		shlr16	r2
 		add	r2,r0
 		mov.b	@(r0,r11),r0			; Read pixel
+		cmp/eq	#0,r0				; If texture pixel == 0
+		bt	.blnk				; then don't add
 		add	r13,r0
+		and	#$FF,r0
+.blnk:
 		mov.b	r0,@r10	   			; Write pixel
 		add 	#1,r10
 		add	r6,r5				; Update X
@@ -1686,7 +1700,7 @@ drwtex_tagshght	dc.l	SCREEN_HEIGHT
 drwtsk_solidmode:
 		mov	#$FF,r0
 		mov	@(plypz_mtrl,r14),r6
-		mov	@(plypz_mtrlopt,r14),r5
+		mov	@(plypz_type,r14),r5
 		and	r0,r5
 		and	r0,r6
 		add	r5,r6
@@ -2331,7 +2345,7 @@ put_piece:
 		mov	@(polygn_mtrl,r14),r0
 		mov 	r0,@(plypz_mtrl,r1)
 		mov	@(polygn_type,r14),r0
-		mov 	r0,@(plypz_mtrlopt,r1)
+		mov 	r0,@(plypz_type,r1)
 		add	#sizeof_plypz,r1
 		mov	r1,r0
 		mov	#RAM_Mars_VdpDrwList_e,r8

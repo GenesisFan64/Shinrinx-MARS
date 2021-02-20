@@ -36,11 +36,11 @@ dreqsource	equ	$08		; DREQ source address
 dreqdest	equ	$0C		; DREQ destination address
 dreqlen		equ	$10		; DREQ length
 dreqfifo	equ	$12		; DREQ FIFO
-vresintclr	equ	$14		; VRES interrupt clear (non-zero write)
-vintclr		equ	$16		; V interrupt clear (non-zero write)
-hintclr		equ	$18		; H interrupt clear (non-zero write)
-cmdintclr	equ	$1a		; CMD interrupt clear (non-zero write)
-pwmintclr	equ	$1C		; PWM interrupt clear (non-zero write)
+vresintclr	equ	$14		; VRES interrupt clear
+vintclr		equ	$16		; V interrupt clear
+hintclr		equ	$18		; H interrupt clear
+cmdintclr	equ	$1a		; CMD interrupt clear
+pwmintclr	equ	$1C		; PWM interrupt clear
 comm0		equ	$20		; Communication ports
 comm2		equ	$22		; (If 2 CPUs either SH2 or 68K writes to
 comm4		equ	$24		; the same location, it will freeze the

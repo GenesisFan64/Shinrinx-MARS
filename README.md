@@ -22,7 +22,6 @@ Please note that current 32X emulators ignore critical parts of the system, thes
 - FM bit: This bit tells which system side (Genesis or 32X) can read/write to the Super VDP (The framebuffer and 256-color palette), if a CPU with NO permission touches the Super VDP, it will freeze the entire system (32X add-on or Genesis)
 - BUS fighting (SH2 side only): If any of the CPU read the same adresss, you will get bad results, mostly a freeze.
 - DMA locks Palette: If transfering palette to SuperVDP using DMA, the first transfer will work but after that it will lock both Source and Destination from writing.
-- This now breaks on Fusion 3.64, still works on Gens Kmod and Picodrive(Retroarch)
 
 A prebuilt binary is located in the /out folder (rom_mars.bin) for testing, for NTSC systems.
 

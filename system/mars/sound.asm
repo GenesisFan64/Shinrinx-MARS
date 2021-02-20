@@ -84,7 +84,6 @@ MarsSound_PWM:
 		mov 	@(mchnsnd_start,r7),r1
 		bra	.keep
 		nop
-; Read WAV
 .read:
 		mov.b	@r2,r0
 		and 	#$FF,r0
@@ -101,11 +100,9 @@ MarsSound_PWM:
 .nol:
 		mov 	@(mchnsnd_pitch,r7),r0
 		add	r0,r1
-		
 ; save read
 .keep:
 		mov 	r1,@(mchnsnd_read,r7)
-
 .chnoff:
 		add	#sizeof_sndchn,r7
 		dt	r5
@@ -118,23 +115,17 @@ MarsSound_PWM:
 ; r4 - right wave
 ; ------------------------------------------------
 
-		mov	#_sysreg+monowidth,r1
-.full:
-		mov.b	@r1,r0
- 		tst	#$80,r0
- 		bf	.full
+; 		mov	#_sysreg+monowidth,r1
+; .full:
+; 		mov.b	@r1,r0
+;  		tst	#$80,r0
+;  		bf	.full
 		mov	#_sysreg+lchwidth,r1
 		mov	#_sysreg+rchwidth,r2
  		mov	r3,r0
  		mov.w	r0,@r1
  		mov	r4,r0
  		mov.w	r0,@r2
- 		
-		mov	#_sysreg+comm4,r1
-		mov.w	@r1,r0
-		add	#1,r0
-		mov.w	r0,@r1
-
 		mov.l	@r15+,r8
 		mov.l	@r15+,r7
 		mov.l	@r15+,r6
@@ -159,7 +150,7 @@ MarsSound_PWM:
 ; 23011361 NTSC
 ; 22801467 PAL
 ; 
-; NOTE: This causes a CLICK on boot, it's normal
+; NOTE: This causes a CLICK on PWM, it's normal
 ; --------------------------------------------------------
 
 MarsSound_Init:
@@ -185,7 +176,6 @@ MarsSound_Init:
 		dt	r2
 		bf/s	.clr_enbl
 		add	r3,r1
-		
 		ldc	@r15+,gbr
 		lds	@r15+,pr
 		rts
@@ -211,9 +201,9 @@ MarsSound_Init:
 ; --------------------------------------------------------
 
 MarsSound_SetChannel:
-; 		stc	sr,r9
-; 		mov	#$F0,r0
-; 		ldc	r0,sr
+		stc	sr,r9
+		mov	#$F0,r0
+		ldc	r0,sr
 		mov	#MarsSnd_PwmChnls,r8
 		mov 	#sizeof_sndchn,r0
 		mulu	r1,r0
@@ -246,7 +236,7 @@ MarsSound_SetChannel:
 		mov 	r0,@(mchnsnd_read,r8)
 		mov 	#1,r0
 		mov 	r0,@(mchnsnd_enbl,r8)
-;  		ldc	r9,sr
+ 		ldc	r9,sr
 		rts
 		nop
 		align 4

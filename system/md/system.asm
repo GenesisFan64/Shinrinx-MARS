@@ -341,7 +341,7 @@ System_MdMars_MstCall:
 		move.b	(sysmars_reg+comm14),d4
 		and.w	#$80,d4
 		bne.s	.wait_m
-		bra.s	sysMdMars_Transfer
+		bra	sysMdMars_Transfer
 
 ; Single call for Slave CPU
 System_MdMars_SlvCall:
@@ -355,7 +355,7 @@ System_MdMars_SlvCall:
 		move.b	(sysmars_reg+comm15),d4
 		and.w	#$80,d4
 		bne.s	.wait_s
-		bra.s	sysMdMars_Transfer
+		bra	sysMdMars_Transfer
 
 System_MdMars_MstSendAll:
 		lea	(RAM_MdMarsTskM),a6
@@ -369,6 +369,19 @@ System_MdMars_MstSendAll:
 		and.w	#$80,d4
 		bne.s	.wait_m
 		bra.s	sysMdMars_Transfer
+
+System_MdMars_MstSendDrop:
+		lea	(RAM_MdMarsTskM),a6
+		clr.w	(RAM_MdMarsTCntM).w
+		move.w	#(MAX_MDTSKARG*MAX_MDTASKS*4),d6
+		moveq	#0,d5
+.wait_m:
+		nop
+		nop
+		move.b	(sysmars_reg+comm14),d4
+		and.w	#$80,d4
+		beq.s	sysMdMars_Transfer
+		rts
 		
 System_MdMars_SlvSendAll:
 		lea	(RAM_MdMarsTskS),a6
@@ -383,6 +396,19 @@ System_MdMars_SlvSendAll:
 		bne.s	.wait_s
 		bra.s	sysMdMars_Transfer
 
+System_MdMars_SlvSendDrop:
+		lea	(RAM_MdMarsTskS),a6
+		clr.w	(RAM_MdMarsTCntS).w
+		move.w	#(MAX_MDTSKARG*MAX_MDTASKS*4),d6
+		moveq	#1,d5
+.wait_s:
+		nop
+		nop
+		move.b	(sysmars_reg+comm15),d4
+		and.w	#$80,d4
+		beq.s	sysMdMars_Transfer
+		rts
+		
 ; a6 - task pointer and args
 ; a5 - task list counter
 sysMdMars_instask:

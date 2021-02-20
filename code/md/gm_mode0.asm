@@ -66,11 +66,11 @@ MD_GmMode0:
 		lea	(RAM_MdCamera),a0
 		moveq	#0,d0
 		move.l	d0,cam2_x_pos(a0)
-		move.l	d0,cam2_y_pos(a0)
+		move.l	#-$8000,cam2_y_pos(a0)
+		move.l	#-$30000,cam2_z_pos(a0)
 		move.l	d0,cam2_x_rot(a0)
 		move.l	d0,cam2_y_rot(a0)
 		move.l	d0,cam2_z_rot(a0)
-		move.l	d0,cam2_z_pos(a0)
 
 ; ====================================================================
 ; ------------------------------------------------------
@@ -110,22 +110,33 @@ MD_GmMode0:
 		bmi	.mode0_loop
 		or.w	#$8000,(RAM_MdlCurrMd).w
 
-; 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
-; 		moveq	#0,d1
-; 		bsr	System_MdMars_MstCall
+		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
+		moveq	#0,d1
+		bsr	System_MdMars_MstCall
 		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
 		bsr	System_MdMars_SlvAddTask
 		move.l	#CmdTaskMd_ObjectSet,d0		; Set new object
 		moveq	#0,d1
 		move.l	#MARSOBJ_SMOK,d2
+		move.w	#96,d3
 		bsr	System_MdMars_SlvAddTask
-
+		move.l	#CmdTaskMd_MapSet,d0		; Set layout data
+		move.l	#TEST_LAYOUT,d1
+		bsr	System_MdMars_SlvAddTask		
+		
 		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
-		move.l	#Palette_Puyo|TH,d1
+		move.l	#Palette_Map,d1
 		moveq	#0,d2
-		move.w	#256,d3
+		move.w	#96,d3
 		moveq	#0,d4
 		bsr	System_MdMars_MstAddTask
+		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
+		move.l	#Palette_Puyo,d1
+		move.w	#96,d2
+		move.w	#160,d3
+		moveq	#0,d4
+		bsr	System_MdMars_MstAddTask
+		
 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
 		moveq	#1,d1
 		bsr	System_MdMars_MstAddTask
@@ -134,8 +145,9 @@ MD_GmMode0:
 		move.w	#$100,(RAM_SndPitch).w
 		bsr	MdMdl_Update
 		bsr	.update
-.mode0_loop:
 
+.mode0_loop:
+		bsr	MdMdl1_Usercontrol		; Foward/Backward/Left/Right
 		move.w	(Controller_1+on_press).l,d7
 		btst	#bitJoyC,d7
 		beq.s	.noc
@@ -195,17 +207,28 @@ MD_GmMode0:
 		bsr	System_MdMars_MstSendAll
 		
 .nox:
+		lea	(RAM_MdCamera),a0
+		move.l	#CmdTaskMd_CameraPos,d0		; Cmnd $0D: Set camera positions
+		moveq	#0,d1
+		move.l	cam2_x_pos(a0),d2
+		move.l	cam2_y_pos(a0),d3
+		move.l	cam2_z_pos(a0),d4
+		move.l	cam2_x_rot(a0),d5
+		move.l	cam2_y_rot(a0),d6
+		move.l	cam2_z_rot(a0),d7
+		bsr	System_MdMars_SlvAddTask
 		move.l	#CmdTaskMd_ObjectPos,d0		; Cmnd $0A: Modify object pos and rot
 		moveq	#0,d1				; Slot
 		moveq	#0,d2				; X
-		moveq	#0,d3				; Y
-		move.l	#-$30000,d4			; Z
+		move.l	#-$8000,d3			; Y
+		move.l	#0,d4				; Z
 		move.l	(RAM_RotX),d5
 		move.l	(RAM_RotX),d6
 		move.l	(RAM_RotX),d7
 		lsr.l	#2,d5
 		bsr	System_MdMars_SlvAddTask
-		bsr	System_MdMars_SlvSendAll
+		bsr	System_MdMars_SlvSendDrop
+
 		add.l	#$2000,(RAM_RotX)
 		rts
 .update:
@@ -213,7 +236,7 @@ MD_GmMode0:
 		move.w	(RAM_SndPitch).w,d1
 		bsr	Sound_Request
 		lea	str_StatusPtch(pc),a0
-		move.l	#locate(0,6,5),d0
+		move.l	#locate(0,10,3),d0
 		bra	Video_Print
 
 ; ; --------------------------------------------------
@@ -280,12 +303,7 @@ MD_GmMode0:
 
 MdMdl_Update:
 		lea	str_Mode0(pc),a0
-		move.w	(RAM_MdlCurrMd).w,d0
-		and.w	#$FF,d0
-		beq.s	.mod0
-		lea	str_Mode1(pc),a0
-.mod0:
-		move.l	#locate(0,1,3),d0
+		move.l	#locate(0,3,3),d0
 		bra	Video_Print
 
 MdMdl_CamAnimate:
@@ -323,7 +341,7 @@ MdMdl_CamAnimate:
 MdMdl1_Usercontrol:
 		move.l	#var_MoveSpd,d5
 		move.l	#-var_MoveSpd,d6
-		move.w	(Controller_1+on_hold),d7
+		move.w	(Controller_2+on_hold),d7
 		btst	#bitJoyUp,d7
 		beq.s	.no_up
 		lea	(RAM_MdCamera),a0
@@ -432,18 +450,25 @@ MdMdl1_Usercontrol:
 ; ------------------------------------------------------
 
 		align 2
-str_Title:	dc.b "Project Shinrinx + GEMA",0
+str_Title:	dc.b "Project Shinrinx + GEMA Z80x68KxSH2",0
 		align 2
-str_Mode0:	dc.b "< Mode 0: GEMA sound tester >",$A
-		dc.b "                             ",$A
-		dc.b "DAC: 0000 (UDLR-BC)          ",$A
-		dc.b "PWM: 0000 (XYZ)              ",$A
-		dc.b "                             ",0
-		align 2
-str_Mode1:	dc.b "< Mode 1: Map layout sample >",$A
-		dc.b "                             ",$A
-		dc.b "                             ",$A
-		dc.b "                             ",$A
+str_Mode0:	dc.b "DAC 01 ----",$A
+		dc.b "PWM 01 ????",$A
+		dc.b "    02 ????",$A
+		dc.b "    03 ????",$A
+		dc.b "    04 ????",$A
+		dc.b "    05 ????",$A
+		dc.b "    06 ????",$A
+		dc.b "    07 ????",$A
+		dc.b "    08 ????",$A
+		dc.b "    09 ????",$A
+		dc.b "    10 ????",$A
+		dc.b "    11 ????",$A
+		dc.b "    12 ????",$A
+		dc.b "    13 ????",$A
+		dc.b "    14 ????",$A
+		dc.b "    15 ????",$A
+		dc.b "    16 ????",$A
 		dc.b "                             ",0
 		align 2
 str_StatusPtch:	dc.b "\\w",0
