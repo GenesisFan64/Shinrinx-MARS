@@ -1163,8 +1163,8 @@ CmdTaskMd_LoadSPal:
 ; @($04,r14) - Object slot
 ; @($08,r14) - Object data
 ; @($0C,r14) - Object options:
-;		$??????pp
-;		pp - index-add value
+;	       %????????????????????????pppppppp
+;		p - index pixel increment value
 ; ------------------------------------------------
 
 CmdTaskMd_ObjectSet:
@@ -1302,12 +1302,13 @@ CmdTaskMd_CameraPos:
 ; @($10,r14) - Loop point
 ; @($14,r14) - Pitch
 ; @($18,r14) - Volume
-; @($1C,r14) - Stereo output bits (%LR)
+; @($1C,r14) - Settings:
+; 		%00000000 00000000LR
+;		LR - output bits
 ; ------------------------------------------------
 
-CmdTaskMd_SetPWM:
+CmdTaskMd_PWM_SetChnl:
 		sts	pr,@-r15
-		
 		mov	@($04,r14),r1
 		mov	@($08,r14),r2
 		mov	@($0C,r14),r3
@@ -1315,19 +1316,47 @@ CmdTaskMd_SetPWM:
 		mov	@($14,r14),r5
 		mov	@($18,r14),r6
 		mov	@($1C,r14),r7
-		bsr	MarsSound_SetChannel
+		bsr	MarsSound_SetPwm
 		nop
+		lds	@r15+,pr
+		rts
+		nop
+		align 4
 
-; 		mov	@($04,r14),r1
-; 		mov	@($08,r14),r2
-; 		mov	@($0C,r14),r3
-; 		mov	@($10,r14),r4
-; 		mov	@($14,r14),r5
-; 		mov	@($18,r14),r6
-; 		mov	@($1C,r14),r7
-; 		mov	#MarsSound_SetChannel,r0
-; 		jsr	@r0
-; 		nop
+; ------------------------------------------------
+; Multi-Pitch PWM change
+; 
+; @($04,r14) - PWM base slot to read
+; @($08,r14) - ChanlPitch 1 | ChanlPitch 2
+; @($0C,r14) - ChanlPitch 3 | ChanlPitch 4
+; @($10,r14) - ChanlPitch 5 | ChanlPitch 6
+; @($14,r14) - ChanlPitch 7 | ChanlPitch 8
+; @($18,r14) - free
+; @($1C,r14) - free
+; ------------------------------------------------
+
+CmdTaskMd_PWM_MultPitch:
+		sts	pr,@-r15
+		mov	#$FFFF,r0
+		mov	@($04,r14),r2
+		swap	r2,r1
+		mov	@($08,r14),r4
+		swap	r4,r3
+		mov	@($0C,r14),r6
+		swap	r6,r5
+		mov	@($10,r14),r8
+		swap	r8,r7
+		and	r0,r1
+		and	r0,r2
+		and	r0,r3
+		and	r0,r4
+		and	r0,r5
+		and	r0,r6
+		and	r0,r7
+		and	r0,r8
+		mov	@($14,r14),r9
+		bsr	MarsSound_MulPwmPitch
+		nop
 		lds	@r15+,pr
 		rts
 		nop

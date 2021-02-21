@@ -2,12 +2,9 @@
 ; Palettes
 ; --------------------------------------------------------
 
-Palette_Puyo:	binclude "data/mars/objects/mtrl/smok_pal.bin"
+Palette_Puyo:	binclude "data/mars/objects/mtrl/doremi_pal.bin"
 		align 4
 Palette_Map:	binclude "data/mars/objects/mtrl/marscity_sdram_pal.bin"
-		align 4
-Textr_smok:
-		binclude "data/mars/objects/mtrl/smok_art.bin"
 		align 4
 Textr_marscity:
 		binclude "data/mars/objects/mtrl/marscity_sdram_art.bin"
@@ -23,6 +20,7 @@ Textr_marscity:
 		include "data/mars/objects/mdl/test2/head.asm"
 		include "data/mars/objects/mdl/test3/head.asm"
 		include "data/mars/objects/mdl/smok/head.asm"
+		include "data/mars/objects/mdl/smok2/head.asm"
 		align 4
 
 ; --------------------------------------------------------

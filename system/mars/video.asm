@@ -1644,6 +1644,7 @@ drwsld_nxtline_tex:
 		shlr16	r4
 		and	r2,r4
 		and	r0,r13
+		mov	r9,@-r15
 .tex_xloop:
 		mov	r7,r2
 		shlr16	r2
@@ -1653,17 +1654,18 @@ drwsld_nxtline_tex:
 		shlr16	r2
 		add	r2,r0
 		mov.b	@(r0,r11),r0			; Read pixel
-		cmp/eq	#0,r0				; If texture pixel == 0
-		bt	.blnk				; then don't add
+; 		cmp/eq	#0,r0				; If texture pixel == 0
+; 		bt	.blnk				; then don't add
 		add	r13,r0
 		and	#$FF,r0
-.blnk:
+; .blnk:
 		mov.b	r0,@r10	   			; Write pixel
 		add 	#1,r10
 		add	r6,r5				; Update X
 		dt	r12
 		bf/s	.tex_xloop
 		add	r8,r7				; Update Y
+		mov	@r15+,r9
 .tex_skip_line:
 		mov	@r15+,r13
 		mov	@r15+,r10

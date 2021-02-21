@@ -4,6 +4,6 @@
 ; ----------------------------------------------------------------
 
 		align 4
-; Textr_marscity:
-; 		binclude "data/mars/objects/mtrl/marscity_art.bin"
-; 		align 4
+Textr_doremi:
+		binclude "data/mars/objects/mtrl/doremi_art.bin"
+		align 4

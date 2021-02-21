@@ -223,6 +223,7 @@ System_Input:
 ; d0 | LONG
 ; --------------------------------------------------------
 
+; TODO: redo this later
 System_Random:
 		move.l	(RAM_SysRandSeed),d5
 		move.l	(RAM_SysRandVal),d4
@@ -265,7 +266,7 @@ System_SetInts:
 		rts
 
 ; --------------------------------------------------------
-; System_SaveInit
+; System_SramInit
 ; 
 ; Init save data
 ; 
@@ -274,7 +275,7 @@ System_SetInts:
 ; --------------------------------------------------------
 
 ; TODO: Check if RV bit is required here...
-System_SaveInit:
+System_SramInit:
 		move.b	#1,(md_bank_sram).l
 		lea	($200001).l,a4
 		moveq	#0,d4
@@ -314,23 +315,28 @@ System_VSync:
 ; --------------------------------------------------------
 
 ; ------------------------------------------------
-; Single call only
+; Add task to Master's queue
 ; ------------------------------------------------
 
-; Add task to Master's queque
 System_MdMars_MstAddTask:
 		lea	(RAM_MdMarsTskM).w,a6
 		lea	(RAM_MdMarsTCntM).w,a5
 		bra	sysMdMars_instask
 
-; Add task to Slave's queque
+; ------------------------------------------------
+; Add task to Slave's queue
+; ------------------------------------------------
+
 System_MdMars_SlvAddTask:
 		lea	(RAM_MdMarsTskS).w,a6
 		lea	(RAM_MdMarsTCntS).w,a5
 		bra	sysMdMars_instask
 
+; ------------------------------------------------
 ; Single call for Master CPU
-System_MdMars_MstCall:
+; ------------------------------------------------
+
+System_MdMars_MstTask:
 		lea	(RAM_MdMarsTsSgl),a6
 		movem.l	d0-d7,(a6)
 		move.w	#(MAX_MDTSKARG*4),d6
@@ -343,8 +349,11 @@ System_MdMars_MstCall:
 		bne.s	.wait_m
 		bra	sysMdMars_Transfer
 
+; ------------------------------------------------
 ; Single call for Slave CPU
-System_MdMars_SlvCall:
+; ------------------------------------------------
+
+System_MdMars_SlvTask:
 		lea	(RAM_MdMarsTsSgl),a6
 		movem.l	d0-d7,(a6)
 		move.w	#(MAX_MDTSKARG*4),d6
@@ -356,6 +365,10 @@ System_MdMars_SlvCall:
 		and.w	#$80,d4
 		bne.s	.wait_s
 		bra	sysMdMars_Transfer
+
+; ------------------------------------------------
+; Single call for Master CPU
+; ------------------------------------------------
 
 System_MdMars_MstSendAll:
 		lea	(RAM_MdMarsTskM),a6
@@ -426,8 +439,9 @@ sysMdMars_instask:
 ; d6 - Data size
 ; d5 - CMD Interrupt bitset value (0-Master/1-Slave)
 ; 
-; Test for comm14 or comm15
-; before calling here.
+; Test for negative on comm14(Master) or
+; comm15(Slave) before jumping here.
+
 sysMdMars_Transfer:
 		lea	(sysmars_reg),a5
 		move.w	sr,d7
@@ -440,7 +454,6 @@ sysMdMars_Transfer:
 .wait_cmd:	move.w	standby(a5),d4
 		btst    d5,d4
 		bne.s   .wait_cmd
-
 .loop:
 		cmpi.b	#2,1(a4)		; SH ready?
 		bne.s	.loop
