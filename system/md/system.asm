@@ -372,8 +372,8 @@ System_MdMars_SlvTask:
 
 System_MdMars_MstSendAll:
 		lea	(RAM_MdMarsTskM),a6
+		move.w	(RAM_MdMarsTCntM).w,d6
 		clr.w	(RAM_MdMarsTCntM).w
-		move.w	#(MAX_MDTSKARG*MAX_MDTASKS*4),d6
 		moveq	#0,d5
 .wait_m:
 		nop
@@ -385,8 +385,8 @@ System_MdMars_MstSendAll:
 
 System_MdMars_MstSendDrop:
 		lea	(RAM_MdMarsTskM),a6
+		move.w	(RAM_MdMarsTCntM).w,d6
 		clr.w	(RAM_MdMarsTCntM).w
-		move.w	#(MAX_MDTSKARG*MAX_MDTASKS*4),d6
 		moveq	#0,d5
 .wait_m:
 		nop
@@ -398,8 +398,8 @@ System_MdMars_MstSendDrop:
 		
 System_MdMars_SlvSendAll:
 		lea	(RAM_MdMarsTskS),a6
+		move.w	(RAM_MdMarsTCntS).w,d6
 		clr.w	(RAM_MdMarsTCntS).w
-		move.w	#(MAX_MDTSKARG*MAX_MDTASKS*4),d6
 		moveq	#1,d5
 .wait_s:
 		nop
@@ -411,8 +411,8 @@ System_MdMars_SlvSendAll:
 
 System_MdMars_SlvSendDrop:
 		lea	(RAM_MdMarsTskS),a6
+		move.w	(RAM_MdMarsTCntS).w,d6
 		clr.w	(RAM_MdMarsTCntS).w
-		move.w	#(MAX_MDTSKARG*MAX_MDTASKS*4),d6
 		moveq	#1,d5
 .wait_s:
 		nop

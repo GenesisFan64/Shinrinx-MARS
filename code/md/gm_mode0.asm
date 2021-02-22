@@ -249,11 +249,11 @@ MD_GmMode0:
 		moveq	#0,d5
 		move.w	(a0,d0.w),d5
 
-		move.l	#PWM_STEREO,d2
-		move.l	#PWM_STEREO_e,d3
+		move.l	#PWM_MONO,d2
+		move.l	#PWM_MONO_e,d3
 		move.l	d2,d4
 		moveq	#0,d6
-		moveq	#%111,d7
+		moveq	#%011,d7
 		move.l	#CmdTaskMd_PWM_SetChnl,d0
 		bra	System_MdMars_MstTask
 
@@ -298,22 +298,22 @@ MdMdl_Update:
 		move.w	(a0)+,d4
 		moveq	#0,d5
 		move.l	#CmdTaskMd_PWM_MultPitch,d0
-		bsr	System_MdMars_MstAddTask
-		move.w	(a0)+,d1	; 1 | 2
-		swap	d1
-		move.w	(a0)+,d1
-		move.w	(a0)+,d2	; 3 | 4
-		swap	d2
-		move.w	(a0)+,d2
-		move.w	(a0)+,d3	; 5 | 6
-		swap	d3
-		move.w	(a0)+,d3
-		move.w	(a0)+,d4	; 7 | 8
-		swap	d4
-		move.w	(a0)+,d4
-		moveq	#8,d5
-		move.l	#CmdTaskMd_PWM_MultPitch,d0
-		bsr	System_MdMars_MstAddTask
+		bsr	System_MdMars_MstTask
+; 		move.w	(a0)+,d1	; 1 | 2
+; 		swap	d1
+; 		move.w	(a0)+,d1
+; 		move.w	(a0)+,d2	; 3 | 4
+; 		swap	d2
+; 		move.w	(a0)+,d2
+; 		move.w	(a0)+,d3	; 5 | 6
+; 		swap	d3
+; 		move.w	(a0)+,d3
+; 		move.w	(a0)+,d4	; 7 | 8
+; 		swap	d4
+; 		move.w	(a0)+,d4
+; 		moveq	#8,d5
+; 		move.l	#CmdTaskMd_PWM_MultPitch,d0
+; 		bsr	System_MdMars_MstAddTask
 		bsr	System_MdMars_MstSendAll
 		
 .upd_cont:
@@ -493,14 +493,14 @@ str_Title:	dc.b "Project Shinrinx + GEMA Z80x68KxSH2",$A,$A
 		dc.b "      06 ????",$A
 		dc.b "      07 ????",$A
 		dc.b "      08 ????",$A
-		dc.b "      09 ????",$A
-		dc.b "      10 ????",$A
-		dc.b "      11 ????",$A
-		dc.b "      12 ????",$A
-		dc.b "      13 ????",$A
-		dc.b "      14 ????",$A
-		dc.b "      15 ????",$A
-		dc.b "      16 ????",$A
+; 		dc.b "      09 ????",$A
+; 		dc.b "      10 ????",$A
+; 		dc.b "      11 ????",$A
+; 		dc.b "      12 ????",$A
+; 		dc.b "      13 ????",$A
+; 		dc.b "      14 ????",$A
+; 		dc.b "      15 ????",$A
+; 		dc.b "      16 ????",$A
 		dc.b "                             ",0
 		align 2
 str_StatusPtch:	dc.b "\\w",$A
@@ -511,14 +511,14 @@ str_StatusPtch:	dc.b "\\w",$A
 		dc.b "\\w",$A
 		dc.b "\\w",$A
 		dc.b "\\w",$A
-		dc.b "\\w",$A
-		dc.b "\\w",$A
-		dc.b "\\w",$A
-		dc.b "\\w",$A
-		dc.b "\\w",$A
-		dc.b "\\w",$A
-		dc.b "\\w",$A
-		dc.b "\\w",$A
+; 		dc.b "\\w",$A
+; 		dc.b "\\w",$A
+; 		dc.b "\\w",$A
+; 		dc.b "\\w",$A
+; 		dc.b "\\w",$A
+; 		dc.b "\\w",$A
+; 		dc.b "\\w",$A
+; 		dc.b "\\w",$A
 		dc.b "\\w",0
 		dc.l RAM_SndPitch
 		dc.l RAM_SndPitch+2
