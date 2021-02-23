@@ -3,7 +3,7 @@
 ; MARS Sound
 ; ----------------------------------------------------------------
 
-MAX_PWMCHNL	equ	8
+MAX_PWMCHNL	equ	6
 
 ; 32X sound channel
 		struct 0
@@ -14,7 +14,7 @@ mchnsnd_start	ds.l 1
 mchnsnd_end	ds.l 1
 mchnsnd_loop	ds.l 1
 mchnsnd_pitch	ds.l 1
-mchnsnd_flags	ds.l 1
+mchnsnd_flags	ds.l 1		; %SLR S-wave format mono/stereo | LR-wave output bits
 mchnsnd_vol	ds.l 1
 sizeof_sndchn	ds.l 0
 		finish
@@ -35,175 +35,118 @@ sizeof_sndchn	ds.l 0
 ; 
 ; process_pwm:
 ; 
-; 	mov.l	#$20004038,r2
-; 
-; @loop
-; 	mov.l	#pwmstructs,r3
-; 	mov	#NUMCHANNELS,r4
-; 	mov	#0,r5
-; 
-; @channelloop:
-; 	mov.l	@r3,r0				;is channel on?
-; 	cmp/eq	#0,r0
-; 	bf	@on
-; 
-; 	mov.l	#$7f,r1				;if channel off, use $7f (flat)
-; 	bra	@skip
-; 	nop
-; @on:
-; 	add.l	#-1,r0
-; 	mov.l	r0,@r3
-; 
-; 	mov.l	@(PWMADDRESS,r3),r0		;get the next pcm byte
-; 	mov.l	r0,r1
-; 	add.l	#1,r0
-; 	mov.l	r0,@(PWMADDRESS,r3)
-; 	shlr	r1
-; 	mov.b	@r1,r1
-; 	extu.b	r1,r1
-; 
-; @skip:
-; 	add	#8,r3
-; 
-; 	add.l	#1,r1   			;make sure it's not 0
-; 	add	r1,r5
-; 
-; 	dt	r4
-; 	bf	@channelloop
-; 
-; 	mov.w	r5,@r2				;store into mono width
-; 
-; 	mov.b	@r2,r0				;is pwm fifo full?
-; 	tst	#$80,r0
-; 	bt	@loop
-; 
-; 	rts
-; 	nop
-; 
-; 	lits
+
 
 MarsSound_ReadPwm:
-		mov.l	r2,@-r15
-		mov.l	r3,@-r15
-		mov.l	r4,@-r15
-		mov.l	r5,@-r15
-		mov.l	r6,@-r15
-		mov.l	r7,@-r15
-		mov.l	r8,@-r15
-		mov.l	r9,@-r15
+		mov	r2,@-r15
+		mov	r3,@-r15
+		mov	r4,@-r15
+		mov	r5,@-r15
+		mov	r6,@-r15
+		mov	r7,@-r15
+		mov	r8,@-r15
+		mov	r9,@-r15
+
 .retry:
-		mov 	#1,r3			; LEFT start
-		mov 	#1,r4			; RIGHT start
+		mov 	#0,r5			; LEFT start
+		mov 	#0,r6			; RIGHT start
 		mov	#MarsSnd_PwmChnls,r8
-		mov 	#MAX_PWMCHNL,r9
-		
-; ------------------------------------------------
-; Read wave data
-; ------------------------------------------------
-
-.nxtchn:
-		mov 	@(mchnsnd_enbl,r8),r0
+		mov 	#7,r7
+.loop:
+		mov	@(mchnsnd_enbl,r8),r0
 		cmp/eq	#0,r0
-		bf	.chnon
+		bf	.on
+.silent:
 		mov	#$7F,r0
-		add	r0,r3
-		bra	.chnoff
-		add	r0,r4
-
-; Active channel
-.chnon:
-		mov 	@(mchnsnd_read,r8),r1
+		mov	r0,r2
+		bra	.skip
+		mov	r0,r1
+.on:
+		mov 	@(mchnsnd_read,r8),r4
 		mov 	@(mchnsnd_end,r8),r0
-		cmp/ge	r0,r1
+		cmp/ge	r0,r4
 		bf	.read
 		mov 	@(mchnsnd_loop,r8),r0
 		cmp/eq	#-1,r0
-		bf	.noend
+		bf	.loop_me
 		mov 	#0,r0
 		mov 	r0,@(mchnsnd_enbl,r8)
-		mov 	@(mchnsnd_start,r8),r1
-		bra	.keep
+		mov 	@(mchnsnd_start,r8),r4
+		bra	.silent
 		nop
-.noend:
-		mov 	@(mchnsnd_start,r8),r1
-		bra	.keep
-		nop
+.loop_me:
+		mov 	@(mchnsnd_start,r8),r4
+		
+; read wave
 .read:
 		mov 	@(mchnsnd_flags,r8),r0
-		mov	#$00FFFFFF,r7
-		mov 	r1,r2
-		shlr8	r2
+		mov	#$00FFFFFF,r1
+		mov 	r4,r3
+		shlr8	r3
 		tst	#%100,r0
 		bt	.mono_a
-		add	#-1,r7
+		add	#-1,r1
 .mono_a
-		and	r7,r2
-		mov 	@(mchnsnd_bank,r8),r7
-		or	r7,r2
-		mov 	@(mchnsnd_pitch,r8),r7
-		mov.b	@r2+,r5
-		mov	r5,r6
+		and	r1,r3
+		mov 	@(mchnsnd_bank,r8),r1
+		or	r1,r3
+		mov.b	@r3+,r1
+		mov	r1,r2
 		tst	#%100,r0
 		bt	.mono
-		mov.b	@r2+,r6
-		shll	r7			; increment * 2
+		mov.b	@r3+,r2
 .mono:
-		add	r7,r1
-		extu.b	r5,r5
-		extu.b	r6,r6
-		add	#1,r5
-		add	#1,r6
-		; volume goes here
-		
-.updwav:
-		tst	#%10,r0
-		bt	.nor
-		add	r5,r3
-.nor:
-		tst	#%01,r0
-		bt	.keep
-		add	r6,r4
-.keep:
-		mov	#$7FF,r7
-		and	r7,r3
-		and	r7,r4
-		mov 	r1,@(mchnsnd_read,r8)
-.chnoff:
-
-
+		mov	#$FF,r3
+		and	r3,r1
+		and	r3,r2
+		mov 	@(mchnsnd_pitch,r8),r3
+		tst	#%100,r0
+		bt	.mono_i
+		shll	r3		
+.mono_i:
+		add	r3,r4
+		mov	r4,@(mchnsnd_read,r8)
+.skip:
+		add	#1,r1
+		add	#1,r2
+		add	r1,r5
+		add	r2,r6
 		add	#sizeof_sndchn,r8
-		dt	r9
-		bf	.nxtchn
+		dt	r7
+		bf	.loop
 
-; ------------------------------------------------
-; Play wave
-; 
-; r3 - left wave
-; r4 - right wave
-; ------------------------------------------------
+	; TODO: this check is for emus only
+	; it recreates the volume overflow effect
+		mov	#$3FF,r0
+		cmp/gt	r0,r5
+		bf	.lmuch
+		mov	r0,r5
+.lmuch:		cmp/gt	r0,r6
+		bf	.rmuch
+		mov	r0,r6
+.rmuch:			
 
-		mov	#_sysreg+monowidth,r5
-		mov	#_sysreg+lchwidth,r1
-		mov	#_sysreg+rchwidth,r2
- 		mov.w	r3,@r1
- 		mov.w	r4,@r2
-		mov.b	@r5,r0
- 		tst	#$80,r0			; PWM FIFO full?
- 		bt	.retry			; loop until it fills
-		mov	#_sysreg+comm4,r5
- 		mov.w	r3,@r5
- 		mov	r4,r0
- 		mov.w	r0,@(2,r5)
-.full:
-
-		mov.l	@r15+,r9
-		mov.l	@r15+,r8
-		mov.l	@r15+,r7
-		mov.l	@r15+,r6
-		mov.l	@r15+,r5
-		mov.l	@r15+,r4
-		mov.l	@r15+,r3
-		mov.l	@r15+,r2
+		mov	#_sysreg+lchwidth,r3
+		mov	#_sysreg+rchwidth,r4
+ 		mov.w	r5,@r3
+ 		mov.w	r6,@r4
+; 		mov	#_sysreg+monowidth,r3	; Not needed on HW
+; 		mov.b	@r3,r0
+; 		tst	#$80,r0
+; 		bf	.retry
+		mov	#_sysreg+comm4,r3
+ 		mov.w	r5,@r3
+ 		mov	r6,r0
+ 		mov.w	r0,@(2,r3)
+ 		
+		mov	@r15+,r9
+		mov	@r15+,r8
+		mov	@r15+,r7
+		mov	@r15+,r6
+		mov	@r15+,r5
+		mov	@r15+,r4
+		mov	@r15+,r3
+		mov	@r15+,r2
 		rts
 		nop
 		align 4
@@ -244,7 +187,7 @@ MarsSound_Init:
 		ldc	r0,gbr
 		mov	#((((23011361<<1)/22050+1)>>1)+1),r0	; 22050 best
 		mov.w	r0,@(cycle,gbr)
-		mov	#$0305,r0
+		mov	#$0105,r0
 		mov.w	r0,@(timerctl,gbr)
 		mov	#0,r0
 		mov.w	r0,@(monowidth,gbr)
@@ -333,77 +276,28 @@ MarsSound_SetPwm:
 ; 
 ; Input:
 ; r1 | Channel pitch slot 0
-; r2 | Channel pitch slot 1
-; r3 | Channel pitch slot 2
-; r4 | Channel pitch slot 3
-; r5 | Channel pitch slot 4
-; r6 | Channel pitch slot 5
-; r7 | Channel pitch slot 6
-; r8 | Channel pitch slot 6
-; r9 | Start from slot id
+; r2 | Pitch data
 ; 
 ; Uses:
-; r0,r10-r12
+; r3,r4
 ; --------------------------------------------------------
 
-MarsSound_MulPwmPitch:
-		stc	sr,r12
+MarsSound_SetPwmPitch:
+		stc	sr,r9
 		mov	#$F0,r0
 		ldc	r0,sr
-		mov	#MarsSnd_PwmChnls,r11
+		mov	#MarsSnd_PwmChnls,r8
 		mov 	#sizeof_sndchn,r0
-		mulu	r9,r0
+		mulu	r1,r0
 		sts	macl,r0
-		add 	r0,r11
-		mov	#sizeof_sndchn,r10
-		mov	@(mchnsnd_enbl,r11),r0
+		add 	r0,r8
+
+		mov	@(mchnsnd_enbl,r8),r0
 		cmp/pl	r0
 		bf	.off_1
-		mov	r1,@(mchnsnd_pitch,r11)
+		mov	r2,@(mchnsnd_pitch,r8)
 .off_1:
-		add	r10,r11
-		mov	@(mchnsnd_enbl,r11),r0
-		cmp/pl	r0
-		bf	.off_2
-		mov	r2,@(mchnsnd_pitch,r11)
-		add	r10,r11
-.off_2:	
-		mov	@(mchnsnd_enbl,r11),r0
-		cmp/pl	r0
-		bf	.off_3
-		mov	r3,@(mchnsnd_pitch,r11)
-		add	r10,r11
-.off_3:	
-		mov	@(mchnsnd_enbl,r11),r0
-		cmp/pl	r0
-		bf	.off_4
-		mov	r4,@(mchnsnd_pitch,r11)
-		add	r10,r11
-.off_4:	
-		mov	@(mchnsnd_enbl,r11),r0
-		cmp/pl	r0
-		bf	.off_5
-		mov	r5,@(mchnsnd_pitch,r11)
-		add	r10,r11
-.off_5:	
-		mov	@(mchnsnd_enbl,r11),r0
-		cmp/pl	r0
-		bf	.off_6
-		mov	r6,@(mchnsnd_pitch,r11)
-		add	r10,r11
-.off_6:
-		mov	@(mchnsnd_enbl,r11),r0
-		cmp/pl	r0
-		bf	.off_7
-		mov	r7,@(mchnsnd_pitch,r11)
-		add	r10,r11
-.off_7:
-		mov	@(mchnsnd_enbl,r11),r0
-		cmp/pl	r0
-		bf	.off_8
-		mov	r8,@(mchnsnd_pitch,r11)
-.off_8:
- 		ldc	r12,sr
+ 		ldc	r9,sr
 		rts
 		nop
 		align 4

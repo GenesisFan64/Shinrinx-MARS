@@ -1323,39 +1323,30 @@ CmdTaskMd_PWM_SetChnl:
 		align 4
 
 ; ------------------------------------------------
-; Multi-Pitch PWM change
+; Set PWM pitch to multiple channels
 ; 
-; @($04,r14) - PWM base slot to read
-; @($08,r14) - ChanlPitch 1 | ChanlPitch 2
-; @($0C,r14) - ChanlPitch 3 | ChanlPitch 4
-; @($10,r14) - ChanlPitch 5 | ChanlPitch 6
-; @($14,r14) - ChanlPitch 7 | ChanlPitch 8
-; @($18,r14) - free
-; @($1C,r14) - free
+; @($04,r14) - Channel 0 pitch
+; @($08,r14) - Channel 1 pitch
+; @($0C,r14) - Channel 2 pitch
+; @($10,r14) - Channel 3 pitch
+; @($14,r14) - Channel 4 pitch
+; @($18,r14) - Channel 5 pitch
+; @($1C,r14) - Channel 6 pitch
 ; ------------------------------------------------
 
 CmdTaskMd_PWM_MultPitch:
 		sts	pr,@-r15
-		mov	#$FFFF,r0
-		mov	@($04,r14),r2
-		swap	r2,r1
-		mov	@($08,r14),r4
-		swap	r4,r3
-		mov	@($0C,r14),r6
-		swap	r6,r5
-		mov	@($10,r14),r8
-		swap	r8,r7
-		and	r0,r1
-		and	r0,r2
-		and	r0,r3
-		and	r0,r4
-		and	r0,r5
-		and	r0,r6
-		and	r0,r7
-		and	r0,r8
-		mov	@($14,r14),r9
-		bsr	MarsSound_MulPwmPitch
+		mov	#$FFFF,r7
+		mov	r14,r13
+		add	#4,r13
+		mov	#0,r1
+	rept 6
+		mov	@r13+,r2
+		and	r7,r2
+		bsr	MarsSound_SetPwmPitch
 		nop
+		add	#1,r1
+	endm
 		lds	@r15+,pr
 		rts
 		nop
