@@ -9,7 +9,7 @@
 ; ------------------------------------------------------
 
 var_MoveSpd	equ	$2000
-CURY_MAX	equ	6
+CURY_MAX	equ	7
 
 ; ====================================================================
 ; ------------------------------------------------------
@@ -157,6 +157,14 @@ MD_GmMode0:
 		bsr	.play_sample
 .noc:
 		move.w	(Controller_1+on_press).l,d7
+		btst	#bitJoyB,d7
+		beq.s	.nob
+		move.l	#TEST_PATTERN,d0
+		move.l	#TEST_BLOCKS,d1
+		bsr	SoundReq_SetTrack
+.nob:
+
+		move.w	(Controller_1+on_press).l,d7
 		btst	#bitJoyLeft,d7
 		beq.s	.nol
 		lea	(RAM_SndPitch),a0
@@ -227,7 +235,7 @@ MD_GmMode0:
 		moveq	#1,d1				; Slot		
 		bsr	System_MdMars_SlvAddTask		
 		bsr	System_MdMars_SlvSendDrop
-		add.l	#$2000,(RAM_RotX)
+		add.l	#$4000,(RAM_RotX)
 		rts
 
 ; 	
@@ -238,6 +246,7 @@ MD_GmMode0:
 		move.l	#(TEST_WAV_E-TEST_WAV),d1
 		move.l	#0,d2
 		move.w	(RAM_SndPitch).w,d3
+		moveq	#%01,d4
 		bsr	SoundReq_SetSample
 		bra	MdMdl_Update
 .pwm_test:
@@ -290,6 +299,7 @@ MdMdl_Update:
 		move.w	(a0)+,d4
 		move.w	(a0)+,d5
 		move.w	(a0)+,d6
+		move.w	(a0)+,d7
 		move.l	#CmdTaskMd_PWM_MultPitch,d0
 		bsr	System_MdMars_MstTask
 		
@@ -460,14 +470,15 @@ MdMdl_Update:
 
 str_LazCursor:	dc.b " ",$A,">",$A," ",0
 		align 2
-str_Title:	dc.b "Project Shinrinx + GEMA Z80x68KxSH2",$A,$A
+str_Title:	dc.b "GEMA Sound tester",$A,$A
 		dc.b "  DAC 01 ????",$A
 		dc.b "  PWM 01 ????",$A
 		dc.b "      02 ????",$A
 		dc.b "      03 ????",$A
 		dc.b "      04 ????",$A
 		dc.b "      05 ????",$A
-		dc.b "      06 ????",0
+		dc.b "      06 ????",$A
+		dc.b "      07 ????",0
 		dc.b "                             ",0
 		align 2
 str_StatusPtch:	dc.b "\\w",$A
@@ -476,7 +487,7 @@ str_StatusPtch:	dc.b "\\w",$A
 		dc.b "\\w",$A
 		dc.b "\\w",$A
 		dc.b "\\w",$A
-; 		dc.b "\\w",$A
+		dc.b "\\w",$A
 ; 		dc.b "\\w",$A
 ; 		dc.b "\\w",$A
 ; 		dc.b "\\w",$A
@@ -494,7 +505,7 @@ str_StatusPtch:	dc.b "\\w",$A
 		dc.l RAM_SndPitch+8
 		dc.l RAM_SndPitch+10
 		dc.l RAM_SndPitch+12
-; 		dc.l RAM_SndPitch+14
+		dc.l RAM_SndPitch+14
 ; 		dc.l RAM_SndPitch+16
 ; 		dc.l RAM_SndPitch+18
 ; 		dc.l RAM_SndPitch+20

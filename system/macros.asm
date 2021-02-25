@@ -31,6 +31,9 @@ locate		function a,b,c,(c&$FF)|(b<<8&$FF00)|(a<<16&$FF0000)	; VDP locate: Layer|
 
 ; -------------------------------------
 ; Reserve memory section
+;
+; NOTE: this doesn't work if
+; the current CPU is set to Z80
 ; -------------------------------------
 
 struct		macro thisinput			; Reserve memory address

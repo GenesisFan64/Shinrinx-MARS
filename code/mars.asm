@@ -1340,7 +1340,7 @@ CmdTaskMd_PWM_MultPitch:
 		mov	r14,r13
 		add	#4,r13
 		mov	#0,r1
-	rept 6
+	rept 7
 		mov	@r13+,r2
 		and	r7,r2
 		bsr	MarsSound_SetPwmPitch

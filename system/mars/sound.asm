@@ -3,7 +3,7 @@
 ; MARS Sound
 ; ----------------------------------------------------------------
 
-MAX_PWMCHNL	equ	6
+MAX_PWMCHNL	equ	7
 
 ; 32X sound channel
 		struct 0
@@ -51,7 +51,7 @@ MarsSound_ReadPwm:
 		mov 	#0,r5			; LEFT start
 		mov 	#0,r6			; RIGHT start
 		mov	#MarsSnd_PwmChnls,r8
-		mov 	#7,r7
+		mov 	#MAX_PWMCHNL,r7
 .loop:
 		mov	@(mchnsnd_enbl,r8),r0
 		cmp/eq	#0,r0
@@ -99,6 +99,8 @@ MarsSound_ReadPwm:
 		mov	#$FF,r3
 		and	r3,r1
 		and	r3,r2
+; 		shll	r1
+; 		shll	r2
 		mov 	@(mchnsnd_pitch,r8),r3
 		tst	#%100,r0
 		bt	.mono_i
@@ -114,9 +116,12 @@ MarsSound_ReadPwm:
 		add	#sizeof_sndchn,r8
 		dt	r7
 		bf	.loop
-
+; 		shlr	r5
+; 		shlr	r6
+		
 	; TODO: this check is for emus only
-	; it recreates the volume overflow effect
+	; it recreates what happens to PWM in
+	; real hardware if it overflows
 		mov	#$3FF,r0
 		cmp/gt	r0,r5
 		bf	.lmuch
@@ -295,6 +300,10 @@ MarsSound_SetPwmPitch:
 		mov	@(mchnsnd_enbl,r8),r0
 		cmp/pl	r0
 		bf	.off_1
+		mov	@(mchnsnd_read,r8),r0
+		mov	#$FFFFFF00,r1
+		and	r1,r0
+		mov	r0,@(mchnsnd_read,r8)
 		mov	r2,@(mchnsnd_pitch,r8)
 .off_1:
  		ldc	r9,sr

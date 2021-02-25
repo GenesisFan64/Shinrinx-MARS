@@ -162,7 +162,7 @@
 ; can be anywhere in ROM
 ; ----------------------------------------------------
 
-		align $8000
+; 		align $8000
 ; WavIns_Kick:	binclude "game/sound/instr/dac/gems/12.wav",$2C
 ; WavIns_Kick_e:
 ; 
