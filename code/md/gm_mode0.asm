@@ -161,7 +161,16 @@ MD_GmMode0:
 		beq.s	.nob
 		move.l	#TEST_PATTERN,d0
 		move.l	#TEST_BLOCKS,d1
+		moveq	#2,d2
+		moveq	#0,d3
 		bsr	SoundReq_SetTrack
+		
+		move.l	#TEST_PATTERN,d0
+		move.l	#TEST_BLOCKS,d1
+		moveq	#2,d2
+		moveq	#1,d3
+		bsr	SoundReq_SetTrack
+		
 .nob:
 
 		move.w	(Controller_1+on_press).l,d7
