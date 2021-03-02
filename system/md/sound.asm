@@ -112,21 +112,24 @@ Sound_Request:
 ; 
 ; d0 - Pattern data pointer
 ; d1 - Block data pointer
-; d2 - Ticks
-; d3 - Slot (0-3)
+; d2 - Instrument data pointer
+; d3 - Ticks
+; d4 - Slot (0-3)
 ; --------------------------------------------------------
 
 SoundReq_SetTrack:
 		bsr	sndReq_Enter
 		move.w	#$00,d7			; Command $00
 		bsr	sndReq_scmd
-		move.b	d3,d7			; d3 - Slot
+		move.b	d4,d7			; d4 - Slot
 		bsr	sndReq_sbyte
-		move.b	d2,d7			; d2 - Ticks
+		move.b	d3,d7			; d3 - Ticks
 		bsr	sndReq_sbyte
 		move.l	d0,d7			; d0 - Patt data point
 		bsr	sndReq_saddr
 		move.l	d1,d7			; d1 - Block data point
+		bsr	sndReq_saddr
+		move.l	d2,d7			; d2 - Intrument data
 		bsr	sndReq_saddr
 		bra 	sndReq_Exit
 		
@@ -220,7 +223,7 @@ sndReq_Exit:
 sndReq_scmd:
 		move.b	#-1,(a6,d6.w)			; write command-start flag
 		addq.b	#1,d6				; next fifo pos
-		andi.b	#$7F,d6
+		andi.b	#$3F,d6
 		bra.s	sndReq_sbyte
 sndReq_slong:
 		bsr	sndReq_sbyte
@@ -234,7 +237,7 @@ sndReq_sword:
 sndReq_sbyte:
 		move.b	d7,(a6,d6.w)			; write byte
 		addq.b	#1,d6				; next fifo pos
-		andi.b	#$7F,d6
+		andi.b	#$3F,d6
 		move.b	d6,(a5)				; update commZWrite
 		rts
 
@@ -264,14 +267,15 @@ Z80_CODE:
 ; LIMIT: 10h bytes
 trk_romBlk	equ 0			; 24-bit base block data
 trk_romPatt	equ 3			; 24-bit base patt data
-trk_romPattRd	equ 6			; same but for reading
-trk_Read	equ 9			; Current track position (in cache)
-trk_Rows	equ 11			; Current track length
-trk_Halfway	equ 13			; Only 00h or 80h
-trk_currBlk	equ 14
-trk_status	equ 15			; %ERxx EVIN | E-enabled / R-Init or Restart track
-trk_tickTmr	equ 16			; Ticks timer
-trk_tickSet	equ 17			; Ticks set for this track
+trk_romIns	equ 6			; 24-bit ROM instrument pointers
+trk_romPattRd	equ 9			; same but for reading
+trk_Read	equ 12			; Current track position (in cache)
+trk_Rows	equ 14			; Current track length
+trk_Halfway	equ 16			; Only 00h or 80h
+trk_currBlk	equ 17
+trk_status	equ 18			; %ERxx xxxx | E-enabled / R-Init or Restart track
+trk_tickTmr	equ 19			; Ticks timer
+trk_tickSet	equ 20			; Ticks set for this track
 		
 ; chnBuff
 ; LIMIT: 8 bytes
@@ -282,13 +286,13 @@ chnl_Ins	equ 3
 chnl_Vol	equ 4
 chnl_EffId	equ 5
 chnl_EffArg	equ 6
-chnl_Chip	equ 7
+chnl_Status	equ 7
 		
 ; --------------------------------------------------------
 ; Variables
 ; --------------------------------------------------------
 
-MAX_TRKS	equ	4		; Max tracks to read
+MAX_TRKS	equ	3		; Max tracks to read
 MAX_TRKCHN	equ	18		; Max internal tracker channels
 
 ; To brute force DAC playback
@@ -311,6 +315,7 @@ DTL		equ	28
 DTH		equ	32
 ALV		equ	36
 FLG		equ	40
+HAT		equ	44
 
 ; ====================================================================
 ; --------------------------------------------------------
@@ -321,6 +326,35 @@ FLG		equ	40
 		im	1		; Interrupt mode 1
 		ld	sp,2000h	; Set stack at the end of Z80
 		jr	z80_init	; Jump to z80_init
+
+; --------------------------------------------------------
+
+wave_Start	dw 0;TEST_WAV&0FFFFh	; START: 68k direct pointer ($00xxxxxx)
+		db 0;TEST_WAV>>16&0FFh
+wave_End	dw 0;(TEST_WAV_E-TEST_WAV)&0FFFFh
+		db 0;(TEST_WAV_E-TEST_WAV)>>16
+wave_Loop	dw 0
+		db 0
+wave_Pitch	dw 100h			; 01.00h
+wav_Flags	db 100b			; WAVE playback flags (%10x: 1 loop / 0 no loop)
+currTrkBlkHd	dw 0
+currTrkData	dw 0
+currInsData	dw 0
+tickFlag	dw 0			; Tick flag from VBlank, Read as (tickFlag+1) for reading/reseting
+tickCnt		db 0			; Tick counter (PUT THIS TAG AFTER tickFlag)
+sbeatPtck	dw 204			; Sub beats per tick (8frac), default is 120bpm
+sbeatAcc	dw 0			; Accumulates ^^ each tick to track sub beats
+currTickBits	db 0			; Current Tick/Tempo bitflags (000000BTb B-beat, T-tick)
+dDacPntr	db 0,0,0		; WAVE play current ROM position
+dDacCntr	db 0,0,0		; WAVE play length counter
+dDacFifoMid	db 0			; WAVE play halfway refill flag (00h/80h)
+x68ksrclsb	db 0			; transferRom temporal LSB
+x68ksrcmid	db 0			; transferRom temporal MID
+commZRead	db 0			; read pointer (here)
+commZWrite	db 0			; cmd fifo wptr (from 68k)
+commZRomBlk	db 0			; 68k ROM block flag
+commZRomRd	db 0			; Z80 is reading ROM bit
+psgHatMode	db 0			; PSG noise mode + noise type bits
 
 ; --------------------------------------------------------
 ; Z80 Interrupt at 0038h
@@ -339,7 +373,6 @@ FLG		equ	40
 
 z80_init:
 		call	gema_init	; Initilize VBLANK sound driver
-; 		call	dac_play
 		ei
 		
 ; --------------------------------------------------------
@@ -379,7 +412,7 @@ drv_loop:
 		ld	(currTickBits),a; Save BEAT/TICK bits
 ; 		call	doenvelope	; TODO: not doing this until channels are fully working
 		call	check_tick
-		call	picksndchip	; Set channels to their respective sound chips
+		call	playonchip	; Set channels to their respective sound chips
 		call	check_tick
 		call	updtrack	; Update track data
 		call	check_tick
@@ -397,19 +430,17 @@ drv_loop:
 		ld	a,(commZRead)
 		cp	b
 		jp	z,drv_loop
-
-	; Get 0FFh (Start of command)
-		call	get_cmdbyte		; read cmd from CMDFIFO
-		cp	-1
-		jp	nz,drv_loop
 		call	get_cmdbyte
+		cp	-1			; Read -1 (Start of command)
+		jp	nz,drv_loop
+		call	get_cmdbyte		; Read cmd number
 		add	a,a
 		ld	hl,.list
 		ld	d,0
 		ld	e,a
 		add	hl,de
-		call	dac_me
 		call	dac_fill
+		call	dac_me
 		ld	a,(hl)
 		inc	hl
 		ld	h,(hl)
@@ -480,16 +511,21 @@ drv_loop:
 		call	get_cmdbyte		; Pattern data
 		ld	(iy+trk_romPatt),a
 		call	get_cmdbyte
-		ld	(iy+(trk_romPatt+1)),a		
+		ld	(iy+(trk_romPatt+1)),a
 		call	get_cmdbyte
 		ld	(iy+(trk_romPatt+2)),a
 		call	get_cmdbyte		; Block data
 		ld	(iy+trk_romBlk),a
 		call	get_cmdbyte
-		ld	(iy+(trk_romBlk+1)),a		
+		ld	(iy+(trk_romBlk+1)),a
 		call	get_cmdbyte
 		ld	(iy+(trk_romBlk+2)),a
-
+		call	get_cmdbyte		; Instrument data
+		ld	(iy+trk_romIns),a
+		call	get_cmdbyte
+		ld	(iy+(trk_romIns+1)),a
+		call	get_cmdbyte
+		ld	(iy+(trk_romIns+2)),a
 		ld	a,1
 		ld	(iy+trk_tickTmr),a
 		ld	a,0C0h			; Set Enable + REFILL flags
@@ -561,7 +597,7 @@ drv_loop:
 		pop	de
 		exx
 		jp	drv_loop
-		
+
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; Sound playback code
@@ -571,48 +607,261 @@ drv_loop:
 ; Set and play instruments in their respective channels
 ; --------------------------------------------------------
 
-picksndchip
+playonchip
 		call	dac_me
 		ld	c,MAX_TRKS
+		ld	hl,insDataC
+		ld	(currInsData),hl
 .nxt_track:
-		ld	iy,trkBuff+20h		; Point to channels only
+		ld	iy,trkBuff+20h		; Point to channels
 		ld	b,MAX_TRKCHN
+.nxt_chnl:
+		push	bc
+		ld	a,(iy+chnl_Status)
+		or	a
+		call	nz,.do_chnl
 		call	dac_me
-; 		ld	c,
-; .nxt_chnl:
-; 		push	bc
-; 		pop	bc
-; 		djnz	.nxt_chnl
-; .all_done:
+		pop	bc
+		ld	de,8
+		add	iy,de
+		djnz	.nxt_chnl
+; 		call	dac_me
+; 		call	dac_me
+; 		call	dac_me
 		ret
 
 ; ----------------------------------------
-; PSG
+; Channel wants to update
 ; ----------------------------------------
 
-.wants_psg:
-		ld	hl,
-; 		ld	ix,psgcom
-; 		ld	(ix+ALV),040h
-; 		ld	(ix+ATK),10h
-; 		ld	(ix+DTL),0Dh
-; 		ld	(ix+DTH),11h
-; 		ld	(ix+COM),1
+.do_chnl:
+		call	dac_me
+		ld	c,a
+		bit	1,(iy+chnl_Status)		; Update instrument first
+		call	nz,.req_ins
+		bit	0,(iy+chnl_Status)
+		call	nz,.req_note
+		call	dac_me
+		bit	2,(iy+chnl_Status)
+		call	nz,.req_vol
+		bit	3,(iy+chnl_Status)
+		call	nz,.req_eff
+		ld	(iy+chnl_Status),0
 		ret
+.req_eff:
+		ret
+
+.req_ins:
+		ret
+
+; ----------------------------------------
+; Note request
+; ----------------------------------------
+
+.req_vol:
+		call	.chk_instype
+		cp	1
+		jp	z,$
+		cp	2
+		jp	z,$
+		cp	3
+		jp	z,$
+		cp	4
+		jp	z,$
+		call	dac_me
+		call	.srch_psg	; Type 0: PSG
+; 		jr	$
+
+		ld	a,(iy+chnl_Vol)
+		srl	a
+		srl	a
+		srl	a
+		and	0Fh
+		ld	hl,.voltbl
+		ld	de,0
+		ld	e,a
+		add	hl,de
+		ld	a,(hl)
+		ld	(ix+ALV),a	; Temporal.
+		ld	(ix+ATK),40h
+		ret
+.voltbl:
+		db 080h
+		db 070h
+		db 060h
+		db 050h	
+		db 040h
+		db 030h
+		db 020h
+		db 010h
+		db 000h
 		
+; ----------------------------------------
+; Note request
+; ----------------------------------------
+
+.req_note:
+		call	dac_me
+		call	.chk_instype
+		cp	1
+		jp	z,.is_fm
+		cp	2
+		jp	z,.is_fm3
+		cp	3
+		jp	z,.is_fm6
+		cp	4
+		jp	z,.is_pwm
+		call	dac_me
+		call	.srch_psg	; Type 0: PSG
+		ld	a,(hl)		; Get pseudo channel slot
+		cp	-1
+		ret	z
+		and	11b
+		ld	ix,psgcom
+		ld	de,0
+		ld	e,a
+		add	ix,de
+		call	dac_me
+		ld	de,0		; Read freq
+		ld	a,(iy+chnl_Note)
+		ld	hl,psgFreq_List
+		cp	-1
+		jp	z,.poff
+		cp	-2
+		jp	z,.pstop	
+		add	a,a
+		ld	e,a
+		add	hl,de
+		call	dac_me
+		ld	a,(hl)
+		and	0Fh
+		ld	(ix+DTL),a
+		ld	a,(hl)
+		sra	a
+		sra	a
+		sra	a
+		sra	a
+		and	0Fh
+		call	dac_me
+		ld	b,a
+		inc	hl
+		ld	a,(hl)
+		sla	a
+		sla	a
+		sla	a
+		sla	a
+		and	0F0h
+		or	b
+		ld	(ix+DTH),a
+		call	dac_me
+		ld	(ix+COM),001b
+		ret
+.pstop:
+		ld	a,(hl)		; lock this channel
+		and	07Fh
+		ld	(hl),a
+		ld	(ix+COM),100b
+		ret
+
+.poff:
+		ld	a,(hl)		; lock this channel
+		and	07Fh
+		ld	(hl),a
+		ld	(ix+RRT),08h	; TEMPORAL
+		ld	(ix+COM),010b
+		ret
+
+; ----------------------------------------
+; Check instrument type
+; 
+; Returns: a
+; 
+; Types:
+; 0 - PSG
+; 1 - PSG noise
+; 2 - FM
+; 3 - FM Special
+; 4 - FM DAC sample
+; 5 - PWM
+; ----------------------------------------
+
+.chk_instype:
+		ld	a,(iy+chnl_Ins)
+		dec	a
+		add	a,a
+		add	a,a
+		ld	hl,(currInsData)
+		ld	de,0
+		ld	e,a
+		add	hl,de
+		call	dac_me
+		ld	a,(hl)		; check type
+		ret
+
+; ----------------------------------------
+;  c - channel's LSB
+; de - Slot incrm
+; hl - table
+; 
+; Returns hl: slot
+; ----------------------------------------
+
+.srch_psg:
+		push	iy
+		pop	bc
+		ld	de,4
+		ld	hl,PSGVTBL
+.ploop:
+		call	dac_me
+		nop
+		nop
+		ld	a,(hl)
+		cp	-1
+		jp	z,.ranout
+		or	a
+		jp	p,.newp		; if free = set new
+		inc	hl
+		ld	a,(hl)
+		dec	hl
+		cp	c
+		ret	z		; if it's ours, use it
+		add	hl,de
+		jr	.ploop
+.newp:
+		ld	a,(hl)		; lock this channel
+		or	80h
+		ld	(hl),a
+		inc	hl
+		ld	(hl),c		; set owner LSB
+		inc	hl
+		ld	(hl),b		; and MSB
+		dec	hl
+		dec	hl
+.ranout:
+		ret
+
 ; ----------------------------------------
 ; FM
 ; ----------------------------------------
 
-.wants_fm:
+.is_fm:
+.is_fm3:
+.is_fm6:
 		ret
 
 ; ----------------------------------------
 ; PWM
 ; ----------------------------------------
 
-.wants_pwm:
+.is_pwm:
 		ret
+
+		; chnl/link addr/freq
+PSGVTBL		db 00h,00h,00h,00h
+		db 01h,00h,00h,00h
+		db 02h,00h,00h,00h
+		db 03h,00h,00h,00h
+		db -1
 
 ; --------------------------------------------------------
 ; Read track data
@@ -623,14 +872,16 @@ updtrack:
 		ld	iy,trkBuff
 		ld	hl,blkHeadC
 		ld	de,trkDataC
+		ld	bc,insDataC
 		ld	(currTrkBlkHd),hl
 		ld	(currTrkData),de
+		ld	(currInsData),bc
 		ld	b,MAX_TRKS
 .next:
 		push	bc
 		call	.read_track
-		call	dac_me
 		pop	bc
+		call	dac_me
 		ld	de,100h
 		add	iy,de
 		ld	hl,(currTrkBlkHd)
@@ -657,9 +908,9 @@ updtrack:
 		ld	a,(iy+trk_status)	; Read track status
 		bit	7,a			; Active?
 		ret	z
+		call	dac_me
 		bit	6,a			; Restart/First time?
 		call	nz,.first_fill
-		call	dac_me
 		ld	a,(iy+trk_tickTmr)	; Tick timer for this track
 		dec	a
 		ld	(iy+trk_tickTmr),a	; If 0, we can progress
@@ -674,7 +925,7 @@ updtrack:
 		ld	b,(iy+(trk_Rows+1))
 		ld	a,c
 		or	b
-		jp	z,.next_track
+		call	z,.next_track
 		call	dac_me
 
 ; --------------------------------
@@ -695,21 +946,19 @@ updtrack:
 		push	bc
 		ld	c,a			; c - Copy of control+channel
 		call	.inc_cpatt
-		call	dac_me
 		ld	a,c
 		push	iy
 		pop	ix
 		ld	de,20h
 		add	ix,de
+		call	dac_me
 		ld 	d,0
 		and	00111111b
-		call	dac_me
 		add	a,a			; * 8
 		add	a,a
 		add	a,a
 		ld	e,a
 		add	ix,de
-		call	dac_me
 		ld	a,c
 		and	00111111b
 		inc	a
@@ -728,25 +977,28 @@ updtrack:
 	;     E-effect/V-volume/I-instrument/N-note
 	;     evin: recycle value stored on the buffer
 	;     EVIN: next byte(for eff:2 bytes) contains new value
+		call	dac_me
 		bit	0,b
 		jp	z,.no_note
 		ld	a,(hl)
 		ld	(ix+chnl_Note),a
 		call	.inc_cpatt
 .no_note:
+; 		call	dac_me
 		bit	1,b
 		jp	z,.no_ins
 		ld	a,(hl)
 		ld	(ix+chnl_Ins),a
 		call	.inc_cpatt
 .no_ins:
-		call	dac_me
+; 		call	dac_me
 		bit	2,b
 		jp	z,.no_vol
 		ld	a,(hl)
 		ld	(ix+chnl_Vol),a
 		call	.inc_cpatt
 .no_vol:
+; 		call	dac_me
 		bit	3,b
 		jp	z,.no_eff
 		ld	a,(hl)
@@ -755,7 +1007,8 @@ updtrack:
 		ld	(ix+chnl_EffArg),a
 		call	.inc_cpatt
 .no_eff:
-		ld	a,b		; Merge recycle bits to main bits
+		call	dac_me
+		ld	a,b			; Merge recycle bits to main bits
 		rra
 		rra
 		rra
@@ -767,22 +1020,22 @@ updtrack:
 		and	1111b
 		or	c
 		ld	c,a
-		ld	a,(iy+trk_status)
+		call	dac_me
+		ld	a,(ix+chnl_Status)
 		or	c
-		ld	(iy+trk_status),a
-
-	; If note off: clear channel
-		ld	a,(ix+chnl_Note)
+		ld	(ix+chnl_Status),a
+		ld	a,(ix+chnl_Note)	; If note off: clear channel
 		cp	-2
 		jp	z,.is_off
 		cp	-1
 		jp	nz,.not_off
 .is_off:
-		call	dac_me
 		xor	a
 		ld	(ix+chnl_Num),a
 .not_off:
 		pop	bc
+		call	dac_fill
+		call	dac_me
 		jp	.next_note
 
 ; --------------------------------
@@ -794,16 +1047,17 @@ updtrack:
 		ld	(iy+trk_Read),l		; Update read location
 		ld	(iy+((trk_Read+1))),h
 .decrow:
-		dec	bc			; Decrase this row
-		ld	(iy+trk_Rows),c		; Update num of rows
+		call	dac_me
+		dec	bc			; Decrement this row
+		ld	(iy+trk_Rows),c		; And update it
 		ld	(iy+(trk_Rows+1)),b
 		ret
 
 ; ----------------------------------------
 ; Call this to increment the
 ; cache pattern read pointer (iy+trk_Read)
-; then it refills the section behind us
-; with new data from ROM
+; it also refills the next section to
+; read if needed.
 ;
 ; NOTE: breaks A
 ; ----------------------------------------
@@ -812,8 +1066,9 @@ updtrack:
 		inc	l
 		ld	a,(iy+trk_Halfway)
 		xor	l
-		and	0C0h			; Check for: 00h/40h/80h/0C0h
+		and	080h
 		ret	z
+		
 		call	dac_fill
 		call	dac_me
 		push	hl
@@ -821,9 +1076,9 @@ updtrack:
 		ld	d,h
 		ld	a,(iy+trk_Halfway)
 		ld	e,a
-		add 	a,040h
+		add 	a,080h
 		ld	(iy+trk_Halfway),a
-		ld	bc,40h
+		ld	bc,80h
 		ld	l,(iy+trk_romPattRd)
 		call	dac_me
 		ld	h,(iy+(trk_romPattRd+1))
@@ -835,7 +1090,6 @@ updtrack:
 		ld	(iy+(trk_romPattRd+2)),a
 		call	transferRom
 		call	dac_me
-		call	dac_me
 		pop	bc
 		pop	hl
 		ret
@@ -846,7 +1100,7 @@ updtrack:
 
 .next_track:
 		call	dac_me
-		ld	l,40h			; Set LSB as 40h
+		ld	l,80h			; Set LSB as 40h
 		ld	(iy+trk_Read),l
 		xor	a			; Reset halfway, next pass
 		ld	(iy+trk_Halfway),a	; will load the first section
@@ -863,7 +1117,6 @@ updtrack:
 		pop	hl
 		cp	-1
 		jp	z,.track_end
-		push	hl
 		ld	hl,(currTrkBlkHd)	; Header section
 		call	dac_me
 		ld	de,80h
@@ -887,11 +1140,20 @@ updtrack:
 		ld	a,(iy+(trk_romPatt+2))
 		add	hl,de			; increment to get new pointer
 		adc	a,0			; and highest byte too.
-		pop	de			; de - trk_Read+40h
-		ld	bc,0C0h			; bc - 0C0h
-		call	dac_fill		; we are only updating 3 sections to save
-		call	transferRom		; wav playback speed, the remaining
-		call	dac_me			; section is updated on next pass.
+		ld	(iy+trk_romPattRd),l	; Save copy of the pointer
+		ld	(iy+(trk_romPattRd+1)),h
+		ld	(iy+(trk_romPattRd+2)),a
+		ld	d,(iy+(trk_Read+1))
+		ld	e,(iy+trk_Read)
+		ld	bc,080h			; bc - 080h
+		call	dac_fill
+		call	transferRom
+		call	dac_me
+		ld	h,(iy+(trk_Read+1))
+		ld	l,(iy+trk_Read)
+		ld	c,(iy+trk_Rows)		; Check if this pattern finished
+		ld	b,(iy+(trk_Rows+1))
+		call	dac_me
 		ret
 
 ; If -1, track ends unless there's a loop effect
@@ -913,7 +1175,7 @@ updtrack:
 
 ; ----------------------------------------
 ; Playing first time
-; Load Blocks/Pointers and 3 of 4 sections
+; Load Blocks/Pointers for 3 of 4 sections
 ; of pattern data, the remaining one is
 ; loaded after returning.
 ; ----------------------------------------
@@ -938,9 +1200,15 @@ updtrack:
 		xor	a
 		ld 	(iy+trk_currBlk),a	; Start at block zero (TODO: add setting)
 		ld	(iy+trk_Halfway),a	; reset halfway
-	; Blocks and Pointers section
-	; 80h bytes each.
-		ld	l,(iy+trk_romBlk)	; Recieve 40h of block data
+		
+		ld	l,(iy+trk_romIns)	; Recieve 40h of instrument pointers
+		ld	h,(iy+(trk_romIns+1))
+		ld	a,(iy+(trk_romIns+2))
+		ld	de,(currInsData)
+		ld	bc,40h
+		call	transferRom	
+		call	dac_me
+		ld	l,(iy+trk_romBlk)	; Recieve 80h of block data
 		ld	h,(iy+(trk_romBlk+1))
 		ld	a,(iy+(trk_romBlk+2))
 		ld	de,(currTrkBlkHd)
@@ -953,13 +1221,10 @@ updtrack:
 		add	a,80h
 		ld	e,a
 		call	dac_me
-		ld	l,(iy+trk_romPatt)	; Recieve 40h of block data
+		ld	l,(iy+trk_romPatt)	; Recieve 80h of header data
 		ld	h,(iy+(trk_romPatt+1))
 		ld	a,(iy+(trk_romPatt+2))
-		ld	(iy+trk_romPattRd),l	; Save copy of the pointer
 		call	dac_me
-		ld	(iy+(trk_romPattRd+1)),h
-		ld	(iy+(trk_romPattRd+2)),a
 		ld	bc,80h
 		call	transferRom
 		call	dac_me
@@ -989,20 +1254,24 @@ updtrack:
 		ld	d,(hl)			; de - pointer (base+increment by this)
 		ld	(iy+trk_Rows),c		; Save this number of rows
 		ld	(iy+(trk_Rows+1)),b
+
 		ld	l,(iy+trk_romPatt)	; hl - Low and Mid pointer of ROM patt data
 		ld	h,(iy+(trk_romPatt+1))
 		ld	a,(iy+(trk_romPatt+2))
 		add	hl,de			; increment to get new pointer
 		adc	a,0			; and highest byte too.
+		ld	(iy+trk_romPattRd),l	; Save copy of the pointer
+		ld	(iy+(trk_romPattRd+1)),h
+		ld	(iy+(trk_romPattRd+2)),a
 		ld	de,(currTrkData)	; Set new Read point to this track
 		ld	b,a
 		ld	a,e
-		add	a,40h
+		add	a,80h
 		ld	e,a
 		ld	a,b
 		ld	(iy+trk_Read),e
 		ld	(iy+((trk_Read+1))),d
-		ld	bc,0C0h			; fill sections 2,3,4
+		ld	bc,080h			; fill sections 2,3,4
 		call	dac_fill
 		call	dac_me
 		jp	transferRom
@@ -1071,7 +1340,7 @@ get_cmdbyte:
 		call	dac_me
 		add	hl,bc
 		inc	a
-		and	7Fh			; limit to 64
+		and	3Fh			; limit to 128
 		ld	(commZRead),a
 		ld	a,(hl)
 		pop	hl
@@ -1093,7 +1362,6 @@ check_tick:
 		ld	a,(hl)			; non-zero value?
 		or 	a
 		jr	z,.ctnotick
-
 	; ints are disabled from here
 		ld	(hl),0			; Reset TICK flag
 		inc	hl			; Move to tickCnt
@@ -1358,7 +1626,7 @@ dac_off:
 
 psg_env:
 		ld	iy,psgcom
-		ld	ix,PSGVTBLTG3		; Byte for Unlocking PSG3
+; 		ld	ix,PSGVTBLTG3		; Byte for Unlocking PSG3
 		ld	hl,Zpsg_ctrl
 		ld	d,80h			; PSG first ctrl command
 		ld	e,4			; 4 channels
@@ -1374,7 +1642,7 @@ psg_env:
 		ld	a,1			; PSG Channel 3?
 		cp	e
 		jr	nz,.ckof
-		res	5,(ix)			; Unlock PSG3
+; 		res	5,(ix)			; Unlock PSG3
 .ckof:
 		bit	1,c			; bit 1 - key off
 		jr      z,.ckon
@@ -1387,14 +1655,21 @@ psg_env:
 		bit	0,c			; bit 0 - key on
 		jr	z,.envproc
 		ld	(iy+LEV),-1		; reset level
-		ld	a,(iy+DTL)		; load frequency LSB or NOISE data
-		or	d			; OR with current channel
-		ld	(hl),a			; write it
 		ld	a,1			; NOISE channel?
 		cp	e
 		jr	z,.nskip		; then don't write next byte
-		ld	a,(iy+DTH)		; Write PSG MSB frequency (1-3 only)
+	; TODO: tone3 mode.
+		ld	a,(iy+DTL)		; load frequency LSB or NOISE data
+		or	d			; OR with current channel
+		ld	(hl),a			; write it
+		ld	a,(iy+DTH)
 		ld	(hl),a
+		jr	.nskip
+.wrhat:
+		ld	a,(psgHatMode)		; write hat mode only.
+		or	d
+		ld	(hl),a
+
 .nskip:
 		ld	(iy+FLG),1		; psg update flag
 		ld	(iy+MODE),001b		; set to attack mode
@@ -1469,7 +1744,7 @@ psg_env:
 		ld	a,1			; PSG Channel 3?
 		cp	e
 		jr	nz,.vedlp
-		res	5,(ix)			; Unlock PSG3
+; 		res	5,(ix)			; Unlock PSG3
 .vedlp:
 		inc	iy			; next COM to check
 		ld	a,20h			; next PSG channel
@@ -2000,31 +2275,50 @@ psgFreq_List:
 
 ; ====================================================================
 ; ----------------------------------------------------------------
-; GAME MUSIC/SOUND DATA GOES HERE
+; Z80 RAM
+; ----------------------------------------------------------------
+
+; --------------------------------------------------------
+; Buffers
+; --------------------------------------------------------
+
+		align 200h
+dWaveBuff	ds 100h			; WAVE data buffer: updated every 80h bytes *LSB must be 00h*
+trkDataC	ds 100h*MAX_TRKS	; Track data cache: 100h bytes each
+blkHeadC	ds 100h*MAX_TRKS	; Track blocks and heads: 80h each
+trkBuff		ds 100h*MAX_TRKS	; Track control (20h) + channels (8h each)
+insDataC	ds 40h*MAX_TRKS		; Instrument pointers cache: 40h each
+commZfifo	ds 40h			; Buffer for command requests from 68k
+
+psgcom		db 00h,00h,00h,00h	;  0 command 1 = key on, 2 = key off, 4 = stop snd
+psglev		db -1, -1, -1, -1	;  4 output level attenuation (%llll.0000, -1 = silent) 
+psgatk		db 00h,00h,00h,00h	;  8 attack rate
+psgdec		db 00h,00h,00h,00h	; 12 decay rate
+psgslv		db 00h,00h,00h,00h	; 16 sustain level attenuation
+psgrrt		db 00h,00h,00h,00h	; 20 release rate
+psgenv		db 00h,00h,00h,00h	; 24 envelope mode 0 = off, 1 = attack, 2 = decay, 3 = sustain, 4
+psgdtl		db 00h,00h,00h,00h	; 28 tone bottom 4 bits
+psgdth		db 00h,00h,00h,00h	; 32 tone upper 6 bits
+psgalv		db 00h,00h,00h,00h	; 36 attack level attenuation
+whdflg		db 00h,00h,00h,00h	; 40 flags to indicate hardware should be updated
+psghat		db 00h,00h,00h,00h	; 44 psg noise control, only the very last byte is used.
+
+; ====================================================================
+; ----------------------------------------------------------------
+; Standard instruments
 ; ----------------------------------------------------------------
 
 ; ----------------------------------------------------
 ; PSG Instruments
 ; ----------------------------------------------------
 
-PsgIns_00:	db 0
-		db -1
-PsgIns_01:	db 0,2,4,5,6
-		db -1
-PsgIns_02:	db 0,15
-		db -1
-PsgIns_03:	db 0,0,1,1,2,2,3,4,6,10,15
-		db -1
-PsgIns_04:	db 0,2,4,6,10
-		db -1	
+zinsPsg_00:	db 0,0,0
 		align 4
 		
 ; ----------------------------------------------------
 ; FM Instruments
 ; ----------------------------------------------------
 
-patch_Data	;ds 40h*16
-; .gsx instruments; filename,$2478,$20 ($28 for FM3 instruments)
 ; FmIns_Fm3_OpenHat:
 ; 		binclude "data/sound/instr/fm/fm3_openhat.gsx",2478h,28h
 ; FmIns_Fm3_ClosedHat:
@@ -2083,86 +2377,6 @@ patch_Data	;ds 40h*16
 ; 		binclude "data/sound/instr/fm/ambient_spook.gsx",2478h,20h
 ; FmIns_Ding_toy:
 ; 		binclude "data/sound/instr/fm/ding_toy.gsx",2478h,20h
-
-; ====================================================================
-; ----------------------------------------------------------------
-; Z80 RAM
-; ----------------------------------------------------------------
-
-currTrkBlkHd	ds 2
-currTrkData	ds 2
-tickFlag	dw 0			; Tick flag from VBlank, Read as (tickFlag+1) for reading/reseting
-tickCnt		db 0			; Tick counter (PUT THIS TAG AFTER tickFlag)
-sbeatPtck	dw 204			; Sub beats per tick (8frac), default is 120bpm
-sbeatAcc	dw 0			; Accumulates ^^ each tick to track sub beats
-currTickBits	db 0			; Current Tick/Tempo bitflags (000000BTb B-beat, T-tick)
-dDacPntr	db 0,0,0		; WAVE play current ROM position
-dDacCntr	db 0,0,0		; WAVE play length counter
-dDacFifoMid	db 0			; WAVE play halfway refill flag (00h/80h)
-x68ksrclsb	db 0			; transferRom temporal LSB
-x68ksrcmid	db 0			; transferRom temporal MID
-commZRead	db 0			; read pointer (here)
-commZWrite	db 0			; cmd fifo wptr (from 68k)
-commZRomBlk	db 0			; 68k ROM block flag
-commZRomRd	db 0			; Z80 is reading ROM bit
-wave_Start	dw TEST_WAV&0FFFFh		; START: 68k direct pointer ($00xxxxxx)
-		db TEST_WAV>>16&0FFh
-wave_End	dw (TEST_WAV_E-TEST_WAV)&0FFFFh
-		db (TEST_WAV_E-TEST_WAV)>>16
-wave_Loop	dw 0
-		db 0
-wave_Pitch	dw 100h			; 01.00h
-wav_Flags	db 100b			; WAVE playback flags (%10x: 1 loop / 0 no loop)
-
-; --------------------------------------------------------
-; Buffers
-; --------------------------------------------------------
-
-		align 400h
-dWaveBuff	ds 100h			; WAVE data buffer: updated every 80h bytes *LSB must be 00h*
-trkDataC	ds 100h*MAX_TRKS	; Track data cache: 100h bytes each
-blkHeadC	ds 100h*MAX_TRKS	; Track blocks and heads: 80h each
-trkBuff		ds 100h*MAX_TRKS	; Track control (20h) + channels (8h each)
-commZfifo	ds 80h			; Buffer for command requests from 68k
-
-
-psgcom		db 00h,00h,00h,00h	;  0 command 1 = key on, 2 = key off, 4 = stop snd
-psglev		db -1, -1, -1, -1	;  4 output level attenuation (%llll.0000, -1 = silent) 
-psgatk		db 00h,00h,00h,00h	;  8 attack rate
-psgdec		db 00h,00h,00h,00h	; 12 decay rate
-psgslv		db 00h,00h,00h,00h	; 16 sustain level attenuation
-psgrrt		db 00h,00h,00h,00h	; 20 release rate
-psgenv		db 00h,00h,00h,00h	; 24 envelope mode 0 = off, 1 = attack, 2 = decay, 3 = sustain, 4
-psgdtl		db 00h,00h,00h,00h	; 28 tone bottom 4 bits
-psgdth		db 00h,00h,00h,00h	; 32 tone upper 6 bits
-psgalv		db 00h,00h,00h,00h	; 36 attack level attenuation
-whdflg		db 00h,00h,00h,00h	; 40 flags to indicate hardware should be updated
-psghat		db 00h,00h,00h,00h	; 44 psg noise control, only the very last byte is used.
-
-; dynamic chip allocation
-; *  FMVTBL - contains (6) 7-byte entires, one per voice:
-; *    byte 0: FRLxxVVV	flag byte, where F=free, R=release phase, L=locked, VVV=voice num
-; *                       VVV is numbered (0,1,2,4,5,6) for writing directly to key on/off reg
-; *    byte 1: priority	only valid for in-use (F=0) voices
-; *    byte 2: notenum	    "
-; *    byte 3: channel	    "
-; *    byte 4: lsb of duration timer (for sequenced notes)
-; *    byte 5: msb of duration timer
-; *    byte 6: release timer
-
-FMVTBL		db 080H,0,050H,0,0,0,0	; fm voice 0
-		db 081H,0,050H,0,0,0,0	; fm voice 1
-		db 084H,0,050H,0,0,0,0	; fm voice 3
-		db 085H,0,050H,0,0,0,0	; fm voice 4
-FMVTBLCH6	db 086H,0,050H,0,0,0,0	; fm voice 5 (FM or WAVE)
-FMVTBLCH3	db 082H,0,050H,0,0,0,0	; fm voice 2 (CH3 special)
-		db -1
-PSGVTBL		db 080H,0,050H,0,0,0,0	; normal type voice, number 0
-		db 081H,0,050H,0,0,0,0	; normal type voice, number 1
-PSGVTBLTG3	db 082H,0,050H,0,0,0,0	; normal type voice, number 2
-		db -1
-PSGVTBLNG	db 083H,0,050H,0,0,0,0	; noise type voice, number 3
-		db -1
 		
 ; ====================================================================
 
