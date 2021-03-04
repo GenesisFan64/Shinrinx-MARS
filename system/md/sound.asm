@@ -113,7 +113,7 @@ Sound_Request:
 ; d0 - Pattern data pointer
 ; d1 - Block data pointer
 ; d2 - Instrument data pointer
-; d3 - Ticks
+; d3 - Ticks (Tempo is set separately)
 ; d4 - Slot (0-3)
 ; --------------------------------------------------------
 
@@ -608,26 +608,35 @@ drv_loop:
 ; --------------------------------------------------------
 
 playonchip
+		call	dac_fill
 		call	dac_me
 		ld	c,MAX_TRKS
 		ld	hl,insDataC
 		ld	(currInsData),hl
-.nxt_track:
 		ld	iy,trkBuff+20h		; Point to channels
+.nxt_track:
+; 		call	dac_me
 		ld	b,MAX_TRKCHN
+		push	iy
 .nxt_chnl:
 		push	bc
 		ld	a,(iy+chnl_Status)
 		or	a
 		call	nz,.do_chnl
+		nop
+		nop
+		nop
 		call	dac_me
 		pop	bc
 		ld	de,8
 		add	iy,de
 		djnz	.nxt_chnl
-; 		call	dac_me
-; 		call	dac_me
-; 		call	dac_me
+		pop	iy
+		ld	de,100h
+		call	dac_me
+		add	iy,de
+		dec	c
+		jp	nz,.nxt_track
 		ret
 
 ; ----------------------------------------
@@ -635,21 +644,20 @@ playonchip
 ; ----------------------------------------
 
 .do_chnl:
+		call	dac_fill
 		call	dac_me
-		ld	c,a
 		bit	1,(iy+chnl_Status)		; Update instrument first
 		call	nz,.req_ins
+		call	dac_me
 		bit	2,(iy+chnl_Status)
 		call	nz,.req_vol
 		call	dac_me
-
 		bit	3,(iy+chnl_Status)
 		call	nz,.req_eff
+		call	dac_me
 		bit	0,(iy+chnl_Status)
 		call	nz,.req_note
 		call	dac_me
-
-
 		ld	(iy+chnl_Status),0
 		ret
 		
@@ -674,20 +682,22 @@ playonchip
 		cp	0
 		ret	nz
 		push	hl
+		call	dac_me
 		call	.srch_psg	; Type 0: PSG
 		pop	de
+		ld	a,(de)
+		ld	c,a
 		inc	de
 		inc	de
-		call	dac_me
 		jr	.cont_psg
 .ins_ns:
 		push	hl
+		call	dac_me
 		call	.srch_psgn	; Type 1: PSG Noise
 		pop	de
-		call	dac_me
+		ld	a,(hl)
+		ld	c,a
 		inc	de
-		ld	a,(de)
-		ld	(psgHatMode),a
 		inc	de
 .cont_psg:
 		inc	hl
@@ -697,12 +707,20 @@ playonchip
 
 	; copypaste to psduochnl
 	rept 5
-		ld	a,(de)		
+		ld	a,(de)	
  		ld	(hl),a
+		call	dac_me
  		inc	de
 		inc	hl
 	endm
-		call	dac_me
+		ld	a,c
+		and	11b
+		cp	3
+		jp	nz,.nothats
+		ld	a,(de)
+		ld	(psgHatMode),a
+.nothats:
+; 		call	dac_me
 		ret
 
 ; ----------------------------------------
@@ -732,14 +750,16 @@ playonchip
 
 		inc	hl
 		inc 	hl
-		inc 	hl
-		sub	a,40h		; Point to Attack level only.
-		call	dac_me
+		inc 	hl		; Point to Attack level
+		sub	a,40h
 		add	a,a
 		ld	b,a
+		call	dac_me
 		ld	a,(hl)
 		sub	b
 		ld	(hl),a
+		inc	hl
+		inc	hl
 		ret
 		
 ; ----------------------------------------
@@ -757,8 +777,8 @@ playonchip
 		jp	z,.is_fm6
 		cp	5
 		jp	z,.is_pwm
-	
 		call	dac_me
+		
 		cp	1
 		jr	nz,.notnse
 		call	.srch_psgn
@@ -771,20 +791,20 @@ playonchip
 		ld	a,(hl)		; Get pseudo channel slot
 		cp	-1
 		ret	z
+		push	hl		; save this hl
 		and	11b
+		call	dac_me
 		ld	ix,psgcom
 		ld	de,0
 		ld	e,a
 		add	ix,de
-		call	dac_me
 		ld	de,0		; Read freq
+		call	dac_me
 		ld	a,(iy+chnl_Note)
 		cp	-1
 		jp	z,.poff
 		cp	-2
 		jp	z,.pstop
-		
-		push	hl
 		ld	hl,psgFreq_List
 		add	a,a
 		ld	e,a
@@ -809,14 +829,12 @@ playonchip
 		sla	a
 		and	0F0h
 		or	b
-		ld	(ix+DTH),a
 		call	dac_me
-		pop	hl
-
+		ld	(ix+DTH),a
+		pop	hl		; get hl back
 		inc	hl
 		inc	hl
-		inc 	hl
-
+		inc 	hl		; Point to our PSG ins data
 		ld	a,(hl)
 		inc	hl
 		ld	(ix+ALV),a	; attack level
@@ -831,38 +849,36 @@ playonchip
 		inc	hl
 		ld	(ix+DKY),a	; decay rate
 		ld	a,(hl)
+		call	dac_me
 		inc	hl
 		ld	(ix+RRT),a	; release rate
-		call	dac_me
-		ld	(ix+COM),001b
+		ld	(ix+COM),001b	; Key on.
 		ret
-
 .pstop:
-		call	.srch_psg	; Type 0: PSG
-		ld	a,(hl)		; unlock this channel
+		pop	hl
+		ld	a,(hl)		; Unlock this channel
 		and	07Fh
 		ld	(hl),a
 		inc 	hl
 		ld	(hl),0
-		inc 	hl
 		call	dac_me
+		inc 	hl
 		ld	(hl),0
 		inc 	hl
-		ld	(ix+COM),100b	; decay mode
+		ld	(ix+COM),100b	; Full stop
 		ret
-
 .poff:
-		call	.srch_psg	; Type 0: PSG
+		pop	hl
 		ld	a,(hl)		; unlock this channel
 		and	07Fh
 		ld	(hl),a
 		inc 	hl
 		ld	(hl),0
+		call	dac_me
 		inc 	hl
 		ld	(hl),0
 		inc 	hl
-		call	dac_me
-		ld	(ix+COM),010b	; sustain mode
+		ld	(ix+COM),010b	; Key off ===
 		ret
 
 ; ----------------------------------------
@@ -873,25 +889,27 @@ playonchip
 ; hl - Instrument data
 ; 
 ; Types:
-; 0 - PSG
-; 1 - PSG noise
-; 2 - FM
-; 3 - FM Special
-; 4 - FM DAC sample
-; 5 - PWM
+; -1 - Null
+;  0 - PSG
+;  1 - PSG Noise
+;  2 - FM
+;  3 - FM Special
+;  4 - FM Sample
+;  5 - PWM
 ; ----------------------------------------
 
 .get_instype:
+		call	dac_me
 		ld	a,(iy+chnl_Ins)
 		dec	a
 		add	a,a
 		add	a,a
 		add	a,a
+		call	dac_me
 		ld	hl,(currInsData)
 		ld	de,0
 		ld	e,a
 		add	hl,de
-		call	dac_me
 		ld	a,(hl)		; check type
 		ret
 
@@ -960,16 +978,15 @@ playonchip
 ; ----------------------------------------
 
 .srch_chnltbl:
-		ld	(currTblSrch),hl
+		ld	(currTblSrch),hl	; save base hl
 		push	iy
 		pop	bc
-
-		
+		call	dac_me
+		nop
+		nop
 ; first search:
 ; check for linked track channel
 .l_lp:
-		nop
-		nop
 		call	dac_me
 		ld	a,(hl)
 		cp	-1
@@ -977,20 +994,18 @@ playonchip
 		inc	hl
 		ld	a,(hl)
 		dec	hl
+		call	dac_me
 		cp	c
 		ret	z		; if it's ours, use it
 		add	hl,de
 		jr	.l_lp
 .nolnk:
-		call	dac_me
 		ld	hl,(currTblSrch)
 
 ; second search:
 ; assign current track channel to a
 ; new sound channel
 .f_lp:
-		nop
-		nop
 		ld	a,(hl)
 		cp	-1
 		ret	z
@@ -1000,13 +1015,13 @@ playonchip
 		jp	p,.newp
 		add	hl,de
 		jr	.f_lp	
-
 .newp:
 		ld	a,(hl)		; lock this channel
 		or	80h
 		ld	(hl),a
 		inc	hl
 		ld	(hl),c		; set owner LSB
+		call	dac_me
 		inc	hl
 		ld	(hl),b		; and MSB
 		dec	hl
@@ -1808,33 +1823,40 @@ psg_env:
 		ld	(iy+FLG),1		; psg update flag
 		ld	(iy+MODE),100b		; set envelope mode 100b
 .ckon:
-
-	; Key on
 		bit	0,c			; bit 0 - key on
 		jr	z,.envproc
 		ld	(iy+LEV),-1		; reset level
-		ld	a,4			; NOISE channel?
-		cp	e
-		jr	z,.wrhat		; then don't write next byte
+		ld	a,(psgHatMode)		; check if using tone3 mode.
+		ld	c,a
+		and	11b
+		cp	11b
+		jp	z,.tnmode
+.wrfreq:
+		ld	a,e
+		cp	4
+		jp	z,.sethat
 		ld	a,(iy+DTL)		; load frequency LSB or NOISE data
 		or	d			; OR with current channel
 		ld	(hl),a			; write it
 		ld	a,(iy+DTH)
 		ld	(hl),a
 		jr	.nskip
-.wrhat:
-		ld	a,(psgHatMode)		; write hat mode only.
-		cp	011b
-		jp	z,.psteal
-		cp	111b
-		jp	nz,.nsteal
+
+; Tone3 mode
+.tnmode:
+		ld	a,e
+		cp	4			; NOISE
+		jr	z,.psteal
+		cp	3			; PSG3, can't play
+		jp	z,.nskip
+		jr	.wrfreq
 .psteal:
 		ld	a,(iy+DTL)		; Steal PSG3's freq
 		or	0C0h
 		ld	(hl),a
 		ld	a,(iy+DTH)
 		ld	(hl),a
-.nsteal:
+.sethat:
 		ld	a,(psgHatMode)		; write hat mode only.
 		or	d
 		ld	(hl),a
