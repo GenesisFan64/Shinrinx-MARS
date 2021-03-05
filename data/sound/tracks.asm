@@ -34,11 +34,11 @@ TEST_INSTR	dc.b $00,$00		; Type 0
 		dc.b $04		; Release rate
 		dc.b $00
 		dc.b $01,$00		; Type 1: 
-		dc.b $40		; Attack level
+		dc.b $00		; Attack level
 		dc.b $FF		; Attack rate
 		dc.b $00		; Sustain
-		dc.b $80		; Decay rate
-		dc.b $80		; Release rate
+		dc.b $F0		; Decay rate
+		dc.b $F0		; Release rate
 		dc.b %101		; NOISE type
 
 ; TEST_BLOCKS	binclude "data/sound/tracks/kraid_blk.bin"
@@ -48,8 +48,8 @@ TEST_INSTR	dc.b $00,$00		; Type 0
 ; 		dc.b $00		; Attack level
 ; 		dc.b $FF		; Attack rate
 ; 		dc.b $20		; Sustain
-; 		dc.b $02		; Decay rate
-; 		dc.b $02		; Release rate
+; 		dc.b $01		; Decay rate
+; 		dc.b $01		; Release rate
 ; 		dc.b %011		; NOISE type
 ; 		dc.b $00,$00
 ; 		dc.b $30		; Attack level

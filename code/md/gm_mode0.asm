@@ -25,19 +25,6 @@ strc_ypos	ds.w 1
 ; ------------------------------------------------------
 ; This mode's RAM
 ; ------------------------------------------------------
-
-; 		struct 0
-; cam2_x_pos	ds.l 1
-; cam2_y_pos	ds.l 1
-; cam2_z_pos	ds.l 1
-; cam2_x_rot	ds.l 1
-; cam2_y_rot	ds.l 1
-; cam2_z_rot	ds.l 1
-; cam2_animdata	ds.l 1
-; cam2_animframe	ds.l 1
-; cam2_animtimer	ds.l 1
-; sizeof_mdcam	ds.l 0
-; 		finish
 		
 		struct RAM_ModeBuff
 RAM_RotX	ds.l 1

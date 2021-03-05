@@ -12,6 +12,7 @@
 
 System_Init:
 		move.w	#$2700,sr		; Disable interrupts
+		move.w	sr,-(sp)
 		move.w	#$0100,(z80_bus).l	; Stop Z80
 .wait:
 		btst	#0,(z80_bus).l		; Wait for it
@@ -37,9 +38,8 @@ System_Init:
 		move.l	#VInt_Default,d0	; Set default ints
 		move.l	#Hint_Default,d1
 		bsr	System_SetInts
-		move.w	#$2000,sr		; Enable interrupts
+		move.w	(sp)+,sr
 		rts
-; 		bra	System_SaveInit
 
 ; ====================================================================
 ; --------------------------------------------------------
@@ -50,7 +50,7 @@ System_Init:
 ; --------------------------------------------------------
 
 ; TODO: check if it still required to turn OFF the Z80
-; while reading input... It works fine on hardware though.
+; while reading the controller
 
 System_Input:
 ; 		move.w	#$0100,(z80_bus).l	; Stop Z80
@@ -447,6 +447,8 @@ sysMdMars_Transfer:
 		lea	(sysmars_reg),a5
 		move.w	sr,d7
 		move.w	#$2700,sr
+		
+	; comm transfer
 		lea	comm8(a5),a4
 		move.w	#$0201,(a4)		; MD ready | SH busy (init)
 		move.w	standby(a5),d4		; SLAVE CMD interrupt

@@ -99,8 +99,6 @@ MarsSound_ReadPwm:
 		mov	#$FF,r3
 		and	r3,r1
 		and	r3,r2
-; 		shll	r1
-; 		shll	r2
 		mov 	@(mchnsnd_pitch,r8),r3
 		tst	#%100,r0
 		bt	.mono_i
@@ -119,9 +117,9 @@ MarsSound_ReadPwm:
 ; 		shlr	r5
 ; 		shlr	r6
 		
-	; TODO: this check is for emus only
-	; it recreates what happens to PWM in
-	; real hardware if it overflows
+	; ***This check is for emus only***
+	; It recreates what happens to the PWM
+	; in real hardware when it overflows
 		mov	#$3FF,r0
 		cmp/gt	r0,r5
 		bf	.lmuch
@@ -130,7 +128,6 @@ MarsSound_ReadPwm:
 		bf	.rmuch
 		mov	r0,r6
 .rmuch:			
-
 		mov	#_sysreg+lchwidth,r3
 		mov	#_sysreg+rchwidth,r4
  		mov.w	r5,@r3
@@ -139,10 +136,10 @@ MarsSound_ReadPwm:
 ; 		mov.b	@r3,r0
 ; 		tst	#$80,r0
 ; 		bf	.retry
-		mov	#_sysreg+comm4,r3
- 		mov.w	r5,@r3
- 		mov	r6,r0
- 		mov.w	r0,@(2,r3)
+; 		mov	#_sysreg+comm4,r3
+;  		mov.w	r5,@r3
+;  		mov	r6,r0
+;  		mov.w	r0,@(2,r3)
  		
 		mov	@r15+,r9
 		mov	@r15+,r8

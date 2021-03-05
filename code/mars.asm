@@ -611,27 +611,19 @@ SH2_M_HotStart:
 ; ------------------------------------------------
 
 		mov	#_CCR,r1
-		mov	#%00001000,r0			; Two-way mode
+		mov	#%00001000,r0		; Two-way mode
 		mov.w	r0,@r1
-		mov	#%00011001,r0			; Cache purge / Two-way mode / Cache ON
+		mov	#%00011001,r0		; Cache purge / Two-way mode / Cache ON
 		mov.w	r0,@r1
-		mov.l	#$20,r0				; Interrupts ON
+		mov.l	#$20,r0			; Interrupts ON
 		ldc	r0,sr
-
-; 		mov	#Palette_Map,r1
-; 		mov	#0,r2
-; 		mov	#256,r3
-; 		mov	#0,r4
-; 		mov	#MarsVideo_LoadPal,r0
-; 		jsr	@r0
-; 		nop
 
 ; --------------------------------------------------------
 ; Loop
 ; --------------------------------------------------------
 
 master_loop:
-		mov	#_sysreg+comm0,r4
+		mov	#_sysreg+comm0,r4	; DEBUG COUNTER
 		mov.w	@r4,r0
 		add	#1,r0
 		mov.w	r0,@r4
@@ -653,8 +645,6 @@ master_loop:
 
 ; ------------------------------------------------
 ; Graphic processing list for Master
-; 
-; Draw polygons or draw a 3rd layer (planned)
 ; ------------------------------------------------
 
 .list:
@@ -914,7 +904,7 @@ slave_loop:
 		and	#$7F,r0
 		mov.b	r0,@r1
 .no_req:
-		mov	#_sysreg+comm2,r4
+		mov	#_sysreg+comm2,r4		; DEBUG COUNTER
 		mov.w	@r4,r0
 		add	#1,r0
 		mov.w	r0,@r4
@@ -1340,7 +1330,7 @@ CmdTaskMd_PWM_MultPitch:
 		mov	r14,r13
 		add	#4,r13
 		mov	#0,r1
-	rept 7
+	rept MAX_PWMCHNL		; MAX: 7
 		mov	@r13+,r2
 		and	r7,r2
 		bsr	MarsSound_SetPwmPitch

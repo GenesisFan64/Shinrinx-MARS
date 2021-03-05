@@ -86,7 +86,6 @@ MARS_RAMDATA_E:
 ; MARS ROM data for SH2
 ; 
 ; This section will be gone if RV=1
-; (doing any MD ROM-to-DMA transfer)
 ; --------------------------------------------------------
 
 		phase CS1+*

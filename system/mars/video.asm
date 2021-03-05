@@ -15,11 +15,11 @@
 ; Settings
 ; ----------------------------------------
 
-MAX_FACES	equ	256	; Maximum polygon faces (models,sprites) to store on buffer
-MAX_SVDP_PZ	equ	384	; This list is for both read and write, increase the value if needed
-MAX_MODELS	equ	64	; Note: First 9 models are reserved for layout map
-MAX_ZDIST	equ	-$2000	; Max drawing distance (-Z max)
-LAY_WIDTH	equ	$10*2	; Layout data width * 2
+MAX_FACES	equ	256		; Maximum polygon faces (models,sprites) to store on buffer
+MAX_SVDP_PZ	equ	384		; This list is for both read and write, increase the value if needed
+MAX_MODELS	equ	64		; Note: First 9 models are reserved for layout map
+MAX_ZDIST	equ	-$2000		; Max drawing distance (-Z max)
+LAY_WIDTH	equ	$10*2		; Layout data width * 2
 
 ; ----------------------------------------
 ; Variables
@@ -116,18 +116,14 @@ sizeof_polygn	ds.l 0
 MarsVideo_Init:
 		sts	pr,@-r15
 		mov	#_sysreg,r4
-		mov 	#FM,r0		; Set SVDP permission to SH2
+		mov 	#FM,r0			; Set SVDP permission to SH2
   		mov.b	r0,@(adapter,r4)
 		mov 	#_vdpreg,r4
-		bsr	.this_fb	; Init line tables for both framebuffers
+		bsr	.this_fb		; Init line tables for both framebuffers
 		nop
 		bsr	.this_fb
 		nop
-; 		mov	#2,r0
-; 		mov.w	r0,@(marsGbl_BitmapSet,gbr)
-; 		mov	#1,r0
-; 		mov.w	r0,@(marsGbl_BitmapReq,gbr)
-		mov	#1,r0
+		mov	#0,r0			; Start at blank
 		mov.b	r0,@(bitmapmd,r4)
 		lds	@r15+,pr
 		rts

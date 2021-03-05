@@ -130,10 +130,10 @@ sizeof_mdsys	ds.l 0
 ; Sound 68k RAM
 ; ----------------------------------------------------------------
 
-			struct RAM_MdSound
-RAM_SoundLastReg	ds.l 4
-sizeof_mdsnd		ds.l 0
-			finish
+		struct RAM_MdSound
+RAM_SoundSvReg	ds.l 4
+sizeof_mdsnd	ds.l 0
+		finish
 		
 ; ====================================================================
 ; ----------------------------------------------------------------
