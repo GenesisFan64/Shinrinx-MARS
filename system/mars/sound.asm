@@ -114,8 +114,6 @@ MarsSound_ReadPwm:
 		add	#sizeof_sndchn,r8
 		dt	r7
 		bf	.loop
-; 		shlr	r5
-; 		shlr	r6
 		
 	; ***This check is for emus only***
 	; It recreates what happens to the PWM

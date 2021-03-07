@@ -45,6 +45,7 @@ MD_Main:
 		include "code/md/gm_mode0.asm"
 		dephase
 Engine_Code_end:
+		align 2
 	if MOMPASS=6
 		message "MD RAM CODE uses: \{Engine_Code_end-Engine_Code}"
 	endif

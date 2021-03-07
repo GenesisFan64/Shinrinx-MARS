@@ -9,7 +9,7 @@
 ; ------------------------------------------------------
 
 var_MoveSpd	equ	$2000
-CURY_MAX	equ	7
+CURY_MAX	equ	9
 
 ; ====================================================================
 ; ------------------------------------------------------
@@ -32,7 +32,7 @@ RAM_MdlCurrMd	ds.w 1
 RAM_BgCamera	ds.w 1
 RAM_BgCamCurr	ds.w 1
 RAM_CurY	ds.w 1
-RAM_SndPitch	ds.w 17
+RAM_SndPitch	ds.w 18
 sizeof_mdglbl	ds.l 0
 		finish
 		
@@ -129,9 +129,9 @@ MD_GmMode0:
 		bsr	System_MdMars_MstSendAll	; Send requests to
 		bsr	System_MdMars_SlvSendAll	; both SH2
 
-		lea	(RAM_SndPitch),a0
+		lea	(RAM_SndPitch+4),a0
 		move.w	#$100,d0
-		move.w	#17-1,d1
+		move.w	#8-1,d1
 .initvals:
 		move.w	d0,(a0)+
 		dbf	d1,.initvals
@@ -143,16 +143,6 @@ MD_GmMode0:
 		beq.s	.noc
 		bsr	.play_sample
 .noc:
-		move.w	(Controller_1+on_press).l,d7
-		btst	#bitJoyB,d7
-		beq.s	.nob
-		move.l	#TEST_PATTERN,d0
-		move.l	#TEST_BLOCKS,d1
-		move.l	#TEST_INSTR,d2
-		moveq	#3,d3
-		moveq	#0,d4
-		bsr	SoundReq_SetTrack
-.nob:
 
 		move.w	(Controller_1+on_press).l,d7
 		btst	#bitJoyLeft,d7
@@ -230,24 +220,25 @@ MD_GmMode0:
 
 ; 	
 .play_sample:
-		tst.w	(RAM_CurY).w
+		cmp.w	#1,(RAM_CurY).w
+		ble.s	.tracktst
+		cmp.w	#2,(RAM_CurY).w
 		bne.s	.pwm_test
 		move.l	#TEST_WAV,d0
 		move.l	#(TEST_WAV_E-TEST_WAV),d1
 		move.l	#0,d2
-		move.w	(RAM_SndPitch).w,d3
+		move.w	(RAM_SndPitch+4).w,d3
 		moveq	#%01,d4
 		bsr	SoundReq_SetSample
 		bra	MdMdl_Update
 .pwm_test:
-		lea	(RAM_SndPitch+2),a0
+		lea	(RAM_SndPitch+6),a0
 		move.w	(RAM_CurY).w,d1
 		sub.w	#1,d1
 		move.w	d1,d0
 		add.w	d0,d0
 		moveq	#0,d5
 		move.w	(a0,d0.w),d5
-
 		move.l	#PWM_STEREO,d2
 		move.l	#PWM_STEREO_e,d3
 		move.l	d2,d4
@@ -255,7 +246,29 @@ MD_GmMode0:
 		moveq	#%111,d7
 		move.l	#CmdTaskMd_PWM_SetChnl,d0
 		bra	System_MdMars_MstTask
-
+.tracktst:
+		lea	.trklist(pc),a0
+		lea	(RAM_SndPitch),a1
+		move.w	(RAM_CurY),d4
+		add.w	d4,d4
+		move.w	(a1,d4.w),d0
+		lsl.w	#4,d0
+		adda	d0,a0
+		move.l	(a0)+,d0
+		move.l	(a0)+,d1
+		move.l	(a0)+,d2
+		move.w	(a0)+,d3
+		bra	SoundReq_SetTrack
+.trklist:
+		dc.l TEST_PATTERN
+		dc.l TEST_BLOCKS
+		dc.l TEST_INSTR
+		dc.w 3,0
+		dc.l TEST_PATTERN_2
+		dc.l TEST_BLOCKS_2
+		dc.l TEST_INSTR_2
+		dc.w 4,0
+		
 ; 		moveq	#1,d1
 ; 		move.l	#PWM_RIGHT,d2
 ; 		move.l	#PWM_RIGHT_e,d3
@@ -275,14 +288,16 @@ MD_GmMode0:
 ; ------------------------------------------------------
 
 MdMdl_Update:
-		tst.w	(RAM_CurY).w
-		bne.s	.pwm_upd
+		cmp.w	#3,(RAM_CurY).w
+		bge.s	.pwm_upd
+		cmp.w	#2,(RAM_CurY).w
+		bne.s	.upd_cont
 		move.w	#$22,d0
-		move.w	(RAM_SndPitch).w,d1
+		move.w	(RAM_SndPitch+4).w,d1
 		bsr	Sound_Request
 		bra.s	.upd_cont
 .pwm_upd:
-		lea	(RAM_SndPitch+2),a0
+		lea	(RAM_SndPitch+6),a0
 		move.w	(a0)+,d1
 		move.w	(a0)+,d2
 		move.w	(a0)+,d3
@@ -461,7 +476,9 @@ MdMdl_Update:
 str_LazCursor:	dc.b " ",$A,">",$A," ",0
 		align 2
 str_Title:	dc.b "GEMA Sound tester",$A,$A
-		dc.b "  DAC 01 ????",$A
+		dc.b " Track 1 ????",$A
+		dc.b " Track 2 ????",$A
+		dc.b "     DAC ????",$A
 		dc.b "  PWM 01 ????",$A
 		dc.b "      02 ????",$A
 		dc.b "      03 ????",$A
@@ -478,8 +495,8 @@ str_StatusPtch:	dc.b "\\w",$A
 		dc.b "\\w",$A
 		dc.b "\\w",$A
 		dc.b "\\w",$A
-; 		dc.b "\\w",$A
-; 		dc.b "\\w",$A
+		dc.b "\\w",$A
+		dc.b "\\w",$A
 ; 		dc.b "\\w",$A
 ; 		dc.b "\\w",$A
 ; 		dc.b "\\w",$A
@@ -496,8 +513,8 @@ str_StatusPtch:	dc.b "\\w",$A
 		dc.l RAM_SndPitch+10
 		dc.l RAM_SndPitch+12
 		dc.l RAM_SndPitch+14
-; 		dc.l RAM_SndPitch+16
-; 		dc.l RAM_SndPitch+18
+		dc.l RAM_SndPitch+16
+		dc.l RAM_SndPitch+18
 ; 		dc.l RAM_SndPitch+20
 ; 		dc.l RAM_SndPitch+22
 ; 		dc.l RAM_SndPitch+24
