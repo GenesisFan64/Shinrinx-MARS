@@ -272,11 +272,12 @@ trk_romPattRd	equ 9			; same but for reading
 trk_Read	equ 12			; Current track position (in cache)
 trk_Rows	equ 14			; Current track length
 trk_Halfway	equ 16			; Only 00h or 80h
-trk_currBlk	equ 17
-trk_status	equ 18			; %ERSx xxxx | E-enabled / R-Init or Restart track
+trk_currBlk	equ 17			; Current block
+trk_setBlk	equ 18			; Start on this block
+trk_status	equ 19			; %ERSx xxxx | E-enabled / R-Init or Restart track
 					;	       S-sfx mode
-trk_tickTmr	equ 19			; Ticks timer
-trk_tickSet	equ 20			; Ticks set for this track
+trk_tickTmr	equ 20			; Ticks timer
+trk_tickSet	equ 21			; Ticks set for this track
 		
 ; chnBuff
 ; 8 bytes
@@ -293,7 +294,7 @@ chnl_Status	equ 7
 ; Variables
 ; --------------------------------------------------------
 
-MAX_TRKS	equ	3		; Max tracks to read
+MAX_TRKS	equ	2		; Max tracks to read
 MAX_TRKCHN	equ	18		; Max internal tracker channels
 
 ; To brute force DAC playback
@@ -638,7 +639,7 @@ playonchip
 		ld	de,100h
 		add	iy,de
 
-		ld	de,40h
+		ld	de,80h
 		ld	hl,(currInsData)
 		add	hl,de
 		ld	(currInsData),hl
@@ -681,14 +682,26 @@ playonchip
 		call	.get_instype
 		cp	-1
 		ret	z
+		cp	2
+		jr	z,.fm_ins
+		cp	3
+		ret	z
+		cp	4
+		ret	z		
+		cp	5
+		ret	z
+		
+; PSG instrument
 		cp	1
-		jp	z,.ins_ns
+		jr	z,.ins_ns
 		cp	0
 		ret	nz
 		push	hl
 		call	dac_me
 		call	.srch_psg	; Type 0: PSG
 		pop	de
+		cp	-1
+		ret	z
 		ld	a,(de)
 		ld	c,a
 		inc	de
@@ -698,6 +711,8 @@ playonchip
 		push	hl
 		call	.srch_psgn	; Type 1: PSG Noise
 		pop	de
+		cp	-1
+		ret	z
 		ld	a,(hl)
 		ld	c,a
 		inc	de
@@ -707,9 +722,15 @@ playonchip
 		inc 	hl
 		inc	hl
 		call	dac_me
-
-	; copypaste to psduochnl
-	rept 6
+		ld	a,(de)
+		ld	b,a
+		inc	de
+		ld	a,(de)
+		inc	de
+		push	de
+		ld	d,a
+		ld	e,b
+	rept 5				; copypaste to psduochnl
 		ld	a,(de)	
  		ld	(hl),a
  		inc	de
@@ -717,21 +738,86 @@ playonchip
 		call	dac_me
 		nop
 	endm
+		pop	de
+		ld	a,(de)
+		ld	(hl),a
 		ret
 
+.fm_ins:
+		push	hl
+		call	.srch_fm
+		cp	-1
+		ret	z
+		push	hl
+		pop	ix
+		pop	hl
+		call	dac_me
+		inc	hl
+		inc	hl
+		ld	a,(hl)
+		inc	hl
+		ld	h,(hl)
+		ld	l,a
+		ld	(ix+3),l
+		ld	(ix+4),h
+		ld	a,(ix)		; Prepare first FM reg
+		and	11b
+		or	30h
+		ld	d,a
+		ld	b,4*7
+.setlv:
+		call	dac_me
+		ld	e,(hl)
+		call	fm_autoset
+		inc 	d
+		inc 	d
+		inc 	d
+		inc 	d
+		inc	hl
+		djnz	.setlv
+
+		ld	a,d
+		and	11b
+		or	0B0h
+		ld	d,a
+		ld	e,(hl)			; 0B0h
+		ld	(ix+5),e
+		call	fm_autoset
+		inc 	hl
+		inc	d
+		inc	d
+		inc	d
+		inc	d
+		call	dac_me
+		ld	a,(hl)			; 0B4h
+; 		or	11000000b		; TEMP PANNING
+		ld	(ix+6),a
+		ld	e,a
+		call	fm_autoset
+		inc	hl			; TODO: FM3 enable bit
+		inc	hl
+		ld	a,(hl)			; Keys (xxxx0000b)
+		ld	(ix+7),a
+		ret
+		
 ; ----------------------------------------
 ; Volume request
 ; ----------------------------------------
 
 .req_vol:
 		call	.get_instype
-; 		cp	2
-; 		ret	z
-; 		cp	3
-; 		ret	z
-; 		cp	4
-; 		ret	z
-
+		cp	-1
+		ret	z
+		cp	2
+		jp	z,.vol_fm
+		cp	3
+		ret	z
+		cp	4
+		ret	z
+		cp	5
+		ret	z
+	
+	; PSG volume
 		cp	1
 		jr	nz,.notnsev
 		call	.srch_psgn
@@ -756,20 +842,130 @@ playonchip
 		inc	hl
 		ret
 		
+.vol_fm:
+		call	.srch_fm
+		cp	-1
+		ret	z
+		push	hl
+		pop	ix
+		inc	hl
+		inc	hl
+		inc	hl
+		call	dac_me
+		ld	a,(hl)
+		inc	hl
+		ld	h,(hl)
+		ld	l,a
+		ld	de,4
+		add	hl,de		; Point to 40h's
+
+	; copy-pasted from PulseMini
+	; b - 0B0h
+	; c - Volume
+		call	dac_fill
+		call	dac_me
+		ld	a,(iy+chnl_Vol)
+		sub	a,40h
+		neg	a
+		ld	c,a
+		ld	a,(ix+5)
+		and	111b
+		ld	b,a
+		ld	d,40h
+		ld	a,(ix)
+		and	11b
+		or	d
+		ld	d,a
+		call	dac_me
+		ld	e,(hl)
+		inc 	hl
+		ld	a,b
+		cp	7
+		jp	nz,.tlv_lv1
+		ld	a,e
+		add 	a,c
+		ld	e,a
+		or	a
+		jp	p,.tlv_lv1
+		ld	e,7Fh
+.tlv_lv1:
+		call	fm_autoset
+		inc 	d
+		inc 	d
+		inc 	d
+		inc 	d
+		call	dac_me
+		ld	e,(hl)
+		ld	a,b
+		cp	7
+		jp	z,.tlv_lv2_ok
+		cp	6
+		jp	z,.tlv_lv2_ok
+		cp	5
+		jp	nz,.tlv_lv2
+		call	dac_me
+.tlv_lv2_ok:
+		ld	a,e
+		add 	a,c
+		ld	e,a
+		or	a
+		jp	p,.tlv_lv2
+		ld	e,7Fh
+.tlv_lv2:
+		call	fm_autoset
+		inc 	hl
+		inc 	d
+		inc 	d
+		inc 	d
+		inc 	d
+		call	dac_me
+		ld	e,(hl)
+		ld	a,b
+		and	100b
+		or	a
+		jp	z,.tlv_lv3
+		ld	a,e
+		add 	a,c
+		ld	e,a
+		or	a
+		jp	p,.tlv_lv3
+		call	dac_me
+		ld	a,7Fh
+.tlv_lv3:
+		call	fm_autoset
+		inc 	hl
+		inc 	d
+		inc 	d
+		inc 	d
+		inc 	d
+		call	dac_me
+		ld	a,(hl)
+		add 	a,c
+		or	a
+		jp	p,.tlv_lv4
+		ld	a,7Fh
+.tlv_lv4:
+		ld	e,a
+		inc 	hl
+		call	fm_autoset
+		ret 
+
 ; ----------------------------------------
 ; Note request
 ; ----------------------------------------
 
 .req_note:
 		call	.get_instype
+		cp	-1
+		ret	z
 		cp	2
-		jp	z,.is_fm
+		jp	z,.note_fm
 		cp	3
-		jp	z,.is_fm3
+		jp	z,.note_fm3
 		cp	4
-		jp	z,.is_fm6
+		jp	z,.note_fm6
 		cp	5
-		jp	z,.is_pwm
+		jp	z,.note_pwm
 		call	dac_me
 		
 	; PSG mode 0 and 1
@@ -854,9 +1050,7 @@ playonchip
 		jp	z,.psgchnl3
 		cp	3
 		jp	nz,.normlpsg
-
-	; if chnl uses NOISE
-		ld	de,psgHatMode
+		ld	de,psgHatMode	; if chnl uses NOISE
 		ld	a,(hl)
 		push	iy
 		pop	hl
@@ -864,7 +1058,7 @@ playonchip
 		ld	(de),a		; NOISE mode
 		inc	de
 		ld	a,l
-		ld	(de),a		; link (TODO)
+		ld	(de),a
 		call	dac_me
 		inc 	de
 		ld	a,h
@@ -876,7 +1070,6 @@ playonchip
 		ld	a,100b		; Send stop com directly
 		ld	(psgcom+2),a	; To PSG3
 		jr	.normlpsg
-
 	; if chnl uses PSG3
 .psgchnl3:
 		ld	a,(psgHatMode)
@@ -887,7 +1080,6 @@ playonchip
 .normlpsg:
 		ld	(ix+COM),001b	; Key on.
 		ret
-
 ; full stop
 .pstop:
 		pop	hl
@@ -903,7 +1095,6 @@ playonchip
 		ld	(ix+COM),100b	; Full stop
 		ld	(iy+chnl_Chip),0
 		ret
-		
 ; key off
 .poff:
 		pop	hl
@@ -918,6 +1109,112 @@ playonchip
 		inc 	hl
 		ld	(ix+COM),010b	; Key off ===
 		ld	(iy+chnl_Chip),0
+		ret
+
+; ----------------------------------------
+; FM
+; ----------------------------------------
+
+.note_fm:
+		call	.srch_fm
+		cp	-1
+		ret	z
+		push	hl
+		pop	ix
+		inc	hl
+		inc	hl
+		inc	hl
+		inc	hl
+		inc	hl
+		call	dac_fill
+		call	dac_me
+
+		ld	a,(ix)		; Keys off
+		and	10000111b
+		or	00100000b	; Mark as FM
+		ld	(iy+chnl_Chip),a
+
+		and	111b
+		ld	e,a
+		ld	d,28h
+		call	fm_send_1
+		ld	a,(iy+chnl_Note)
+		cp	-1		; Key off.
+		ret	z
+		cp	-2		; TODO: Total level force off
+		ret	z
+		ld	b,0
+	rept 7				; Separate as octave(b) and note(c)
+		ld	c,a
+		sub	12
+		or	a
+		jp	m,.getoct
+		inc	b
+	endm
+.getoct:
+		call	dac_me
+		ld	de,0
+		ld	a,(ix)
+		and	11b
+		or	0A4h
+		ld	d,a
+
+		ld	a,c		; c - Note
+		add	a,a
+		ld	c,a
+		ld	a,b
+		add	a,a
+		add	a,a
+		add	a,a		; a - Octave
+		ld	b,0
+		call	dac_me
+		ld	hl,fmFreq_List
+		add	hl,bc
+		inc	hl
+		ld	e,a
+		ld	a,(hl)
+		or	e
+		ld	e,a
+		call	fm_autoset
+		dec	d
+		dec	d
+		dec	d
+		dec	d
+		dec	hl
+		ld	e,(hl)
+		call	fm_autoset
+		call	dac_me
+
+		ld	a,(ix)		; 0B4h
+		and	111b
+		ld	d,0B4h
+		or	d
+		ld	d,a
+		ld	a,(ix+6)
+		or	11000000b	; TEMP panning
+		ld	e,a
+		call	fm_autoset
+		call	dac_me
+
+		ld	a,(ix)		; Keys
+		and	111b
+		ld	e,(ix+7)
+		or	e
+		ld	e,a
+		ld	d,28h
+		call	fm_send_1
+		ret
+		
+		
+.note_fm3:
+.note_fm6:
+		ret
+
+; ----------------------------------------
+; PWM
+; ----------------------------------------
+
+.note_pwm:
 		ret
 
 ; ----------------------------------------
@@ -962,26 +1259,19 @@ playonchip
 		ld	hl,PSGVTBL
 		jr	.srch_chnltbl
 .srch_fm:
-		nop
-		nop
-		nop
-		ret
-		
-; ----------------------------------------
-; FM
-; ----------------------------------------
-
-.is_fm:
-.is_fm3:
-.is_fm6:
-		ret
-
-; ----------------------------------------
-; PWM
-; ----------------------------------------
-
-.is_pwm:
-		ret
+		ld	de,16
+		ld	hl,FMVTBL
+		call	.srch_chnltbl
+		or	a
+		ret	z
+		ld	de,16
+		ld	hl,FM3VTBL
+		call	.srch_chnltbl
+		or	a
+		ret	z
+		ld	de,16
+		ld	hl,FM6VTBL
+		jr	.srch_chnltbl
 
 ; ----------------------------------------
 
@@ -1028,12 +1318,23 @@ playonchip
 		cp	-1
 		jp	z,.nolnk
 		inc	hl
+		inc	hl
+		ld	a,(hl)
+		dec	hl
+		dec	hl
+		cp	b
+		jr	nz,.ngood
+		call	dac_me
+		nop
+		inc	hl
 		ld	a,(hl)
 		dec	hl
 		cp	c
-		ret	z		; if it's ours, use it
+		jp	z,.setgood
+.ngood:					; if it's ours, use it
 		add	hl,de
 		jr	.l_lp
+
 .nolnk:
 		ld	hl,(currTblSrch)
 
@@ -1061,6 +1362,8 @@ playonchip
 		dec	hl
 		dec	hl
 		call	dac_me
+.setgood:
+		xor	a
 		ret
 
 ; --------------------------------------------------------
@@ -1094,7 +1397,7 @@ updtrack:
 		add	hl,de
 		call	dac_me
 		ld	(currTrkBlkHd),hl
-		ld	de,40h
+		ld	de,80h
 		ld	hl,(currInsData)
 		add	hl,de
 		ld	(currInsData),hl
@@ -1448,54 +1751,40 @@ updtrack:
 		ld	a,(ix+chnl_Chip)
 		or	a
 		jp	z,.off
-		ld	c,a
-		ld	hl,PSGNVTBL
-		ld	de,9
-		call	.chlst_unlk
-		cp	-1
-		jp	nz,.unlknow
-		ld	hl,PSGVTBL
-		ld	de,9
-		call	.chlst_unlk
-		cp	-1
-		jp	z,.off
-.unlknow:
-		ld	a,(hl)
-		and	7Fh
-		ld	(hl),a
-		inc	hl		; delete link
-		ld	(hl),0
-		inc	hl
-		ld	(hl),0
-		inc	hl		; ALV to 0
-		ld	(hl),0
-		inc	hl		; ATK to 0
-		ld	(hl),0
-		ld	a,c
-		and	11b
-		ld	l,a
-		ld	h,psgcom>>8
-		ld	(hl),100b
+		call	.silnc_chip
 .off:
 		ld	(ix+chnl_Note),-2
 		ld	(ix+chnl_Status),11b
 		pop	de
 		add	ix,de
 		djnz	.clrf
-		xor	a			; TODO: link check if
-		ld	(psgHatMode),a		; already in use
-
+		
+	; TODO: psgHat lock check
 		xor	a
-		ld 	(iy+trk_currBlk),a	; Start at block zero (TODO: add user setting)
+; 		ld	hl,psgHatMode+1
+; 		ld	e,(hl)
+; 		inc	hl
+; 		ld	d,(hl)
+; 		dec	hl
+; 		dec	hl
+; 		ld	a,(de)
+; 		or	a
+; 		jp	nz,.inuse
+		ld	(psgHatMode),a		; already in use
+; .inuse:
+
+		ld	a,(iy+trk_setBlk)
+		ld 	(iy+trk_currBlk),a
 		ld	(iy+trk_Halfway),a	; Reset halfway
 		call	dac_fill
 		call	dac_me
-		ld	l,(iy+trk_romIns)	; Recieve 40h of instrument pointers
+		ld	l,(iy+trk_romIns)	; Recieve 80h of instrument pointers
 		ld	h,(iy+(trk_romIns+1))
 		ld	a,(iy+(trk_romIns+2))
 		ld	de,(currInsData)
-		ld	bc,40h
+		ld	bc,080h
 		call	transferRom	
+		
 		ld	l,(iy+trk_romBlk)	; Recieve 80h of block data
 		ld	h,(iy+(trk_romBlk+1))
 		ld	a,(iy+(trk_romBlk+2))
@@ -1562,6 +1851,40 @@ updtrack:
 		call	dac_me
 		jp	transferRom
 
+; c - Chip
+.silnc_chip:
+		ret
+
+		ld	c,a
+		ld	hl,PSGNVTBL
+		ld	de,9
+		call	.chlst_unlk
+		cp	-1
+		jp	nz,.unlknow
+		ld	hl,PSGVTBL
+		ld	de,9
+		call	.chlst_unlk
+		cp	-1
+		jp	z,.off
+.unlknow:
+		ld	a,(hl)
+		and	7Fh
+		ld	(hl),a
+		inc	hl		; delete link
+		ld	(hl),0
+		inc	hl
+		ld	(hl),0
+		inc	hl		; ALV to 0
+		ld	(hl),0
+		inc	hl		; ATK to 0
+		ld	(hl),0
+		ld	a,c
+		and	11b
+		ld	l,a
+		ld	h,psgcom>>8
+		ld	(hl),100b
+		ret
+
 .chlst_unlk:
 		ld	a,(hl)
 		cp	-1
@@ -1570,7 +1893,7 @@ updtrack:
 		ret	z
 		add	hl,de
 		jp	.chlst_unlk
-		
+
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; Subroutines
@@ -1591,21 +1914,21 @@ gema_init:
 		ld	a,0FFh
 		ld	(Zpsg_ctrl),a
 		ld	de,2700h
-		call	SndDrv_FmSet_1
+		call	fm_send_1
 		ld	de,2800h
-		call	SndDrv_FmSet_1
+		call	fm_send_1
 		ld	de,2801h
-		call	SndDrv_FmSet_1
+		call	fm_send_1
 		ld	de,2802h
-		call	SndDrv_FmSet_1
+		call	fm_send_1
 		ld	de,2804h
-		call	SndDrv_FmSet_1
+		call	fm_send_1
 		ld	de,2805h
-		call	SndDrv_FmSet_1
+		call	fm_send_1
 		ld	de,2806h
-		call	SndDrv_FmSet_1
+		call	fm_send_1
 		ld	de,2B00h
-		call	SndDrv_FmSet_1	
+		call	fm_send_1
 		ld	hl,dWaveBuff			; Initilize WAVE FIFO
 		ld	de,dWaveBuff+1
 		ld	bc,100h-1
@@ -2103,7 +2426,12 @@ psg_env:
 ; e - data
 ; ---------------------------------------------
 
-SndDrv_FmSet_1:
+; ix - first byte: FM id
+fm_autoset:
+		bit	2,(ix)
+		jp	nz,fm_send_2
+		
+fm_send_1:
 		ld	a,d
 		ld	(Zym_ctrl_1),a
 		nop
@@ -2112,7 +2440,7 @@ SndDrv_FmSet_1:
 		nop
 		ret
 
-SndDrv_FmSet_2:
+fm_send_2:
 		ld	a,d
 		ld	(Zym_ctrl_2),a
 		nop
@@ -2589,35 +2917,7 @@ psgFreq_List:
  		dw 8h
 		dw 0		; use +60 if using C-5 for tone 3 noise
 
-; ====================================================================
-; ----------------------------------------------------------------
-; Z80 RAM
-; ----------------------------------------------------------------
-
 ; --------------------------------------------------------
-; Buffers
-; --------------------------------------------------------
-
-		align 200h
-dWaveBuff	ds 100h			; WAVE data buffer: updated every 80h bytes *LSB must be 00h*
-trkDataC	ds 100h*MAX_TRKS	; Track data cache: 100h bytes each
-trkBuff		ds 100h*MAX_TRKS	; Track control (20h) + channels (8h each)
-blkHeadC	ds 80h*MAX_TRKS		; Track blocks and heads: 40h each
-insDataC	ds 80h*MAX_TRKS		; Instrument pointers cache: 80h each
-commZfifo	ds 40h			; Buffer for command requests from 68k
-
-psgcom		db 00h,00h,00h,00h	;  0 command 1 = key on, 2 = key off, 4 = stop snd
-psglev		db -1, -1, -1, -1	;  4 output level attenuation (%llll.0000, -1 = silent) 
-psgatk		db 00h,00h,00h,00h	;  8 attack rate
-psgdec		db 00h,00h,00h,00h	; 12 decay rate
-psgslv		db 00h,00h,00h,00h	; 16 sustain level attenuation
-psgrrt		db 00h,00h,00h,00h	; 20 release rate
-psgenv		db 00h,00h,00h,00h	; 24 envelope mode 0 = off, 1 = attack, 2 = decay, 3 = sustain, 4
-psgdtl		db 00h,00h,00h,00h	; 28 tone bottom 4 bits
-psgdth		db 00h,00h,00h,00h	; 32 tone upper 6 bits
-psgalv		db 00h,00h,00h,00h	; 36 attack level attenuation
-whdflg		db 00h,00h,00h,00h	; 40 flags to indicate hardware should be updated
-psgtim		db 00h,00h,00h,00h	; 44 timer for sustain
 
 PSGVTBL		db 00h			; 0 - PSG channel id + flags
 		dw 0			; 1 - track channel link
@@ -2653,6 +2953,58 @@ PSGNVTBL	db 03h
 		db 0			; RRT
 		db 0
 		db -1			; end-of-list
+		
+FMVTBL		db 00h			;  0 - FM channel (chip's actual order)
+		dw 0			;  1 - link
+		dw 0			;  3 - FM instr pointer
+		db 0,0,0		;  5 - 0B0h,0B4h,keys
+		dw 0			;  8 - Main frequency
+		dw 0			; 10 - Ex freq 1
+		dw 0			; 12 - Ex freq 2
+		dw 0			; 14 - Ex freq 3
+		db 01h
+		dw 0
+		dw 0
+		db 0,0,0
+		dw 0
+		dw 0
+		dw 0
+		dw 0
+		db 04h
+		dw 0
+		dw 0
+		db 0,0,0
+		dw 0
+		dw 0
+		dw 0
+		dw 0	
+		db 05h
+		dw 0
+		dw 0
+		db 0,0,0
+		dw 0
+		dw 0
+		dw 0
+		dw 0
+		db -1
+FM3VTBL		db 02h
+		dw 0			;  1 - link
+		dw 0			;  3 - FM instr pointer
+		db 0,0,0		;  5 - 0B0h,0B4h,keys
+		dw 0			;  8 - Main frequency
+		dw 0			; 10 - Ex freq 1
+		dw 0			; 12 - Ex freq 2
+		dw 0			; 14 - Ex freq 3
+		db -1
+FM6VTBL		db 06h
+		dw 0			;  1 - link
+		dw 0			;  3 - FM instr pointer
+		db 0,0,0		;  5 - 0B0h,0B4h,keys
+		dw 0			;  8 - Main frequency
+		dw 0			; 10 - Ex freq 1
+		dw 0			; 12 - Ex freq 2
+		dw 0			; 14 - Ex freq 3
+		db -1
 
 PWMVTBL		db 00h			; 0 - PWM entry
 		dw 0			; 1 - track link
@@ -2704,6 +3056,107 @@ PWMVTBL		db 00h			; 0 - PWM entry
 		db 0
 		db 0
 		db -1
+
+psgcom		db 00h,00h,00h,00h	;  0 command 1 = key on, 2 = key off, 4 = stop snd
+psglev		db -1, -1, -1, -1	;  4 output level attenuation (%llll.0000, -1 = silent) 
+psgatk		db 00h,00h,00h,00h	;  8 attack rate
+psgdec		db 00h,00h,00h,00h	; 12 decay rate
+psgslv		db 00h,00h,00h,00h	; 16 sustain level attenuation
+psgrrt		db 00h,00h,00h,00h	; 20 release rate
+psgenv		db 00h,00h,00h,00h	; 24 envelope mode 0 = off, 1 = attack, 2 = decay, 3 = sustain, 4
+psgdtl		db 00h,00h,00h,00h	; 28 tone bottom 4 bits
+psgdth		db 00h,00h,00h,00h	; 32 tone upper 6 bits
+psgalv		db 00h,00h,00h,00h	; 36 attack level attenuation
+whdflg		db 00h,00h,00h,00h	; 40 flags to indicate hardware should be updated
+psgtim		db 00h,00h,00h,00h	; 44 timer for sustain
+
+; ====================================================================
+; ----------------------------------------------------------------
+; Z80 RAM
+; ----------------------------------------------------------------
+
+; --------------------------------------------------------
+; Buffers
+; --------------------------------------------------------
+
+		align 100h
+dWaveBuff	ds 100h			; WAVE data buffer: updated every 80h bytes *LSB must be 00h*
+trkDataC	ds 100h*MAX_TRKS	; Track data cache: 100h bytes each
+trkBuff		ds 100h*MAX_TRKS	; Track control (20h) + channels (8h each)
+insDataC	ds 80h*MAX_TRKS		; Instrument pointers cache: 80h each
+blkHeadC	ds 80h*MAX_TRKS		; Track blocks and heads: 40h each
+commZfifo	ds 40h			; Buffer for command requests from 68k
+
+; ====================================================================
+; ----------------------------------------------------------------
+; FM Voices
+; ----------------------------------------------------------------
+
+PsgIns_00:	db 30h,0FFh,40h,00h, 40h
+PsgIns_01:	db 40h, 40h,80h,01h, 10h
+PsgIns_02:	db 30h, 60h,80h,04h, 04h
+PsgIns_Bass:	db 00h,0FFh,20h,01h, 01h
+PsgIns_Snare:	db 00h,0FFh,00h,0F0h,0F0h
+
+PATCHDATA
+FmIns_Fm3_OpenHat:
+		binclude "data/sound/instr/fm/fm3_openhat.gsx",2478h,28h
+FmIns_Fm3_ClosedHat:
+		binclude "data/sound/instr/fm/fm3_closedhat.gsx",2478h,28h
+FmIns_DrumKick:
+		binclude "data/sound/instr/fm/drum_kick.gsx",2478h,20h
+FmIns_DrumSnare:
+		binclude "data/sound/instr/fm/drum_snare.gsx",2478h,20h
+; FmIns_DrumCloseHat:
+; 		binclude "data/sound/instr/fm/drum_closehat.gsx",2478h,20h
+; FmIns_Piano_m1:
+; 		binclude "data/sound/instr/fm/piano_m1.gsx",2478h,20h
+; FmIns_Bass_gum:
+; 		binclude "data/sound/instr/fm/bass_gum.gsx",2478h,20h
+; FmIns_Bass_calm:
+; 		binclude "data/sound/instr/fm/bass_calm.gsx",2478h,20h
+; FmIns_Bass_heavy:
+; 		binclude "data/sound/instr/fm/bass_heavy.gsx",2478h,20h
+; FmIns_Bass_ambient:
+; 		binclude "data/sound/instr/fm/bass_ambient.gsx",2478h,20h
+; FmIns_Brass_gummy:
+; 		binclude "data/sound/instr/fm/brass_gummy.gsx",2478h,20h
+; FmIns_Flaute_1:
+; 		binclude "data/sound/instr/fm/flaute_1.gsx",2478h,20h
+FmIns_Bass_2:
+		binclude "data/sound/instr/fm/bass_2.gsx",2478h,20h
+FmIns_Bass_3:
+		binclude "data/sound/instr/fm/bass_3.gsx",2478h,20h
+FmIns_Bass_5:
+		binclude "data/sound/instr/fm/bass_5.gsx",2478h,20h
+; FmIns_Bass_synth:
+; 		binclude "data/sound/instr/fm/bass_synth_1.gsx",2478h,20h
+; FmIns_Guitar_1:
+; 		binclude "data/sound/instr/fm/guitar_1.gsx",2478h,20h
+; FmIns_Horn_1:
+; 		binclude "data/sound/instr/fm/horn_1.gsx",2478h,20h
+; FmIns_Organ_M1:
+; 		binclude "data/sound/instr/fm/organ_m1.gsx",2478h,20h
+; FmIns_Bass_Beach:
+; 		binclude "data/sound/instr/fm/bass_beach.gsx",2478h,20h
+; FmIns_Bass_Beach_2:
+; 		binclude "data/sound/instr/fm/bass_beach_2.gsx",2478h,20h
+; FmIns_Brass_Cave:
+; 		binclude "data/sound/instr/fm/brass_cave.gsx",2478h,20h
+FmIns_Piano_Small:
+		binclude "data/sound/instr/fm/piano_small.gsx",2478h,20h
+FmIns_Trumpet_2:
+		binclude "data/sound/instr/fm/trumpet_2.gsx",2478h,20h
+; FmIns_Bell_Glass:
+; 		binclude "data/sound/instr/fm/bell_glass.gsx",2478h,20h
+; FmIns_Marimba_1:
+; 		binclude "data/sound/instr/fm/marimba_1.gsx",2478h,20h
+; FmIns_Ambient_dark:
+; 		binclude "data/sound/instr/fm/ambient_dark.gsx",2478h,20h
+; FmIns_Ambient_spook:
+; 		binclude "data/sound/instr/fm/ambient_spook.gsx",2478h,20h
+; FmIns_Ding_toy:
+; 		binclude "data/sound/instr/fm/ding_toy.gsx",2478h,20h
 
 ; ====================================================================
 

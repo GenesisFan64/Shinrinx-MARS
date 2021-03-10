@@ -1,3 +1,3 @@
-	 dc.l Textr_doremi
-	 dc.w 480
+	 dc.l Textr_sonia
+	 dc.w 220
 	 dc.w 0

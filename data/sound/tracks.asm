@@ -5,60 +5,103 @@
 ; SOUND
 ; ------------------------------------------------------------
 
-; *** Instrument reference ***
-; PSG CHANNEL:
-; 	dc.b $00,$00		; Type 0 or 1
-; 	dc.b $00		; Pitch up or down
-; 	dc.b $40		; Attack level
-; 	dc.b $40		; Attack rate
-; 	dc.b $80		; Sustain
-; 	dc.b $01		; Decay rate
-; 	dc.b $40		; Release rate
-; 	dc.b $00		; if Type1: Noise mode (%wtt), else: null
+gemaInsPsg	macro pitch,psgins
+		dc.b 0,pitch
+		dc.b psgins&$FF,((psgins>>8)&$FF)
+		dc.b 0,0
+		dc.b 0,0
+		endm
 
+gemaInsPsgN	macro pitch,psgins,type
+		dc.b 1,pitch
+		dc.b psgins&$FF,((psgins>>8)&$FF)
+		dc.b type,0
+		dc.b 0,0
+		endm
+
+gemaInsFm	macro pitch,fmins
+		dc.b 2,pitch
+		dc.b fmins&$FF,((fmins>>8)&$FF)
+		dc.b 0,0
+		dc.b 0,0
+		endm
+
+gemaInsFm3	macro pitch,fmins,freq1,freq2,freq3
+		dc.b 3,pitch
+		dc.b fmins&$FF,((fmins>>8)&$FF)
+		dc.b 0,0
+		dc.b 0,0		
+		endm
 		
+; gemaInsDac	macro pitch,start,len,loop,flags
+; 		dc.b 4,pitch
+; 		dc.b start&$FF,((start>>8)&$FF),((start>>16)&$FF)
+; 		dc.b len&$FF,((len>>8)&$FF),((len>>16)&$FF)
+; 		dc.b loop&$FF,((loop>>8)&$FF),((loop>>16)&$FF)
+; 		dc.b 0,0
+; 		endm
+
+gemaInsNull	macro
+		dc.b -1,0
+		dc.b  0,0
+		dc.b  0,0
+		dc.b  0,0
+		endm
+
+; ------------------------------------------------------------
+
 TEST_BLOCKS	binclude "data/sound/tracks/temple_blk.bin"
 TEST_PATTERN	binclude "data/sound/tracks/temple_patt.bin"
-TEST_INSTR	dc.b $00,$00		; Type 0
-		dc.b $40		; Attack level
-		dc.b $40		; Attack rate
-		dc.b $80		; Sustain
-		dc.b $01		; Decay rate
-		dc.b $10		; Release rate
-		dc.b $00
-		dc.b $00,$00
-		dc.b $30		; Attack level
-		dc.b $60		; Attack rate
-		dc.b $80		; Sustain
-		dc.b $04		; Decay rate
-		dc.b $04		; Release rate
-		dc.b $00
-		dc.b $01,$00		; Type 1: 
-		dc.b $00		; Attack level
-		dc.b $FF		; Attack rate
-		dc.b $00		; Sustain
-		dc.b $F0		; Decay rate
-		dc.b $F0		; Release rate
-		dc.b %101		; NOISE type
+TEST_INSTR
+		gemaInsPsg  0,PsgIns_01
+		gemaInsPsg  0,PsgIns_02
+		gemaInsPsgN 0,PsgIns_Snare,%101
 
 TEST_BLOCKS_2	binclude "data/sound/tracks/kraid_blk.bin"
 TEST_PATTERN_2	binclude "data/sound/tracks/kraid_patt.bin"
 TEST_INSTR_2
-		dc.b $01,$00		; Type 1: 
-		dc.b $00		; Attack level
-		dc.b $FF		; Attack rate
-		dc.b $20		; Sustain
-		dc.b $01		; Decay rate
-		dc.b $01		; Release rate
-		dc.b %011		; NOISE type
-		dc.b $00,$00
-		dc.b $30		; Attack level
-		dc.b $FF		; Attack rate
-		dc.b $00		; Sustain
-		dc.b $00		; Decay rate
-		dc.b $40		; Release rate
-		dc.b $00
-		
+		gemaInsPsgN 0,PsgIns_Bass,%011
+		gemaInsPsg  0,PsgIns_00
+
+GemaTrk_Yuki_blk:
+		binclude "data/sound/tracks/yuki_blk.bin"
+GemaTrk_Yuki_patt:
+		binclude "data/sound/tracks/yuki_patt.bin"
+GemaTrk_Yuki_ins:
+		gemaInsNull
+		gemaInsFm   0,FmIns_Trumpet_2
+		gemaInsFm   0,FmIns_Bass_2
+		gemaInsNull
+		gemaInsNull
+		gemaInsFm   0,FmIns_Piano_Small
+		gemaInsPsg  0,PsgIns_00
+		gemaInsPsgN 0,PsgIns_Snare,%100
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
 
 ; ====================================================================
 ; ----------------------------------------------------------------

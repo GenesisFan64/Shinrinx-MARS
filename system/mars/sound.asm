@@ -76,6 +76,7 @@ MarsSound_ReadPwm:
 		nop
 .loop_me:
 		mov 	@(mchnsnd_start,r8),r4
+		add	r0,r4
 		
 ; read wave
 .read:
@@ -306,6 +307,36 @@ MarsSound_SetPwmPitch:
 		nop
 		align 4
 
+; --------------------------------------------------------
+; MarsSound_MulPwmPitch
+; 
+; Set pitch data to 8 consecutive sound channels
+; starting from specific slot
+; 
+; Input:
+; r1 | Channel pitch slot 0
+; r2 | Pitch data
+; 
+; Uses:
+; r3,r4
+; --------------------------------------------------------
+
+MarsSound_PwmEnable:
+		stc	sr,r9
+		mov	#$F0,r0
+		ldc	r0,sr
+		mov	#MarsSnd_PwmChnls,r8
+		mov 	#sizeof_sndchn,r0
+		mulu	r1,r0
+		sts	macl,r0
+		add 	r0,r8
+
+		mov	r2,@(mchnsnd_enbl,r8)
+ 		ldc	r9,sr
+		rts
+		nop
+		align 4
+		
 ; ====================================================================
 
 		ltorg			; Save literals

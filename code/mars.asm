@@ -1341,24 +1341,24 @@ CmdTaskMd_PWM_MultPitch:
 		rts
 		nop
 		align 4
-		
-; 		mov	#0,r1
-; 		mov	#WAV_LEFT,r2
-; 		mov	#WAV_LEFT_E,r3
-; 		mov	#WAV_LEFT,r4
-; 		mov	#$100,r5
-; 		mov	#0,r6
-; 		bsr	MarsSound_SetChannel
-; 		mov	#%10,r7
 
-; 		mov	#1,r1
-; 		mov	#WAV_RIGHT,r2
-; 		mov	#WAV_RIGHT_E,r3
-; 		mov	r2,r4
-; 		mov	#$100,r5
-; 		mov	#0,r6
-; 		bsr	MarsSound_SetChannel
-; 		mov	#%01,r7
+; ------------------------------------------------
+; Enable/Disable PWM channels from playing
+; 
+; @($04,r14) - Channel slot
+; @($08,r14) - Enable/Disable/Restart
+; ------------------------------------------------
+
+CmdTaskMd_PWM_Enable:
+		sts	pr,@-r15
+		mov	@($04,r14),r1
+		mov	@($08,r14),r2
+		bsr	MarsSound_PwmEnable
+		nop
+		lds	@r15+,pr
+		rts
+		nop
+		align 4
 
 ; ----------------------------------------
 

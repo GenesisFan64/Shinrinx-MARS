@@ -107,21 +107,13 @@ MD_GmMode0:
 		move.l	#CmdTaskMd_ObjectSet,d0		; Load 2 objects
 		moveq	#0,d1
 		move.l	#MARSOBJ_SMOK,d2
-		moveq	#96,d3
-		bsr	System_MdMars_SlvAddTask
-		moveq	#1,d1
-		move.l	#MARSOBJ_SMOK2,d2
 		moveq	#0,d3
 		bsr	System_MdMars_SlvAddTask		
 		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
 		move.l	#Palette_Map,d1
 		moveq	#0,d2
-		move.w	#96,d3
+		move.w	#256,d3
 		moveq	#0,d4
-		bsr	System_MdMars_MstAddTask
-		move.l	#Palette_Puyo,d1
-		move.w	#96,d2
-		move.w	#160,d3
 		bsr	System_MdMars_MstAddTask
 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
 		moveq	#1,d1
@@ -139,6 +131,10 @@ MD_GmMode0:
 
 .mode0_loop:
 		move.w	(Controller_1+on_press).l,d7
+		btst	#bitJoyB,d7
+		beq.s	.nob
+		bsr	.stop_sample
+.nob:
 		btst	#bitJoyC,d7
 		beq.s	.noc
 		bsr	.play_sample
@@ -202,23 +198,43 @@ MD_GmMode0:
 		bsr	MdMdl_Update
 .noz:
 	; BG Visual updates
-		move.l	#CmdTaskMd_ObjectPos,d0		; Cmnd $0A: Modify object pos and rot
-		moveq	#0,d1				; Slot
-		move.l	#$9000,d2			; X
-		move.l	#-$6000,d3			; Y
-		move.l	#-$40000,d4			; Z
+		move.l	#CmdTaskMd_ObjectPos,d0	; Cmnd $0A: Modify object pos and rot
+		moveq	#0,d1			; Slot
+		move.l	#0,d2			; X
+		move.l	#0,d3			; Y
+		move.l	#-$18000,d4		; Z
 		move.l	(RAM_RotX),d5
-		move.l	#0,d6
-		move.l	#0,d7
+		move.l	(RAM_RotX),d6
+		move.l	(RAM_RotX),d7
+; 		lsr.l	#2,d5
+; 		lsr.l	#1,d7
 		bsr	System_MdMars_SlvAddTask
-		move.l	#$6000,d3			; Y
-		moveq	#1,d1				; Slot		
-		bsr	System_MdMars_SlvAddTask		
+; 		move.l	#$6000,d3		; Y
+; 		moveq	#1,d1			; Slot
+; 		bsr	System_MdMars_SlvAddTask		
 		bsr	System_MdMars_SlvSendDrop
-		add.l	#$4000,(RAM_RotX)
+		add.l	#$1000,(RAM_RotX)
 		rts
 
-; 	
+.stop_sample:
+; 		cmp.w	#1,(RAM_CurY).w
+; 		ble.s	.tracktst2
+		cmp.w	#2,(RAM_CurY).w
+		bne.s	.pwm_test2
+		move.l	#TEST_WAV,d0
+		move.l	#(TEST_WAV_E-TEST_WAV),d1
+		move.l	#0,d2
+		move.w	(RAM_SndPitch+4).w,d3
+		moveq	#%01,d4
+		bsr	SoundReq_SetSample
+		bra	MdMdl_Update
+.pwm_test2:
+		move.w	(RAM_CurY).w,d1
+		sub.w	#3,d1
+		moveq	#0,d2
+		move.l	#CmdTaskMd_PWM_Enable,d0
+		bra	System_MdMars_MstTask
+
 .play_sample:
 		cmp.w	#1,(RAM_CurY).w
 		ble.s	.tracktst
@@ -234,14 +250,14 @@ MD_GmMode0:
 .pwm_test:
 		lea	(RAM_SndPitch+6),a0
 		move.w	(RAM_CurY).w,d1
-		sub.w	#1,d1
+		sub.w	#3,d1
 		move.w	d1,d0
 		add.w	d0,d0
 		moveq	#0,d5
 		move.w	(a0,d0.w),d5
 		move.l	#PWM_STEREO,d2
 		move.l	#PWM_STEREO_e,d3
-		move.l	d2,d4
+		move.l	#0,d4
 		moveq	#0,d6
 		moveq	#%111,d7
 		move.l	#CmdTaskMd_PWM_SetChnl,d0
@@ -249,9 +265,10 @@ MD_GmMode0:
 .tracktst:
 		lea	.trklist(pc),a0
 		lea	(RAM_SndPitch),a1
-		move.w	(RAM_CurY),d4
-		add.w	d4,d4
-		move.w	(a1,d4.w),d0
+		move.w	(RAM_CurY),d5
+		move.w	d5,d4
+		add.w	d5,d5
+		move.w	(a1,d5.w),d0
 		lsl.w	#4,d0
 		adda	d0,a0
 		move.l	(a0)+,d0
@@ -260,6 +277,10 @@ MD_GmMode0:
 		move.w	(a0)+,d3
 		bra	SoundReq_SetTrack
 .trklist:
+		dc.l GemaTrk_Yuki_patt
+		dc.l GemaTrk_Yuki_blk
+		dc.l GemaTrk_Yuki_ins
+		dc.w 2,0
 		dc.l TEST_PATTERN
 		dc.l TEST_BLOCKS
 		dc.l TEST_INSTR
