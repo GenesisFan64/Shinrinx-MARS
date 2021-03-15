@@ -9,7 +9,8 @@
 		align $8000
 		include "data/sound/tracks.asm"
 
-CAMERA_ANIM:	binclude "data/mars/objects/anim/camera_anim.bin"
 		align 4
-TEST_WAV:	binclude "data/sound/test.wav",$2C,$CFFFF
-TEST_WAV_e:
+CAMERA_INTRO:	binclude "data/mars/objects/anim/intro_anim.bin"
+		align 4
+; TEST_WAV:	binclude "data/sound/test.wav",$2C,$CFFFF
+; TEST_WAV_e:

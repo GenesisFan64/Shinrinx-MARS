@@ -186,15 +186,15 @@ MarsSound_Init:
 		stc	gbr,@-r15
 		mov	#_sysreg,r0
 		ldc	r0,gbr
-		mov	#((((23011361<<1)/22050+1)>>1)+1),r0	; 22050 best
-		mov.w	r0,@(cycle,gbr)
 		mov	#$0105,r0
 		mov.w	r0,@(timerctl,gbr)
-		mov	#0,r0
+		mov	#((((23011361<<1)/22050+1)>>1)+1),r0	; 22050 best
+		mov.w	r0,@(cycle,gbr)
+		mov	#1,r0
 		mov.w	r0,@(monowidth,gbr)
 		mov.w	r0,@(monowidth,gbr)
 		mov.w	r0,@(monowidth,gbr)
-		
+
 		mov	#0,r0
 		mov	#MarsSnd_PwmChnls,r1
 		mov	#MAX_PWMCHNL,r2
@@ -294,12 +294,12 @@ MarsSound_SetPwmPitch:
 		add 	r0,r8
 
 		mov	@(mchnsnd_enbl,r8),r0
-		cmp/pl	r0
+		cmp/eq	#1,r0
 		bf	.off_1
 		mov	@(mchnsnd_read,r8),r0
-		mov	#$FFFFFF00,r1
-		and	r1,r0
-		mov	r0,@(mchnsnd_read,r8)
+; 		mov	#$FFFFFF00,r1
+; 		and	r1,r0
+; 		mov	r0,@(mchnsnd_read,r8)
 		mov	r2,@(mchnsnd_pitch,r8)
 .off_1:
  		ldc	r9,sr

@@ -288,7 +288,7 @@ chnl_Ins	equ 3
 chnl_Vol	equ 4
 chnl_EffId	equ 5
 chnl_EffArg	equ 6
-chnl_Status	equ 7
+chnl_Status	equ 7			; 000e uuuu | p-priority overwrite, u-update bits from Tracker
 
 ; --------------------------------------------------------
 ; Variables
@@ -420,10 +420,21 @@ drv_loop:
 		call	updtrack	; Update track data
 		call	check_tick
 .neither:
-; 		call	apply_bend
-; 		ld	b,7
-; 		djnz	$
+; 		ld	hl,6000h	; Template for PWM comm.
+; 		ld	(hl),0
+; 		ld	(hl),1
+; 		ld	(hl),0
+; 		ld	(hl),0
+; 		ld	(hl),0
+; 		ld	(hl),0
+; 		ld	(hl),1
 ; 		call	dac_me
+; 		ld	(hl),0
+; 		ld	(hl),1
+; 		ld	ix,5100h|8000h		; ix - mars sysreg
+; 		ld	a,(ix+27h)
+; 		inc	a
+; 		ld	(ix+27h),a
 
 .next_cmd:
 		call	dac_fill
@@ -664,7 +675,9 @@ playonchip
 		bit	0,(iy+chnl_Status)
 		call	nz,.req_note
 		call	dac_me
-		ld	(iy+chnl_Status),0
+		ld	a,(iy+chnl_Status)		; clear update flags
+		and	11110000b
+		ld	(iy+chnl_Status),a
 		ret
 		
 ; ----------------------------------------
@@ -672,8 +685,46 @@ playonchip
 ; ----------------------------------------
 
 .req_eff:
+		call	.get_instype
+		cp	-1
+		ret	z
+		cp	0
+		ret	z
+		cp	1
+		ret	z
+		cp	5
+		ret	z
+
+	; TODO: a list
+		ld	a,(iy+chnl_EffId)	; Eff X?
+		cp	24
+		jp	z,.eff_X
+		ret
+.eff_X:
+		call	.srch_fm
+		push	hl
+		pop	ix
+		ld	a,(iy+chnl_EffArg)
+		rlca
+		rlca
+		and	00000011b
+		ld	de,.fmpan_list
+		add 	a,e
+		ld	e,a
+		ld	a,(ix+7)
+		and	00111111b
+		ld	b,a
+		ld	a,(de)
+		or	b
+		ld	(ix+7),a
 		ret
 
+.fmpan_list:
+		db 080h		; 000h
+		db 080h		; 040h
+		db 0C0h		; 080h
+		db 040h		; 0C0h
+		
 ; ----------------------------------------
 ; Set new instrument
 ; ----------------------------------------
@@ -687,7 +738,7 @@ playonchip
 		cp	3
 		ret	z
 		cp	4
-		ret	z		
+		ret	z
 		cp	5
 		ret	z
 		
@@ -753,6 +804,8 @@ playonchip
 		pop	hl
 		call	dac_me
 		inc	hl
+		ld	a,(hl)
+		ld	(ix+5),a
 		inc	hl
 		ld	a,(hl)
 		inc	hl
@@ -781,7 +834,7 @@ playonchip
 		or	0B0h
 		ld	d,a
 		ld	e,(hl)			; 0B0h
-		ld	(ix+5),e
+		ld	(ix+6),e
 		call	fm_autoset
 		inc 	hl
 		inc	d
@@ -789,15 +842,16 @@ playonchip
 		inc	d
 		inc	d
 		call	dac_me
-		ld	a,(hl)			; 0B4h
-; 		or	11000000b		; TEMP PANNING
-		ld	(ix+6),a
+		ld	a,(ix+7)		; 0B4h
+		ld	b,(hl)
+		or	b
+		ld	(ix+7),a
 		ld	e,a
 		call	fm_autoset
 		inc	hl			; TODO: FM3 enable bit
 		inc	hl
 		ld	a,(hl)			; Keys (xxxx0000b)
-		ld	(ix+7),a
+		ld	(ix+8),a
 		ret
 		
 ; ----------------------------------------
@@ -868,7 +922,7 @@ playonchip
 		sub	a,40h
 		neg	a
 		ld	c,a
-		ld	a,(ix+5)
+		ld	a,(ix+6)
 		and	111b
 		ld	b,a
 		ld	d,40h
@@ -1133,7 +1187,6 @@ playonchip
 		and	10000111b
 		or	00100000b	; Mark as FM
 		ld	(iy+chnl_Chip),a
-
 		and	111b
 		ld	e,a
 		ld	d,28h
@@ -1143,6 +1196,8 @@ playonchip
 		ret	z
 		cp	-2		; TODO: Total level force off
 		ret	z
+		ld	b,(ix+5)
+		add	a,b
 		ld	b,0
 	rept 7				; Separate as octave(b) and note(c)
 		ld	c,a
@@ -1158,7 +1213,6 @@ playonchip
 		and	11b
 		or	0A4h
 		ld	d,a
-
 		ld	a,c		; c - Note
 		add	a,a
 		ld	c,a
@@ -1175,6 +1229,7 @@ playonchip
 		ld	a,(hl)
 		or	e
 		ld	e,a
+		ld	(ix+9),a
 		call	fm_autoset
 		dec	d
 		dec	d
@@ -1182,23 +1237,21 @@ playonchip
 		dec	d
 		dec	hl
 		ld	e,(hl)
+		ld	(ix+10),e
 		call	fm_autoset
 		call	dac_me
-
 		ld	a,(ix)		; 0B4h
 		and	111b
 		ld	d,0B4h
 		or	d
 		ld	d,a
-		ld	a,(ix+6)
-		or	11000000b	; TEMP panning
+		ld	a,(ix+7)
 		ld	e,a
 		call	fm_autoset
 		call	dac_me
-
 		ld	a,(ix)		; Keys
 		and	111b
-		ld	e,(ix+7)
+		ld	e,(ix+8)
 		or	e
 		ld	e,a
 		ld	d,28h
@@ -1259,18 +1312,18 @@ playonchip
 		ld	hl,PSGVTBL
 		jr	.srch_chnltbl
 .srch_fm:
-		ld	de,16
+		ld	de,17
 		ld	hl,FMVTBL
-		call	.srch_chnltbl
-		or	a
-		ret	z
-		ld	de,16
-		ld	hl,FM3VTBL
-		call	.srch_chnltbl
-		or	a
-		ret	z
-		ld	de,16
-		ld	hl,FM6VTBL
+; 		call	.srch_chnltbl
+; 		or	a
+; 		ret	z
+; 		ld	de,16
+; 		ld	hl,FM3VTBL
+; 		call	.srch_chnltbl
+; 		or	a
+; 		ret	z
+; 		ld	de,16
+; 		ld	hl,FM6VTBL
 		jr	.srch_chnltbl
 
 ; ----------------------------------------
@@ -1392,7 +1445,7 @@ updtrack:
 		ld	hl,(currTrkData)
 		add	hl,de
 		ld	(currTrkData),hl
-		ld	de,80h
+		ld	de,100h
 		ld	hl,(currTrkBlkHd)
 		add	hl,de
 		call	dac_me
@@ -1624,7 +1677,7 @@ updtrack:
 .eff_B:
 		ld	a,(ix+chnl_EffArg)
 		ld 	(iy+trk_currBlk),a
-		push	iy		; Clear all channels first
+		push	iy			; Clear all channels first
 		pop	ix
 		ld	de,20h
 		add	ix,de
@@ -1672,7 +1725,7 @@ updtrack:
 		jp	z,.track_end
 		ld	hl,(currTrkBlkHd)	; Header section
 		call	dac_me
-		ld	de,40h
+		ld	de,80h
 		add	hl,de
 		add	a,a
 		add	a,a
@@ -1750,9 +1803,7 @@ updtrack:
 		push	de
 		ld	a,(ix+chnl_Chip)
 		or	a
-		jp	z,.off
-		call	.silnc_chip
-.off:
+		call	nz,.silnc_chip
 		ld	(ix+chnl_Note),-2
 		ld	(ix+chnl_Status),11b
 		pop	de
@@ -1789,19 +1840,19 @@ updtrack:
 		ld	h,(iy+(trk_romBlk+1))
 		ld	a,(iy+(trk_romBlk+2))
 		ld	de,(currTrkBlkHd)
-		ld	bc,40h
+		ld	bc,80h
 		push	de
 		call	transferRom	
 		pop	de
 		call	dac_fill
 		call	dac_me
 		ld	a,e
-		add	a,40h
+		add	a,80h
 		ld	e,a
 		ld	l,(iy+trk_romPatt)	; Recieve 80h of header data
 		ld	h,(iy+(trk_romPatt+1))
 		ld	a,(iy+(trk_romPatt+2))
-		ld	bc,40h
+		ld	bc,80h
 		call	transferRom
 		ld	a,0
 		ld	hl,(currTrkBlkHd)	; Block section
@@ -1814,7 +1865,7 @@ updtrack:
 		call	dac_fill
 		call	dac_me
 		ld	hl,(currTrkBlkHd)	; Header section
-		ld	de,40h
+		ld	de,80h
 		add	hl,de
 		add	a,a
 		add	a,a
@@ -1852,20 +1903,31 @@ updtrack:
 		jp	transferRom
 
 ; c - Chip
-.silnc_chip:
-		ret
+; PSG: 80h
+; FM:  A0h + fm key
+; PWM: C0h
 
+.silnc_chip:
 		ld	c,a
-		ld	hl,PSGNVTBL
+		and	01100000b	; Get curr used chip
+		cp	00100000b	; FM?
+		jr	z,.sil_fm
+		cp	01000000b	; PWM?
+		ret	z
+		
+	; chip ID: 00b
+		ld	hl,PSGNVTBL	; Check for NOISE
 		ld	de,9
 		call	.chlst_unlk
-		cp	-1
-		jp	nz,.unlknow
+		and	83h
+		cp	83h
+		jp	z,.unlknow
 		ld	hl,PSGVTBL
 		ld	de,9
 		call	.chlst_unlk
 		cp	-1
-		jp	z,.off
+		jp	nz,.unlknow
+		ret
 .unlknow:
 		ld	a,(hl)
 		and	7Fh
@@ -1880,11 +1942,55 @@ updtrack:
 		ld	(hl),0
 		ld	a,c
 		and	11b
-		ld	l,a
-		ld	h,psgcom>>8
+		
+		ld	hl,psgcom
+		ld	de,0
+		ld	e,a
+		add	hl,de
 		ld	(hl),100b
 		ret
 
+; FM silence
+.sil_fm:
+		ld	a,c
+		and	10000111b
+		ld	c,a
+		ld	de,17
+		ld	hl,FMVTBL
+		call	.chlst_unlk
+		ld	a,c
+		and	11b
+		ld	d,40h
+		or	d
+		ld	d,a
+		ld	e,7Fh
+		call	fm_autoset		; ix is already our channel
+		inc	d
+		inc	d
+		inc	d
+		inc	d
+		call	fm_autoset
+		inc	d
+		inc	d
+		inc	d
+		inc	d
+		call	fm_autoset
+		inc	d
+		inc	d
+		inc	d
+		inc	d
+		call	fm_autoset
+		ld	a,c
+		and	111b
+		ld	e,a
+		ld	d,28h
+		call	fm_send_1
+		ld	de,2800h
+		ld	a,c
+		and	111b
+		or	e
+		ld	e,a
+		jp	fm_send_1
 .chlst_unlk:
 		ld	a,(hl)
 		cp	-1
@@ -1892,7 +1998,7 @@ updtrack:
 		cp	c
 		ret	z
 		add	hl,de
-		jp	.chlst_unlk
+		jr	.chlst_unlk
 
 ; ====================================================================
 ; ----------------------------------------------------------------
@@ -2957,14 +3063,16 @@ PSGNVTBL	db 03h
 FMVTBL		db 00h			;  0 - FM channel (chip's actual order)
 		dw 0			;  1 - link
 		dw 0			;  3 - FM instr pointer
-		db 0,0,0		;  5 - 0B0h,0B4h,keys
-		dw 0			;  8 - Main frequency
-		dw 0			; 10 - Ex freq 1
-		dw 0			; 12 - Ex freq 2
-		dw 0			; 14 - Ex freq 3
+		db 0			;  5 - Pitch
+		db 0,0,0		;  6 - 0B0h,0B4h,keys
+		dw 0			;  9 - Main frequency
+		dw 0			; 11 - Ex freq 1
+		dw 0			; 13 - Ex freq 2
+		dw 0			; 15 - Ex freq 3
 		db 01h
 		dw 0
 		dw 0
+		db 0
 		db 0,0,0
 		dw 0
 		dw 0
@@ -2973,6 +3081,7 @@ FMVTBL		db 00h			;  0 - FM channel (chip's actual order)
 		db 04h
 		dw 0
 		dw 0
+		db 0
 		db 0,0,0
 		dw 0
 		dw 0
@@ -2981,24 +3090,25 @@ FMVTBL		db 00h			;  0 - FM channel (chip's actual order)
 		db 05h
 		dw 0
 		dw 0
+		db 0
 		db 0,0,0
 		dw 0
 		dw 0
 		dw 0
 		dw 0
-		db -1
 FM3VTBL		db 02h
 		dw 0			;  1 - link
 		dw 0			;  3 - FM instr pointer
+		db 0
 		db 0,0,0		;  5 - 0B0h,0B4h,keys
 		dw 0			;  8 - Main frequency
 		dw 0			; 10 - Ex freq 1
 		dw 0			; 12 - Ex freq 2
 		dw 0			; 14 - Ex freq 3
-		db -1
 FM6VTBL		db 06h
 		dw 0			;  1 - link
 		dw 0			;  3 - FM instr pointer
+		db 0
 		db 0,0,0		;  5 - 0B0h,0B4h,keys
 		dw 0			;  8 - Main frequency
 		dw 0			; 10 - Ex freq 1
@@ -3072,33 +3182,16 @@ psgtim		db 00h,00h,00h,00h	; 44 timer for sustain
 
 ; ====================================================================
 ; ----------------------------------------------------------------
-; Z80 RAM
-; ----------------------------------------------------------------
-
-; --------------------------------------------------------
-; Buffers
-; --------------------------------------------------------
-
-		align 100h
-dWaveBuff	ds 100h			; WAVE data buffer: updated every 80h bytes *LSB must be 00h*
-trkDataC	ds 100h*MAX_TRKS	; Track data cache: 100h bytes each
-trkBuff		ds 100h*MAX_TRKS	; Track control (20h) + channels (8h each)
-insDataC	ds 80h*MAX_TRKS		; Instrument pointers cache: 80h each
-blkHeadC	ds 80h*MAX_TRKS		; Track blocks and heads: 40h each
-commZfifo	ds 40h			; Buffer for command requests from 68k
-
-; ====================================================================
-; ----------------------------------------------------------------
 ; FM Voices
 ; ----------------------------------------------------------------
 
-PsgIns_00:	db 30h,0FFh,40h,00h, 40h
+PsgIns_00:	db 00h,0FFh,40h,00h, 80h
 PsgIns_01:	db 40h, 40h,80h,01h, 10h
-PsgIns_02:	db 30h, 60h,80h,04h, 04h
-PsgIns_Bass:	db 00h,0FFh,20h,01h, 01h
+PsgIns_02:	db 00h,0FFh,80h,04h, 04h
+PsgIns_03:	db 30h,0FFh, -1,00h, 04h
+PsgIns_Bass:	db 00h,0FFh, -1,01h, 01h
 PsgIns_Snare:	db 00h,0FFh,00h,0F0h,0F0h
 
-PATCHDATA
 FmIns_Fm3_OpenHat:
 		binclude "data/sound/instr/fm/fm3_openhat.gsx",2478h,28h
 FmIns_Fm3_ClosedHat:
@@ -3107,10 +3200,11 @@ FmIns_DrumKick:
 		binclude "data/sound/instr/fm/drum_kick.gsx",2478h,20h
 FmIns_DrumSnare:
 		binclude "data/sound/instr/fm/drum_snare.gsx",2478h,20h
-; FmIns_DrumCloseHat:
-; 		binclude "data/sound/instr/fm/drum_closehat.gsx",2478h,20h
-; FmIns_Piano_m1:
-; 		binclude "data/sound/instr/fm/piano_m1.gsx",2478h,20h
+FmIns_DrumCloseHat:
+		binclude "data/sound/instr/fm/drum_closehat.gsx",2478h,20h
+FmIns_Piano_m1:
+		binclude "data/sound/instr/fm/piano_m1.gsx",2478h,20h
+
 ; FmIns_Bass_gum:
 ; 		binclude "data/sound/instr/fm/bass_gum.gsx",2478h,20h
 ; FmIns_Bass_calm:
@@ -3127,8 +3221,14 @@ FmIns_Bass_2:
 		binclude "data/sound/instr/fm/bass_2.gsx",2478h,20h
 FmIns_Bass_3:
 		binclude "data/sound/instr/fm/bass_3.gsx",2478h,20h
+FmIns_Bass_4:
+		binclude "data/sound/instr/fm/bass_4.gsx",2478h,20h
 FmIns_Bass_5:
 		binclude "data/sound/instr/fm/bass_5.gsx",2478h,20h
+FmIns_Bass_6:
+		binclude "data/sound/instr/fm/bass_6.gsx",2478h,20h
+FmIns_Bass_7:
+		binclude "data/sound/instr/fm/bass_7.gsx",2478h,20h
 ; FmIns_Bass_synth:
 ; 		binclude "data/sound/instr/fm/bass_synth_1.gsx",2478h,20h
 ; FmIns_Guitar_1:
@@ -3143,10 +3243,12 @@ FmIns_Bass_5:
 ; 		binclude "data/sound/instr/fm/bass_beach_2.gsx",2478h,20h
 ; FmIns_Brass_Cave:
 ; 		binclude "data/sound/instr/fm/brass_cave.gsx",2478h,20h
-FmIns_Piano_Small:
-		binclude "data/sound/instr/fm/piano_small.gsx",2478h,20h
-FmIns_Trumpet_2:
-		binclude "data/sound/instr/fm/trumpet_2.gsx",2478h,20h
+FmIns_Brass_Gem:
+		binclude "data/sound/instr/fm/brass_gem.gsx",2478h,20h
+; FmIns_Piano_Small:
+; 		binclude "data/sound/instr/fm/piano_small.gsx",2478h,20h
+; FmIns_Trumpet_2:
+; 		binclude "data/sound/instr/fm/trumpet_2.gsx",2478h,20h
 ; FmIns_Bell_Glass:
 ; 		binclude "data/sound/instr/fm/bell_glass.gsx",2478h,20h
 ; FmIns_Marimba_1:
@@ -3155,8 +3257,27 @@ FmIns_Trumpet_2:
 ; 		binclude "data/sound/instr/fm/ambient_dark.gsx",2478h,20h
 ; FmIns_Ambient_spook:
 ; 		binclude "data/sound/instr/fm/ambient_spook.gsx",2478h,20h
+FmIns_Ambient_3:
+		binclude "data/sound/instr/fm/ambient_3.gsx",2478h,20h
 ; FmIns_Ding_toy:
 ; 		binclude "data/sound/instr/fm/ding_toy.gsx",2478h,20h
+
+; ====================================================================
+; ----------------------------------------------------------------
+; Z80 RAM
+; ----------------------------------------------------------------
+
+; --------------------------------------------------------
+; Buffers
+; --------------------------------------------------------
+
+		align 100h
+dWaveBuff	ds 100h			; WAVE data buffer: updated every 80h bytes *LSB must be 00h*
+trkDataC	ds 100h*MAX_TRKS	; Track data cache: 100h bytes each
+trkBuff		ds 100h*MAX_TRKS	; Track control (20h) + channels (8h each)
+blkHeadC	ds 100h*MAX_TRKS	; Track blocks and heads: 80h each
+insDataC	ds 80h*MAX_TRKS		; Instrument pointers cache: 80h each
+commZfifo	ds 40h			; Buffer for command requests from 68k
 
 ; ====================================================================
 

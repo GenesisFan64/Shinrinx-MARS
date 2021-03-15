@@ -59,18 +59,19 @@ if len(sys.argv) == 4:
   INCR_Y = sys.argv[2]
   INDXBASE = sys.argv[3]
   
-if not os.path.exists("mdl/"+object_name):
-    os.makedirs("mdl/"+object_name)
+#if not os.path.exists("pz/"+object_name):
+    #os.makedirs("pz/"+object_name)
 
 list_vertices = list()
 list_faces    = list()
 model_file    = open(TAG_OBJECTSDIR+"/"+object_name+".obj","r")
 material_file = open(TAG_OBJECTSDIR+"/"+object_name+".mtl","r")	# CHECK BELOW
-out_vertices  = open("mdl/"+object_name+"/"+"vert.bin","wb")	# vertices (points)
-out_faces     = open("mdl/"+object_name+"/"+"face.bin","wb")	# faces
+
+out_head      = open("pz/"+object_name+".asm","w")	# header
+out_vertices  = open("pz/"+"vert_"+object_name+".bin","wb")	# vertices (points)
+out_faces     = open("pz/"+"face_"+object_name+".bin","wb")	# faces
 #out_vertex    = open(object_name+"_vrtx.bin","wb")	# texture vertex (MOVED)
-out_head      = open("mdl/"+object_name+"/"+"head.asm","w")	# header
-out_mtrl      = open("mdl/"+object_name+"/"+"mtrl.asm","w")
+out_mtrl      = open("pz/"+"mtrl_"+object_name+".asm","w")
 
 used_triangles= 0
 used_quads    = 0
@@ -489,7 +490,7 @@ while reading:
 
 cntr = len(vertex_list)
 if cntr != 0:
-  out_vertex = open("mdl/"+object_name+"/"+"vrtx.bin","wb")	# texture vertex
+  out_vertex = open("pz/vrtx_"+object_name+".bin","wb")	# texture vertex
 
   x_tx = 0
   while cntr:
@@ -523,13 +524,13 @@ if a != 0:
 # ----------------------------
 
 # generate include
-out_head.write("MarsObj_"+object_name+":\n")
+out_head.write("MarsMapPz_"+object_name+":\n")
 out_head.write("\t\tdc.w "+str(used_triangles+used_quads)+","+str(num_vert)+"\n") # numof_faces, numof_vertices
 out_head.write("\t\tdc.l .vert,.face,.vrtx,.mtrl\n")
-out_head.write('.vert:\t\tbinclude "data/mars/objects/mdl/'+object_name+'/vert.bin"\n')
-out_head.write('.face:\t\tbinclude "data/mars/objects/mdl/'+object_name+'/face.bin"\n')
-out_head.write('.vrtx:\t\tbinclude "data/mars/objects/mdl/'+object_name+'/vrtx.bin"\n')
-out_head.write('.mtrl:\t\tinclude "data/mars/objects/mdl/'+object_name+'/mtrl.asm"\n')
+out_head.write('.vert:\t\tbinclude "data/mars/maps/pz/vert_'+object_name+'.bin"\n')
+out_head.write('.face:\t\tbinclude "data/mars/maps/pz/face_'+object_name+'.bin"\n')
+out_head.write('.vrtx:\t\tbinclude "data/mars/maps/pz/vrtx_'+object_name+'.bin"\n')
+out_head.write('.mtrl:\t\tinclude "data/mars/maps/pz/mtrl_'+object_name+'.asm"\n')
 out_head.write("\t\talign 4")
 print("Vert:",num_vert,"Face:",used_triangles+used_quads)
 print("Poly:",used_triangles,"Quad:",used_quads)

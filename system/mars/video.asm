@@ -240,17 +240,22 @@ MarsVideo_FrameSwap:
 ; ------------------------------------
 
 MarsVideo_LoadPal:
-; 		mov.w	@(marsGbl_PalDmaMidWr,gbr),r0
-; 		cmp/eq	#1,r0
-; 		bt	MarsVideo_LoadPal
-		mov	#1,r0
-		mov.w	r0,@(marsGbl_PalDmaMidWr,gbr)
+		mov.w	@(marsGbl_PalDmaMidWr,gbr),r0
+		cmp/eq	#1,r0
+		bt	MarsVideo_LoadPal
 		mov 	r1,r5
 		mov 	#RAM_Mars_Palette,r6
 		mov 	r2,r0
 		shll	r0
 		add 	r0,r6
-		mov 	r3,r7
+		mov 	r3,r0
+; 		and	#$FF,r0
+; 		cmp/pl	r0
+; 		bf	.badlen
+		mov	#256,r7
+		cmp/gt	r7,r0
+		bt	.loop
+		mov	r0,r7
 .loop:
 		mov.w	@r5+,r0
 		or	r4,r0
@@ -258,8 +263,7 @@ MarsVideo_LoadPal:
 		dt	r7
 		bf/s	.loop
 		add 	#2,r6
-		mov	#0,r0
-		mov.w	r0,@(marsGbl_PalDmaMidWr,gbr)
+.badlen:
 		rts
 		nop
 		align 4
@@ -1141,45 +1145,20 @@ mdlrd_setpoint:
 
 	; Perspective projection
 	; NOT PERFECT, this is the best I got.
+		mov 	#_JR,r8
+		mov	#320<<16,r7
 		neg	r4,r0		; reverse Z
 		cmp/pl	r0
 		bt	.inside
-		mov	#$1FFF,r6
-		mov	@(cam_x_rot,r11),r5
-		and	r6,r5
-		shar	r5
-		shar	r5
-		shar	r5
-		shar	r5		
-		mov	r4,r0
-		add 	#64,r0
-		shll16	r0
-		add	r4,r0
-		add	r5,r0
-		mov	r0,r5
-		dmuls	r5,r2
-		sts	mach,r0
-		sts	macl,r2
-		xtrct	r0,r2
-		dmuls	r5,r3
-		sts	mach,r0
-		sts	macl,r3
-		xtrct	r0,r3
-	rept 3
-		shar	r2
-		shar	r3
-	endm
-		add	#-64,r4
-		bra	.zmulti
-		nop
+		shlr8	r7
+; 		shlr2	r7
+		mov	#1,r0
 .inside:
-		mov	#512<<16,r7
-		mov 	#_JR,r8
-		add 	#64,r0
 		mov 	r0,@r8
 		mov 	r7,@(4,r8)
 		nop
 		mov 	@(4,r8),r7
+.zmulti:
 		dmuls	r7,r2
 		sts	mach,r0
 		sts	macl,r2
@@ -1188,7 +1167,6 @@ mdlrd_setpoint:
 		sts	mach,r0
 		sts	macl,r3
 		xtrct	r0,r3
-.zmulti:
 
 		mov	@r15+,r11
 		mov	@r15+,r10
@@ -1198,7 +1176,7 @@ mdlrd_setpoint:
 		mov	@r15+,r6
 		mov	@r15+,r5
 		
-	; Set the most far limit points
+	; Set the most far points
 	; for each direction (X,Y,Z)
 		cmp/gt	r13,r4
 		bf	.save_z2

@@ -27,12 +27,22 @@ strc_ypos	ds.w 1
 ; ------------------------------------------------------
 		
 		struct RAM_ModeBuff
-RAM_RotX	ds.l 1
+RAM_Cam_Xpos	ds.l 1
+RAM_Cam_Ypos	ds.l 1
+RAM_Cam_Zpos	ds.l 1
+RAM_Cam_Xrot	ds.l 1
+RAM_Cam_Yrot	ds.l 1
+RAM_Cam_Zrot	ds.l 1
+RAM_CamData	ds.l 1
+RAM_CamFrame	ds.l 1
+RAM_CamTimer	ds.l 1
+
 RAM_MdlCurrMd	ds.w 1
-RAM_BgCamera	ds.w 1
+; RAM_BgCamera	ds.w 1
 RAM_BgCamCurr	ds.w 1
-RAM_CurY	ds.w 1
-RAM_SndPitch	ds.w 18
+; RAM_CurY	ds.w 1
+; RAM_SndPitch	ds.w 18
+
 sizeof_mdglbl	ds.l 0
 		finish
 		
@@ -45,21 +55,12 @@ MD_GmMode0:
 		move.w	#$2700,sr
 		bsr	Mode_Init
 		bsr	Video_PrintInit
-		lea	str_Title(pc),a0
-		move.l	#locate(0,1,1),d0
-		bsr	Video_Print
+; 		lea	str_Title(pc),a0
+; 		move.l	#locate(0,1,1),d0
+; 		bsr	Video_Print
 		bset	#bitDispEnbl,(RAM_VdpRegs+1).l		; Enable display
 		bsr	Video_Update
-
-; 		lea	(RAM_MdCamera),a0
-; 		moveq	#0,d0
-; 		move.l	d0,cam2_x_pos(a0)
-; 		move.l	#-$8000,cam2_y_pos(a0)
-; 		move.l	#-$30000,cam2_z_pos(a0)
-; 		move.l	d0,cam2_x_rot(a0)
-; 		move.l	d0,cam2_y_rot(a0)
-; 		move.l	d0,cam2_z_rot(a0)
-; 		move.l	#CAMERA_ANIM,(RAM_MdCamera+cam2_animdata)
+		move.w	#1,(RAM_MdlCurrMd).w
 		
 ; ====================================================================
 ; ------------------------------------------------------
@@ -68,19 +69,19 @@ MD_GmMode0:
 
 .loop:
 		bsr	System_VSync
-		move.l	#$7C000003,(vdp_ctrl).l
-		move.w	(RAM_BgCamCurr).l,d0
-		lsr.w	#3,d0
-		move.w	#0,(vdp_data).l
-		move.w	d0,(vdp_data).l
-		lea	str_Status(pc),a0
-		move.l	#locate(0,1,25),d0
-		bsr	Video_Print
+; 		move.l	#$7C000003,(vdp_ctrl).l
+; 		move.w	(RAM_BgCamCurr).l,d0
+; 		lsr.w	#3,d0
+; 		move.w	#0,(vdp_data).l
+; 		move.w	d0,(vdp_data).l
+; 		lea	str_Status(pc),a0
+; 		move.l	#locate(0,1,25),d0
+; 		bsr	Video_Print
 		move.w	(RAM_MdlCurrMd).w,d0
-		and.w	#$FF,d0
+		and.w	#%11111,d0
 		add.w	d0,d0
 		add.w	d0,d0
-		bsr	.mode0;.list(pc,d0.w)
+		jsr	.list(pc,d0.w)
 		bra	.loop
 
 ; ====================================================================
@@ -90,8 +91,10 @@ MD_GmMode0:
 
 .list:
 		bra.w	.mode0
-		bra.w	.mode0
+		bra.w	.mode1
 		
+; --------------------------------------------------
+; Mode 0
 ; --------------------------------------------------
 
 .mode0:
@@ -104,273 +107,257 @@ MD_GmMode0:
 		bsr	System_MdMars_MstTask		; Wait until it finishes.
 		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
 		bsr	System_MdMars_SlvAddTask
-		move.l	#CmdTaskMd_ObjectSet,d0		; Load 2 objects
-		moveq	#0,d1
-		move.l	#MARSOBJ_SMOK,d2
-		moveq	#0,d3
-		bsr	System_MdMars_SlvAddTask		
-		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
-		move.l	#Palette_Map,d1
+		move.l	#Palette_Intro,d1
 		moveq	#0,d2
-		move.w	#256,d3
+		move.w	#16,d3
 		moveq	#0,d4
+		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
 		bsr	System_MdMars_MstAddTask
+		moveq	#0,d1
+		move.l	#MARSOBJ_INTRO,d2
+		moveq	#0,d3
+		move.l	#CmdTaskMd_ObjectSet,d0
+		bsr	System_MdMars_SlvAddTask	; Load object
+; 		move.l	#TEST_LAYOUT,d1
+; 		move.l	#CmdTaskMd_MakeMap,d0
+; 		bsr	System_MdMars_SlvAddTask	; Load map
+
+		moveq	#0,d1
+		move.l	#PWM_STEREO,d2
+		move.l	#PWM_STEREO_e,d3
+		move.l	#0,d4
+		move.w	#$100,d5
+		moveq	#0,d6
+		moveq	#%111,d7
+		move.l	#CmdTaskMd_PWM_SetChnl,d0
+		bsr	System_MdMars_MstTask
+		
 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
 		moveq	#1,d1
 		bsr	System_MdMars_MstAddTask
 		bsr	System_MdMars_MstSendAll	; Send requests to
 		bsr	System_MdMars_SlvSendAll	; both SH2
+		move.l	#CAMERA_INTRO,(RAM_CamData).l
+		bsr	MdMdl_CamAnimate
+; 		move.l	#TEST_WAV,d0
+; 		move.l	#(TEST_WAV_E-TEST_WAV),d1
+; 		move.l	#0,d2
+; 		move.w	#$100,d3
+; 		moveq	#%01,d4
+; 		bsr	SoundReq_SetSample
 
-		lea	(RAM_SndPitch+4),a0
-		move.w	#$100,d0
-		move.w	#8-1,d1
-.initvals:
-		move.w	d0,(a0)+
-		dbf	d1,.initvals
-		bsr	MdMdl_Update
 
+		
+		
 .mode0_loop:
-		move.w	(Controller_1+on_press).l,d7
-		btst	#bitJoyB,d7
-		beq.s	.nob
-		bsr	.stop_sample
-.nob:
-		btst	#bitJoyC,d7
-		beq.s	.noc
-		bsr	.play_sample
-.noc:
-
-		move.w	(Controller_1+on_press).l,d7
-		btst	#bitJoyLeft,d7
-		beq.s	.nol
-		lea	(RAM_SndPitch),a0
-		move.w	(RAM_CurY).w,d0
-		add.w	d0,d0
-		sub.w	#1,(a0,d0.w)
-		bsr	MdMdl_Update
-.nol:
-		move.w	(Controller_1+on_press).l,d7
-		btst	#bitJoyRight,d7
-		beq.s	.nor
-		lea	(RAM_SndPitch),a0
-		move.w	(RAM_CurY).w,d0
-		add.w	d0,d0
-		add.w	#1,(a0,d0.w)
-		bsr	MdMdl_Update
-.nor:
-
-		move.w	(Controller_1+on_press).l,d7
-		btst	#bitJoyUp,d7
-		beq.s	.nou
-		tst.w	(RAM_CurY).w
-		beq.s	.nou
-		sub.w	#1,(RAM_CurY).w
-		bsr	MdMdl_Update
-.nou:
-		move.w	(Controller_1+on_press).l,d7
-		btst	#bitJoyDown,d7
-		beq.s	.nod
-		cmp.w	#CURY_MAX,(RAM_CurY).w
-		bge.s	.nod
-		add.w	#1,(RAM_CurY).w
-		bsr	MdMdl_Update
-.nod:
-
-	; XYZM
-		move.w	(Controller_1+on_press).l,d7
-		move.w	d7,d6
-		and.w	#JoyY,d6
-		beq.s	.noy
-		lea	(RAM_SndPitch),a0
-		move.w	(RAM_CurY).w,d0
-		add.w	d0,d0
-		sub.w	#$10,(a0,d0.w)
-		bsr	MdMdl_Update
-.noy:
-		move.w	(Controller_1+on_press).l,d7
-		move.w	d7,d6
-		and.w	#JoyZ,d6
-		beq.s	.noz
-		lea	(RAM_SndPitch),a0
-		move.w	(RAM_CurY).w,d0
-		add.w	d0,d0
-		add.w	#$10,(a0,d0.w)
-		bsr	MdMdl_Update
-.noz:
-	; BG Visual updates
-		move.l	#CmdTaskMd_ObjectPos,d0	; Cmnd $0A: Modify object pos and rot
-		moveq	#0,d1			; Slot
-		move.l	#0,d2			; X
-		move.l	#0,d3			; Y
-		move.l	#-$18000,d4		; Z
-		move.l	(RAM_RotX),d5
-		move.l	(RAM_RotX),d6
-		move.l	(RAM_RotX),d7
-; 		lsr.l	#2,d5
-; 		lsr.l	#1,d7
-		bsr	System_MdMars_SlvAddTask
-; 		move.l	#$6000,d3		; Y
-; 		moveq	#1,d1			; Slot
-; 		bsr	System_MdMars_SlvAddTask		
+		bsr	MdMdl_CamAnimate
+		bpl.s	.stay
+		move.w	#1,(RAM_MdlCurrMd).w
+; 		rts
+.stay:
+		moveq	#0,d1
+		move.l	(RAM_Cam_Xpos),d2
+		move.l	(RAM_Cam_Ypos),d3
+		move.l	(RAM_Cam_Zpos),d4
+		move.l	(RAM_Cam_Xrot),d5
+		move.l	(RAM_Cam_Yrot),d6
+		move.l	(RAM_Cam_Zrot),d7
+		move.l	#CmdTaskMd_CameraPos,d0		; Load map
+		bsr	System_MdMars_SlvAddTask	
 		bsr	System_MdMars_SlvSendDrop
-		add.l	#$1000,(RAM_RotX)
 		rts
 
-.stop_sample:
-; 		cmp.w	#1,(RAM_CurY).w
-; 		ble.s	.tracktst2
-		cmp.w	#2,(RAM_CurY).w
-		bne.s	.pwm_test2
-		move.l	#TEST_WAV,d0
-		move.l	#(TEST_WAV_E-TEST_WAV),d1
-		move.l	#0,d2
-		move.w	(RAM_SndPitch+4).w,d3
-		moveq	#%01,d4
-		bsr	SoundReq_SetSample
-		bra	MdMdl_Update
-.pwm_test2:
-		move.w	(RAM_CurY).w,d1
-		sub.w	#3,d1
-		moveq	#0,d2
-		move.l	#CmdTaskMd_PWM_Enable,d0
-		bra	System_MdMars_MstTask
+; --------------------------------------------------
+; Mode 1
+; --------------------------------------------------
 
-.play_sample:
-		cmp.w	#1,(RAM_CurY).w
-		ble.s	.tracktst
-		cmp.w	#2,(RAM_CurY).w
-		bne.s	.pwm_test
-		move.l	#TEST_WAV,d0
-		move.l	#(TEST_WAV_E-TEST_WAV),d1
-		move.l	#0,d2
-		move.w	(RAM_SndPitch+4).w,d3
-		moveq	#%01,d4
-		bsr	SoundReq_SetSample
-		bra	MdMdl_Update
-.pwm_test:
-		lea	(RAM_SndPitch+6),a0
-		move.w	(RAM_CurY).w,d1
-		sub.w	#3,d1
-		move.w	d1,d0
-		add.w	d0,d0
-		moveq	#0,d5
-		move.w	(a0,d0.w),d5
-		move.l	#PWM_STEREO,d2
-		move.l	#PWM_STEREO_e,d3
-		move.l	#0,d4
-		moveq	#0,d6
-		moveq	#%111,d7
-		move.l	#CmdTaskMd_PWM_SetChnl,d0
-		bra	System_MdMars_MstTask
-.tracktst:
-		lea	.trklist(pc),a0
-		lea	(RAM_SndPitch),a1
-		move.w	(RAM_CurY),d5
-		move.w	d5,d4
-		add.w	d5,d5
-		move.w	(a1,d5.w),d0
-		lsl.w	#4,d0
-		adda	d0,a0
-		move.l	(a0)+,d0
-		move.l	(a0)+,d1
-		move.l	(a0)+,d2
-		move.w	(a0)+,d3
-		bra	SoundReq_SetTrack
-.trklist:
-		dc.l GemaTrk_Yuki_patt
-		dc.l GemaTrk_Yuki_blk
-		dc.l GemaTrk_Yuki_ins
-		dc.w 2,0
-		dc.l TEST_PATTERN
-		dc.l TEST_BLOCKS
-		dc.l TEST_INSTR
-		dc.w 3,0
-		dc.l TEST_PATTERN_2
-		dc.l TEST_BLOCKS_2
-		dc.l TEST_INSTR_2
-		dc.w 4,0
+.mode1:
+		tst.w	(RAM_MdlCurrMd).w
+		bmi	.mode1_loop
+		or.w	#$8000,(RAM_MdlCurrMd).w
+		clr.l	(RAM_Cam_Xpos).l
+		clr.l	(RAM_Cam_Ypos).l
+		clr.l	(RAM_Cam_Zpos).l
+		clr.l	(RAM_Cam_Xrot).l
+		clr.l	(RAM_Cam_Yrot).l
+		clr.l	(RAM_Cam_Zrot).l
+		move.l	#-$8000,(RAM_Cam_Ypos).l
 		
-; 		moveq	#1,d1
-; 		move.l	#PWM_RIGHT,d2
-; 		move.l	#PWM_RIGHT_e,d3
-; 		move.l	d2,d4
-; 		move.l	#$100,d5
+; 		bsr	System_MdMars_WaitComm
+		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
+		moveq	#0,d1
+		bsr	System_MdMars_MstTask		; Wait until it finishes.
+		moveq	#0,d1
+		move.l	(RAM_Cam_Xpos),d2
+		move.l	(RAM_Cam_Ypos),d3
+		move.l	(RAM_Cam_Zpos),d4
+		move.l	(RAM_Cam_Xrot),d5
+		move.l	(RAM_Cam_Yrot),d6
+		move.l	(RAM_Cam_Zrot),d7
+		move.l	#CmdTaskMd_CameraPos,d0		; Load map
+		bsr	System_MdMars_SlvAddTask
+		move.l	#Palette_Map,d1
+		moveq	#0,d2
+		move.l	#256,d3
+		moveq	#0,d4
+		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
+		bsr	System_MdMars_MstAddTask
+		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
+		bsr	System_MdMars_SlvAddTask
+		move.l	#TEST_LAYOUT,d1
+		move.l	#CmdTaskMd_MakeMap,d0
+		bsr	System_MdMars_MstAddTask	; Load map
+		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
+		moveq	#1,d1
+		bsr	System_MdMars_MstAddTask
+		bsr	System_MdMars_MstSendAll	; Send requests to
+		bsr	System_MdMars_SlvSendAll	; both SH2
+; 		moveq	#0,d1
+; 		move.l	#PWM_STEREO,d2
+; 		move.l	#PWM_STEREO_e,d3
+; 		move.l	#0,d4
+; 		move.w	#$100,d5
 ; 		moveq	#0,d6
-; 		moveq	#%01,d7
-; 		move.l	#CmdTaskMd_SetPWM,d0
-; 		bsr	System_MdMars_MstAddTask
-; 		bsr	System_MdMars_MstSendAll
-; 		
-; .nox:
+; 		moveq	#%111,d7
+; 		move.l	#CmdTaskMd_PWM_SetChnl,d0
+; 		bsr	System_MdMars_MstTask
+
+.mode1_loop:
+		lea	str_Status(pc),a0
+		move.l	#locate(0,1,25),d0
+		bsr	Video_Print
+
+	; temporal camera
+		move.w	(Controller_1+on_hold).l,d7
+		btst	#bitJoyUp,d7
+		beq.s	.nou
+		add.l	#$2000,(RAM_Cam_Zpos).l
+.nou:
+		btst	#bitJoyDown,d7
+		beq.s	.nod
+		add.l	#-$2000,(RAM_Cam_Zpos).l
+.nod:
+		btst	#bitJoyLeft,d7
+		beq.s	.nol
+		add.l	#-$2000,(RAM_Cam_Xpos).l
+.nol:
+		btst	#bitJoyRight,d7
+		beq.s	.nor
+		add.l	#$2000,(RAM_Cam_Xpos).l
+.nor:
+		btst	#bitJoyA,d7
+		beq.s	.noa
+		add.l	#-$2000,(RAM_Cam_Xrot).l
+.noa:
+		btst	#bitJoyB,d7
+		beq.s	.nob
+		add.l	#$2000,(RAM_Cam_Xrot).l
+.nob:
+		moveq	#0,d1
+		move.l	(RAM_Cam_Xpos),d2
+		move.l	(RAM_Cam_Ypos),d3
+		move.l	(RAM_Cam_Zpos),d4
+		move.l	(RAM_Cam_Xrot),d5
+		move.l	(RAM_Cam_Yrot),d6
+		move.l	(RAM_Cam_Zrot),d7
+		move.l	#CmdTaskMd_CameraPos,d0		; Load map
+		bsr	System_MdMars_SlvAddTask		
+		bsr	System_MdMars_SlvSendDrop
+		rts
+
+; 		lea	.trklist(pc),a0
+; 		lea	(RAM_SndPitch),a1
+; 		move.w	(RAM_CurY),d5
+; 		move.w	d5,d4
+; 		add.w	d5,d5
+; 		move.w	(a1,d5.w),d0
+; 		lsl.w	#4,d0
+; 		adda	d0,a0
+; 		move.l	(a0)+,d0
+; 		move.l	(a0)+,d1
+; 		move.l	(a0)+,d2
+; 		move.w	(a0)+,d3
+; 		bra	SoundReq_SetTrack
+; .trklist:
+; 		dc.l GemaTrk_Yuki_patt
+; 		dc.l GemaTrk_Yuki_blk
+; 		dc.l GemaTrk_Yuki_ins
+; 		dc.w 2,0
+; 		dc.l TEST_PATTERN
+; 		dc.l TEST_BLOCKS
+; 		dc.l TEST_INSTR
+; 		dc.w 3,0
+; 		dc.l TEST_PATTERN_2
+; 		dc.l TEST_BLOCKS_2
+; 		dc.l TEST_INSTR_2
+; 		dc.w 4,0
 
 ; ====================================================================
 ; ------------------------------------------------------
 ; Subroutines
 ; ------------------------------------------------------
 
-MdMdl_Update:
-		cmp.w	#3,(RAM_CurY).w
-		bge.s	.pwm_upd
-		cmp.w	#2,(RAM_CurY).w
-		bne.s	.upd_cont
-		move.w	#$22,d0
-		move.w	(RAM_SndPitch+4).w,d1
-		bsr	Sound_Request
-		bra.s	.upd_cont
-.pwm_upd:
-		lea	(RAM_SndPitch+6),a0
-		move.w	(a0)+,d1
-		move.w	(a0)+,d2
-		move.w	(a0)+,d3
-		move.w	(a0)+,d4
-		move.w	(a0)+,d5
-		move.w	(a0)+,d6
-		move.w	(a0)+,d7
-		move.l	#CmdTaskMd_PWM_MultPitch,d0
-		bsr	System_MdMars_MstTask
-		
-.upd_cont:
-		lea	str_StatusPtch(pc),a0
-		move.l	#locate(0,10,3),d0
-		bsr	Video_Print
-		
-		lea	str_LazCursor(pc),a0
-		move.l	#locate(0,1,2),d0
-		move.w	(RAM_CurY).w,d1
-		add.b	d1,d0
-		bra	Video_Print
+; MdMdl_Update:
+; 		cmp.w	#3,(RAM_CurY).w
+; 		bge.s	.pwm_upd
+; 		cmp.w	#2,(RAM_CurY).w
+; 		bne.s	.upd_cont
+; 		move.w	#$22,d0
+; 		move.w	(RAM_SndPitch+4).w,d1
+; 		bsr	Sound_Request
+; 		bra.s	.upd_cont
+; .pwm_upd:
+; 		lea	(RAM_SndPitch+6),a0
+; 		move.w	(a0)+,d1
+; 		move.w	(a0)+,d2
+; 		move.w	(a0)+,d3
+; 		move.w	(a0)+,d4
+; 		move.w	(a0)+,d5
+; 		move.w	(a0)+,d6
+; 		move.w	(a0)+,d7
+; 		move.l	#CmdTaskMd_PWM_MultPitch,d0
+; 		bsr	System_MdMars_MstTask
+; 		
+; .upd_cont:
+; 		lea	str_StatusPtch(pc),a0
+; 		move.l	#locate(0,10,3),d0
+; 		bsr	Video_Print
+; 		
+; 		lea	str_LazCursor(pc),a0
+; 		move.l	#locate(0,1,2),d0
+; 		move.w	(RAM_CurY).w,d1
+; 		add.b	d1,d0
+; 		bra	Video_Print
 
-; MdMdl_CamAnimate:
-; 		lea	(RAM_MdCamera),a0
-; 		move.l	cam2_animdata(a0),d0		; If 0 == No animation
-; 		beq.s	.no_camanim
-; 		sub.l	#1,cam2_animtimer(a0)
-; 		bpl.s	.no_camanim
-; 		move.l	#1+1,cam2_animtimer(a0)		; TEMPORAL timer
-; 		move.l	d0,a1
-; 		move.l	(a1)+,d1
-; 		move.l	cam2_animframe(a0),d0
-; 		add.l	#1,d0
-; 		cmp.l	d1,d0
-; 		bne.s	.on_frames
-; 		moveq	#0,d0
-; .on_frames:
-; 		move.l	d0,cam2_animframe(a0)
-; 		mulu.w	#$18,d0
-; 		adda	d0,a1
-; 		move.l	(a1)+,cam2_x_pos(a0)
-; 		move.l	(a1)+,cam2_y_pos(a0)
-; 		move.l	(a1)+,cam2_z_pos(a0)
-; 		move.l	(a1)+,d1
-; 		move.l	d1,d0
-; 		neg.l	d0
-; 		move.l	d0,cam2_x_rot(a0)
-; 		move.l	(a1)+,cam2_y_rot(a0)
-; 		move.l	(a1)+,cam2_z_rot(a0)
+MdMdl_CamAnimate:
+		move.l	(RAM_CamData).l,d0		; If 0 == No animation
+		beq.s	.no_camanim
+		sub.l	#1,(RAM_CamTimer).l
+		bpl.s	.no_camanim
+		move.l	#1,(RAM_CamTimer).l		; TEMPORAL timer
+		move.l	d0,a1
+		move.l	(a1)+,d1
+		move.l	(RAM_CamFrame).l,d0
+		add.l	#1,d0
+		cmp.l	d1,d0
+		bne.s	.on_frames
+		moveq	#-1,d0
+		rts
+.on_frames:
+		move.l	d0,(RAM_CamFrame).l
+		mulu.w	#$18,d0
+		adda	d0,a1
+		move.l	(a1)+,(RAM_Cam_Xpos).l
+		move.l	(a1)+,(RAM_Cam_Ypos).l
+		move.l	(a1)+,(RAM_Cam_Zpos).l
+		move.l	(a1)+,(RAM_Cam_Xrot).l
+		move.l	(a1)+,(RAM_Cam_Yrot).l
+		move.l	(a1)+,(RAM_Cam_Zrot).l
 ; 		lsr.l	#7,d1
 ; 		move.w	d1,(RAM_BgCamera).l
-; .no_camanim:
-; 		rts
+.no_camanim:
+		moveq	#0,d0
+		rts
 ; 
 ; MdMdl1_Usercontrol:
 ; 		move.l	#var_MoveSpd,d5
@@ -494,30 +481,22 @@ MdMdl_Update:
 ; short stuff goes here
 ; ------------------------------------------------------
 
-str_LazCursor:	dc.b " ",$A,">",$A," ",0
-		align 2
-str_Title:	dc.b "GEMA Sound tester",$A,$A
-		dc.b " Track 1 ????",$A
-		dc.b " Track 2 ????",$A
-		dc.b "     DAC ????",$A
-		dc.b "  PWM 01 ????",$A
-		dc.b "      02 ????",$A
-		dc.b "      03 ????",$A
-		dc.b "      04 ????",$A
-		dc.b "      05 ????",$A
-		dc.b "      06 ????",$A
-		dc.b "      07 ????",0
-		dc.b "                             ",0
-		align 2
-str_StatusPtch:	dc.b "\\w",$A
-		dc.b "\\w",$A
-		dc.b "\\w",$A
-		dc.b "\\w",$A
-		dc.b "\\w",$A
-		dc.b "\\w",$A
-		dc.b "\\w",$A
-		dc.b "\\w",$A
-		dc.b "\\w",$A
+; str_LazCursor:	dc.b " ",$A,">",$A," ",0
+; 		align 2
+; str_Title:	dc.b "GEMA Sound tester",$A,$A
+; 		dc.b " Track 1 ????",$A
+; 		dc.b " Track 2 ????",$A
+; 		dc.b "     DAC ????",$A
+; 		dc.b "  PWM 01 ????",$A
+; 		dc.b "      02 ????",$A
+; 		dc.b "      03 ????",$A
+; 		dc.b "      04 ????",$A
+; 		dc.b "      05 ????",$A
+; 		dc.b "      06 ????",$A
+; 		dc.b "      07 ????",0
+; 		dc.b "                             ",0
+; 		align 2
+; str_StatusPtch:	dc.b "\\w",$A
 ; 		dc.b "\\w",$A
 ; 		dc.b "\\w",$A
 ; 		dc.b "\\w",$A
@@ -525,25 +504,33 @@ str_StatusPtch:	dc.b "\\w",$A
 ; 		dc.b "\\w",$A
 ; 		dc.b "\\w",$A
 ; 		dc.b "\\w",$A
-		dc.b "\\w",0
-		dc.l RAM_SndPitch
-		dc.l RAM_SndPitch+2
-		dc.l RAM_SndPitch+4
-		dc.l RAM_SndPitch+6
-		dc.l RAM_SndPitch+8
-		dc.l RAM_SndPitch+10
-		dc.l RAM_SndPitch+12
-		dc.l RAM_SndPitch+14
-		dc.l RAM_SndPitch+16
-		dc.l RAM_SndPitch+18
-; 		dc.l RAM_SndPitch+20
-; 		dc.l RAM_SndPitch+22
-; 		dc.l RAM_SndPitch+24
-; 		dc.l RAM_SndPitch+26
-; 		dc.l RAM_SndPitch+28
-; 		dc.l RAM_SndPitch+30
-; 		dc.l RAM_SndPitch+32
-		align 2
+; 		dc.b "\\w",$A
+; ; 		dc.b "\\w",$A
+; ; 		dc.b "\\w",$A
+; ; 		dc.b "\\w",$A
+; ; 		dc.b "\\w",$A
+; ; 		dc.b "\\w",$A
+; ; 		dc.b "\\w",$A
+; ; 		dc.b "\\w",$A
+; 		dc.b "\\w",0
+; 		dc.l RAM_SndPitch
+; 		dc.l RAM_SndPitch+2
+; 		dc.l RAM_SndPitch+4
+; 		dc.l RAM_SndPitch+6
+; 		dc.l RAM_SndPitch+8
+; 		dc.l RAM_SndPitch+10
+; 		dc.l RAM_SndPitch+12
+; 		dc.l RAM_SndPitch+14
+; 		dc.l RAM_SndPitch+16
+; 		dc.l RAM_SndPitch+18
+; ; 		dc.l RAM_SndPitch+20
+; ; 		dc.l RAM_SndPitch+22
+; ; 		dc.l RAM_SndPitch+24
+; ; 		dc.l RAM_SndPitch+26
+; ; 		dc.l RAM_SndPitch+28
+; ; 		dc.l RAM_SndPitch+30
+; ; 		dc.l RAM_SndPitch+32
+; 		align 2
 str_Status:
 		dc.b "\\w \\w \\w \\w       MD: \\l",$A
 		dc.b "\\w \\w \\w \\w",0

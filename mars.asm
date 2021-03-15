@@ -6,7 +6,7 @@
 ; +-----------------------------------------------------------------+
 
 		include	"system/macros.asm"	; Assembler macros
-		include	"system/md/const.asm"	; MD and MARS Variables are located here
+		include	"system/md/const.asm"	; MD and MARS Variables
 		include	"system/md/map.asm"	; Genesis hardware map
 		include	"system/mars/map.asm"	; MARS map
 		
@@ -15,13 +15,14 @@
 ; Header
 ; ----------------------------------------------------------------
 
-		include	"system/head.asm"	; Header, contains 32X specific setup
+		include	"system/head.asm"	; 32X Header and boot sequence
 
 ; ====================================================================
 ; ----------------------------------------------------------------
-; 68K CODE Section
-; 
+; 68K RAMCODE Section
 ; Stored on RAM to prevent BUS fighting (Kolibri-style)
+; 
+; MAX size: $8000
 ; ----------------------------------------------------------------
 
 Engine_Code:
@@ -57,7 +58,7 @@ Engine_Code_end:
 
 		align 4
 MARS_RAMDATA:
-		include "code/mars.asm"
+		include "system/mars/code.asm"
 		ltorg
 		cpu 68000
 		padding off
@@ -81,7 +82,7 @@ MARS_RAMDATA_E:
 ; --------------------------------------------------------
 
 		align 4
-		include "data/md_dmadata0.asm"
+		include "data/md_dma.asm"
 		
 ; --------------------------------------------------------
 ; MARS ROM data for SH2

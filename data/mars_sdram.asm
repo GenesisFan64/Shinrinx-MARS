@@ -4,7 +4,7 @@
 ; 
 ; This data is stored on SDRAM, it's always available to use
 ; and can be re-writeable
-; Put your most usable data like palettes or models here.
+; Put small sections of data like palettes or small models
 ; ----------------------------------------------------------------
 
 		include  "data/mars/objects/incl_sdram.asm"		; Models and palettes will go here

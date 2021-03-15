@@ -7,6 +7,11 @@
 # objtomars.py objname
 # ======================================================================
 
+# BLENDER:
+# Rotation X: 90°, Camera focus: 30mm
+# Animation view is centered
+
+
 import sys
 
 # ======================================================================
@@ -48,12 +53,12 @@ while reading:
     break
 
   point = text.split("\t")
-  x_pos = int(float(point[1])*(scale*2))
-  y_pos = int(float(point[2])*(scale*2))*-1
-  z_pos = int(float(point[3])*(scale*2))*-1
+  x_pos = int(float(point[1])*(scale))
+  y_pos = int(float(point[2])*(scale))*-1
+  z_pos = int(float(point[3])*(scale))*-1
   y_rot = int(float(point[4])*(scale/5.624995))*-1
-  x_rot = int(float(point[5])*(scale/5.624995))
-  z_rot = int(float(point[6])*(scale/5.624995))
+  x_rot = int(float(point[5])*(scale/5.624995))*-1
+  z_rot = int(float(point[6])*(scale/5.624995))*-1
   
   out_anim.write( bytes([x_pos>>24&0xFF,x_pos>>16&0xFF,x_pos>>8&0xFF,x_pos&0xFF,
 			 y_pos>>24&0xFF,y_pos>>16&0xFF,y_pos>>8&0xFF,y_pos&0xFF,

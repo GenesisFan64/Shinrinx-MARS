@@ -350,6 +350,16 @@ System_MdMars_MstTask:
 		bne.s	.wait_m
 		bra	sysMdMars_Transfer
 
+; System_MdMars_WaitComm:
+; 		move.b	(sysmars_reg+comm14),d4
+; 		move.b	(sysmars_reg+comm15),d5
+; 		or.w	d5,d4
+; 		and.w	#$80,d4
+; 		bne.s	System_MdMars_WaitComm
+; 		clr.w	(RAM_MdMarsTCntM).w
+; 		clr.w	(RAM_MdMarsTCntS).w
+; 		rts
+		
 ; ------------------------------------------------
 ; Single call for Slave CPU
 ; ------------------------------------------------
@@ -438,7 +448,7 @@ sysMdMars_instask:
 
 ; a6 - Task list and args
 ; d6 - Data size
-; d5 - CMD Interrupt bitset value (0-Master/1-Slave)
+; d5 - CMD Interrupt bitset value ($00-Master/$01-Slave)
 ; 
 ; Test for negative on comm14(Master) or
 ; comm15(Slave) before jumping here.
