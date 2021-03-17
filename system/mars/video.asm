@@ -18,8 +18,8 @@
 MAX_FACES	equ	256		; Maximum polygon faces (models,sprites) to store on buffer
 MAX_SVDP_PZ	equ	384		; This list is for both read and write, increase the value if needed
 MAX_MODELS	equ	64		; Note: First 9 models are reserved for layout map
-MAX_ZDIST	equ	-$2000		; Max drawing distance (-Z max)
-LAY_WIDTH	equ	$10*2		; Layout data width * 2
+MAX_ZDIST	equ	-$1800		; Max drawing distance (-Z max)
+LAY_WIDTH	equ	$20*2		; Layout data width * 2
 
 ; ----------------------------------------
 ; Variables
@@ -443,7 +443,7 @@ MarsLay_Draw:
 		jmp	@r0
 		nop
 		align 4
-.center_val:	dc.l (LAY_WIDTH*6)+(2*5)
+.center_val:	dc.l (LAY_WIDTH*$E)+(2*$C)
 
 .list:
 		dc.l .front
@@ -1143,15 +1143,14 @@ mdlrd_setpoint:
    		mov	r7,r2
    		mov	r8,r3
 
-	; Perspective projection
-	; NOT PERFECT, this is the best I got.
+	; Weak perspective projection
+	; this is the best I got,
+	; It breaks on large faces
 		mov 	#_JR,r8
-		mov	#320<<16,r7
+		mov	#360<<16,r7
 		neg	r4,r0		; reverse Z
 		cmp/pl	r0
 		bt	.inside
-		shlr8	r7
-; 		shlr2	r7
 		mov	#1,r0
 .inside:
 		mov 	r0,@r8

@@ -311,8 +311,9 @@ System_VSync:
 ; ====================================================================
 ; --------------------------------------------------------
 ; Routines to send task request from here to 32X
+; ARGUMENTS (d1-d7) MUST BE LONGWORDS (move.l) OR MOVEQ's
 ; 
-; Uses comm8,comm10,comm12
+; Uses comm8,comm10,comm12, shared for both SH2s
 ; --------------------------------------------------------
 
 ; ------------------------------------------------

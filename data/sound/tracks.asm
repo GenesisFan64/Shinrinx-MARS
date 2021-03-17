@@ -50,18 +50,18 @@ gemaInsNull	macro
 
 ; ------------------------------------------------------------
 
-TEST_BLOCKS	binclude "data/sound/tracks/temple_blk.bin"
-TEST_PATTERN	binclude "data/sound/tracks/temple_patt.bin"
-TEST_INSTR
-		gemaInsPsg  0,PsgIns_01
-		gemaInsPsg  0,PsgIns_01
-		gemaInsPsgN 0,PsgIns_Snare,%101
-
-TEST_BLOCKS_2	binclude "data/sound/tracks/kraid_blk.bin"
-TEST_PATTERN_2	binclude "data/sound/tracks/kraid_patt.bin"
-TEST_INSTR_2
-		gemaInsPsgN 0,PsgIns_Bass,%011
-		gemaInsPsg  0,PsgIns_03
+; TEST_BLOCKS	binclude "data/sound/tracks/temple_blk.bin"
+; TEST_PATTERN	binclude "data/sound/tracks/temple_patt.bin"
+; TEST_INSTR
+; 		gemaInsPsg  0,PsgIns_01
+; 		gemaInsPsg  0,PsgIns_01
+; 		gemaInsPsgN 0,PsgIns_Snare,%101
+; 
+; TEST_BLOCKS_2	binclude "data/sound/tracks/kraid_blk.bin"
+; TEST_PATTERN_2	binclude "data/sound/tracks/kraid_patt.bin"
+; TEST_INSTR_2
+; 		gemaInsPsgN 0,PsgIns_Bass,%011
+; 		gemaInsPsg  0,PsgIns_03
 
 GemaTrk_Yuki_blk:
 		binclude "data/sound/tracks/level0_blk.bin"

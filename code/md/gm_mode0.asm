@@ -36,13 +36,8 @@ RAM_Cam_Zrot	ds.l 1
 RAM_CamData	ds.l 1
 RAM_CamFrame	ds.l 1
 RAM_CamTimer	ds.l 1
-
 RAM_MdlCurrMd	ds.w 1
-; RAM_BgCamera	ds.w 1
 RAM_BgCamCurr	ds.w 1
-; RAM_CurY	ds.w 1
-; RAM_SndPitch	ds.w 18
-
 sizeof_mdglbl	ds.l 0
 		finish
 		
@@ -61,6 +56,23 @@ MD_GmMode0:
 		bset	#bitDispEnbl,(RAM_VdpRegs+1).l		; Enable display
 		bsr	Video_Update
 		move.w	#1,(RAM_MdlCurrMd).w
+
+; 		move.l	#GemaTrk_Yuki_patt,d0
+; 		move.l	#GemaTrk_Yuki_blk,d1
+; 		move.l	#GemaTrk_Yuki_ins,d2
+; 		moveq	#2,d3
+; 		moveq	#0,d4
+; 		bsr	SoundReq_SetTrack
+
+		moveq	#0,d1
+		move.l	#PWM_STEREO,d2
+		move.l	#PWM_STEREO_e,d3
+		move.l	#0,d4
+		move.l	#$100,d5
+		moveq	#0,d6
+		moveq	#%111,d7
+		move.l	#CmdTaskMd_PWM_SetChnl,d0
+		bsr	System_MdMars_MstTask
 		
 ; ====================================================================
 ; ------------------------------------------------------
@@ -121,17 +133,6 @@ MD_GmMode0:
 ; 		move.l	#TEST_LAYOUT,d1
 ; 		move.l	#CmdTaskMd_MakeMap,d0
 ; 		bsr	System_MdMars_SlvAddTask	; Load map
-
-		moveq	#0,d1
-		move.l	#PWM_STEREO,d2
-		move.l	#PWM_STEREO_e,d3
-		move.l	#0,d4
-		move.w	#$100,d5
-		moveq	#0,d6
-		moveq	#%111,d7
-		move.l	#CmdTaskMd_PWM_SetChnl,d0
-		bsr	System_MdMars_MstTask
-		
 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
 		moveq	#1,d1
 		bsr	System_MdMars_MstAddTask
@@ -181,7 +182,7 @@ MD_GmMode0:
 		clr.l	(RAM_Cam_Xrot).l
 		clr.l	(RAM_Cam_Yrot).l
 		clr.l	(RAM_Cam_Zrot).l
-		move.l	#-$8000,(RAM_Cam_Ypos).l
+		move.l	#-$A000,(RAM_Cam_Ypos).l
 		
 ; 		bsr	System_MdMars_WaitComm
 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF

@@ -546,11 +546,11 @@ SH2_M_Entry:
 		mov     #0,r0
 		mov.b   r0,@(3,r1)
 		mov.b   r0,@(2,r1)
-		mov.l   #$FFFFFEE2,r0			; Pre-init special interrupt
+		mov.l   #$FFFFFEE2,r0			; Init special interrupt
 		mov     #$50,r1
 		mov.w   r1,@r0
 		mov.l   #$FFFFFEE4,r0
-		mov     #$120/4,r1			; VBR + this/4
+		mov     #$120/4,r1			; Watchdog: Set jump pointer (VBR + this/4)
 		shll8   r1
 		mov.w   r1,@r0
 
@@ -705,6 +705,13 @@ master_loop:
 		mov	#MarsVideo_SetWatchdog,r0
 		jsr	@r0
 		nop
+		
+	; While we are doing this, the watchdog is
+	; working on the background drawing the polygons
+	; using the "pieces" list
+	; 
+	; r14 - Polygon pointers list
+	; r13 - Number of polygons to build
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0	; Start drawing polygons from the READ buffer
 		tst     #1,r0				; Check for which buffer to use
 		bt	.page_2
@@ -716,13 +723,6 @@ master_loop:
 		mov 	#RAM_Mars_PlgnList_1,r14
 		mov	#RAM_Mars_PlgnNum_1,r13
 .cont_plgn:
-
-	; While we are doing this, the watchdog is
-	; working on the background drawing the polygons
-	; using the "pieces" list
-	; 
-	; r14 - Polygon pointers list
-	; r13 - Number of polygons to build
 		mov.w	@r13,r13
 		cmp/pl	r13
 		bf	.skip
@@ -766,8 +766,8 @@ master_loop:
 		add	#1,r0
 		mov.b	r0,@r4
 	; --------------------
-	
-		mov	#_sysreg+comm14,r1
+
+		mov	#_sysreg+comm14,r1		; Clear task number
 		mov.b	@r1,r0
 		and	#$80,r0
 		mov.b	r0,@r1
@@ -857,8 +857,8 @@ SH2_S_HotStart:
 		bf	.copy
 
 ; ------------------------------------------------
-; REMINDER: In blender, 1 meter = $10000
-;
+; REMINDER: 1 meter = $10000
+
 		mov	#MarsMdl_Init,r0
 		jsr	@r0
 		nop
@@ -1007,7 +1007,6 @@ slave_loop:
 ; --------------------------------------------------------
 
 ; Bubble sorting
-
 slv_sort_z:
 		sts	pr,@-r15
 		mov	#0,r0					; Reset current PlgnNum
@@ -1084,12 +1083,10 @@ slv_sort_z:
 
 ; ====================================================================
 ; --------------------------------------------------------
-; Task list for MD-to-MARS tasks, call these directly
-; in the Genesis side
+; Task list for MD-to-MARS tasks, call these 68k side
+; with the respective arguments
 ; 
 ; *** 68k EXAMPLES ***
-; Mst: For Master
-; Slv: For Slave
 ; 
 ; Single task:
 ; 	move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
@@ -1107,7 +1104,9 @@ slv_sort_z:
 ; 	bsr	System_MdMars_MstSendAll	; <-- Send all and wait
 ; 	; or
 ; 	bsr	System_MdMars_MstSendDrop	; <-- Send all but skip if busy
-; 	
+;
+; Mst: for Master, processes until all draw-tasks finished
+; Slv: for Slave, processes after sorting model faces
 ; --------------------------------------------------------
 
 		align 4
