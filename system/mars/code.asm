@@ -405,6 +405,9 @@ s_irq_cmd:
 		bra	.next_comm
 		add	#4,r2
 .finish:
+		mov	#0,r0		; SH is done
+		mov.b	r0,@(1,r1)
+
 		mov	#_sysreg+comm15,r1	; Start tasks on Slave
 		mov.b	@r1,r0
 		or	#$80,r0
@@ -1300,11 +1303,9 @@ CmdTaskMd_CameraPos:
 ; @($08,r14) - Start point
 ; @($0C,r14) - End point
 ; @($10,r14) - Loop point
-; @($14,r14) - Pitch
-; @($18,r14) - Volume
-; @($1C,r14) - Settings:
-; 		%00000000 00000000LR
-;		LR - output bits
+; @($14,r14) - Volume
+; @($18,r14) - Settings: %00000000 00000000LR | LR - output bits
+; @($1C,r14) - Pitch
 ; ------------------------------------------------
 
 CmdTaskMd_PWM_SetChnl:
@@ -1313,9 +1314,9 @@ CmdTaskMd_PWM_SetChnl:
 		mov	@($08,r14),r2
 		mov	@($0C,r14),r3
 		mov	@($10,r14),r4
-		mov	@($14,r14),r5
-		mov	@($18,r14),r6
-		mov	@($1C,r14),r7
+		mov	@($1C,r14),r5	; TODO: reorder this
+		mov	@($14,r14),r6
+		mov	@($18,r14),r7
 		bsr	MarsSound_SetPwm
 		nop
 		lds	@r15+,pr

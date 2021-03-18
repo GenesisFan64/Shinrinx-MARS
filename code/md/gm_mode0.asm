@@ -57,20 +57,20 @@ MD_GmMode0:
 		bsr	Video_Update
 		move.w	#1,(RAM_MdlCurrMd).w
 
-; 		move.l	#GemaTrk_Yuki_patt,d0
-; 		move.l	#GemaTrk_Yuki_blk,d1
-; 		move.l	#GemaTrk_Yuki_ins,d2
-; 		moveq	#2,d3
-; 		moveq	#0,d4
-; 		bsr	SoundReq_SetTrack
+		move.l	#GemaTrk_Yuki_patt,d0
+		move.l	#GemaTrk_Yuki_blk,d1
+		move.l	#GemaTrk_Yuki_ins,d2
+		moveq	#7,d3
+		moveq	#0,d4
+		bsr	SoundReq_SetTrack
 
 		moveq	#0,d1
 		move.l	#PWM_STEREO,d2
 		move.l	#PWM_STEREO_e,d3
 		move.l	#0,d4
-		move.l	#$100,d5
-		moveq	#0,d6
-		moveq	#%111,d7
+		moveq	#0,d5
+		moveq	#%111,d6
+		move.l	#$100,d7
 		move.l	#CmdTaskMd_PWM_SetChnl,d0
 		bsr	System_MdMars_MstTask
 		
@@ -183,8 +183,7 @@ MD_GmMode0:
 		clr.l	(RAM_Cam_Yrot).l
 		clr.l	(RAM_Cam_Zrot).l
 		move.l	#-$A000,(RAM_Cam_Ypos).l
-		
-; 		bsr	System_MdMars_WaitComm
+
 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
 		moveq	#0,d1
 		bsr	System_MdMars_MstTask		; Wait until it finishes.
@@ -213,15 +212,15 @@ MD_GmMode0:
 		bsr	System_MdMars_MstAddTask
 		bsr	System_MdMars_MstSendAll	; Send requests to
 		bsr	System_MdMars_SlvSendAll	; both SH2
-; 		moveq	#0,d1
-; 		move.l	#PWM_STEREO,d2
-; 		move.l	#PWM_STEREO_e,d3
-; 		move.l	#0,d4
-; 		move.w	#$100,d5
-; 		moveq	#0,d6
-; 		moveq	#%111,d7
-; 		move.l	#CmdTaskMd_PWM_SetChnl,d0
-; 		bsr	System_MdMars_MstTask
+		moveq	#0,d1
+		move.l	#PWM_STEREO,d2
+		move.l	#PWM_STEREO_e,d3
+		move.l	#0,d4
+		move.w	#$100,d5
+		moveq	#0,d6
+		moveq	#%111,d7
+		move.l	#CmdTaskMd_PWM_SetChnl,d0
+		bsr	System_MdMars_MstTask
 
 .mode1_loop:
 		lea	str_Status(pc),a0

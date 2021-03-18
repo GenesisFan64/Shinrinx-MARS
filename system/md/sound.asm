@@ -2,7 +2,7 @@
 ; ----------------------------------------------------------------
 ; MD Sound
 ; ----------------------------------------------------------------
-
+		
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; Subroutines
@@ -46,9 +46,69 @@ Sound_Init:
 ; Call this on VBlank only.
 ; --------------------------------------------------------
 
+		align $80			; ASL's fault for this
 Sound_Update:
-		bsr	sndLockZ80
-		bsr	sndUnlockZ80
+; 		bsr	sndLockZ80
+; 		lea	(z80_cpu+PWMVTBL),a0
+; 		move.w	#7-1,d7			; TODO: Set max channels here
+; .looppwm:
+; 		move.b	(a0),d1
+; 		btst	#6,d1
+; 		beq.s	.no_upd
+; 		bclr	#6,d1
+; 		move.b	d1,(a0)
+; 		move.l	a0,a1
+; 		adda	#3,a1
+; 
+; 		move.l	d7,-(sp)
+; 		and.l	#%1111,d1
+; 		move.b	(a1)+,d2	; Start
+; 		lsl.l	#8,d2
+; 		move.b	(a1)+,d2
+; 		lsl.l	#8,d2
+; 		move.b	(a1)+,d2
+; 		lsl.l	#8,d2
+; 		move.b	(a1)+,d2
+; 		move.b	(a1)+,d3	; End
+; 		lsl.l	#8,d3
+; 		move.b	(a1)+,d3
+; 		lsl.l	#8,d3
+; 		move.b	(a1)+,d3
+; 		lsl.l	#8,d3
+; 		move.b	(a1)+,d3
+; 		move.b	(a1)+,d4	; Loop
+; 		lsl.l	#8,d4
+; 		move.b	(a1)+,d4
+; 		lsl.l	#8,d4
+; 		move.b	(a1)+,d4
+; 		lsl.l	#8,d4
+; 		move.b	(a1)+,d4
+; 		moveq	#0,d5
+; 		moveq	#0,d6
+; 		moveq	#0,d7
+; 		move.b	(a1)+,d6
+; 		move.b	(a1)+,d7
+; 		move.b	(a1)+,d5
+; 		lsl.l	#8,d5
+; 		move.b	(a1)+,d5
+; 		move.l	#CmdTaskMd_PWM_SetChnl,d0
+; 		bsr	System_MdMars_MstTask
+; 		move.l	(sp)+,d7
+; .no_upd:
+; 		move.b	(a0),d1
+; 		btst	#5,d1
+; 		beq.s	.unused
+; 		bclr	#5,d1
+; 		move.b	d1,(a0)
+; 		and.l	#%1111,d1
+; 		moveq	#0,d2
+; 		move.l	#CmdTaskMd_PWM_Enable,d0
+; 		bsr	System_MdMars_MstTask
+; .unused:
+; 		adda	#19,a0
+; 		dbf	d7,.looppwm
+; 		
+; 		bsr	sndUnlockZ80
 		rts
 
 ; --------------------------------------------------------
@@ -420,22 +480,7 @@ drv_loop:
 		call	updtrack	; Update track data
 		call	check_tick
 .neither:
-; 		ld	hl,6000h	; Template for PWM comm.
-; 		ld	(hl),0
-; 		ld	(hl),1
-; 		ld	(hl),0
-; 		ld	(hl),0
-; 		ld	(hl),0
-; 		ld	(hl),0
-; 		ld	(hl),1
-; 		call	dac_me
-; 		ld	(hl),0
-; 		ld	(hl),1
-; 		ld	ix,5100h|8000h		; ix - mars sysreg
-; 		ld	a,(ix+27h)
-; 		inc	a
-; 		ld	(ix+27h),a
-
+		call	mars_snd
 .next_cmd:
 		call	dac_fill
 		call	dac_me
@@ -619,6 +664,180 @@ drv_loop:
 ; ----------------------------------------------------------------
 
 ; --------------------------------------------------------
+; For 32X only:
+; Communicate to Master SH2 using CMD interrupt
+; --------------------------------------------------------
+
+mars_snd:
+		ld	hl,6000h	; Template for PWM comm.
+		ld	(hl),0
+		ld	(hl),1
+		ld	(hl),0
+		ld	(hl),0
+		ld	(hl),0
+		ld	(hl),0
+		ld	(hl),1
+		call	dac_fill
+		call	dac_me
+		ld	(hl),0
+		ld	(hl),1
+		ld	iy,PWMVTBL
+		ld	ix,5100h|8000h		; ix - mars sysreg
+		ld	b,7
+.next:
+		push	bc
+		push	iy
+		ld	a,(iy)
+		or	a
+		jp	p,.disbld
+		bit	6,(iy)
+		call	nz,.play
+		call	dac_me
+		bit	5,(iy)
+		call	nz,.stop		
+.disbld:
+		call	dac_me
+		pop	iy
+		pop	bc
+		ld	de,19
+		add	iy,de
+		djnz	.next
+		ld	a,(ix+26h)
+		inc	a
+		ld	(ix+26h),a
+		ret	
+; bit 6
+.play:
+		res	6,(iy)
+		ld	hl,.liltrnfr_play
+		push	hl
+		call	dac_me
+		ld	de,4+3		; Point to arg 2
+		add	hl,de
+		ld	a,(iy)		; Set channel
+		and	1111b
+		ld	(hl),a
+		inc	iy
+		inc	iy
+		inc	iy
+		inc	hl
+	rept 4*3
+		ld	a,(iy)		; Set Start/End/Loop
+		ld	(hl),a
+		inc	hl
+		inc	iy
+	endm
+		call	dac_me
+		ld	a,(iy)		; Set volume
+		inc	hl
+		inc	hl
+		inc 	hl
+		ld	(hl),a
+		inc 	hl
+		inc	iy
+		call	dac_me
+		ld	a,(iy)		; Set bits
+		inc	hl
+		inc	hl
+		inc 	hl
+		ld	(hl),a
+		inc 	hl
+		inc	iy
+		call	dac_me
+		inc	hl
+		inc	hl
+		ld	a,(iy)		; Set freq
+		ld	(hl),a
+		inc 	hl
+		inc	iy
+		ld	a,(iy)
+		ld	(hl),a
+		call	dac_me
+		inc 	hl
+		inc	iy
+		pop	hl
+		jr	.comm_me
+; bit 5
+.stop:
+		res	5,(iy)
+		ld	hl,.liltrnfr_stop
+		push	hl
+		call	dac_me
+		ld	de,4+3		; Point to arg 2
+		add	hl,de
+		ld	a,(iy)		; Set channel
+		and	1111b
+		ld	(hl),a
+		inc	hl
+		inc	hl
+		inc 	hl
+		inc 	hl
+		ld	(hl),0
+		pop	hl
+
+; Communicate to 32X
+.comm_me:
+		ld	(ix+(comm6+1)),1		; Stop signal
+		call	dac_me
+.busy_md:	ld	a,(ix+comm8)
+		or	a
+		jp	nz,.busy_md		
+		ld	(ix+comm8),2		; MD ready
+		ld	(ix+(comm8+1)),1	; SH busy
+		ld	(ix+3),01b		; Master CMD interrupt
+.wait_cmd:	bit	0,(ix+3)
+		jp	nz,.wait_cmd
+		call	dac_me
+		ld	b,8
+.loop:
+		ld	a,(ix+(comm8+1))	; SH ready?
+		cp	2
+		jr	nz,.loop
+		ld	(ix+comm8),1		; MD is writing
+		ld	a,b
+		or	a
+		jr	z,.exit
+		call	dac_me
+		ld	a,(hl)
+		inc	hl
+		ld	(ix+comm10),a
+		ld	a,(hl)
+		inc	hl
+		ld	(ix+comm10+1),a
+		ld	a,(hl)
+		inc	hl
+		call	dac_me
+		ld	(ix+comm12),a
+		ld	a,(hl)
+		inc	hl
+		ld	(ix+comm12+1),a
+		ld	(ix+comm8),2		; MD is free
+		dec	b
+		jr	.loop
+.exit:	
+		ld	(ix+comm8),0		; MD finished
+		ld	(ix+(comm6+1)),0	; Resume 68k comm
+		ret
+
+		align 10h
+.liltrnfr_play:
+	db CmdTaskMd_PWM_SetChnl>>24&0FFh,CmdTaskMd_PWM_SetChnl>>16&0FFh
+	db CmdTaskMd_PWM_SetChnl>>8&0FFh,CmdTaskMd_PWM_SetChnl&0FFh
+	db 0,0,0,0	; Slot
+	db 0,0,0,0	; Start
+	db 0,0,0,0	; End
+	db 0,0,0,0	; Loop
+	db 0,0,0,0	; Volume
+	db 0,0,0,0	; Settings
+	db 0,0,0,0	; Pitch
+	
+.liltrnfr_stop:
+	db CmdTaskMd_PWM_SetChnl>>24&0FFh,CmdTaskMd_PWM_SetChnl>>16&0FFh
+	db CmdTaskMd_PWM_SetChnl>>8&0FFh,CmdTaskMd_PWM_SetChnl&0FFh
+	db 0,0,0,0	; Slot
+	db 0,0,0,0	; Flags
+	
+; --------------------------------------------------------
 ; Set and play instruments in their respective channels
 ; --------------------------------------------------------
 
@@ -731,22 +950,24 @@ playonchip
 
 .req_ins:
 		call	.get_instype
-		cp	-1
+		cp	-1		; Null
 		ret	z
-		cp	2
-		jr	z,.fm_ins
-		cp	3
-		ret	z
-		cp	4
-		ret	z
-		cp	5
-		ret	z
-		
-; PSG instrument
-		cp	1
+		cp	0		; PSG normal
+		jr	z,.ins_psg
+		cp	1		; PSG noise
 		jr	z,.ins_ns
-		cp	0
-		ret	nz
+		cp	2		; FM normal
+		jr	z,.fm_ins
+		cp	3		; FM special
+		ret	z
+		cp	4		; DAC
+		ret	z
+		cp	5		; PWM
+		jp	z,.pwm_ins
+		ret
+
+; PSG instrument
+.ins_psg:
 		push	hl
 		call	dac_me
 		call	.srch_psg	; Type 0: PSG
@@ -793,7 +1014,7 @@ playonchip
 		ld	a,(de)
 		ld	(hl),a
 		ret
-
+; Type 2
 .fm_ins:
 		push	hl
 		call	.srch_fm
@@ -853,7 +1074,44 @@ playonchip
 		ld	a,(hl)			; Keys (xxxx0000b)
 		ld	(ix+8),a
 		ret
+
+; Type 5
+.pwm_ins:
+		push	hl
+		call	.srch_pwm
+		cp	-1
+		ret	z
+		push	hl
+		pop	ix
+		pop	hl
 		
+		inc	hl
+		inc	hl
+		call	dac_me
+		ld	a,(hl)
+		inc	hl
+		ld	h,(hl)
+		ld	l,a
+		push	ix
+		pop	de
+		inc	de
+		inc	de
+		inc	de
+		ld	b,12
+	; Copy-paste start/end/loop
+.copypste_p:
+		ld	a,(hl)
+		ld	(de),a
+		inc	hl
+		inc	de
+		nop
+		call	dac_me
+		djnz	.copypste_p
+		ld	a,(hl)
+		ld	(ix+16),a
+; 		jr	$
+		ret
+
 ; ----------------------------------------
 ; Volume request
 ; ----------------------------------------
@@ -1257,8 +1515,6 @@ playonchip
 		ld	d,28h
 		call	fm_send_1
 		ret
-		
-		
 .note_fm3:
 .note_fm6:
 		ret
@@ -1268,8 +1524,42 @@ playonchip
 ; ----------------------------------------
 
 .note_pwm:
+		push	hl
+		call	.srch_pwm
+		push	hl
+		pop	ix
+		pop	hl
+		inc	hl
+		
+		call	dac_me
+		ld	a,(iy+chnl_Note)
+		cp	-1
+		jr	z,.pwm_stop
+		cp	-2
+		jr	z,.pwm_stop
+		ld	l,(hl)
+		call	dac_me
+		add	a,l
+		add	a,a
+		ld	de,0
+		ld	e,a
+		ld	hl,wavFreq_Pwm
+		add	hl,de
+		ld	a,(hl)
+		ld	(ix+18),a	; NOTE: big endian
+		inc	hl
+		ld	a,(hl)
+		ld	(ix+17),a
+		ld	a,(ix)		; Tell SH2 we want to play
+		or	01000000b
+		ld	(ix),a
 		ret
-
+.pwm_stop:
+		ld	a,(ix)		; Tell SH2 to stop this channel
+		or	00100000b
+		ld	(ix),a
+		ret
+		
 ; ----------------------------------------
 ; Check the current instrument type
 ; 
@@ -1314,18 +1604,20 @@ playonchip
 .srch_fm:
 		ld	de,17
 		ld	hl,FMVTBL
-; 		call	.srch_chnltbl
-; 		or	a
-; 		ret	z
-; 		ld	de,16
-; 		ld	hl,FM3VTBL
-; 		call	.srch_chnltbl
-; 		or	a
-; 		ret	z
-; 		ld	de,16
-; 		ld	hl,FM6VTBL
 		jr	.srch_chnltbl
-
+.srch_fm3:
+		ld	de,17		; TODO: don't autosearch this
+		ld	hl,FM3VTBL
+		jr	.srch_chnltbl
+.srch_fm6:
+		ld	de,17		; TODO: same thing
+		ld	hl,FM6VTBL
+		jr	.srch_chnltbl
+.srch_pwm:
+		ld	de,19
+		ld	hl,PWMVTBL
+		jr	.srch_chnltbl
+		
 ; ----------------------------------------
 
 .psgvoltbl:
@@ -3116,13 +3408,14 @@ FM6VTBL		db 06h
 		dw 0			; 14 - Ex freq 3
 		db -1
 
-PWMVTBL		db 00h			; 0 - PWM entry
-		dw 0			; 1 - track link
-		db 0,0,0,0		; 3 - BIG-endian 64-bit Start position
-		db 0,0,0,0		; 7 - BIG-endian 64-bit End position
-		db 0,0,0,0		; 11 - BIG-endian 64-bit Loop position
-		db 0			; 15 - "Volume"
-		db 0			; 16 - Type + panning (slrb) s-Stereo sample, lr-Left/Right output
+PWMVTBL		db 00h		; 0 - PWM entry, bit7:locked bit6:update for 68k
+		dw 0		; 1 - track link
+		db 0,0,0,0	; 3 - BIG-endian 64-bit Start position
+		db 0,0,0,0	; 7 - BIG-endian 64-bit End position
+		db 0,0,0,0	; 11 - BIG-endian 64-bit Loop position
+		db 0		; 15 - "Volume" (zero until I figure it out)
+		db 0		; 16 - Type + panning (slrb) s-Stereo sample, lr-Left/Right output
+		dw 0		; 18 - Pitch (note)
 		db 01h
 		dw 0
 		db 0,0,0,0
@@ -3130,6 +3423,7 @@ PWMVTBL		db 00h			; 0 - PWM entry
 		db 0,0,0,0
 		db 0
 		db 0
+		dw 0
 		db 02h
 		dw 0
 		db 0,0,0,0
@@ -3137,6 +3431,7 @@ PWMVTBL		db 00h			; 0 - PWM entry
 		db 0,0,0,0
 		db 0
 		db 0
+		dw 0
 		db 03h
 		dw 0
 		db 0,0,0,0
@@ -3144,6 +3439,7 @@ PWMVTBL		db 00h			; 0 - PWM entry
 		db 0,0,0,0
 		db 0
 		db 0
+		dw 0
 		db 04h
 		dw 0
 		db 0,0,0,0
@@ -3151,6 +3447,7 @@ PWMVTBL		db 00h			; 0 - PWM entry
 		db 0,0,0,0
 		db 0
 		db 0
+		dw 0
 		db 05h
 		dw 0
 		db 0,0,0,0
@@ -3158,6 +3455,7 @@ PWMVTBL		db 00h			; 0 - PWM entry
 		db 0,0,0,0
 		db 0
 		db 0
+		dw 0
 		db 06h
 		dw 0
 		db 0,0,0,0
@@ -3165,6 +3463,7 @@ PWMVTBL		db 00h			; 0 - PWM entry
 		db 0,0,0,0
 		db 0
 		db 0
+		dw 0
 		db -1
 
 psgcom		db 00h,00h,00h,00h	;  0 command 1 = key on, 2 = key off, 4 = stop snd
@@ -3191,6 +3490,51 @@ PsgIns_02:	db 00h,0FFh,80h,04h, 04h
 PsgIns_03:	db 30h,0FFh, -1,00h, 04h
 PsgIns_Bass:	db 00h,0FFh, -1,01h, 01h
 PsgIns_Snare:	db 00h,0FFh,00h,0F0h,0F0h
+
+PwmIns_SPHEAVY1:
+		db PwmInsWav_SPHEAVY1>>24&0FFh
+		db PwmInsWav_SPHEAVY1>>16&0FFh
+		db PwmInsWav_SPHEAVY1>>8&0FFh
+		db PwmInsWav_SPHEAVY1&0FFh
+		db PwmInsWav_SPHEAVY1_e>>24&0FFh
+		db PwmInsWav_SPHEAVY1_e>>16&0FFh
+		db PwmInsWav_SPHEAVY1_e>>8&0FFh
+		db PwmInsWav_SPHEAVY1_e&0FFh
+		db -1,-1,-1,-1
+		db 011b
+PwmIns_MCLSTRNG:
+		db PwmInsWav_MCLSTRNG>>24&0FFh
+		db PwmInsWav_MCLSTRNG>>16&0FFh
+		db PwmInsWav_MCLSTRNG>>8&0FFh
+		db PwmInsWav_MCLSTRNG&0FFh
+		db PwmInsWav_MCLSTRNG_e>>24&0FFh
+		db PwmInsWav_MCLSTRNG_e>>16&0FFh
+		db PwmInsWav_MCLSTRNG_e>>8&0FFh
+		db PwmInsWav_MCLSTRNG_e&0FFh
+		db -1,-1,-1,-1
+		db 011b
+PwmIns_WHODSNARE:
+		db PwmInsWav_WHODSNARE>>24&0FFh
+		db PwmInsWav_WHODSNARE>>16&0FFh
+		db PwmInsWav_WHODSNARE>>8&0FFh
+		db PwmInsWav_WHODSNARE&0FFh
+		db PwmInsWav_WHODSNARE_e>>24&0FFh
+		db PwmInsWav_WHODSNARE_e>>16&0FFh
+		db PwmInsWav_WHODSNARE_e>>8&0FFh
+		db PwmInsWav_WHODSNARE_e&0FFh
+		db -1,-1,-1,-1
+		db 011b
+PwmIns_TECHNOBASSD:
+		db PwmInsWav_TECHNOBASSD>>24&0FFh
+		db PwmInsWav_TECHNOBASSD>>16&0FFh
+		db PwmInsWav_TECHNOBASSD>>8&0FFh
+		db PwmInsWav_TECHNOBASSD&0FFh
+		db PwmInsWav_TECHNOBASSD_e>>24&0FFh
+		db PwmInsWav_TECHNOBASSD_e>>16&0FFh
+		db PwmInsWav_TECHNOBASSD_e>>8&0FFh
+		db PwmInsWav_TECHNOBASSD_e&0FFh
+		db -1,-1,-1,-1
+		db 011b
 
 FmIns_Fm3_OpenHat:
 		binclude "data/sound/instr/fm/fm3_openhat.gsx",2478h,28h

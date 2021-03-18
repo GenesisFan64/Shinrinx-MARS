@@ -340,13 +340,14 @@ System_MdMars_SlvAddTask:
 
 System_MdMars_MstTask:
 		lea	(RAM_MdMarsTsSgl),a6
+		lea	(sysmars_reg+comm14),a5
 		movem.l	d0-d7,(a6)
 		move.w	#(MAX_MDTSKARG*4),d6
 		moveq	#0,d5
 .wait_m:
 		nop
 		nop
-		move.b	(sysmars_reg+comm14),d4
+		move.b	(a5),d4
 		and.w	#$80,d4
 		bne.s	.wait_m
 		bra	sysMdMars_Transfer
@@ -367,13 +368,14 @@ System_MdMars_MstTask:
 
 System_MdMars_SlvTask:
 		lea	(RAM_MdMarsTsSgl),a6
+		lea	(sysmars_reg+comm15),a5
 		movem.l	d0-d7,(a6)
 		move.w	#(MAX_MDTSKARG*4),d6
 		moveq	#1,d5
 .wait_s:
 		nop
 		nop
-		move.b	(sysmars_reg+comm15),d4
+		move.b	(a5),d4
 		and.w	#$80,d4
 		bne.s	.wait_s
 		bra	sysMdMars_Transfer
@@ -384,52 +386,56 @@ System_MdMars_SlvTask:
 
 System_MdMars_MstSendAll:
 		lea	(RAM_MdMarsTskM),a6
+		lea	(sysmars_reg+comm14),a5
 		move.w	(RAM_MdMarsTCntM).w,d6
 		clr.w	(RAM_MdMarsTCntM).w
 		moveq	#0,d5
 .wait_m:
 		nop
 		nop
-		move.b	(sysmars_reg+comm14),d4
+		move.b	(a5),d4
 		and.w	#$80,d4
 		bne.s	.wait_m
-		bra.s	sysMdMars_Transfer
+		bra	sysMdMars_Transfer
 
 System_MdMars_MstSendDrop:
 		lea	(RAM_MdMarsTskM),a6
+		lea	(sysmars_reg+comm14),a5
 		move.w	(RAM_MdMarsTCntM).w,d6
 		clr.w	(RAM_MdMarsTCntM).w
 		moveq	#0,d5
 .wait_m:
 		nop
 		nop
-		move.b	(sysmars_reg+comm14),d4
+		move.b	(a5),d4
 		and.w	#$80,d4
 		beq.s	sysMdMars_Transfer
 		rts
 		
 System_MdMars_SlvSendAll:
 		lea	(RAM_MdMarsTskS),a6
+		lea	(sysmars_reg+comm15),a5
 		move.w	(RAM_MdMarsTCntS).w,d6
 		clr.w	(RAM_MdMarsTCntS).w
 		moveq	#1,d5
 .wait_s:
 		nop
 		nop
-		move.b	(sysmars_reg+comm15),d4
+		move.b	(a5),d4
 		and.w	#$80,d4
 		bne.s	.wait_s
 		bra.s	sysMdMars_Transfer
 
 System_MdMars_SlvSendDrop:
 		lea	(RAM_MdMarsTskS),a6
+		lea	(sysmars_reg+comm15),a5
 		move.w	(RAM_MdMarsTCntS).w,d6
 		clr.w	(RAM_MdMarsTCntS).w
 		moveq	#1,d5
 .wait_s:
 		nop
 		nop
-		move.b	(sysmars_reg+comm15),d4
+		move.b	(a5),d4
 		and.w	#$80,d4
 		beq.s	sysMdMars_Transfer
 		rts
@@ -448,6 +454,7 @@ sysMdMars_instask:
 		rts
 
 ; a6 - Task list and args
+; a5 - Status byte
 ; d6 - Data size
 ; d5 - CMD Interrupt bitset value ($00-Master/$01-Slave)
 ; 
@@ -455,35 +462,39 @@ sysMdMars_instask:
 ; comm15(Slave) before jumping here.
 
 sysMdMars_Transfer:
-		lea	(sysmars_reg),a5
+		move.b	(a5),d7			; Double check if Z80
+		bmi.s	sysMdMars_Transfer	; did a request first
+		lea	(sysmars_reg),a4
+.wait_z80:	move.b	comm6+1(a4),d7
+		bne.s	.wait_z80
 		move.w	sr,d7
 		move.w	#$2700,sr
-		
-	; comm transfer
-		lea	comm8(a5),a4
-		move.w	#$0201,(a4)		; MD ready | SH busy (init)
-		move.w	standby(a5),d4		; SLAVE CMD interrupt
+		lea	comm8(a4),a3		; comm transfer method
+.z80_isin:	tst.b	(a3)			; Z80 got first?
+		bne.s	.z80_isin		
+		move.w	#$0201,(a3)		; MD ready | SH busy (init)
+		move.w	standby(a4),d4		; Request CMD interrupt
 		bset	d5,d4
-		move.w	d4,standby(a5)
-.wait_cmd:	move.w	standby(a5),d4
+		move.w	d4,standby(a4)
+.wait_cmd:	move.w	standby(a4),d4
 		btst    d5,d4
 		bne.s   .wait_cmd
 .loop:
-		cmpi.b	#2,1(a4)		; SH ready?
+		cmpi.b	#2,1(a3)		; SH ready?
 		bne.s	.loop
-		move.b	#1,(a4)			; MD is writing
+		move.b	#1,(a3)			; MD is writing
 		tst.w	d6
 		beq.s	.exit
 		move.l	(a6),d4
 		clr.l	(a6)+
-		move.w	d4,4(a4)
+		move.w	d4,4(a3)
 		swap	d4
-		move.w	d4,2(a4)
-		move.b	#2,(a4)			; MD is free
+		move.w	d4,2(a3)
+		move.b	#2,(a3)			; MD is free
 		sub.w	#4,d6
 		bra.s	.loop
 .exit:	
-		move.b	#0,(a4)			; MD finished
+		move.b	#0,(a3)			; MD finished
 		move.w	d7,sr
 .mid_write:
 		rts

@@ -41,6 +41,14 @@ gemaInsFm3	macro pitch,fmins,freq1,freq2,freq3
 ; 		dc.b 0,0
 ; 		endm
 
+gemaInsPwm	macro pitch,pointer
+		dc.b 5,pitch
+		dc.b pointer&$FF,((pointer>>8)&$FF)
+		dc.b 0,0
+		dc.b 0,0
+		endm
+
+
 gemaInsNull	macro
 		dc.b -1,0
 		dc.b  0,0
@@ -64,41 +72,15 @@ gemaInsNull	macro
 ; 		gemaInsPsg  0,PsgIns_03
 
 GemaTrk_Yuki_blk:
-		binclude "data/sound/tracks/level0_blk.bin"
+		binclude "data/sound/tracks/marscomm_blk.bin"
 GemaTrk_Yuki_patt:
-		binclude "data/sound/tracks/level0_patt.bin"
+		binclude "data/sound/tracks/marscomm_patt.bin"
 GemaTrk_Yuki_ins:
-		gemaInsFm   -48,FmIns_DrumKick
-		gemaInsFm   -56,FmIns_DrumSnare
-		gemaInsFm     0,FmIns_DrumCloseHat
-		gemaInsPsgN 0,PsgIns_02,%100
-		gemaInsFm   0,FmIns_Bass_7
-		gemaInsFm   0,FmIns_Brass_gem
-		gemaInsPsg  0,PsgIns_00
-		gemaInsFm   0,FmIns_Ambient_3
 		gemaInsNull
 		gemaInsNull
+		gemaInsPwm -17,PwmIns_WHODSNARE
 		gemaInsNull
 		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
+		gemaInsPwm -17,PwmIns_TECHNOBASSD
+		gemaInsPwm -17,PwmIns_SPHEAVY1
+		gemaInsPwm -17,PwmIns_MCLSTRNG
