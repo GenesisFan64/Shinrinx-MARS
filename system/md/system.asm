@@ -223,7 +223,7 @@ System_Input:
 ; d0 | LONG
 ; --------------------------------------------------------
 
-; TODO: redo this later
+; TODO: rewrite this
 System_Random:
 		move.l	(RAM_SysRandSeed),d5
 		move.l	(RAM_SysRandVal),d4
@@ -247,7 +247,7 @@ System_Random:
 ; d4
 ; 
 ; Notes:
-; setting 0 or negative number will ignore changes
+; setting 0 or negative number will skip change
 ; --------------------------------------------------------
 
 System_SetInts:
@@ -317,185 +317,164 @@ System_VSync:
 ; --------------------------------------------------------
 
 ; ------------------------------------------------
-; Add task to Master's queue
+; Add new task to the list
 ; ------------------------------------------------
 
 System_MdMars_MstAddTask:
-		lea	(RAM_MdMarsTskM).w,a6
-		lea	(RAM_MdMarsTCntM).w,a5
+		lea	(RAM_MdMarsTskM).w,a0
+		lea	(RAM_MdMarsTCntM).w,a1
 		bra	sysMdMars_instask
-
-; ------------------------------------------------
-; Add task to Slave's queue
-; ------------------------------------------------
 
 System_MdMars_SlvAddTask:
-		lea	(RAM_MdMarsTskS).w,a6
-		lea	(RAM_MdMarsTCntS).w,a5
+		lea	(RAM_MdMarsTskS).w,a0
+		lea	(RAM_MdMarsTCntS).w,a1
 		bra	sysMdMars_instask
 
 ; ------------------------------------------------
-; Single call for Master CPU
+; Single task
 ; ------------------------------------------------
 
 System_MdMars_MstTask:
-		lea	(RAM_MdMarsTsSgl),a6
-		lea	(sysmars_reg+comm14),a5
-		movem.l	d0-d7,(a6)
-		move.w	#(MAX_MDTSKARG*4),d6
-		moveq	#0,d5
-.wait_m:
-		nop
-		nop
-		move.b	(a5),d4
-		and.w	#$80,d4
-		bne.s	.wait_m
+		lea	(RAM_MdMarsTsSgl),a0
+		lea	(sysmars_reg+comm14),a1
+		movem.l	d0-d7,(a0)
+		move.w	#(MAX_MDTSKARG*4),d0
+		moveq	#1,d1			; Task transfer mode
+		moveq	#0,d2
 		bra	sysMdMars_Transfer
-
-; System_MdMars_WaitComm:
-; 		move.b	(sysmars_reg+comm14),d4
-; 		move.b	(sysmars_reg+comm15),d5
-; 		or.w	d5,d4
-; 		and.w	#$80,d4
-; 		bne.s	System_MdMars_WaitComm
-; 		clr.w	(RAM_MdMarsTCntM).w
-; 		clr.w	(RAM_MdMarsTCntS).w
-; 		rts
-		
-; ------------------------------------------------
-; Single call for Slave CPU
-; ------------------------------------------------
 
 System_MdMars_SlvTask:
-		lea	(RAM_MdMarsTsSgl),a6
-		lea	(sysmars_reg+comm15),a5
-		movem.l	d0-d7,(a6)
-		move.w	#(MAX_MDTSKARG*4),d6
-		moveq	#1,d5
-.wait_s:
-		nop
-		nop
-		move.b	(a5),d4
-		and.w	#$80,d4
-		bne.s	.wait_s
+		lea	(RAM_MdMarsTsSgl),a0
+		lea	(sysmars_reg+comm15),a1
+		movem.l	d0-d7,(a0)
+		move.w	#(MAX_MDTSKARG*4),d0
+		moveq	#1,d1			; Task transfer mode
+		moveq	#1,d2
 		bra	sysMdMars_Transfer
 
 ; ------------------------------------------------
-; Single call for Master CPU
+; Queued tasks
 ; ------------------------------------------------
 
 System_MdMars_MstSendAll:
-		lea	(RAM_MdMarsTskM),a6
-		lea	(sysmars_reg+comm14),a5
-		move.w	(RAM_MdMarsTCntM).w,d6
+		lea	(RAM_MdMarsTskM),a0
+		lea	(sysmars_reg+comm14),a1
+		move.w	(RAM_MdMarsTCntM).w,d0
 		clr.w	(RAM_MdMarsTCntM).w
-		moveq	#0,d5
-.wait_m:
-		nop
-		nop
-		move.b	(a5),d4
-		and.w	#$80,d4
-		bne.s	.wait_m
+		moveq	#1,d1			; Task transfer mode
+		moveq	#0,d2
 		bra	sysMdMars_Transfer
 
-System_MdMars_MstSendDrop:
-		lea	(RAM_MdMarsTskM),a6
-		lea	(sysmars_reg+comm14),a5
-		move.w	(RAM_MdMarsTCntM).w,d6
-		clr.w	(RAM_MdMarsTCntM).w
-		moveq	#0,d5
-.wait_m:
-		nop
-		nop
-		move.b	(a5),d4
-		and.w	#$80,d4
-		beq.s	sysMdMars_Transfer
-		rts
-		
 System_MdMars_SlvSendAll:
-		lea	(RAM_MdMarsTskS),a6
-		lea	(sysmars_reg+comm15),a5
-		move.w	(RAM_MdMarsTCntS).w,d6
+		lea	(RAM_MdMarsTskS),a0
+		lea	(sysmars_reg+comm15),a1
+		move.w	(RAM_MdMarsTCntS).w,d0
 		clr.w	(RAM_MdMarsTCntS).w
-		moveq	#1,d5
-.wait_s:
-		nop
-		nop
-		move.b	(a5),d4
-		and.w	#$80,d4
-		bne.s	.wait_s
+		moveq	#1,d1			; Task transfer mode
+		moveq	#1,d2
 		bra.s	sysMdMars_Transfer
 
-System_MdMars_SlvSendDrop:
-		lea	(RAM_MdMarsTskS),a6
-		lea	(sysmars_reg+comm15),a5
-		move.w	(RAM_MdMarsTCntS).w,d6
-		clr.w	(RAM_MdMarsTCntS).w
-		moveq	#1,d5
-.wait_s:
+System_MdMars_MstSendDrop:
+		lea	(RAM_MdMarsTskM),a0
+		lea	(sysmars_reg+comm14),a1
+		move.w	(RAM_MdMarsTCntM).w,d0
+		moveq	#1,d1			; Task transfer mode
+		moveq	#0,d2
 		nop
 		nop
-		move.b	(a5),d4
-		and.w	#$80,d4
-		beq.s	sysMdMars_Transfer
+		move.b	(a1),d7
+		and.w	#$80,d7
+		beq.s	.go_m
 		rts
+.go_m:		clr.w	(RAM_MdMarsTCntM).w
+		bra	sysMdMars_Transfer
+
+System_MdMars_SlvSendDrop:
+		lea	(RAM_MdMarsTskS),a0
+		lea	(sysmars_reg+comm15),a1
+		move.w	(RAM_MdMarsTCntS).w,d0
+		moveq	#1,d1			; Task transfer mode
+		moveq	#1,d2
+		nop
+		nop
+		move.b	(a1),d7
+		and.w	#$80,d7
+		beq.s	.go_s
+		rts
+.go_s:		clr.w	(RAM_MdMarsTCntS).w
+		bra	sysMdMars_Transfer
 		
-; a6 - task pointer and args
-; a5 - task list counter
+; a0 - task pointer and args
+; a1 - task list counter
 sysMdMars_instask:
-		cmp.w	#(MAX_MDTSKARG*MAX_MDTASKS)*4,(a5)
+		cmp.w	#(MAX_MDTSKARG*MAX_MDTASKS)*4,(a1)
 		bge.s	.ran_out
-		move.w	#1,(RAM_FifoMarsWrt).w
-		adda.w	(a5),a6
-		movem.l	d0-d7,(a6)				; Send variables to RAM
-		add.w	#MAX_MDTSKARG*4,(a5)
-		move.w	#0,(RAM_FifoMarsWrt).w
+; 		move.w	#1,(RAM_FifoMarsWrt).w
+		adda.w	(a1),a0
+		movem.l	d0-d7,(a0)		; Set variables to RAM (d0 is label to jump)
+		add.w	#MAX_MDTSKARG*4,(a1)
+; 		move.w	#0,(RAM_FifoMarsWrt).w
 .ran_out:
 		rts
 
-; a6 - Task list and args
-; a5 - Status byte
-; d6 - Data size
-; d5 - CMD Interrupt bitset value ($00-Master/$01-Slave)
+; ------------------------------------------------
+; sysMdMars_Transfer
 ; 
-; Test for negative on comm14(Master) or
-; comm15(Slave) before jumping here.
+; a0 - Data to transfer
+; a1 - Status byte from the target CPU
+; d0 - Num of LONGS(4bytes) to transfer
+; d1 - Transfer type:
+; 	1-Task list
+; 	2-Sound
+; d2 - CMD Interrupt bitset value
+; 	($00-Master/$01-Slave)
+; ------------------------------------------------
 
 sysMdMars_Transfer:
-		move.b	(a5),d7			; Double check if Z80
-		bmi.s	sysMdMars_Transfer	; did a request first
+		nop
+		nop
+		move.b	(a1),d4
+		and.w	#$80,d4
+		bne.s	sysMdMars_Transfer
 		lea	(sysmars_reg),a4
-.wait_z80:	move.b	comm6+1(a4),d7
-		bne.s	.wait_z80
-		move.w	sr,d7
-		move.w	#$2700,sr
-		lea	comm8(a4),a3		; comm transfer method
-.z80_isin:	tst.b	(a3)			; Z80 got first?
-		bne.s	.z80_isin		
-		move.w	#$0201,(a3)		; MD ready | SH busy (init)
+		tst.w	d2			; CMD bit for Slave?
+		bne.s	.slv_safe
+.w_z80:		move.b	comm4(a4),d4		; Z80 made it first?
+		bne.s	.w_z80
+.slv_safe:
+		move.w	sr,d5
+		move.w	#$2700,sr		; Disable interrupts
+		lea	comm8(a4),a3		; comm transfer method	
+		move.b	d1,(a3)			; Set MD task ID
+		move.b	#$01,1(a3)		; Set SH as busy first
 		move.w	standby(a4),d4		; Request CMD interrupt
-		bset	d5,d4
+		bset	d2,d4
 		move.w	d4,standby(a4)
-.wait_cmd:	move.w	standby(a4),d4
-		btst    d5,d4
+.wait_cmd:	move.w	standby(a4),d4		; CMD cleared?
+		btst    d2,d4
 		bne.s   .wait_cmd
 .loop:
 		cmpi.b	#2,1(a3)		; SH ready?
 		bne.s	.loop
-		move.b	#1,(a3)			; MD is writing
-		tst.w	d6
+		move.w	d1,d4
+		or.w	#$80,d4
+		move.b	d4,(a3)			; MD is busy
+		tst.w	d0
 		beq.s	.exit
-		move.l	(a6),d4
-		clr.l	(a6)+
+		bmi.s	.exit
+		move.l	(a0),d4
+		clr.l	(a0)+
 		move.w	d4,4(a3)
 		swap	d4
 		move.w	d4,2(a3)
-		move.b	#2,(a3)			; MD is free
-		sub.w	#4,d6
+		move.w	d1,d4
+		or.w	#$40,d4
+		move.b	d4,(a3)			; MD is ready
+		sub.w	#4,d0
 		bra.s	.loop
 .exit:	
 		move.b	#0,(a3)			; MD finished
-		move.w	d7,sr
+		move.w	d5,sr
 .mid_write:
 		rts
 

@@ -109,55 +109,49 @@ m_irq_cmd:
 		stc	sr,@-r15
 		mov	#$F0,r0
 		ldc	r0,sr
-		mov	#RAM_Mars_MdTasksFifo_M,r2
+	
 		mov	#_sysreg+comm8,r1
+		mov	#MarsSnd_InstrList,r2
+		mov.b	@(0,r1),r0	; Sound transfer?
+		and	#%00111111,r0
+		cmp/eq	#2,r0
+		bt	.next_comm
+		mov	#RAM_Mars_MdTasksFifo_M,r2
+		mov	#_sysreg+comm14,r3
+		mov.b	@r3,r0
+		or	#$80,r0
+		mov.b	r0,@r3
 .next_comm:
 		mov	#2,r0		; SH is ready
 		mov.b	r0,@(1,r1)
 .wait_md_b:
 		mov.b	@(0,r1),r0	; get MD status
-		and	#$FF,r0
-		tst	r0,r0
+		cmp/eq	#0,r0
 		bt	.finish
-		cmp/eq	#1,r0		; MD is writing?
-		bf	.wait_md_b
+		and	#$80,r0
+		cmp/eq	#0,r0		; is MD busy?
+		bt	.wait_md_b
 		mov	#1,r0		; SH is busy
 		mov.b	r0,@(1,r1)
 .wait_md_c:
 		mov.b	@(0,r1),r0
-		and	#$FF,r0
-		tst	r0,r0
+		cmp/eq	#0,r0
 		bt	.finish
-		cmp/eq	#2,r0		; MD is ready?
+		and	#$40,r0
+		cmp/eq	#$40,r0		; MD ready?
 		bf	.wait_md_c
 		mov.w	@(2,r1),r0	; comm10
 		mov.w	r0,@r2
 		mov.w	@(4,r1),r0	; comm12
 		mov.w	r0,@(2,r2)
-		
-; 		mov	#_sysreg+comm6,r4
-; 		mov.w	@r4,r0
-; 		add	#1,r0
-; 		mov.w	r0,@r4
 		mov	#2,r0		; SH is ready
 		mov.b	r0,@(1,r1)
 		bra	.next_comm
 		add	#4,r2
 .finish:
-		mov	#_sysreg+comm14,r1
-		mov.b	@r1,r0
-		or	#$80,r0
-		mov.b	r0,@r1
 		ldc 	@r15+,sr
 		mov 	@r15+,r3
 		mov 	@r15+,r2
-		rts
-		nop
-		align 4
-
-		nop
-		nop
-		nop
 		rts
 		nop
 		align 4
@@ -369,7 +363,6 @@ s_irq_cmd:
 
 		mov	r2,@-r15
 		mov	r3,@-r15
-; 		mov	r4,@-r15
 		mov	#RAM_Mars_MdTasksFifo_S,r2
 		mov	#_sysreg+comm8,r1
 .next_comm:
@@ -377,29 +370,24 @@ s_irq_cmd:
 		mov.b	r0,@(1,r1)
 .wait_md_b:
 		mov.b	@(0,r1),r0	; get MD status
-		and	#$FF,r0
-		tst	r0,r0
+		cmp/eq	#0,r0
 		bt	.finish
-		cmp/eq	#1,r0		; MD is writing?
-		bf	.wait_md_b
+		and	#$80,r0
+		cmp/eq	#0,r0		; is MD busy?
+		bt	.wait_md_b
 		mov	#1,r0		; SH is busy
 		mov.b	r0,@(1,r1)
 .wait_md_c:
 		mov.b	@(0,r1),r0
-		and	#$FF,r0
-		tst	r0,r0
+		cmp/eq	#0,r0
 		bt	.finish
-		cmp/eq	#2,r0		; MD is ready?
+		and	#$40,r0
+		cmp/eq	#$40,r0		; MD ready?
 		bf	.wait_md_c
 		mov.w	@(2,r1),r0	; comm10
 		mov.w	r0,@r2
 		mov.w	@(4,r1),r0	; comm12
 		mov.w	r0,@(2,r2)
-		
-; 		mov	#_sysreg+comm6,r4
-; 		mov.w	@r4,r0
-; 		add	#1,r0
-; 		mov.w	r0,@r4
 		mov	#2,r0		; SH is ready
 		mov.b	r0,@(1,r1)
 		bra	.next_comm
@@ -411,8 +399,7 @@ s_irq_cmd:
 		mov	#_sysreg+comm15,r1	; Start tasks on Slave
 		mov.b	@r1,r0
 		or	#$80,r0
-		mov.b	r0,@r1
-; 		mov 	@r15+,r4		
+		mov.b	r0,@r1		
 		mov 	@r15+,r3
 		mov 	@r15+,r2
 		nop
@@ -1479,6 +1466,7 @@ sizeof_marsram	ds.l 0
 
 			struct MarsRam_Sound
 MarsSnd_PwmChnls	ds.b sizeof_sndchn*MAX_PWMCHNL
+MarsSnd_InstrList	ds.l 64
 sizeof_marssnd		ds.l 0
 			finish
 

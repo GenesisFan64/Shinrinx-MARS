@@ -10,12 +10,7 @@
 ; ----------------------------------------------------------------
 
 		include  "data/mars/objects/incl_rom.asm"	; All textures will go in ROM
-; PWM_LEFT:	binclude "data/sound/pwm_l.wav",$2C,$140000
-; PWM_LEFT_e:
-; 		align 4
-; PWM_MONO:	binclude "data/sound/pwm_mono.wav",$2C,$120000
-; PWM_MONO_e:
-; 		align 4
+
 PWM_STEREO:	binclude "data/sound/pwm_st.wav",$2C
 PWM_STEREO_e:
 		align 4

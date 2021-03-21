@@ -53,17 +53,14 @@ MD_GmMode0:
 ; 		lea	str_Title(pc),a0
 ; 		move.l	#locate(0,1,1),d0
 ; 		bsr	Video_Print
-		bset	#bitDispEnbl,(RAM_VdpRegs+1).l		; Enable display
-		bsr	Video_Update
-		move.w	#1,(RAM_MdlCurrMd).w
 
+		move.w	#1,(RAM_MdlCurrMd).w
 		move.l	#GemaTrk_Yuki_patt,d0
 		move.l	#GemaTrk_Yuki_blk,d1
 		move.l	#GemaTrk_Yuki_ins,d2
 		moveq	#7,d3
 		moveq	#0,d4
 		bsr	SoundReq_SetTrack
-
 		moveq	#0,d1
 		move.l	#PWM_STEREO,d2
 		move.l	#PWM_STEREO_e,d3
@@ -73,7 +70,10 @@ MD_GmMode0:
 		move.l	#$100,d7
 		move.l	#CmdTaskMd_PWM_SetChnl,d0
 		bsr	System_MdMars_MstTask
-		
+	
+		bset	#bitDispEnbl,(RAM_VdpRegs+1).l		; Enable display
+		bsr	Video_Update
+
 ; ====================================================================
 ; ------------------------------------------------------
 ; Loop
@@ -212,15 +212,6 @@ MD_GmMode0:
 		bsr	System_MdMars_MstAddTask
 		bsr	System_MdMars_MstSendAll	; Send requests to
 		bsr	System_MdMars_SlvSendAll	; both SH2
-		moveq	#0,d1
-		move.l	#PWM_STEREO,d2
-		move.l	#PWM_STEREO_e,d3
-		move.l	#0,d4
-		move.w	#$100,d5
-		moveq	#0,d6
-		moveq	#%111,d7
-		move.l	#CmdTaskMd_PWM_SetChnl,d0
-		bsr	System_MdMars_MstTask
 
 .mode1_loop:
 		lea	str_Status(pc),a0

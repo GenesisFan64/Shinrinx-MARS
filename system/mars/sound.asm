@@ -100,6 +100,7 @@ MarsSound_ReadPwm:
 		mov	#$FF,r3
 		and	r3,r1
 		and	r3,r2
+	; volume goes here...
 		mov 	@(mchnsnd_pitch,r8),r3
 		tst	#%100,r0
 		bt	.mono_i
@@ -337,6 +338,10 @@ MarsSound_PwmEnable:
 		nop
 		align 4
 		
+; ====================================================================
+
+		include "data/sound/instr_sdram.asm"
+
 ; ====================================================================
 
 		ltorg			; Save literals

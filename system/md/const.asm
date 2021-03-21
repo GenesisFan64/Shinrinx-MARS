@@ -131,7 +131,8 @@ sizeof_mdsys	ds.l 0
 ; ----------------------------------------------------------------
 
 		struct RAM_MdSound
-RAM_SoundSvReg	ds.l 4
+RAM_SndInsCopy	ds.b $100
+RAM_SndSaveReg	ds.l 4
 sizeof_mdsnd	ds.l 0
 		finish
 		
@@ -174,7 +175,7 @@ RAM_MdGlobal	ds.b sizeof_mdglbl-RAM_MdGlobal
 sizeof_mdram	ds.l 0
 	endif
 
-	if MOMPASS=6
+	if MOMPASS=7
 		message "MD RAM ends at: \{((sizeof_mdram)&$FFFFFF)}"
 	endif
 		finish

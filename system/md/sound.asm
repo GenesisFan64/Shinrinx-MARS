@@ -46,69 +46,37 @@ Sound_Init:
 ; Call this on VBlank only.
 ; --------------------------------------------------------
 
-		align $80			; ASL's fault for this
+		align $100			; ASL's fault for this
 Sound_Update:
-; 		bsr	sndLockZ80
-; 		lea	(z80_cpu+PWMVTBL),a0
-; 		move.w	#7-1,d7			; TODO: Set max channels here
-; .looppwm:
-; 		move.b	(a0),d1
-; 		btst	#6,d1
-; 		beq.s	.no_upd
-; 		bclr	#6,d1
-; 		move.b	d1,(a0)
-; 		move.l	a0,a1
-; 		adda	#3,a1
-; 
-; 		move.l	d7,-(sp)
-; 		and.l	#%1111,d1
-; 		move.b	(a1)+,d2	; Start
-; 		lsl.l	#8,d2
-; 		move.b	(a1)+,d2
-; 		lsl.l	#8,d2
-; 		move.b	(a1)+,d2
-; 		lsl.l	#8,d2
-; 		move.b	(a1)+,d2
-; 		move.b	(a1)+,d3	; End
-; 		lsl.l	#8,d3
-; 		move.b	(a1)+,d3
-; 		lsl.l	#8,d3
-; 		move.b	(a1)+,d3
-; 		lsl.l	#8,d3
-; 		move.b	(a1)+,d3
-; 		move.b	(a1)+,d4	; Loop
-; 		lsl.l	#8,d4
-; 		move.b	(a1)+,d4
-; 		lsl.l	#8,d4
-; 		move.b	(a1)+,d4
-; 		lsl.l	#8,d4
-; 		move.b	(a1)+,d4
-; 		moveq	#0,d5
-; 		moveq	#0,d6
-; 		moveq	#0,d7
-; 		move.b	(a1)+,d6
-; 		move.b	(a1)+,d7
-; 		move.b	(a1)+,d5
-; 		lsl.l	#8,d5
-; 		move.b	(a1)+,d5
-; 		move.l	#CmdTaskMd_PWM_SetChnl,d0
-; 		bsr	System_MdMars_MstTask
-; 		move.l	(sp)+,d7
-; .no_upd:
-; 		move.b	(a0),d1
-; 		btst	#5,d1
-; 		beq.s	.unused
-; 		bclr	#5,d1
-; 		move.b	d1,(a0)
-; 		and.l	#%1111,d1
-; 		moveq	#0,d2
-; 		move.l	#CmdTaskMd_PWM_Enable,d0
-; 		bsr	System_MdMars_MstTask
-; .unused:
-; 		adda	#19,a0
-; 		dbf	d7,.looppwm
-; 		
-; 		bsr	sndUnlockZ80
+		bsr	sndLockZ80
+		lea	(z80_cpu),a0
+		lea	(z80_cpu+reqMarsTrnf),a1
+		moveq	#0,d4
+		move.b	1(a1),d4
+		lsl.l	#8,d4
+		move.b	(a1),d4
+		bsr	sndUnlockZ80
+		tst.w	d4
+		beq.s	.no_req
+		lea	(a0,d4.w),a0
+		lea	(RAM_SndInsCopy),a2
+		move.w	#$80-1,d1
+		bsr	sndLockZ80
+.copydata:
+		move.b	(a0)+,d0
+		move.b	d0,(a2)+
+		dbf	d1,.copydata
+		move.b	#0,(a1)
+		move.b	#0,1(a1)
+		bsr	sndUnlockZ80
+		
+		lea	(RAM_SndInsCopy),a0
+		lea	(sysmars_reg+comm14),a1
+		move.w	#$80*2,d0
+		moveq	#2,d1			; Task transfer mode
+		moveq	#0,d2
+		bra	sysMdMars_Transfer
+.no_req:
 		rts
 
 ; --------------------------------------------------------
@@ -246,7 +214,7 @@ sndSendCmd:
 ; ------------------------------------------------
 
 sndReq_Enter:
-		movem.l	d6-d7/a5-a6,(RAM_SoundSvReg).l
+		movem.l	d6-d7/a5-a6,(RAM_SndSaveReg).l
 		moveq	#0,d6
 		move.w	sr,d6
 		swap	d6
@@ -265,7 +233,7 @@ sndReq_Exit:
 		move.w	#0,(z80_bus).l
 		swap	d6
 		move.w	d6,sr
-		movem.l	(RAM_SoundSvReg).l,d6-d7/a5-a6
+		movem.l	(RAM_SndSaveReg).l,d6-d7/a5-a6
 		rts
 		
 ; ------------------------------------------------
@@ -418,6 +386,7 @@ commZRomBlk	db 0			; 68k ROM block flag
 commZRomRd	db 0			; Z80 is reading ROM bit
 psgHatMode	db 0,0,0		; noise mode bits + linked channel
 currTblSrch	dw 0
+reqMarsTrnf	dw 0			; Request instrument transfer to SH2
 
 ; --------------------------------------------------------
 ; Z80 Interrupt at 0038h
@@ -663,180 +632,6 @@ drv_loop:
 ; Sound playback code
 ; ----------------------------------------------------------------
 
-; --------------------------------------------------------
-; For 32X only:
-; Communicate to Master SH2 using CMD interrupt
-; --------------------------------------------------------
-
-mars_snd:
-		ld	hl,6000h	; Template for PWM comm.
-		ld	(hl),0
-		ld	(hl),1
-		ld	(hl),0
-		ld	(hl),0
-		ld	(hl),0
-		ld	(hl),0
-		ld	(hl),1
-		call	dac_fill
-		call	dac_me
-		ld	(hl),0
-		ld	(hl),1
-		ld	iy,PWMVTBL
-		ld	ix,5100h|8000h		; ix - mars sysreg
-		ld	b,7
-.next:
-		push	bc
-		push	iy
-		ld	a,(iy)
-		or	a
-		jp	p,.disbld
-		bit	6,(iy)
-		call	nz,.play
-		call	dac_me
-		bit	5,(iy)
-		call	nz,.stop		
-.disbld:
-		call	dac_me
-		pop	iy
-		pop	bc
-		ld	de,19
-		add	iy,de
-		djnz	.next
-		ld	a,(ix+26h)
-		inc	a
-		ld	(ix+26h),a
-		ret	
-; bit 6
-.play:
-		res	6,(iy)
-		ld	hl,.liltrnfr_play
-		push	hl
-		call	dac_me
-		ld	de,4+3		; Point to arg 2
-		add	hl,de
-		ld	a,(iy)		; Set channel
-		and	1111b
-		ld	(hl),a
-		inc	iy
-		inc	iy
-		inc	iy
-		inc	hl
-	rept 4*3
-		ld	a,(iy)		; Set Start/End/Loop
-		ld	(hl),a
-		inc	hl
-		inc	iy
-	endm
-		call	dac_me
-		ld	a,(iy)		; Set volume
-		inc	hl
-		inc	hl
-		inc 	hl
-		ld	(hl),a
-		inc 	hl
-		inc	iy
-		call	dac_me
-		ld	a,(iy)		; Set bits
-		inc	hl
-		inc	hl
-		inc 	hl
-		ld	(hl),a
-		inc 	hl
-		inc	iy
-		call	dac_me
-		inc	hl
-		inc	hl
-		ld	a,(iy)		; Set freq
-		ld	(hl),a
-		inc 	hl
-		inc	iy
-		ld	a,(iy)
-		ld	(hl),a
-		call	dac_me
-		inc 	hl
-		inc	iy
-		pop	hl
-		jr	.comm_me
-; bit 5
-.stop:
-		res	5,(iy)
-		ld	hl,.liltrnfr_stop
-		push	hl
-		call	dac_me
-		ld	de,4+3		; Point to arg 2
-		add	hl,de
-		ld	a,(iy)		; Set channel
-		and	1111b
-		ld	(hl),a
-		inc	hl
-		inc	hl
-		inc 	hl
-		inc 	hl
-		ld	(hl),0
-		pop	hl
-
-; Communicate to 32X
-.comm_me:
-		ld	(ix+(comm6+1)),1		; Stop signal
-		call	dac_me
-.busy_md:	ld	a,(ix+comm8)
-		or	a
-		jp	nz,.busy_md		
-		ld	(ix+comm8),2		; MD ready
-		ld	(ix+(comm8+1)),1	; SH busy
-		ld	(ix+3),01b		; Master CMD interrupt
-.wait_cmd:	bit	0,(ix+3)
-		jp	nz,.wait_cmd
-		call	dac_me
-		ld	b,8
-.loop:
-		ld	a,(ix+(comm8+1))	; SH ready?
-		cp	2
-		jr	nz,.loop
-		ld	(ix+comm8),1		; MD is writing
-		ld	a,b
-		or	a
-		jr	z,.exit
-		call	dac_me
-		ld	a,(hl)
-		inc	hl
-		ld	(ix+comm10),a
-		ld	a,(hl)
-		inc	hl
-		ld	(ix+comm10+1),a
-		ld	a,(hl)
-		inc	hl
-		call	dac_me
-		ld	(ix+comm12),a
-		ld	a,(hl)
-		inc	hl
-		ld	(ix+comm12+1),a
-		ld	(ix+comm8),2		; MD is free
-		dec	b
-		jr	.loop
-.exit:	
-		ld	(ix+comm8),0		; MD finished
-		ld	(ix+(comm6+1)),0	; Resume 68k comm
-		ret
-
-		align 10h
-.liltrnfr_play:
-	db CmdTaskMd_PWM_SetChnl>>24&0FFh,CmdTaskMd_PWM_SetChnl>>16&0FFh
-	db CmdTaskMd_PWM_SetChnl>>8&0FFh,CmdTaskMd_PWM_SetChnl&0FFh
-	db 0,0,0,0	; Slot
-	db 0,0,0,0	; Start
-	db 0,0,0,0	; End
-	db 0,0,0,0	; Loop
-	db 0,0,0,0	; Volume
-	db 0,0,0,0	; Settings
-	db 0,0,0,0	; Pitch
-	
-.liltrnfr_stop:
-	db CmdTaskMd_PWM_SetChnl>>24&0FFh,CmdTaskMd_PWM_SetChnl>>16&0FFh
-	db CmdTaskMd_PWM_SetChnl>>8&0FFh,CmdTaskMd_PWM_SetChnl&0FFh
-	db 0,0,0,0	; Slot
-	db 0,0,0,0	; Flags
-	
 ; --------------------------------------------------------
 ; Set and play instruments in their respective channels
 ; --------------------------------------------------------
@@ -2125,6 +1920,7 @@ updtrack:
 		ld	h,(iy+(trk_romIns+1))
 		ld	a,(iy+(trk_romIns+2))
 		ld	de,(currInsData)
+		ld	(reqMarsTrnf),de	; Tell 68k to copy instruments
 		ld	bc,080h
 		call	transferRom	
 		
@@ -2192,7 +1988,8 @@ updtrack:
 		ld	bc,080h			; fill sections 2,3,4
 		call	dac_fill
 		call	dac_me
-		jp	transferRom
+		call	transferRom
+		ret
 
 ; c - Chip
 ; PSG: 80h
@@ -2292,6 +2089,201 @@ updtrack:
 		add	hl,de
 		jr	.chlst_unlk
 
+; --------------------------------------------------------
+; For 32X only:
+; Communicate to Master SH2 using CMD interrupt
+; --------------------------------------------------------
+
+mars_snd:
+		call	dac_fill
+		ld	hl,6000h		; Template for PWM comm.
+		ld	(hl),0
+		ld	(hl),1
+		ld	(hl),0
+		ld	(hl),0
+		ld	(hl),0
+		ld	(hl),0
+		ld	(hl),1
+		call	dac_me
+		ld	(hl),0
+		ld	(hl),1
+		ld	iy,PWMVTBL
+		ld	ix,5100h|8000h		; ix - mars sysreg
+		
+		ld	a,(ix+comm4+1)
+		inc	a
+		ld	(ix+comm4+1),a
+		ret
+
+; 		ld	b,7			; 7 channels
+; .next:
+; 		push	bc
+; 		push	iy
+; 		ld	a,(iy)
+; 		or	a
+; 		jp	p,.disbld
+; 		bit	6,(iy)
+; 		call	nz,.play
+; 		call	dac_me
+; 		bit	5,(iy)
+; 		call	nz,.stop		
+; .disbld:
+; 		call	dac_me
+; 		pop	iy
+; 		pop	bc
+; 		ld	de,19
+; 		add	iy,de
+; 		djnz	.next
+; 		ld	a,(ix+26h)
+; 		inc	a
+; 		ld	(ix+26h),a
+; 		ret	
+; ; bit 6
+; .play:
+; 		res	6,(iy)
+; ; 		ld	hl,.liltrnfr_play
+; ; 		push	hl
+; ; 		call	dac_me
+; ; 		ld	de,4+3		; Point to arg 2
+; ; 		add	hl,de
+; ; 		ld	a,(iy)		; Set channel
+; ; 		and	1111b
+; ; 		ld	(hl),a
+; ; 		inc	iy
+; ; 		inc	iy
+; ; 		inc	iy
+; ; 		inc	hl
+; ; 	rept 4*3
+; ; 		ld	a,(iy)		; Set Start/End/Loop
+; ; 		ld	(hl),a
+; ; 		inc	hl
+; ; 		inc	iy
+; ; 	endm
+; ; 		call	dac_me
+; ; 		ld	a,(iy)		; Set volume
+; ; 		inc	hl
+; ; 		inc	hl
+; ; 		inc 	hl
+; ; 		ld	(hl),a
+; ; 		inc 	hl
+; ; 		inc	iy
+; ; 		call	dac_me
+; ; 		ld	a,(iy)		; Set bits
+; ; 		inc	hl
+; ; 		inc	hl
+; ; 		inc 	hl
+; ; 		ld	(hl),a
+; ; 		inc 	hl
+; ; 		inc	iy
+; ; 		call	dac_me
+; ; 		inc	hl
+; ; 		inc	hl
+; ; 		ld	a,(iy)		; Set freq
+; ; 		ld	(hl),a
+; ; 		inc 	hl
+; ; 		inc	iy
+; ; 		ld	a,(iy)
+; ; 		ld	(hl),a
+; ; 		call	dac_me
+; ; 		inc 	hl
+; ; 		inc	iy
+; ; 		pop	hl
+; 
+; 		ld	hl,liltrnsfr_list
+; 		jr	.comm_me
+; ; ; bit 5
+; .stop:
+; 		res	5,(iy)
+; 		ret 
+; ; 		ld	hl,.liltrnfr_stop
+; ; 		push	hl
+; ; 		call	dac_me
+; ; 		ld	de,4+3		; Point to arg 2
+; ; 		add	hl,de
+; ; 		ld	a,(iy)		; Set channel
+; ; 		and	1111b
+; ; 		ld	(hl),a
+; ; 		inc	hl
+; ; 		inc	hl
+; ; 		inc 	hl
+; ; 		inc 	hl
+; ; 		ld	(hl),0
+; ; 		pop	hl
+; 
+; ; Communicate to 32X
+; .comm_me:
+; 		ld	(ix+(comm6+1)),1		; Stop signal
+; 		call	dac_me
+; .busy_md:	ld	a,(ix+comm8)
+; 		or	a
+; 		jp	nz,.busy_md		
+; 		ld	(ix+comm8),2		; MD ready
+; 		ld	(ix+(comm8+1)),1	; SH busy
+; 		ld	(ix+3),01b		; Master CMD interrupt
+; .wait_cmd:	bit	0,(ix+3)
+; 		jp	nz,.wait_cmd
+; 		call	dac_me
+; 		ld	b,8
+; .loop:
+; 		ld	a,(ix+(comm8+1))	; SH ready?
+; 		cp	2
+; 		jr	nz,.loop
+; 		ld	(ix+comm8),1		; MD is writing
+; 		ld	a,b
+; 		or	a
+; 		jr	z,.exit
+; 		call	dac_me
+; 		ld	a,(hl)
+; 		inc	hl
+; 		ld	(ix+comm10),a
+; 		ld	a,(hl)
+; 		inc	hl
+; 		ld	(ix+comm10+1),a
+; 		ld	a,(hl)
+; 		inc	hl
+; 		call	dac_me
+; 		ld	(ix+comm12),a
+; 		ld	a,(hl)
+; 		inc	hl
+; 		ld	(ix+comm12+1),a
+; 		ld	(ix+comm8),2		; MD is free
+; 		dec	b
+; 		jr	.loop
+; .exit:	
+; 		ld	(ix+comm8),0		; MD finished
+; 		ld	(ix+(comm6+1)),0	; Resume 68k comm
+; 		ret
+; 		align 10h
+; 		
+; .liltrnfr_play:
+; 	db CmdTaskMd_PWM_SetChnl>>24&0FFh,CmdTaskMd_PWM_SetChnl>>16&0FFh
+; 	db CmdTaskMd_PWM_SetChnl>>8&0FFh,CmdTaskMd_PWM_SetChnl&0FFh
+; 	db 0,0,0,0	; Slot
+; 	db 0,0,0,0	; Start
+; 	db 0,0,0,0	; End
+; 	db 0,0,0,0	; Loop
+; 	db 0,0,0,0	; Volume
+; 	db 0,0,0,0	; Settings
+; 	db 0,0,0,0	; Pitch
+; 	
+; .liltrnfr_stop:
+; 	db CmdTaskMd_PWM_SetChnl>>24&0FFh,CmdTaskMd_PWM_SetChnl>>16&0FFh
+; 	db CmdTaskMd_PWM_SetChnl>>8&0FFh,CmdTaskMd_PWM_SetChnl&0FFh
+; 	db 0,0,0,0	; Slot
+; 	db 0,0,0,0	; Flags
+; 
+; liltrnsfr_list:
+;  rept 7
+; 	db 0,0,0,0	; SH2 CALL routine
+; 	db 0,0,0,0	; Slot
+; 	db 0,0,0,0	; Start
+; 	db 0,0,0,0	; End
+; 	db 0,0,0,0	; Loop
+; 	db 0,0,0,0	; Volume
+; 	db 0,0,0,0	; Settings
+; 	db 0,0,0,0	; Pitch
+;  endm
+ 
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; Subroutines
@@ -3484,128 +3476,9 @@ psgtim		db 00h,00h,00h,00h	; 44 timer for sustain
 ; FM Voices
 ; ----------------------------------------------------------------
 
-PsgIns_00:	db 00h,0FFh,40h,00h, 80h
-PsgIns_01:	db 40h, 40h,80h,01h, 10h
-PsgIns_02:	db 00h,0FFh,80h,04h, 04h
-PsgIns_03:	db 30h,0FFh, -1,00h, 04h
-PsgIns_Bass:	db 00h,0FFh, -1,01h, 01h
-PsgIns_Snare:	db 00h,0FFh,00h,0F0h,0F0h
-
-PwmIns_SPHEAVY1:
-		db PwmInsWav_SPHEAVY1>>24&0FFh
-		db PwmInsWav_SPHEAVY1>>16&0FFh
-		db PwmInsWav_SPHEAVY1>>8&0FFh
-		db PwmInsWav_SPHEAVY1&0FFh
-		db PwmInsWav_SPHEAVY1_e>>24&0FFh
-		db PwmInsWav_SPHEAVY1_e>>16&0FFh
-		db PwmInsWav_SPHEAVY1_e>>8&0FFh
-		db PwmInsWav_SPHEAVY1_e&0FFh
-		db -1,-1,-1,-1
-		db 011b
-PwmIns_MCLSTRNG:
-		db PwmInsWav_MCLSTRNG>>24&0FFh
-		db PwmInsWav_MCLSTRNG>>16&0FFh
-		db PwmInsWav_MCLSTRNG>>8&0FFh
-		db PwmInsWav_MCLSTRNG&0FFh
-		db PwmInsWav_MCLSTRNG_e>>24&0FFh
-		db PwmInsWav_MCLSTRNG_e>>16&0FFh
-		db PwmInsWav_MCLSTRNG_e>>8&0FFh
-		db PwmInsWav_MCLSTRNG_e&0FFh
-		db -1,-1,-1,-1
-		db 011b
-PwmIns_WHODSNARE:
-		db PwmInsWav_WHODSNARE>>24&0FFh
-		db PwmInsWav_WHODSNARE>>16&0FFh
-		db PwmInsWav_WHODSNARE>>8&0FFh
-		db PwmInsWav_WHODSNARE&0FFh
-		db PwmInsWav_WHODSNARE_e>>24&0FFh
-		db PwmInsWav_WHODSNARE_e>>16&0FFh
-		db PwmInsWav_WHODSNARE_e>>8&0FFh
-		db PwmInsWav_WHODSNARE_e&0FFh
-		db -1,-1,-1,-1
-		db 011b
-PwmIns_TECHNOBASSD:
-		db PwmInsWav_TECHNOBASSD>>24&0FFh
-		db PwmInsWav_TECHNOBASSD>>16&0FFh
-		db PwmInsWav_TECHNOBASSD>>8&0FFh
-		db PwmInsWav_TECHNOBASSD&0FFh
-		db PwmInsWav_TECHNOBASSD_e>>24&0FFh
-		db PwmInsWav_TECHNOBASSD_e>>16&0FFh
-		db PwmInsWav_TECHNOBASSD_e>>8&0FFh
-		db PwmInsWav_TECHNOBASSD_e&0FFh
-		db -1,-1,-1,-1
-		db 011b
-
-FmIns_Fm3_OpenHat:
-		binclude "data/sound/instr/fm/fm3_openhat.gsx",2478h,28h
-FmIns_Fm3_ClosedHat:
-		binclude "data/sound/instr/fm/fm3_closedhat.gsx",2478h,28h
-FmIns_DrumKick:
-		binclude "data/sound/instr/fm/drum_kick.gsx",2478h,20h
-FmIns_DrumSnare:
-		binclude "data/sound/instr/fm/drum_snare.gsx",2478h,20h
-FmIns_DrumCloseHat:
-		binclude "data/sound/instr/fm/drum_closehat.gsx",2478h,20h
-FmIns_Piano_m1:
-		binclude "data/sound/instr/fm/piano_m1.gsx",2478h,20h
-
-; FmIns_Bass_gum:
-; 		binclude "data/sound/instr/fm/bass_gum.gsx",2478h,20h
-; FmIns_Bass_calm:
-; 		binclude "data/sound/instr/fm/bass_calm.gsx",2478h,20h
-; FmIns_Bass_heavy:
-; 		binclude "data/sound/instr/fm/bass_heavy.gsx",2478h,20h
-; FmIns_Bass_ambient:
-; 		binclude "data/sound/instr/fm/bass_ambient.gsx",2478h,20h
-; FmIns_Brass_gummy:
-; 		binclude "data/sound/instr/fm/brass_gummy.gsx",2478h,20h
-; FmIns_Flaute_1:
-; 		binclude "data/sound/instr/fm/flaute_1.gsx",2478h,20h
-FmIns_Bass_2:
-		binclude "data/sound/instr/fm/bass_2.gsx",2478h,20h
-FmIns_Bass_3:
-		binclude "data/sound/instr/fm/bass_3.gsx",2478h,20h
-FmIns_Bass_4:
-		binclude "data/sound/instr/fm/bass_4.gsx",2478h,20h
-FmIns_Bass_5:
-		binclude "data/sound/instr/fm/bass_5.gsx",2478h,20h
-FmIns_Bass_6:
-		binclude "data/sound/instr/fm/bass_6.gsx",2478h,20h
-FmIns_Bass_7:
-		binclude "data/sound/instr/fm/bass_7.gsx",2478h,20h
-; FmIns_Bass_synth:
-; 		binclude "data/sound/instr/fm/bass_synth_1.gsx",2478h,20h
-; FmIns_Guitar_1:
-; 		binclude "data/sound/instr/fm/guitar_1.gsx",2478h,20h
-; FmIns_Horn_1:
-; 		binclude "data/sound/instr/fm/horn_1.gsx",2478h,20h
-; FmIns_Organ_M1:
-; 		binclude "data/sound/instr/fm/organ_m1.gsx",2478h,20h
-; FmIns_Bass_Beach:
-; 		binclude "data/sound/instr/fm/bass_beach.gsx",2478h,20h
-; FmIns_Bass_Beach_2:
-; 		binclude "data/sound/instr/fm/bass_beach_2.gsx",2478h,20h
-; FmIns_Brass_Cave:
-; 		binclude "data/sound/instr/fm/brass_cave.gsx",2478h,20h
-FmIns_Brass_Gem:
-		binclude "data/sound/instr/fm/brass_gem.gsx",2478h,20h
-; FmIns_Piano_Small:
-; 		binclude "data/sound/instr/fm/piano_small.gsx",2478h,20h
-; FmIns_Trumpet_2:
-; 		binclude "data/sound/instr/fm/trumpet_2.gsx",2478h,20h
-; FmIns_Bell_Glass:
-; 		binclude "data/sound/instr/fm/bell_glass.gsx",2478h,20h
-; FmIns_Marimba_1:
-; 		binclude "data/sound/instr/fm/marimba_1.gsx",2478h,20h
-; FmIns_Ambient_dark:
-; 		binclude "data/sound/instr/fm/ambient_dark.gsx",2478h,20h
-; FmIns_Ambient_spook:
-; 		binclude "data/sound/instr/fm/ambient_spook.gsx",2478h,20h
-FmIns_Ambient_3:
-		binclude "data/sound/instr/fm/ambient_3.gsx",2478h,20h
-; FmIns_Ding_toy:
-; 		binclude "data/sound/instr/fm/ding_toy.gsx",2478h,20h
-
+		include "data/sound/instr_z80.asm"
+		; PWM instruments are stored in SDRAM
+	
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; Z80 RAM
