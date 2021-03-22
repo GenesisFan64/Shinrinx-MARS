@@ -48,35 +48,39 @@ Sound_Init:
 
 		align $100			; ASL's fault for this
 Sound_Update:
-		bsr	sndLockZ80
-		lea	(z80_cpu),a0
-		lea	(z80_cpu+reqMarsTrnf),a1
-		moveq	#0,d4
-		move.b	1(a1),d4
-		lsl.l	#8,d4
-		move.b	(a1),d4
-		bsr	sndUnlockZ80
-		tst.w	d4
-		beq.s	.no_req
-		lea	(a0,d4.w),a0
-		lea	(RAM_SndInsCopy),a2
-		move.w	#$80-1,d1
-		bsr	sndLockZ80
-.copydata:
-		move.b	(a0)+,d0
-		move.b	d0,(a2)+
-		dbf	d1,.copydata
-		move.b	#0,(a1)
-		move.b	#0,1(a1)
-		bsr	sndUnlockZ80
-		
-		lea	(RAM_SndInsCopy),a0
-		lea	(sysmars_reg+comm14),a1
-		move.w	#$80*2,d0
-		moveq	#2,d1			; Task transfer mode
-		moveq	#0,d2
-		bra	sysMdMars_Transfer
-.no_req:
+
+	; Special check to transfer a copy
+	; of a track's instrument list
+	; from Z80 to 68k then to SH2
+	; for PWM playback
+; 		bsr	sndLockZ80
+; 		lea	(z80_cpu),a0
+; 		lea	(z80_cpu+reqMarsTrnf),a1
+; 		moveq	#0,d4
+; 		move.b	1(a1),d4
+; 		lsl.l	#8,d4
+; 		move.b	(a1),d4
+; 		bsr	sndUnlockZ80
+; 		tst.w	d4
+; 		beq.s	.no_req
+; 		lea	(a0,d4.w),a0
+; 		lea	(RAM_SndInsCopy),a2
+; 		move.w	#$80-1,d1
+; 		bsr	sndLockZ80
+; .copydata:
+; 		move.b	(a0)+,d0
+; 		move.b	d0,(a2)+
+; 		dbf	d1,.copydata
+; 		move.b	#0,(a1)
+; 		move.b	#0,1(a1)
+; 		bsr	sndUnlockZ80
+; 		lea	(RAM_SndInsCopy),a0
+; 		lea	(sysmars_reg+comm14),a1
+; 		move.w	#$80*2,d0
+; 		moveq	#2,d1			; Transfer mode 2: Instrument copy
+; 		moveq	#0,d2
+; 		bra	sysMdMars_Transfer
+; .no_req:
 		rts
 
 ; --------------------------------------------------------
@@ -449,7 +453,9 @@ drv_loop:
 		call	updtrack	; Update track data
 		call	check_tick
 .neither:
-		call	mars_snd
+		call	mars_scomm
+		call	dac_me
+
 .next_cmd:
 		call	dac_fill
 		call	dac_me
@@ -2094,7 +2100,11 @@ updtrack:
 ; Communicate to Master SH2 using CMD interrupt
 ; --------------------------------------------------------
 
-mars_snd:
+mars_scomm:
+		ld	de,(reqMarsTrnf)
+		ld	a,e
+		or	d
+		ret	z
 		call	dac_fill
 		ld	hl,6000h		; Template for PWM comm.
 		ld	(hl),0
@@ -2107,12 +2117,82 @@ mars_snd:
 		call	dac_me
 		ld	(hl),0
 		ld	(hl),1
-		ld	iy,PWMVTBL
-		ld	ix,5100h|8000h		; ix - mars sysreg
-		
-		ld	a,(ix+comm4+1)
+		ld	iy,5100h|8000h		; ix - mars sysreg
+		ld	a,(iy+comm4)
 		inc	a
-		ld	(ix+comm4+1),a
+		ld	(iy+comm4),a
+
+		ld	h,d
+		ld	l,e
+		ld	c,1
+		ld	b,80h/2
+		call	.comm_me
+
+		ld	de,0
+		ld	(reqMarsTrnf),de
+		ret
+
+; Communicate to 32X from here
+; iy - 5100h|8000h (set ROM bank to $A10000)
+; hl - Data to transfer
+; b - WORDS to transfer
+; c - Task id
+.comm_me:
+		ld	a,(iy+comm8)		; 68k busy?
+		or	a
+		jp	nz,.comm_me
+		ld	(iy+comm4),c		; Z80 ready
+		ld	(iy+(comm4+1)),1	; SH busy
+		ld	(iy+3),01b		; Master CMD interrupt
+.wait_cmd:	bit	0,(iy+3)		; CMD clear?
+		jp	nz,.wait_cmd
+		call	dac_me
+.loop:
+		nop
+		nop
+		nop
+		nop
+		ld	a,(iy+(comm4+1))	; SH ready?
+		cp	2
+		jr	nz,.loop
+		ld	a,c			; Z80 is busy
+		or	80h
+		ld	(iy+comm4),a
+		call	dac_me
+		nop
+		nop
+		ld	a,b			; check b
+		or	a
+		jr	z,.exit
+		jp	m,.exit
+		call	dac_me
+		ld	a,(hl)
+		ld	(iy+comm6),a
+		call	dac_me
+		nop
+		nop
+		inc	hl
+		ld	a,(hl)
+		ld	(iy+comm6+1),a
+		nop
+		nop
+		nop
+		inc	hl
+		call	dac_me
+		ld	a,c			; Z80 is busy
+		or	40h
+		ld	(iy+comm4),a
+		nop
+		nop
+		nop
+		dec	b
+		call	dac_me
+		jr	.loop
+.exit:	
+		ld	(iy+comm4),0		; Z80 finished
+		nop
+		nop
+		nop
 		ret
 
 ; 		ld	b,7			; 7 channels
@@ -2209,50 +2289,7 @@ mars_snd:
 ; ; 		inc 	hl
 ; ; 		ld	(hl),0
 ; ; 		pop	hl
-; 
-; ; Communicate to 32X
-; .comm_me:
-; 		ld	(ix+(comm6+1)),1		; Stop signal
-; 		call	dac_me
-; .busy_md:	ld	a,(ix+comm8)
-; 		or	a
-; 		jp	nz,.busy_md		
-; 		ld	(ix+comm8),2		; MD ready
-; 		ld	(ix+(comm8+1)),1	; SH busy
-; 		ld	(ix+3),01b		; Master CMD interrupt
-; .wait_cmd:	bit	0,(ix+3)
-; 		jp	nz,.wait_cmd
-; 		call	dac_me
-; 		ld	b,8
-; .loop:
-; 		ld	a,(ix+(comm8+1))	; SH ready?
-; 		cp	2
-; 		jr	nz,.loop
-; 		ld	(ix+comm8),1		; MD is writing
-; 		ld	a,b
-; 		or	a
-; 		jr	z,.exit
-; 		call	dac_me
-; 		ld	a,(hl)
-; 		inc	hl
-; 		ld	(ix+comm10),a
-; 		ld	a,(hl)
-; 		inc	hl
-; 		ld	(ix+comm10+1),a
-; 		ld	a,(hl)
-; 		inc	hl
-; 		call	dac_me
-; 		ld	(ix+comm12),a
-; 		ld	a,(hl)
-; 		inc	hl
-; 		ld	(ix+comm12+1),a
-; 		ld	(ix+comm8),2		; MD is free
-; 		dec	b
-; 		jr	.loop
-; .exit:	
-; 		ld	(ix+comm8),0		; MD finished
-; 		ld	(ix+(comm6+1)),0	; Resume 68k comm
-; 		ret
+
 ; 		align 10h
 ; 		
 ; .liltrnfr_play:

@@ -93,7 +93,10 @@ m_irq_pwm:
 
 ; =================================================================
 ; ------------------------------------------------
-; Master | CMD Interrupt (MD request)
+; Master | CMD Interrupt
+; 
+; Recieve task list from 68k
+; OR control the sound PWM with Z80
 ; ------------------------------------------------
 
 m_irq_cmd:
@@ -109,16 +112,19 @@ m_irq_cmd:
 		stc	sr,@-r15
 		mov	#$F0,r0
 		ldc	r0,sr
-	
+		mov	#_sysreg+comm4,r1	; Check if Z80
+		mov.b	@(0,r1),r0		; called first
+		cmp/eq	#0,r0
+		bf	.pwm_play
+
+; ----------------------------------------
+; Transfer from 68K
+; ----------------------------------------
+
 		mov	#_sysreg+comm8,r1
-		mov	#MarsSnd_InstrList,r2
-		mov.b	@(0,r1),r0	; Sound transfer?
-		and	#%00111111,r0
-		cmp/eq	#2,r0
-		bt	.next_comm
 		mov	#RAM_Mars_MdTasksFifo_M,r2
-		mov	#_sysreg+comm14,r3
-		mov.b	@r3,r0
+		mov	#_sysreg+comm14,r3	; Also process tasks
+		mov.b	@r3,r0			; after this
 		or	#$80,r0
 		mov.b	r0,@r3
 .next_comm:
@@ -144,8 +150,6 @@ m_irq_cmd:
 		mov.w	r0,@r2
 		mov.w	@(4,r1),r0	; comm12
 		mov.w	r0,@(2,r2)
-		mov	#2,r0		; SH is ready
-		mov.b	r0,@(1,r1)
 		bra	.next_comm
 		add	#4,r2
 .finish:
@@ -155,7 +159,50 @@ m_irq_cmd:
 		rts
 		nop
 		align 4
-		
+
+; ----------------------------------------
+; Transfer from Z80
+; ----------------------------------------
+
+.pwm_play:
+		mov	#MarsSnd_InstrList,r2
+; 		cmp/eq	#1,r0
+; 		bt	.pwm_instr
+; 		mov	#MarsSnd_InstrList,r2	
+; .pwm_instr:
+.next_commz:
+		mov	#2,r0		; SH is ready
+		mov.b	r0,@(1,r1)
+.wait_z_b:
+		mov.b	@(0,r1),r0	; get Z80 status
+		cmp/eq	#0,r0
+		bt	.finishz
+		and	#$80,r0
+		cmp/eq	#0,r0		; is Z80 busy?
+		bt	.wait_z_b
+		mov	#1,r0		; SH is busy
+		mov.b	r0,@(1,r1)
+.wait_z_c:
+		mov.b	@(0,r1),r0
+		cmp/eq	#0,r0
+		bt	.finishz
+		and	#$40,r0
+		cmp/eq	#$40,r0		; Z80 ready?
+		bf	.wait_z_c
+		mov.w	@(2,r1),r0	; word write.
+		mov.w	r0,@r2
+		bra	.next_commz
+		add	#2,r2
+.finishz:
+
+		ldc 	@r15+,sr
+		mov 	@r15+,r3
+		mov 	@r15+,r2
+		rts
+		nop
+		align 4
+		ltorg
+
 ; =================================================================
 ; ------------------------------------------------
 ; Master | HBlank
@@ -388,8 +435,6 @@ s_irq_cmd:
 		mov.w	r0,@r2
 		mov.w	@(4,r1),r0	; comm12
 		mov.w	r0,@(2,r2)
-		mov	#2,r0		; SH is ready
-		mov.b	r0,@(1,r1)
 		bra	.next_comm
 		add	#4,r2
 .finish:
