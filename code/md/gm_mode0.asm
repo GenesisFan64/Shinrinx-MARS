@@ -54,7 +54,7 @@ MD_GmMode0:
 ; 		move.l	#locate(0,1,1),d0
 ; 		bsr	Video_Print
 
-		move.w	#1,(RAM_MdlCurrMd).w
+; 		move.w	#1,(RAM_MdlCurrMd).w
 		move.l	#GemaTrk_Yuki_patt,d0
 		move.l	#GemaTrk_Yuki_blk,d1
 		move.l	#GemaTrk_Yuki_ins,d2

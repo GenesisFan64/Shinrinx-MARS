@@ -125,6 +125,10 @@ MarsSound_ReadPwm:
 		add	#8,r8
 		dt	r5
 		bf	.next_pwm
+		
+		mov	#_sysreg+comm4,r1
+		mov	#$00,r0			; SH is busy
+		mov.b	r0,@(1,r1)
 		mov	#0,r0
 		mov.w	r0,@(marsGbl_PwmTrkUpd,gbr)
 ; ------------------------------------------------

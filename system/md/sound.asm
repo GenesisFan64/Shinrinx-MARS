@@ -2129,30 +2129,30 @@ mars_scomm:
 		add	iy,de
 		djnz	.next
 		
-	; All this code just to tell SH2
-	; to update PWM list...
-		call	dac_me
-		ld	hl,6000h		; Set bank
-		ld	(hl),0
-		ld	(hl),1
-		ld	(hl),0
-		ld	(hl),0
-		ld	(hl),0
-		ld	(hl),0
-		ld	(hl),1
-		call	dac_me
-		ld	(hl),0
-		ld	(hl),1
-		ld	ix,5100h|8000h		; ix - mars sysreg
-.wait_md:	ld	a,(ix+comm8)		; 68k got it first?
-		or	a
-		jp	nz,.wait_md
-		call	dac_me
-		ld	(ix+comm4),20h		; Z80 ready
-		ld	(ix+3),01b		; Master CMD interrupt
-.wait_cmd:	bit	0,(ix+3)		; CMD clear?
-		jp	nz,.wait_cmd
-		call	dac_me
+; 	; All this code just to tell SH2
+; 	; to update PWM list...
+; 		call	dac_me
+; 		ld	hl,6000h		; Set bank
+; 		ld	(hl),0
+; 		ld	(hl),1
+; 		ld	(hl),0
+; 		ld	(hl),0
+; 		ld	(hl),0
+; 		ld	(hl),0
+; 		ld	(hl),1
+; 		call	dac_me
+; 		ld	(hl),0
+; 		ld	(hl),1
+; 		ld	ix,5100h|8000h		; ix - mars sysreg
+; .wait_md:	ld	a,(ix+comm8)		; 68k got it first?
+; 		or	a
+; 		jp	nz,.wait_md
+; 		call	dac_me
+; 		ld	(ix+comm4),20h		; Z80 ready
+; 		ld	(ix+3),01b		; Master CMD interrupt
+; .wait_cmd:	bit	0,(ix+3)		; CMD clear?
+; 		jp	nz,.wait_cmd
+; 		call	dac_me
 		ret
 
 ; bit 6
@@ -2723,9 +2723,9 @@ mars_zcomm:
 .wait_md:	ld	a,(ix+comm8)		; 68k got it first?
 		or	a
 		jp	nz,.wait_md
-; .wait_md:	ld	a,(ix+comm4+1)		; 68k got it first?
-; 		or	a
-; 		jp	nz,.wait_md
+.wait_md2:	ld	a,(ix+comm4+1)		; busy?
+		or	a
+		jp	m,.wait_md2
 		call	dac_me
 		ld	(ix+comm4),c		; Z80 ready
 		ld	(ix+(comm4+1)),1	; SH busy

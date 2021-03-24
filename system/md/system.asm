@@ -439,7 +439,10 @@ sysMdMars_Transfer:
 		lea	(sysmars_reg),a4
 		tst.w	d2			; CMD bit for Slave?
 		bne.s	.slv_safe
-.w_z80:		move.b	comm4(a4),d4		; Z80 made it first?
+.w_z80:
+		nop
+		nop
+		move.b	comm4(a4),d4		; Z80 made it first?
 		bne.s	.w_z80
 .slv_safe:
 		move.w	sr,d5

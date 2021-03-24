@@ -175,8 +175,6 @@ m_irq_cmd:
 		shll	r0
 		add	r0,r2
 .next_commz:
-		mov	#3,r0		; SH is ready
-		mov.b	r0,@(1,r1)
 		mov	#2,r0		; SH is ready
 		mov.b	r0,@(1,r1)
 .wait_z_b:
@@ -201,13 +199,16 @@ m_irq_cmd:
 		add	#2,r2
 		align 4
 .play_all:
-		mov	#1,r0
-		mov.w	r0,@(marsGbl_PwmTrkUpd,gbr)
+
 
 ; ----------------------------------------
 
 .finish_s:
-		
+		mov	#1,r0
+		mov.w	r0,@(marsGbl_PwmTrkUpd,gbr)
+		mov	#$80,r0		; SH is busy
+		mov.b	r0,@(1,r1)
+
 .finish:
 		ldc 	@r15+,sr
 		mov 	@r15+,r4
