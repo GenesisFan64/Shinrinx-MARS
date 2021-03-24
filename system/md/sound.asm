@@ -885,32 +885,10 @@ playonchip
 		push	hl
 		pop	ix
 		pop	hl
-		
-		inc	hl
-		inc	hl
-		call	dac_me
-		ld	a,(hl)
-		inc	hl
-		ld	h,(hl)
-		ld	l,a
-		push	ix
-		pop	de
-		inc	de
-		inc	de
-		inc	de
-		ld	b,12
-	; Copy-paste start/end/loop
-.copypste_p:
-		ld	a,(hl)
-		ld	(de),a
-		inc	hl
-		inc	de
-		nop
-		call	dac_me
-		djnz	.copypste_p
-		ld	a,(hl)
-		ld	(ix+16),a
-; 		jr	$
+ 		ld	de,
+ 		ld	a,(iy+chnl_Ins)
+ 		dec	a
+ 		ld	(ix+5),a		; put ins number
 		ret
 
 ; ----------------------------------------
@@ -928,7 +906,7 @@ playonchip
 		cp	4
 		ret	z
 		cp	5
-		ret	z
+		jp	z,.vol_pwm
 	
 	; PSG volume
 		cp	1
@@ -1063,6 +1041,22 @@ playonchip
 		call	fm_autoset
 		ret 
 
+; Type 5
+.vol_pwm:
+		push	hl
+		call	.srch_pwm
+		cp	-1
+		ret	z
+		push	hl
+		pop	ix
+		pop	hl
+ 		ld	de,
+ 		ld	a,(iy+chnl_Vol)
+		sub	a,40h
+		neg	a
+ 		ld	(ix+6),a		; put ins number
+		ret
+		
 ; ----------------------------------------
 ; Note request
 ; ----------------------------------------
@@ -1347,11 +1341,11 @@ playonchip
 		ld	hl,wavFreq_Pwm
 		add	hl,de
 		ld	a,(hl)
-		ld	(ix+18),a	; NOTE: big endian
+		ld	(ix+3),a	; NOTE: big endian
 		inc	hl
 		ld	a,(hl)
-		ld	(ix+17),a
-		ld	a,(ix)		; Tell SH2 we want to play
+		ld	(ix+4),a
+		ld	a,(ix)		; Tell SH2 we want to play channel
 		or	01000000b
 		ld	(ix),a
 		ret
@@ -1415,7 +1409,7 @@ playonchip
 		ld	hl,FM6VTBL
 		jr	.srch_chnltbl
 .srch_pwm:
-		ld	de,19
+		ld	de,8
 		ld	hl,PWMVTBL
 		jr	.srch_chnltbl
 		
@@ -2101,225 +2095,81 @@ updtrack:
 ; --------------------------------------------------------
 
 mars_scomm:
-		ld	de,(reqMarsTrnf)
+		ld	de,(reqMarsTrnf)	; New PWM ins data?
 		ld	a,e
 		or	d
-		ret	z
+		jp	z,.playbck
 		call	dac_fill
-		ld	hl,6000h		; Template for PWM comm.
-		ld	(hl),0
-		ld	(hl),1
-		ld	(hl),0
-		ld	(hl),0
-		ld	(hl),0
-		ld	(hl),0
-		ld	(hl),1
-		call	dac_me
-		ld	(hl),0
-		ld	(hl),1
-		ld	iy,5100h|8000h		; ix - mars sysreg
-		ld	a,(iy+comm4)
-		inc	a
-		ld	(iy+comm4),a
-
-		ld	h,d
-		ld	l,e
-		ld	c,1
-		ld	b,80h/2
-		call	.comm_me
-
-		ld	de,0
+		ld	hl,(reqMarsTrnf)
+		ld	c,21h			; 21h: Send copy of Instrlist
+		ld	b,80h/2			; num of words to transfer
+		call	mars_zcomm
+		ld	de,0			; Reset wordflag
 		ld	(reqMarsTrnf),de
 		ret
-
-; Communicate to 32X from here
-; iy - 5100h|8000h (set ROM bank to $A10000)
-; hl - Data to transfer
-; b - WORDS to transfer
-; c - Task id
-.comm_me:
-		ld	a,(iy+comm8)		; 68k busy?
+.playbck:
+		ld	iy,PWMVTBL
+		ld	b,7			; 7 channels
+.next:
+		push	bc
+		push	iy
+		ld	a,(iy)
 		or	a
-		jp	nz,.comm_me
-		ld	(iy+comm4),c		; Z80 ready
-		ld	(iy+(comm4+1)),1	; SH busy
-		ld	(iy+3),01b		; Master CMD interrupt
-.wait_cmd:	bit	0,(iy+3)		; CMD clear?
+		jp	p,.disbld
+		and	01100000b
+		or	a
+		call	nz,.play
+		res	6,(iy)
+		res	5,(iy)
+.disbld:
+		pop	iy
+		pop	bc
+		ld	de,8
+		call	dac_me		
+		add	iy,de
+		djnz	.next
+		
+	; All this code just to tell SH2
+	; to update PWM list...
+		call	dac_me
+		ld	hl,6000h		; Set bank
+		ld	(hl),0
+		ld	(hl),1
+		ld	(hl),0
+		ld	(hl),0
+		ld	(hl),0
+		ld	(hl),0
+		ld	(hl),1
+		call	dac_me
+		ld	(hl),0
+		ld	(hl),1
+		ld	ix,5100h|8000h		; ix - mars sysreg
+.wait_md:	ld	a,(ix+comm8)		; 68k got it first?
+		or	a
+		jp	nz,.wait_md
+		call	dac_me
+		ld	(ix+comm4),20h		; Z80 ready
+		ld	(ix+3),01b		; Master CMD interrupt
+.wait_cmd:	bit	0,(ix+3)		; CMD clear?
 		jp	nz,.wait_cmd
 		call	dac_me
-.loop:
-		nop
-		nop
-		nop
-		nop
-		ld	a,(iy+(comm4+1))	; SH ready?
-		cp	2
-		jr	nz,.loop
-		ld	a,c			; Z80 is busy
-		or	80h
-		ld	(iy+comm4),a
-		call	dac_me
-		nop
-		nop
-		ld	a,b			; check b
-		or	a
-		jr	z,.exit
-		jp	m,.exit
-		call	dac_me
-		ld	a,(hl)
-		ld	(iy+comm6),a
-		call	dac_me
-		nop
-		nop
-		inc	hl
-		ld	a,(hl)
-		ld	(iy+comm6+1),a
-		nop
-		nop
-		nop
-		inc	hl
-		call	dac_me
-		ld	a,c			; Z80 is busy
-		or	40h
-		ld	(iy+comm4),a
-		nop
-		nop
-		nop
-		dec	b
-		call	dac_me
-		jr	.loop
-.exit:	
-		ld	(iy+comm4),0		; Z80 finished
-		nop
-		nop
-		nop
 		ret
 
-; 		ld	b,7			; 7 channels
-; .next:
-; 		push	bc
-; 		push	iy
-; 		ld	a,(iy)
-; 		or	a
-; 		jp	p,.disbld
-; 		bit	6,(iy)
-; 		call	nz,.play
-; 		call	dac_me
-; 		bit	5,(iy)
-; 		call	nz,.stop		
-; .disbld:
-; 		call	dac_me
-; 		pop	iy
-; 		pop	bc
-; 		ld	de,19
-; 		add	iy,de
-; 		djnz	.next
-; 		ld	a,(ix+26h)
-; 		inc	a
-; 		ld	(ix+26h),a
-; 		ret	
-; ; bit 6
-; .play:
-; 		res	6,(iy)
-; ; 		ld	hl,.liltrnfr_play
-; ; 		push	hl
-; ; 		call	dac_me
-; ; 		ld	de,4+3		; Point to arg 2
-; ; 		add	hl,de
-; ; 		ld	a,(iy)		; Set channel
-; ; 		and	1111b
-; ; 		ld	(hl),a
-; ; 		inc	iy
-; ; 		inc	iy
-; ; 		inc	iy
-; ; 		inc	hl
-; ; 	rept 4*3
-; ; 		ld	a,(iy)		; Set Start/End/Loop
-; ; 		ld	(hl),a
-; ; 		inc	hl
-; ; 		inc	iy
-; ; 	endm
-; ; 		call	dac_me
-; ; 		ld	a,(iy)		; Set volume
-; ; 		inc	hl
-; ; 		inc	hl
-; ; 		inc 	hl
-; ; 		ld	(hl),a
-; ; 		inc 	hl
-; ; 		inc	iy
-; ; 		call	dac_me
-; ; 		ld	a,(iy)		; Set bits
-; ; 		inc	hl
-; ; 		inc	hl
-; ; 		inc 	hl
-; ; 		ld	(hl),a
-; ; 		inc 	hl
-; ; 		inc	iy
-; ; 		call	dac_me
-; ; 		inc	hl
-; ; 		inc	hl
-; ; 		ld	a,(iy)		; Set freq
-; ; 		ld	(hl),a
-; ; 		inc 	hl
-; ; 		inc	iy
-; ; 		ld	a,(iy)
-; ; 		ld	(hl),a
-; ; 		call	dac_me
-; ; 		inc 	hl
-; ; 		inc	iy
-; ; 		pop	hl
-; 
-; 		ld	hl,liltrnsfr_list
-; 		jr	.comm_me
-; ; ; bit 5
-; .stop:
-; 		res	5,(iy)
-; 		ret 
-; ; 		ld	hl,.liltrnfr_stop
-; ; 		push	hl
-; ; 		call	dac_me
-; ; 		ld	de,4+3		; Point to arg 2
-; ; 		add	hl,de
-; ; 		ld	a,(iy)		; Set channel
-; ; 		and	1111b
-; ; 		ld	(hl),a
-; ; 		inc	hl
-; ; 		inc	hl
-; ; 		inc 	hl
-; ; 		inc 	hl
-; ; 		ld	(hl),0
-; ; 		pop	hl
-
-; 		align 10h
-; 		
-; .liltrnfr_play:
-; 	db CmdTaskMd_PWM_SetChnl>>24&0FFh,CmdTaskMd_PWM_SetChnl>>16&0FFh
-; 	db CmdTaskMd_PWM_SetChnl>>8&0FFh,CmdTaskMd_PWM_SetChnl&0FFh
-; 	db 0,0,0,0	; Slot
-; 	db 0,0,0,0	; Start
-; 	db 0,0,0,0	; End
-; 	db 0,0,0,0	; Loop
-; 	db 0,0,0,0	; Volume
-; 	db 0,0,0,0	; Settings
-; 	db 0,0,0,0	; Pitch
-; 	
-; .liltrnfr_stop:
-; 	db CmdTaskMd_PWM_SetChnl>>24&0FFh,CmdTaskMd_PWM_SetChnl>>16&0FFh
-; 	db CmdTaskMd_PWM_SetChnl>>8&0FFh,CmdTaskMd_PWM_SetChnl&0FFh
-; 	db 0,0,0,0	; Slot
-; 	db 0,0,0,0	; Flags
-; 
-; liltrnsfr_list:
-;  rept 7
-; 	db 0,0,0,0	; SH2 CALL routine
-; 	db 0,0,0,0	; Slot
-; 	db 0,0,0,0	; Start
-; 	db 0,0,0,0	; End
-; 	db 0,0,0,0	; Loop
-; 	db 0,0,0,0	; Volume
-; 	db 0,0,0,0	; Settings
-; 	db 0,0,0,0	; Pitch
-;  endm
+; bit 6
+.play:
+		ld	a,(iy)
+		and	00001111b
+		inc	a
+		ld	c,a
+		call	dac_me
+		push	iy
+		pop	hl
+		ld	b,8/2
+		call	mars_zcomm
+		ld	a,(iy)
+		and	10011111b
+		ld	(iy),a
+		ret
  
 ; ====================================================================
 ; ----------------------------------------------------------------
@@ -2843,6 +2693,77 @@ psg_env:
 		inc	iy		; next com
 		djnz	.nextpsg
 		call	dac_me
+		ret
+
+; --------------------------------------------------------
+; Communicate to 32X from here
+; hl - Data to transfer
+; b - WORDS to transfer
+; c - Task id
+; 
+; Uses comm4/comm6
+; --------------------------------------------------------
+
+mars_zcomm:
+		call	dac_me
+		push	hl
+		ld	hl,6000h		; Set bank
+		ld	(hl),0
+		ld	(hl),1
+		ld	(hl),0
+		ld	(hl),0
+		ld	(hl),0
+		ld	(hl),0
+		ld	(hl),1
+		call	dac_me
+		ld	(hl),0
+		ld	(hl),1
+		pop	hl
+		ld	ix,5100h|8000h		; ix - mars sysreg
+.wait_md:	ld	a,(ix+comm8)		; 68k got it first?
+		or	a
+		jp	nz,.wait_md
+; .wait_md:	ld	a,(ix+comm4+1)		; 68k got it first?
+; 		or	a
+; 		jp	nz,.wait_md
+		call	dac_me
+		ld	(ix+comm4),c		; Z80 ready
+		ld	(ix+(comm4+1)),1	; SH busy
+		ld	(ix+3),01b		; Master CMD interrupt
+.wait_cmd:	bit	0,(ix+3)		; CMD clear?
+		jp	nz,.wait_cmd
+		call	dac_me
+.loop:
+		nop				; CRITICAL
+		nop
+		nop
+		nop
+		ld	a,(ix+(comm4+1))	; SH ready?
+		cp	2
+		jr	nz,.loop
+		ld	a,c			; Z80 is busy
+		or	80h
+		ld	(ix+comm4),a
+		call	dac_me
+		ld	a,b			; check b
+		or	a
+		jr	z,.exit
+		jp	m,.exit
+		ld	a,(hl)
+		ld	(ix+comm6),a
+		call	dac_me
+		inc	hl
+		ld	a,(hl)
+		ld	(ix+comm6+1),a
+		inc	hl
+		call	dac_me
+		ld	a,c			; Z80 is ready
+		or	40h
+		ld	(ix+comm4),a
+		dec	b
+		jr	.loop
+.exit:	
+		ld	(ix+comm4),0		; Z80 finished
 		ret
 
 ; ---------------------------------------------
@@ -3437,62 +3358,49 @@ FM6VTBL		db 06h
 		dw 0			; 14 - Ex freq 3
 		db -1
 
+; 		align 8
 PWMVTBL		db 00h		; 0 - PWM entry, bit7:locked bit6:update for 68k
 		dw 0		; 1 - track link
-		db 0,0,0,0	; 3 - BIG-endian 64-bit Start position
-		db 0,0,0,0	; 7 - BIG-endian 64-bit End position
-		db 0,0,0,0	; 11 - BIG-endian 64-bit Loop position
-		db 0		; 15 - "Volume" (zero until I figure it out)
-		db 0		; 16 - Type + panning (slrb) s-Stereo sample, lr-Left/Right output
-		dw 0		; 18 - Pitch (note)
+		dw 0		; 3 - Pitch (note)
+		db 0		; 5 - Instrument number
+		db 0		; 6 - Volume
+		db 0		; 7 - Panning
 		db 01h
 		dw 0
-		db 0,0,0,0
-		db 0,0,0,0
-		db 0,0,0,0
-		db 0
-		db 0
 		dw 0
+		db 0
+		db 0
+		db 0
 		db 02h
 		dw 0
-		db 0,0,0,0
-		db 0,0,0,0
-		db 0,0,0,0
-		db 0
-		db 0
 		dw 0
+		db 0
+		db 0
+		db 0
 		db 03h
 		dw 0
-		db 0,0,0,0
-		db 0,0,0,0
-		db 0,0,0,0
-		db 0
-		db 0
 		dw 0
+		db 0
+		db 0
+		db 0
 		db 04h
 		dw 0
-		db 0,0,0,0
-		db 0,0,0,0
-		db 0,0,0,0
-		db 0
-		db 0
 		dw 0
+		db 0
+		db 0
+		db 0
 		db 05h
 		dw 0
-		db 0,0,0,0
-		db 0,0,0,0
-		db 0,0,0,0
-		db 0
-		db 0
 		dw 0
+		db 0
+		db 0
+		db 0
 		db 06h
 		dw 0
-		db 0,0,0,0
-		db 0,0,0,0
-		db 0,0,0,0
-		db 0
-		db 0
 		dw 0
+		db 0
+		db 0
+		db 0
 		db -1
 
 psgcom		db 00h,00h,00h,00h	;  0 command 1 = key on, 2 = key off, 4 = stop snd

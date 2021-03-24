@@ -41,11 +41,13 @@ gemaInsFm3	macro pitch,fmins,freq1,freq2,freq3
 ; 		dc.b 0,0
 ; 		endm
 
+; Pointers go to instr_sdram.asm
+; 
 gemaInsPwm	macro pitch,pointer
 		dc.b 5,pitch
+		dc.b 0,0		; filler
 		dc.b ((pointer>>24)&$FF),((pointer>>16)&$FF)
 		dc.b ((pointer>>8)&$FF),pointer&$FF
-		dc.b 0,0
 		endm
 
 gemaInsNull	macro

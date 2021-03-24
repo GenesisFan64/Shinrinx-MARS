@@ -61,15 +61,15 @@ MD_GmMode0:
 		moveq	#7,d3
 		moveq	#0,d4
 		bsr	SoundReq_SetTrack
-		moveq	#0,d1
-		move.l	#PWM_STEREO,d2
-		move.l	#PWM_STEREO_e,d3
-		move.l	#0,d4
-		moveq	#0,d5
-		moveq	#%111,d6
-		move.l	#$100,d7
-		move.l	#CmdTaskMd_PWM_SetChnl,d0
-		bsr	System_MdMars_MstTask
+; 		moveq	#6,d1
+; 		move.l	#PWM_STEREO,d2
+; 		move.l	#PWM_STEREO_e,d3
+; 		move.l	#0,d4
+; 		moveq	#0,d5
+; 		moveq	#%111,d6
+; 		move.l	#$100,d7
+; 		move.l	#CmdTaskMd_PWM_SetChnl,d0
+; 		bsr	System_MdMars_MstTask
 	
 		bset	#bitDispEnbl,(RAM_VdpRegs+1).l		; Enable display
 		bsr	Video_Update

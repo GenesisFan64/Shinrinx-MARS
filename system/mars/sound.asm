@@ -47,6 +47,88 @@ MarsSound_ReadPwm:
 		mov	r8,@-r15
 		mov	r9,@-r15
 
+; ------------------------------------------------
+; Process PWM request(s) from GEMA sound driver
+		mov.w	@(marsGbl_PwmTrkUpd,gbr),r0
+		cmp/eq	#0,r0
+		bt	.retry
+		mov	#MarsSnd_PwmPlyData,r8
+		mov	#MarsSnd_PwmTrkData,r7
+		mov	#MarsSnd_PwmChnls,r6
+		mov	#MAX_PWMCHNL,r5
+.next_pwm:
+		mov.b	@r8,r0
+		mov	r0,r3
+		and	#%01100000,r0
+		cmp/eq	#%01000000,r0
+		bt	.play
+		cmp/eq	#%00100000,r0
+		bf	.pwmcont
+		
+		mov.b	@r8,r0
+		and	#%1111,r0
+		mov	#MarsSnd_PwmChnls,r6
+		mov 	#sizeof_sndchn,r1
+		mulu	r1,r0
+		sts	macl,r0
+		add 	r0,r6
+		mov	#0,r0
+		mov	r0,@(mchnsnd_enbl,r6)
+		bra	.pwmcont
+		nop
+.play:
+		mov.b	@r8,r0
+		and	#%1111,r0
+		mov	#MarsSnd_PwmChnls,r6
+		mov 	#sizeof_sndchn,r1
+		mulu	r1,r0
+		sts	macl,r0
+		add 	r0,r6
+		
+		mov.b	@(4,r8),r0
+		and	#$FF,r0
+		shll8	r0
+		mov	r0,r4
+		mov.b	@(3,r8),r0
+		and	#$FF,r0
+		or	r4,r0
+		mov	r0,@(mchnsnd_pitch,r6)
+		mov.b	@(5,r8),r0
+		shll2	r0
+		shll	r0
+		mov	r7,r4
+		add	r0,r4
+		add	#4,r4			; Move to pointer
+		mov	@r4,r4
+		mov	@r4+,r0
+		mov	r0,r2
+		mov 	#$FF000000,r3
+		and 	r3,r2
+		mov 	r2,@(mchnsnd_bank,r6)
+		shll8	r0
+		mov	r0,@(mchnsnd_start,r6)
+		mov 	r0,@(mchnsnd_read,r6)
+
+		mov	@r4+,r0
+		shll8	r0
+		mov	r0,@(mchnsnd_end,r6)
+		mov	@r4+,r0
+		mov	r0,@(mchnsnd_loop,r6)
+		mov	@r4+,r0
+		mov	r0,@(mchnsnd_flags,r6)
+		mov	#1,r0
+		mov	r0,@(mchnsnd_enbl,r6)
+.pwmcont:
+		mov	r3,r0
+		and	#%10011111,r0
+		mov.b	r0,@r8
+		add	#8,r8
+		dt	r5
+		bf	.next_pwm
+		mov	#0,r0
+		mov.w	r0,@(marsGbl_PwmTrkUpd,gbr)
+; ------------------------------------------------
+
 .retry:
 		mov 	#0,r5			; LEFT start
 		mov 	#0,r6			; RIGHT start

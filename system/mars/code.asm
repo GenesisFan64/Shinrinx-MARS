@@ -37,6 +37,7 @@ marsGbl_DivReq_M	ds.w 1		; Flag to tell Watchdog we are in the middle of divisio
 marsGbl_CurrFb		ds.w 1		; Current framebuffer number
 marsGbl_PalDmaMidWr	ds.w 1		; Enable this flag if modifing RAM_Mars_Palette
 marsGbl_ZSortReq	ds.w 1		; Flag to request Zsort in Slave's watchdogd
+marsGbl_PwmTrkUpd	ds.w 1		; Flag to update PWM tracks (Z80 then here)
 sizeof_MarsGbl		ds.l 0
 			finish
 			
@@ -109,9 +110,13 @@ m_irq_cmd:
 		
 		mov	r2,@-r15
 		mov	r3,@-r15
+		mov	r4,@-r15
 		stc	sr,@-r15
 		mov	#$F0,r0
 		ldc	r0,sr
+		
+; ----------------------------------------
+
 		mov	#_sysreg+comm4,r1	; Check if Z80
 		mov.b	@(0,r1),r0		; called first
 		cmp/eq	#0,r0
@@ -152,31 +157,32 @@ m_irq_cmd:
 		mov.w	r0,@(2,r2)
 		bra	.next_comm
 		add	#4,r2
-.finish:
-		ldc 	@r15+,sr
-		mov 	@r15+,r3
-		mov 	@r15+,r2
-		rts
-		nop
-		align 4
 
 ; ----------------------------------------
 ; Transfer from Z80
 ; ----------------------------------------
 
 .pwm_play:
-		mov	#MarsSnd_InstrList,r2
-; 		cmp/eq	#1,r0
-; 		bt	.pwm_instr
-; 		mov	#MarsSnd_InstrList,r2	
-; .pwm_instr:
+		cmp/eq	#$20,r0
+		bt	.play_all
+		mov	#MarsSnd_PwmTrkData,r2
+		cmp/eq	#$21,r0
+		bt	.next_commz
+		mov	#MarsSnd_PwmPlyData,r2
+		add	#-1,r0
+		and	#%11111,r0
+		shll2	r0
+		shll	r0
+		add	r0,r2
 .next_commz:
+		mov	#3,r0		; SH is ready
+		mov.b	r0,@(1,r1)
 		mov	#2,r0		; SH is ready
 		mov.b	r0,@(1,r1)
 .wait_z_b:
 		mov.b	@(0,r1),r0	; get Z80 status
 		cmp/eq	#0,r0
-		bt	.finishz
+		bt	.finish_s
 		and	#$80,r0
 		cmp/eq	#0,r0		; is Z80 busy?
 		bt	.wait_z_b
@@ -185,7 +191,7 @@ m_irq_cmd:
 .wait_z_c:
 		mov.b	@(0,r1),r0
 		cmp/eq	#0,r0
-		bt	.finishz
+		bt	.finish_s
 		and	#$40,r0
 		cmp/eq	#$40,r0		; Z80 ready?
 		bf	.wait_z_c
@@ -193,16 +199,25 @@ m_irq_cmd:
 		mov.w	r0,@r2
 		bra	.next_commz
 		add	#2,r2
-.finishz:
+		align 4
+.play_all:
+		mov	#1,r0
+		mov.w	r0,@(marsGbl_PwmTrkUpd,gbr)
 
+; ----------------------------------------
+
+.finish_s:
+		
+.finish:
 		ldc 	@r15+,sr
+		mov 	@r15+,r4
 		mov 	@r15+,r3
 		mov 	@r15+,r2
 		rts
 		nop
 		align 4
 		ltorg
-
+		
 ; =================================================================
 ; ------------------------------------------------
 ; Master | HBlank
@@ -328,6 +343,15 @@ m_irq_vres:
 		bf	.sh_wait
 		mov.l	#"M_OK",r0		; let the others know master ready
 		mov.l	r0,@(comm0,gbr)
+		mov.l   #$FFFFFE80,r1		; Stop watchdog
+		mov.w   #$A518,r0
+		mov.w   r0,@r1
+; 		mov	#_vdpreg,r1		; Framebuffer swap request
+; 		mov.b	@(framectl,r1),r0	; watchdog will check for it later
+; 		xor	#1,r0
+; 		mov.b	r0,@(framectl,r1)
+; 		mov	#RAM_Mars_Global+marsGbl_CurrFb,r1
+		mov.b	r0,@r1
 		mov.l	#CS3|$40000-8,r15	; Set reset values
 		mov.l	#SH2_M_HotStart,r0
 		mov.l	r0,@r15
@@ -1511,7 +1535,8 @@ sizeof_marsram	ds.l 0
 
 			struct MarsRam_Sound
 MarsSnd_PwmChnls	ds.b sizeof_sndchn*MAX_PWMCHNL
-MarsSnd_InstrList	ds.l 64
+MarsSnd_PwmTrkData	ds.b $80*2
+MarsSnd_PwmPlyData	ds.l 7
 sizeof_marssnd		ds.l 0
 			finish
 
