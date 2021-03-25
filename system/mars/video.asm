@@ -797,9 +797,9 @@ MarsMdl_ReadModel:
 .no_anim:
 
 	; Now start reading
-; 		mov	#Cach_CurrPlygn,r13
-		mov	@(marsGbl_CurrFacePos,gbr),r0
-		mov	r0,r13				; r13 - output faces
+		mov	#Cach_CurrPlygn,r13		; r13 - output faces
+; 		mov	@(marsGbl_CurrFacePos,gbr),r0
+; 		mov	r0,r13				; r13 - output faces
 		mov	#$3FFFFFFF,r0
 		mov	@(mdl_data,r14),r12		; r12 - model header
 		and	r0,r12
@@ -810,11 +810,14 @@ MarsMdl_ReadModel:
 		mov	r0,r8
 .next_face:
 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0	; Ran out of space to store faces?
-		mov	#MAX_FACES,r1
+		mov	.tag_maxfaces,r1
 		cmp/ge	r1,r0
 		bf	.can_build
 		bra	.exit_model
 		nop
+		align 4
+.tag_maxfaces:	dc.l	MAX_FACES
+
 .can_build:
 		mov.w	@r11+,r4			; Read type from model
 		mov	#3,r7				; r7 - Current polygon type: triangle (3)
@@ -1021,14 +1024,30 @@ MarsMdl_ReadModel:
 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0	; Add 1 face to the list
 		add	#1,r0
 		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
+	
+	; NEW: copy cache polygon
+	; to final position
+		mov	@(marsGbl_CurrFacePos,gbr),r0
+		mov	r13,r2
+		mov	r0,r1
 		mov	r5,@r8				; Store current Z to Zlist
-		mov	r13,@(4,r8)			; And it's address
-		add	#8,r8
+		mov	r1,@(4,r8)			; And it's address
+	rept sizeof_polygn/4
+		mov	@r2+,r0
+		mov	r0,@r1
+		add	#4,r1
+	endm
+; 		bra	*
+; 		nop
+
+		add	#8,r8				; Update from Zlist
+		mov	r1,r0				; TODO: Delete after the cache
+		mov	r0,@(marsGbl_CurrFacePos,gbr)	; method is made
 
 ; 		mov	@(marsGbl_CurrFacePos,gbr),r0
 	; Copy from cache to currpos
 	; goes here
-		add	#sizeof_polygn,r13
+; 		add	#sizeof_polygn,r13
 ; 		mov	r0,@(marsGbl_CurrFacePos,gbr)	
 		
 .face_out:
@@ -1039,8 +1058,7 @@ MarsMdl_ReadModel:
 .finish_this:
 		mov	r8,r0
 		mov	r0,@(marsGbl_CurrZList,gbr)
-		mov	r13,r0				; TODO: Delete after the cache
-		mov	r0,@(marsGbl_CurrFacePos,gbr)	; method is made
+
 .exit_model:
 		lds	@r15+,pr
 		rts

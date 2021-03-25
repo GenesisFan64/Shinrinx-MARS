@@ -1061,7 +1061,6 @@ CachDDA_Src	ds.l 4*2
 CachDDA_Src_L	ds.l 4			; X/DX/Y/DX result for textures
 CachDDA_Src_R	ds.l 4
 Cach_ClrLines	ds.l 1			; Current lines to clear
-Cach_CurrPlygn	ds.l sizeof_polygn	; Current polygon in modelread
 
 ; ------------------------------------------------
 .end:		phase CACHE_MASTER+.end&$1FFF
@@ -1078,6 +1077,9 @@ CACHE_SLAVE:
 		phase $C0000000
 ; ------------------------------------------------
 		dc.b "SLAVE CACHE CODE GOES HERE"
+		align 4
+Cach_CurrPlygn	ds.l sizeof_polygn	; Current polygon in modelread
+
 ; ------------------------------------------------
 .end:		phase CACHE_SLAVE+.end&$1FFF
 CACHE_SLAVE_E:
