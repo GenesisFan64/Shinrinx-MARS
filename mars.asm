@@ -19,8 +19,8 @@
 
 ; ====================================================================
 ; ----------------------------------------------------------------
-; 68K RAMCODE Section
-; Stored on RAM to prevent BUS fighting (Kolibri-style)
+; 68K RAMCODE Section, MUST BE ON RAM
+; Not using $880000 so it doesn't conflict with the ROM bus
 ; 
 ; MAX size: $8000
 ; ----------------------------------------------------------------

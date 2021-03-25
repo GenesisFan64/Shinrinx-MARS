@@ -1054,13 +1054,14 @@ put_piece:
 
 		align 4
 Cach_LnDrw_L	ds.l 14			;
-Cach_LnDrw_S	ds.l 0			; Reads backwards
+Cach_LnDrw_S	ds.l 0			; <-- Reads backwards
 CachDDA_Top	ds.l 2*2		; First 2 points
 CachDDA_Last	ds.l 2*2		; Triangle or Quad (+8)
 CachDDA_Src	ds.l 4*2
 CachDDA_Src_L	ds.l 4			; X/DX/Y/DX result for textures
 CachDDA_Src_R	ds.l 4
-Cach_ClrLines	ds.l 1
+Cach_ClrLines	ds.l 1			; Current lines to clear
+Cach_CurrPlygn	ds.l sizeof_polygn	; Current polygon in modelread
 
 ; ------------------------------------------------
 .end:		phase CACHE_MASTER+.end&$1FFF

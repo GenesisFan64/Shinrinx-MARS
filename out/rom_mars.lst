@@ -1,4 +1,4 @@
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 1 - 3/24/2021 21:18:19
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 1 - 3/25/2021 0:43:11
 
 
        1/       0 :                     ; ===========================================================================
@@ -649,7 +649,7 @@
 (1)  165/     3D0 : 0000 0000           		dc.l 0					; Version (always 0)
 (1)  166/     3D4 : 0000 465C           		dc.l MARS_RAMDATA			; Set to 0 if SH2 code points to ROM
 (1)  167/     3D8 : 0000 0000           		dc.l 0					; No info, set to zero.
-(1)  168/     3DC : 0000 5A5C           		dc.l MARS_RAMDATA_e-MARS_RAMDATA	; Set to 4 if SH2 code points to ROM
+(1)  168/     3DC : 0000 5B3C           		dc.l MARS_RAMDATA_e-MARS_RAMDATA	; Set to 4 if SH2 code points to ROM
 (1)  169/     3E0 : 0600 1170           		dc.l SH2_M_Entry			; Master SH2 PC (SH2 map area)
 (1)  170/     3E4 : 0600 1328           		dc.l SH2_S_Entry			; Slave SH2 PC (SH2 map area)
 (1)  171/     3E8 : 0600 0000           		dc.l SH2_Master				; Master SH2 default VBR (Vector table)
@@ -804,8 +804,8 @@
       19/     932 :                     
       20/     932 :                     ; ====================================================================
       21/     932 :                     ; ----------------------------------------------------------------
-      22/     932 :                     ; 68K RAMCODE Section
-      23/     932 :                     ; Stored on RAM to prevent BUS fighting (Kolibri-style)
+      22/     932 :                     ; 68K RAMCODE Section, MUST BE ON RAM
+      23/     932 :                     ; Not using $880000 so it doesn't conflict with the ROM bus
       24/     932 :                     ; 
       25/     932 :                     ; MAX size: $8000
       26/     932 :                     ; ----------------------------------------------------------------
@@ -5869,14 +5869,14 @@
 (1)  119/  FF3A92 : 6100 C7B4           		bsr	System_MdMars_MstTask		; Wait until it finishes.
 (1)  120/  FF3A96 : 203C 0600 15B0      		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
 (1)  121/  FF3A9C : 6100 C79E           		bsr	System_MdMars_SlvAddTask
-(1)  122/  FF3AA0 : 223C 0600 464C      		move.l	#Palette_Intro,d1
+(1)  122/  FF3AA0 : 223C 0600 472C      		move.l	#Palette_Intro,d1
 (1)  123/  FF3AA6 : 7400                		moveq	#0,d2
 (1)  124/  FF3AA8 : 363C 0010           		move.w	#16,d3
 (1)  125/  FF3AAC : 7800                		moveq	#0,d4
 (1)  126/  FF3AAE : 203C 0600 1544      		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
 (1)  127/  FF3AB4 : 6100 C77A           		bsr	System_MdMars_MstAddTask
 (1)  128/  FF3AB8 : 7200                		moveq	#0,d1
-(1)  129/  FF3ABA : 243C 0600 486C      		move.l	#MARSOBJ_INTRO,d2
+(1)  129/  FF3ABA : 243C 0600 494C      		move.l	#MARSOBJ_INTRO,d2
 (1)  130/  FF3AC0 : 7600                		moveq	#0,d3
 (1)  131/  FF3AC2 : 203C 0600 1558      		move.l	#CmdTaskMd_ObjectSet,d0
 (1)  132/  FF3AC8 : 6100 C772           		bsr	System_MdMars_SlvAddTask	; Load object
@@ -5948,7 +5948,7 @@
 (1)  196/  FF3B82 : 2E38 8814           		move.l	(RAM_Cam_Zrot),d7
 (1)  197/  FF3B86 : 203C 0600 15D4      		move.l	#CmdTaskMd_CameraPos,d0		; Load map
 (1)  198/  FF3B8C : 6100 C6AE           		bsr	System_MdMars_SlvAddTask
-(1)  199/  FF3B90 : 223C 0600 466C      		move.l	#Palette_Map,d1
+(1)  199/  FF3B90 : 223C 0600 474C      		move.l	#Palette_Map,d1
 (1)  200/  FF3B96 : 7400                		moveq	#0,d2
 (1)  201/  FF3B98 : 263C 0000 0100      		move.l	#256,d3
 (1)  202/  FF3B9E : 7800                		moveq	#0,d4
@@ -5956,7 +5956,7 @@
 (1)  204/  FF3BA6 : 6100 C688           		bsr	System_MdMars_MstAddTask
 (1)  205/  FF3BAA : 203C 0600 15B0      		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
 (1)  206/  FF3BB0 : 6100 C68A           		bsr	System_MdMars_SlvAddTask
-(1)  207/  FF3BB4 : 223C 0600 4938      		move.l	#TEST_LAYOUT,d1
+(1)  207/  FF3BB4 : 223C 0600 4A18      		move.l	#TEST_LAYOUT,d1
 (1)  208/  FF3BBA : 203C 0600 15C0      		move.l	#CmdTaskMd_MakeMap,d0
 (1)  209/  FF3BC0 : 6100 C66E           		bsr	System_MdMars_MstAddTask	; Load map
 (1)  210/  FF3BC4 : 203C 0600 1534      		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
@@ -6744,9 +6744,9 @@
 (1)  220/ 60003E8 : 0600 02CC 2000 4038 		ltorg
                     0600 0EF4 2000 401C 
                     2000 401A 2000 4024 
-                    2000 4028 0601 63F8 
-                    2000 402E 0601 6AF8 
-                    0601 6BF8 FE10 00F0 
+                    2000 4028 0601 64D8 
+                    2000 402E 0601 6BD8 
+                    0601 6CD8 FE10 00F0 
                     0080                
 (1)  221/ 600041A :                     		
 (1)  222/ 600041A :                     ; =================================================================
@@ -6956,7 +6956,7 @@
 (1)  378/ 6000530 : 0009                		nop
 (1)  379/ 6000532 :                     		align 4
 (1)  380/ 6000534 : 2000 4018 2000 4016 		ltorg				; Save MASTER IRQ literals here
-                    2000 4100 0601 67F8 
+                    2000 4100 0601 68D8 
                     2000 4200 2000 4000 
                     3638 5550 535F 4F4B 
                     4D5F 4F4B 0603 FFF8 
@@ -7156,7 +7156,7 @@
 (1)  572/ 600066C : 0009                		nop
 (1)  573/ 600066E :                     		align 4
 (1)  574/ 6000670 : 2000 401C 2000 401A 		ltorg			; Save Slave IRQ literals
-                    0601 65F8 2000 4028 
+                    0601 66D8 2000 4028 
                     2000 402F 2000 4018 
                     2000 4016 2000 4000 
                     3638 5550 535F 4F4B 
@@ -7470,7 +7470,7 @@
 (2)  268/ 6000774 : 0009                		nop
 (2)  269/ 6000776 :                     		align 4
 (2)  270/ 6000778 : 2000 4000 2000 4100 		ltorg
-                    2400 0000 0601 67F8 
+                    2400 0000 0601 68D8 
                     0080 0100 00F0 00FF 
 (2)  271/ 6000790 :                     
 (2)  272/ 6000790 :                     ; ====================================================================
@@ -7583,8 +7583,8 @@
 (2)  379/ 60007FC : 000B                		rts
 (2)  380/ 60007FE : 0009                		nop
 (2)  381/ 6000800 :                     		align 4
-(2)  382/ 6000800 : 0600 5AD8 0600 5AB0 		ltorg
-                    0600 5AF8 FFF0 0000 
+(2)  382/ 6000800 : 0600 5BB8 0600 5B90 		ltorg
+                    0600 5BD8 FFF0 0000 
                     8000                
 (2)  383/ 6000812 :                     
 (2)  384/ 6000812 :                     ; r1 - layout data pointer
@@ -7942,8 +7942,8 @@
 (2)  730/ 6000ACA : 000B                		rts
 (2)  731/ 6000ACC : 0009                		nop
 (2)  732/ 6000ACE :                     		align 4
-(2)  733/ 6000AD0 : 0600 5AD8 0600 5AB0 		ltorg
-                    0600 5AF8 0600 0888 
+(2)  733/ 6000AD0 : 0600 5BB8 0600 5B90 		ltorg
+                    0600 5BD8 0600 0888 
                     0010 0000 0600 09D0 
                     4000 0000 FFF0 0000 
                     FFE0 0000 1FFF      
@@ -7966,624 +7966,634 @@
 (2)  750/ 6000B04 : 000B                		rts
 (2)  751/ 6000B06 : 0009                		nop
 (2)  752/ 6000B08 :                     		align 4
-(2)  753/ 6000B08 : 0600 5AF8 0300      		ltorg
+(2)  753/ 6000B08 : 0600 5BD8 0300      		ltorg
 (2)  754/ 6000B0E :                     
-(2)  755/ 6000B0E :                     MarsMdl_ReadModel:
-(2)  756/ 6000B0E : 4F22                		sts	pr,@-r15
-(2)  757/ 6000B10 :                     
-(2)  758/ 6000B10 : 5DE8                		mov	@(mdl_animdata,r14),r13
-(2)  759/ 6000B12 : 4D15                		cmp/pl	r13
-(2)  760/ 6000B14 : 8B1E                		bf	.no_anim
-(2)  761/ 6000B16 : 50EA                		mov	@(mdl_animtimer,r14),r0
-(2)  762/ 6000B18 : 70FF                		add	#-1,r0
-(2)  763/ 6000B1A : 4015                		cmp/pl 	r0
-(2)  764/ 6000B1C : 8919                		bt	.wait_camanim
-(2)  765/ 6000B1E : 62D6                		mov	@r13+,r2
-(2)  766/ 6000B20 : 50E9                		mov	@(mdl_animframe,r14),r0
-(2)  767/ 6000B22 : 7001                		add	#1,r0
-(2)  768/ 6000B24 : 3020                		cmp/eq	r2,r0
-(2)  769/ 6000B26 : 8B00                		bf	.on_frames
-(2)  770/ 6000B28 : 200A                		xor	r0,r0
-(2)  771/ 6000B2A :                     .on_frames:
-(2)  772/ 6000B2A : 6103                		mov	r0,r1
-(2)  773/ 6000B2C : 1E09                		mov	r0,@(mdl_animframe,r14)
-(2)  774/ 6000B2E : E018                		mov	#$18,r0
-(2)  775/ 6000B30 : 210E                		mulu	r0,r1
-(2)  776/ 6000B32 : 001A                		sts	macl,r0 	
-(2)  777/ 6000B34 : 3D0C                		add	r0,r13
-(2)  778/ 6000B36 : 61D6                		mov	@r13+,r1
-(2)  779/ 6000B38 : 62D6                		mov	@r13+,r2
-(2)  780/ 6000B3A : 63D6                		mov	@r13+,r3
-(2)  781/ 6000B3C : 64D6                		mov	@r13+,r4
-(2)  782/ 6000B3E : 65D6                		mov	@r13+,r5
-(2)  783/ 6000B40 : 66D6                		mov	@r13+,r6
-(2)  784/ 6000B42 : 644B                		neg	r4,r4
-(2)  785/ 6000B44 : 1E12                		mov	r1,@(mdl_x_pos,r14)
-(2)  786/ 6000B46 : 1E23                		mov	r2,@(mdl_y_pos,r14)
-(2)  787/ 6000B48 : 1E34                		mov	r3,@(mdl_z_pos,r14)
-(2)  788/ 6000B4A : 1E45                		mov	r4,@(mdl_x_rot,r14)
-(2)  789/ 6000B4C : 1E56                		mov	r5,@(mdl_y_rot,r14)
-(2)  790/ 6000B4E : 1E67                		mov	r6,@(mdl_z_rot,r14)
-(2)  791/ 6000B50 : E001                		mov	#1,r0				; TEMPORAL timer
-(2)  792/ 6000B52 :                     .wait_camanim:
-(2)  793/ 6000B52 : 1E0A                		mov	r0,@(mdl_animtimer,r14)	
-(2)  794/ 6000B54 :                     .no_anim:
-(2)  795/ 6000B54 :                     
-(2)  796/ 6000B54 :                     	; Now start reading
-(2)  797/ 6000B54 : C603                		mov	@(marsGbl_CurrFacePos,gbr),r0
-(2)  798/ 6000B56 : 6D03                		mov	r0,r13				; r13 - output faces
-(2)  799/ 6000B58 : D073                		mov	#$3FFFFFFF,r0
-(2)  800/ 6000B5A : 5CE0                		mov	@(mdl_data,r14),r12		; r12 - model header
-(2)  801/ 6000B5C : 2C09                		and	r0,r12
-(2)  802/ 6000B5E : 5BC2                		mov 	@(8,r12),r11			; r11 - face data
-(2)  803/ 6000B60 : 5AC1                		mov 	@(4,r12),r10			; r10 - vertice data (X,Y,Z)
-(2)  804/ 6000B62 : 69C1                		mov.w	@r12,r9				;  r9 - Number of faces used on model
-(2)  805/ 6000B64 : C602                		mov	@(marsGbl_CurrZList,gbr),r0	;  r8 - Zlist for sorting
-(2)  806/ 6000B66 : 6803                		mov	r0,r8
-(2)  807/ 6000B68 :                     .next_face:
-(2)  808/ 6000B68 : C50A                		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0	; Ran out of space to store faces?
-(2)  809/ 6000B6A : 91E5                		mov	#MAX_FACES,r1
-(2)  810/ 6000B6C : 3013                		cmp/ge	r1,r0
-(2)  811/ 6000B6E : 8B01                		bf	.can_build
-(2)  812/ 6000B70 : A0D7                		bra	.exit_model
-(2)  813/ 6000B72 : 0009                		nop
-(2)  814/ 6000B74 :                     .can_build:
-(2)  815/ 6000B74 : 64B5                		mov.w	@r11+,r4			; Read type from model
-(2)  816/ 6000B76 : E703                		mov	#3,r7				; r7 - Current polygon type: triangle (3)
-(2)  817/ 6000B78 : 6043                		mov	r4,r0
-(2)  818/ 6000B7A : 4019                		shlr8	r0
-(2)  819/ 6000B7C : C840                		tst	#PLGN_TRI,r0			; Model face uses triangle?
-(2)  820/ 6000B7E : 8B00                		bf	.set_tri
-(2)  821/ 6000B80 : 7701                		add	#1,r7				; Face is quad, r7 = 4 points
-(2)  822/ 6000B82 :                     .set_tri:
-(2)  823/ 6000B82 : 4415                		cmp/pl	r4				; Faces uses texture?
-(2)  824/ 6000B84 : 893A                		bt	.solid_type
-(2)  825/ 6000B86 :                     
-(2)  826/ 6000B86 :                     ; --------------------------------
-(2)  827/ 6000B86 :                     ; Set texture material
-(2)  828/ 6000B86 :                     ; --------------------------------
+(2)  755/ 6000B0E :                     ; ------------------------------------------------
+(2)  756/ 6000B0E :                     ; Read model
+(2)  757/ 6000B0E :                     ; ------------------------------------------------
+(2)  758/ 6000B0E :                     
+(2)  759/ 6000B0E :                     MarsMdl_ReadModel:
+(2)  760/ 6000B0E : 4F22                		sts	pr,@-r15
+(2)  761/ 6000B10 : 5DE8                		mov	@(mdl_animdata,r14),r13
+(2)  762/ 6000B12 : 4D15                		cmp/pl	r13
+(2)  763/ 6000B14 : 8B1E                		bf	.no_anim
+(2)  764/ 6000B16 : 50EA                		mov	@(mdl_animtimer,r14),r0
+(2)  765/ 6000B18 : 70FF                		add	#-1,r0
+(2)  766/ 6000B1A : 4015                		cmp/pl 	r0
+(2)  767/ 6000B1C : 8919                		bt	.wait_camanim
+(2)  768/ 6000B1E : 62D6                		mov	@r13+,r2
+(2)  769/ 6000B20 : 50E9                		mov	@(mdl_animframe,r14),r0
+(2)  770/ 6000B22 : 7001                		add	#1,r0
+(2)  771/ 6000B24 : 3020                		cmp/eq	r2,r0
+(2)  772/ 6000B26 : 8B00                		bf	.on_frames
+(2)  773/ 6000B28 : 200A                		xor	r0,r0
+(2)  774/ 6000B2A :                     .on_frames:
+(2)  775/ 6000B2A : 6103                		mov	r0,r1
+(2)  776/ 6000B2C : 1E09                		mov	r0,@(mdl_animframe,r14)
+(2)  777/ 6000B2E : E018                		mov	#$18,r0
+(2)  778/ 6000B30 : 210E                		mulu	r0,r1
+(2)  779/ 6000B32 : 001A                		sts	macl,r0 	
+(2)  780/ 6000B34 : 3D0C                		add	r0,r13
+(2)  781/ 6000B36 : 61D6                		mov	@r13+,r1
+(2)  782/ 6000B38 : 62D6                		mov	@r13+,r2
+(2)  783/ 6000B3A : 63D6                		mov	@r13+,r3
+(2)  784/ 6000B3C : 64D6                		mov	@r13+,r4
+(2)  785/ 6000B3E : 65D6                		mov	@r13+,r5
+(2)  786/ 6000B40 : 66D6                		mov	@r13+,r6
+(2)  787/ 6000B42 : 644B                		neg	r4,r4
+(2)  788/ 6000B44 : 1E12                		mov	r1,@(mdl_x_pos,r14)
+(2)  789/ 6000B46 : 1E23                		mov	r2,@(mdl_y_pos,r14)
+(2)  790/ 6000B48 : 1E34                		mov	r3,@(mdl_z_pos,r14)
+(2)  791/ 6000B4A : 1E45                		mov	r4,@(mdl_x_rot,r14)
+(2)  792/ 6000B4C : 1E56                		mov	r5,@(mdl_y_rot,r14)
+(2)  793/ 6000B4E : 1E67                		mov	r6,@(mdl_z_rot,r14)
+(2)  794/ 6000B50 : E001                		mov	#1,r0				; TEMPORAL timer
+(2)  795/ 6000B52 :                     .wait_camanim:
+(2)  796/ 6000B52 : 1E0A                		mov	r0,@(mdl_animtimer,r14)	
+(2)  797/ 6000B54 :                     .no_anim:
+(2)  798/ 6000B54 :                     
+(2)  799/ 6000B54 :                     	; Now start reading
+(2)  800/ 6000B54 :                     ; 		mov	#Cach_CurrPlygn,r13
+(2)  801/ 6000B54 : C603                		mov	@(marsGbl_CurrFacePos,gbr),r0
+(2)  802/ 6000B56 : 6D03                		mov	r0,r13				; r13 - output faces
+(2)  803/ 6000B58 : D073                		mov	#$3FFFFFFF,r0
+(2)  804/ 6000B5A : 5CE0                		mov	@(mdl_data,r14),r12		; r12 - model header
+(2)  805/ 6000B5C : 2C09                		and	r0,r12
+(2)  806/ 6000B5E : 5BC2                		mov 	@(8,r12),r11			; r11 - face data
+(2)  807/ 6000B60 : 5AC1                		mov 	@(4,r12),r10			; r10 - vertice data (X,Y,Z)
+(2)  808/ 6000B62 : 69C1                		mov.w	@r12,r9				;  r9 - Number of faces used on model
+(2)  809/ 6000B64 : C602                		mov	@(marsGbl_CurrZList,gbr),r0	;  r8 - Zlist for sorting
+(2)  810/ 6000B66 : 6803                		mov	r0,r8
+(2)  811/ 6000B68 :                     .next_face:
+(2)  812/ 6000B68 : C50A                		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0	; Ran out of space to store faces?
+(2)  813/ 6000B6A : 91E5                		mov	#MAX_FACES,r1
+(2)  814/ 6000B6C : 3013                		cmp/ge	r1,r0
+(2)  815/ 6000B6E : 8B01                		bf	.can_build
+(2)  816/ 6000B70 : A0D7                		bra	.exit_model
+(2)  817/ 6000B72 : 0009                		nop
+(2)  818/ 6000B74 :                     .can_build:
+(2)  819/ 6000B74 : 64B5                		mov.w	@r11+,r4			; Read type from model
+(2)  820/ 6000B76 : E703                		mov	#3,r7				; r7 - Current polygon type: triangle (3)
+(2)  821/ 6000B78 : 6043                		mov	r4,r0
+(2)  822/ 6000B7A : 4019                		shlr8	r0
+(2)  823/ 6000B7C : C840                		tst	#PLGN_TRI,r0			; Model face uses triangle?
+(2)  824/ 6000B7E : 8B00                		bf	.set_tri
+(2)  825/ 6000B80 : 7701                		add	#1,r7				; Face is quad, r7 = 4 points
+(2)  826/ 6000B82 :                     .set_tri:
+(2)  827/ 6000B82 : 4415                		cmp/pl	r4				; Faces uses texture?
+(2)  828/ 6000B84 : 893A                		bt	.solid_type
 (2)  829/ 6000B86 :                     
-(2)  830/ 6000B86 : 56C3                		mov	@($C,r12),r6			; r6 - Material data
-(2)  831/ 6000B88 : 65D3                		mov	r13,r5				; r5 - Go to UV section 
-(2)  832/ 6000B8A : 7528                		add 	#polygn_srcpnts,r5
-(2)  833/ 6000B8C : 6373                		mov	r7,r3				; r3 - copy of current face points (3 or 4)
-(2)  834/ 6000B8E :                     
-(2)  835/ 6000B8E :                     	; New method
-(2)  836/ 6000B8E :                     	rept 3
-(2)  837/ 6000B8E :                     		mov.w	@r11+,r0			; Read UV index			
-(2)  838/ 6000B8E :                     		extu	r0,r0
-(2)  839/ 6000B8E :                     		shll2	r0
-(2)  840/ 6000B8E :                     		mov	@(r6,r0),r0
-(2)  841/ 6000B8E :                     		mov.w	r0,@(2,r5)
-(2)  842/ 6000B8E :                     		shlr16	r0
-(2)  843/ 6000B8E :                     		mov.w	r0,@r5
-(2)  844/ 6000B8E :                     		add	#4,r5
-(2)  845/ 6000B8E :                     	endm
-(2)  837/ 6000B8E : 60B5                		mov.w	@r11+,r0			; Read UV index			
-(2)  838/ 6000B90 : 600D                		extu	r0,r0
-(2)  839/ 6000B92 : 4008                		shll2	r0
-(2)  840/ 6000B94 : 006E                		mov	@(r6,r0),r0
-(2)  841/ 6000B96 : 8151                		mov.w	r0,@(2,r5)
-(2)  842/ 6000B98 : 4029                		shlr16	r0
-(2)  843/ 6000B9A : 2501                		mov.w	r0,@r5
-(2)  844/ 6000B9C : 7504                		add	#4,r5
-(2)  837/ 6000B9E : 60B5                		mov.w	@r11+,r0			; Read UV index			
-(2)  838/ 6000BA0 : 600D                		extu	r0,r0
-(2)  839/ 6000BA2 : 4008                		shll2	r0
-(2)  840/ 6000BA4 : 006E                		mov	@(r6,r0),r0
-(2)  841/ 6000BA6 : 8151                		mov.w	r0,@(2,r5)
-(2)  842/ 6000BA8 : 4029                		shlr16	r0
-(2)  843/ 6000BAA : 2501                		mov.w	r0,@r5
-(2)  844/ 6000BAC : 7504                		add	#4,r5
-(2)  837/ 6000BAE : 60B5                		mov.w	@r11+,r0			; Read UV index			
-(2)  838/ 6000BB0 : 600D                		extu	r0,r0
-(2)  839/ 6000BB2 : 4008                		shll2	r0
-(2)  840/ 6000BB4 : 006E                		mov	@(r6,r0),r0
-(2)  841/ 6000BB6 : 8151                		mov.w	r0,@(2,r5)
-(2)  842/ 6000BB8 : 4029                		shlr16	r0
-(2)  843/ 6000BBA : 2501                		mov.w	r0,@r5
-(2)  844/ 6000BBC : 7504                		add	#4,r5
-(2)  846/ 6000BBE : E003                		mov	#3,r0			; Triangle?
-(2)  847/ 6000BC0 : 3700                		cmp/eq	r0,r7
-(2)  848/ 6000BC2 : 8906                		bt	.alluvdone
-(2)  849/ 6000BC4 : 60B5                		mov.w	@r11+,r0			; Read UV index			
-(2)  850/ 6000BC6 : 600D                		extu	r0,r0
-(2)  851/ 6000BC8 : 4008                		shll2	r0
-(2)  852/ 6000BCA : 006E                		mov	@(r6,r0),r0
-(2)  853/ 6000BCC : 8151                		mov.w	r0,@(2,r5)
-(2)  854/ 6000BCE : 4029                		shlr16	r0
-(2)  855/ 6000BD0 : 2501                		mov.w	r0,@r5
-(2)  856/ 6000BD2 :                     .alluvdone:
-(2)  857/ 6000BD2 :                     
-(2)  858/ 6000BD2 : 50E1                		mov	@(mdl_option,r14),r0
-(2)  859/ 6000BD4 : C9FF                		and	#$FF,r0
-(2)  860/ 6000BD6 : 6103                		mov	r0,r1
-(2)  861/ 6000BD8 : 6043                		mov	r4,r0
-(2)  862/ 6000BDA : 95AE                		mov	#$1FFF,r5
-(2)  863/ 6000BDC : 2059                		and	r5,r0
-(2)  864/ 6000BDE : 4008                		shll2	r0
-(2)  865/ 6000BE0 : 4000                		shll	r0
-(2)  866/ 6000BE2 : 56C4                		mov	@($10,r12),r6
-(2)  867/ 6000BE4 : 360C                		add	r0,r6
-(2)  868/ 6000BE6 : D051                		mov	#$E000,r0		; grab special bits
-(2)  869/ 6000BE8 : 2409                		and	r0,r4
-(2)  870/ 6000BEA : 4428                		shll16	r4
-(2)  871/ 6000BEC : 5061                		mov	@(4,r6),r0
-(2)  872/ 6000BEE : 240B                		or	r0,r4
-(2)  873/ 6000BF0 : 341C                		add	r1,r4
-(2)  874/ 6000BF2 : 1D40                		mov	r4,@(polygn_type,r13)
-(2)  875/ 6000BF4 : 6062                		mov	@r6,r0
-(2)  876/ 6000BF6 : 1D01                		mov	r0,@(polygn_mtrl,r13)
-(2)  877/ 6000BF8 : A00B                		bra	.go_faces
-(2)  878/ 6000BFA : 0009                		nop
-(2)  879/ 6000BFC :                     
-(2)  880/ 6000BFC :                     ; --------------------------------
-(2)  881/ 6000BFC :                     ; Set texture material
-(2)  882/ 6000BFC :                     ; --------------------------------
+(2)  830/ 6000B86 :                     ; --------------------------------
+(2)  831/ 6000B86 :                     ; Set texture material
+(2)  832/ 6000B86 :                     ; --------------------------------
+(2)  833/ 6000B86 :                     
+(2)  834/ 6000B86 : 56C3                		mov	@($C,r12),r6			; r6 - Material data
+(2)  835/ 6000B88 : 65D3                		mov	r13,r5				; r5 - Go to UV section 
+(2)  836/ 6000B8A : 7528                		add 	#polygn_srcpnts,r5
+(2)  837/ 6000B8C : 6373                		mov	r7,r3				; r3 - copy of current face points (3 or 4)
+(2)  838/ 6000B8E :                     
+(2)  839/ 6000B8E :                     	; New method
+(2)  840/ 6000B8E :                     	rept 3
+(2)  841/ 6000B8E :                     		mov.w	@r11+,r0			; Read UV index			
+(2)  842/ 6000B8E :                     		extu	r0,r0
+(2)  843/ 6000B8E :                     		shll2	r0
+(2)  844/ 6000B8E :                     		mov	@(r6,r0),r0
+(2)  845/ 6000B8E :                     		mov.w	r0,@(2,r5)
+(2)  846/ 6000B8E :                     		shlr16	r0
+(2)  847/ 6000B8E :                     		mov.w	r0,@r5
+(2)  848/ 6000B8E :                     		add	#4,r5
+(2)  849/ 6000B8E :                     	endm
+(2)  841/ 6000B8E : 60B5                		mov.w	@r11+,r0			; Read UV index			
+(2)  842/ 6000B90 : 600D                		extu	r0,r0
+(2)  843/ 6000B92 : 4008                		shll2	r0
+(2)  844/ 6000B94 : 006E                		mov	@(r6,r0),r0
+(2)  845/ 6000B96 : 8151                		mov.w	r0,@(2,r5)
+(2)  846/ 6000B98 : 4029                		shlr16	r0
+(2)  847/ 6000B9A : 2501                		mov.w	r0,@r5
+(2)  848/ 6000B9C : 7504                		add	#4,r5
+(2)  841/ 6000B9E : 60B5                		mov.w	@r11+,r0			; Read UV index			
+(2)  842/ 6000BA0 : 600D                		extu	r0,r0
+(2)  843/ 6000BA2 : 4008                		shll2	r0
+(2)  844/ 6000BA4 : 006E                		mov	@(r6,r0),r0
+(2)  845/ 6000BA6 : 8151                		mov.w	r0,@(2,r5)
+(2)  846/ 6000BA8 : 4029                		shlr16	r0
+(2)  847/ 6000BAA : 2501                		mov.w	r0,@r5
+(2)  848/ 6000BAC : 7504                		add	#4,r5
+(2)  841/ 6000BAE : 60B5                		mov.w	@r11+,r0			; Read UV index			
+(2)  842/ 6000BB0 : 600D                		extu	r0,r0
+(2)  843/ 6000BB2 : 4008                		shll2	r0
+(2)  844/ 6000BB4 : 006E                		mov	@(r6,r0),r0
+(2)  845/ 6000BB6 : 8151                		mov.w	r0,@(2,r5)
+(2)  846/ 6000BB8 : 4029                		shlr16	r0
+(2)  847/ 6000BBA : 2501                		mov.w	r0,@r5
+(2)  848/ 6000BBC : 7504                		add	#4,r5
+(2)  850/ 6000BBE : E003                		mov	#3,r0			; Triangle?
+(2)  851/ 6000BC0 : 3700                		cmp/eq	r0,r7
+(2)  852/ 6000BC2 : 8906                		bt	.alluvdone
+(2)  853/ 6000BC4 : 60B5                		mov.w	@r11+,r0			; Read UV index			
+(2)  854/ 6000BC6 : 600D                		extu	r0,r0
+(2)  855/ 6000BC8 : 4008                		shll2	r0
+(2)  856/ 6000BCA : 006E                		mov	@(r6,r0),r0
+(2)  857/ 6000BCC : 8151                		mov.w	r0,@(2,r5)
+(2)  858/ 6000BCE : 4029                		shlr16	r0
+(2)  859/ 6000BD0 : 2501                		mov.w	r0,@r5
+(2)  860/ 6000BD2 :                     .alluvdone:
+(2)  861/ 6000BD2 :                     
+(2)  862/ 6000BD2 : 50E1                		mov	@(mdl_option,r14),r0
+(2)  863/ 6000BD4 : C9FF                		and	#$FF,r0
+(2)  864/ 6000BD6 : 6103                		mov	r0,r1
+(2)  865/ 6000BD8 : 6043                		mov	r4,r0
+(2)  866/ 6000BDA : 95AE                		mov	#$1FFF,r5
+(2)  867/ 6000BDC : 2059                		and	r5,r0
+(2)  868/ 6000BDE : 4008                		shll2	r0
+(2)  869/ 6000BE0 : 4000                		shll	r0
+(2)  870/ 6000BE2 : 56C4                		mov	@($10,r12),r6
+(2)  871/ 6000BE4 : 360C                		add	r0,r6
+(2)  872/ 6000BE6 : D051                		mov	#$E000,r0		; grab special bits
+(2)  873/ 6000BE8 : 2409                		and	r0,r4
+(2)  874/ 6000BEA : 4428                		shll16	r4
+(2)  875/ 6000BEC : 5061                		mov	@(4,r6),r0
+(2)  876/ 6000BEE : 240B                		or	r0,r4
+(2)  877/ 6000BF0 : 341C                		add	r1,r4
+(2)  878/ 6000BF2 : 1D40                		mov	r4,@(polygn_type,r13)
+(2)  879/ 6000BF4 : 6062                		mov	@r6,r0
+(2)  880/ 6000BF6 : 1D01                		mov	r0,@(polygn_mtrl,r13)
+(2)  881/ 6000BF8 : A00B                		bra	.go_faces
+(2)  882/ 6000BFA : 0009                		nop
 (2)  883/ 6000BFC :                     
-(2)  884/ 6000BFC :                     .solid_type:
-(2)  885/ 6000BFC :                     
-(2)  886/ 6000BFC : 50E1                		mov	@(mdl_option,r14),r0
-(2)  887/ 6000BFE : C9FF                		and	#$FF,r0
-(2)  888/ 6000C00 : 6103                		mov	r0,r1
-(2)  889/ 6000C02 : 6043                		mov	r4,r0
-(2)  890/ 6000C04 : D549                		mov	#$E000,r5
-(2)  891/ 6000C06 : 2459                		and	r5,r4
-(2)  892/ 6000C08 : 4428                		shll16	r4
-(2)  893/ 6000C0A : 341C                		add	r1,r4
-(2)  894/ 6000C0C : 1D40                		mov	r4,@(polygn_type,r13)		; Set type 0 (tri) or quad (1)
-(2)  895/ 6000C0E : C9FF                		and	#$FF,r0
-(2)  896/ 6000C10 : 1D01                		mov	r0,@(polygn_mtrl,r13)		; Set pixel color (0-255)
-(2)  897/ 6000C12 :                     
-(2)  898/ 6000C12 :                     ; --------------------------------
-(2)  899/ 6000C12 :                     ; Read faces
-(2)  900/ 6000C12 :                     ; --------------------------------
+(2)  884/ 6000BFC :                     ; --------------------------------
+(2)  885/ 6000BFC :                     ; Set texture material
+(2)  886/ 6000BFC :                     ; --------------------------------
+(2)  887/ 6000BFC :                     
+(2)  888/ 6000BFC :                     .solid_type:
+(2)  889/ 6000BFC :                     
+(2)  890/ 6000BFC : 50E1                		mov	@(mdl_option,r14),r0
+(2)  891/ 6000BFE : C9FF                		and	#$FF,r0
+(2)  892/ 6000C00 : 6103                		mov	r0,r1
+(2)  893/ 6000C02 : 6043                		mov	r4,r0
+(2)  894/ 6000C04 : D549                		mov	#$E000,r5
+(2)  895/ 6000C06 : 2459                		and	r5,r4
+(2)  896/ 6000C08 : 4428                		shll16	r4
+(2)  897/ 6000C0A : 341C                		add	r1,r4
+(2)  898/ 6000C0C : 1D40                		mov	r4,@(polygn_type,r13)		; Set type 0 (tri) or quad (1)
+(2)  899/ 6000C0E : C9FF                		and	#$FF,r0
+(2)  900/ 6000C10 : 1D01                		mov	r0,@(polygn_mtrl,r13)		; Set pixel color (0-255)
 (2)  901/ 6000C12 :                     
-(2)  902/ 6000C12 :                     .go_faces:
-(2)  903/ 6000C12 : 61D3                		mov	r13,r1
-(2)  904/ 6000C14 : 7108                		add 	#polygn_points,r1
-(2)  905/ 6000C16 : 66B3                		mov	r11,r6
-(2)  906/ 6000C18 : 6073                		mov	r7,r0
-(2)  907/ 6000C1A : 4000                		shll	r0
-(2)  908/ 6000C1C : 3B0C                		add	r0,r11
-(2)  909/ 6000C1E : 2F86                		mov 	r8,@-r15
-(2)  910/ 6000C20 : 2F96                		mov 	r9,@-r15
-(2)  911/ 6000C22 : 2FB6                		mov 	r11,@-r15
-(2)  912/ 6000C24 : 2FC6                		mov 	r12,@-r15
-(2)  913/ 6000C26 : 2FD6                		mov 	r13,@-r15
-(2)  914/ 6000C28 : 9888                		mov	#-160,r8
-(2)  915/ 6000C2A : 698B                		neg	r8,r9
-(2)  916/ 6000C2C : EB90                		mov	#-112,r11
-(2)  917/ 6000C2E : 6CBB                		neg	r11,r12
-(2)  918/ 6000C30 : D53F                		mov	#$7FFFFFFF,r5
-(2)  919/ 6000C32 : EDFF                		mov	#$FFFFFFFF,r13
-(2)  920/ 6000C34 :                     
-(2)  921/ 6000C34 :                     	; New method, might speed up
-(2)  922/ 6000C34 :                     	; a little...
-(2)  923/ 6000C34 :                     	rept 3
-(2)  924/ 6000C34 :                     		mov	#0,r0
-(2)  925/ 6000C34 :                     		mov.w 	@r6+,r0
-(2)  926/ 6000C34 :                     		mov	#$C,r4
-(2)  927/ 6000C34 :                     		mulu	r4,r0
-(2)  928/ 6000C34 :                     		sts	macl,r0
-(2)  929/ 6000C34 :                     		mov	r10,r4
-(2)  930/ 6000C34 :                     		add 	r0,r4
-(2)  931/ 6000C34 :                     		mov	@r4,r2
-(2)  932/ 6000C34 :                     		mov	@(4,r4),r3
-(2)  933/ 6000C34 :                     		mov	@(8,r4),r4
-(2)  934/ 6000C34 :                     		bsr	mdlrd_setpoint
-(2)  935/ 6000C34 :                     		nop
-(2)  936/ 6000C34 :                     		mov	r2,@r1
-(2)  937/ 6000C34 :                     		mov	r3,@(4,r1)
-(2)  938/ 6000C34 :                     		add	#8,r1
-(2)  939/ 6000C34 :                     	endm
-(2)  924/ 6000C34 : E000                		mov	#0,r0
-(2)  925/ 6000C36 : 6065                		mov.w 	@r6+,r0
-(2)  926/ 6000C38 : E40C                		mov	#$C,r4
-(2)  927/ 6000C3A : 204E                		mulu	r4,r0
-(2)  928/ 6000C3C : 001A                		sts	macl,r0
-(2)  929/ 6000C3E : 64A3                		mov	r10,r4
-(2)  930/ 6000C40 : 340C                		add 	r0,r4
-(2)  931/ 6000C42 : 6242                		mov	@r4,r2
-(2)  932/ 6000C44 : 5341                		mov	@(4,r4),r3
-(2)  933/ 6000C46 : 5442                		mov	@(8,r4),r4
-(2)  934/ 6000C48 : B07A                		bsr	mdlrd_setpoint
-(2)  935/ 6000C4A : 0009                		nop
-(2)  936/ 6000C4C : 2122                		mov	r2,@r1
-(2)  937/ 6000C4E : 1131                		mov	r3,@(4,r1)
-(2)  938/ 6000C50 : 7108                		add	#8,r1
-(2)  924/ 6000C52 : E000                		mov	#0,r0
-(2)  925/ 6000C54 : 6065                		mov.w 	@r6+,r0
-(2)  926/ 6000C56 : E40C                		mov	#$C,r4
-(2)  927/ 6000C58 : 204E                		mulu	r4,r0
-(2)  928/ 6000C5A : 001A                		sts	macl,r0
-(2)  929/ 6000C5C : 64A3                		mov	r10,r4
-(2)  930/ 6000C5E : 340C                		add 	r0,r4
-(2)  931/ 6000C60 : 6242                		mov	@r4,r2
-(2)  932/ 6000C62 : 5341                		mov	@(4,r4),r3
-(2)  933/ 6000C64 : 5442                		mov	@(8,r4),r4
-(2)  934/ 6000C66 : B06B                		bsr	mdlrd_setpoint
-(2)  935/ 6000C68 : 0009                		nop
-(2)  936/ 6000C6A : 2122                		mov	r2,@r1
-(2)  937/ 6000C6C : 1131                		mov	r3,@(4,r1)
-(2)  938/ 6000C6E : 7108                		add	#8,r1
-(2)  924/ 6000C70 : E000                		mov	#0,r0
-(2)  925/ 6000C72 : 6065                		mov.w 	@r6+,r0
-(2)  926/ 6000C74 : E40C                		mov	#$C,r4
-(2)  927/ 6000C76 : 204E                		mulu	r4,r0
-(2)  928/ 6000C78 : 001A                		sts	macl,r0
-(2)  929/ 6000C7A : 64A3                		mov	r10,r4
-(2)  930/ 6000C7C : 340C                		add 	r0,r4
-(2)  931/ 6000C7E : 6242                		mov	@r4,r2
-(2)  932/ 6000C80 : 5341                		mov	@(4,r4),r3
-(2)  933/ 6000C82 : 5442                		mov	@(8,r4),r4
-(2)  934/ 6000C84 : B05C                		bsr	mdlrd_setpoint
-(2)  935/ 6000C86 : 0009                		nop
-(2)  936/ 6000C88 : 2122                		mov	r2,@r1
-(2)  937/ 6000C8A : 1131                		mov	r3,@(4,r1)
-(2)  938/ 6000C8C : 7108                		add	#8,r1
-(2)  940/ 6000C8E : E003                		mov	#3,r0			; Triangle?
-(2)  941/ 6000C90 : 3700                		cmp/eq	r0,r7
-(2)  942/ 6000C92 : 890D                		bt	.allfcsdone
-(2)  943/ 6000C94 : E000                		mov	#0,r0			; Do forth point for Quad
-(2)  944/ 6000C96 : 6065                		mov.w 	@r6+,r0
-(2)  945/ 6000C98 : E40C                		mov	#$C,r4
-(2)  946/ 6000C9A : 204E                		mulu	r4,r0
-(2)  947/ 6000C9C : 001A                		sts	macl,r0
-(2)  948/ 6000C9E : 64A3                		mov	r10,r4
-(2)  949/ 6000CA0 : 340C                		add 	r0,r4
-(2)  950/ 6000CA2 : 6242                		mov	@r4,r2
-(2)  951/ 6000CA4 : 5341                		mov	@(4,r4),r3
-(2)  952/ 6000CA6 : 5442                		mov	@(8,r4),r4
-(2)  953/ 6000CA8 : B04A                		bsr	mdlrd_setpoint
-(2)  954/ 6000CAA : 0009                		nop
-(2)  955/ 6000CAC : 2122                		mov	r2,@r1
-(2)  956/ 6000CAE : 1131                		mov	r3,@(4,r1)
-(2)  957/ 6000CB0 :                     .allfcsdone:
-(2)  958/ 6000CB0 :                     
-(2)  959/ 6000CB0 : 6183                		mov	r8,r1
-(2)  960/ 6000CB2 : 6293                		mov	r9,r2
-(2)  961/ 6000CB4 : 63B3                		mov	r11,r3
-(2)  962/ 6000CB6 : 64C3                		mov	r12,r4
-(2)  963/ 6000CB8 : 66D3                		mov	r13,r6
-(2)  964/ 6000CBA : 6DF6                		mov	@r15+,r13
-(2)  965/ 6000CBC : 6CF6                		mov	@r15+,r12
-(2)  966/ 6000CBE : 6BF6                		mov	@r15+,r11
-(2)  967/ 6000CC0 : 69F6                		mov	@r15+,r9
-(2)  968/ 6000CC2 : 68F6                		mov	@r15+,r8
-(2)  969/ 6000CC4 :                     		
-(2)  970/ 6000CC4 :                     	; NOTE: if you don't like how the perspective works
-(2)  971/ 6000CC4 :                     	; change this register depending how you want to ignore
-(2)  972/ 6000CC4 :                     	; faces closer to the camera:
-(2)  973/ 6000CC4 :                     	; 
-(2)  974/ 6000CC4 :                     	; r5 - Back Z point, keep affine limitations
-(2)  975/ 6000CC4 :                     	; r6 - Front Z point, skip face but larger faces are affected
-(2)  976/ 6000CC4 : 4511                		cmp/pz	r5
-(2)  977/ 6000CC6 : 8924                		bt	.face_out
-(2)  978/ 6000CC8 : D01A                		mov	#RAM_Mars_ObjCamera,r0
-(2)  979/ 6000CCA : 5701                		mov	@(cam_y_pos,r0),r7
-(2)  980/ 6000CCC : 4709                		shlr2	r7
-(2)  981/ 6000CCE : 4709                		shlr2	r7
-(2)  982/ 6000CD0 : 4709                		shlr2	r7
-(2)  983/ 6000CD2 : 4701                		shlr	r7
-(2)  984/ 6000CD4 : 677F                		exts	r7,r7
-(2)  985/ 6000CD6 : 4715                		cmp/pl	r7
-(2)  986/ 6000CD8 : 8B00                		bf	.revrscam
-(2)  987/ 6000CDA : 677B                		neg	r7,r7
-(2)  988/ 6000CDC :                     .revrscam:
-(2)  989/ 6000CDC : 902F                		mov	#MAX_ZDIST,r0
-(2)  990/ 6000CDE : 3703                		cmp/ge	r0,r7
-(2)  991/ 6000CE0 : 8900                		bt	.camlimit
-(2)  992/ 6000CE2 : 6703                		mov	r0,r7
-(2)  993/ 6000CE4 :                     .camlimit:
-(2)  994/ 6000CE4 :                     ; 		cmp/pl	r6
-(2)  995/ 6000CE4 :                     ; 		bt	.face_out
-(2)  996/ 6000CE4 : 902B                		mov	#MAX_ZDIST,r0		; Draw distance
-(2)  997/ 6000CE6 : 307C                		add 	r7,r0
-(2)  998/ 6000CE8 : 3503                		cmp/ge	r0,r5
-(2)  999/ 6000CEA : 8B12                		bf	.face_out
-(2) 1000/ 6000CEC :                     		
-(2) 1001/ 6000CEC : 9026                		mov	#-(SCREEN_WIDTH/2),r0
-(2) 1002/ 6000CEE : 3107                		cmp/gt	r0,r1
-(2) 1003/ 6000CF0 : 8B0F                		bf	.face_out
-(2) 1004/ 6000CF2 : 600B                		neg	r0,r0
-(2) 1005/ 6000CF4 : 3203                		cmp/ge	r0,r2
-(2) 1006/ 6000CF6 : 890C                		bt	.face_out
-(2) 1007/ 6000CF8 : E090                		mov	#-(SCREEN_HEIGHT/2),r0
-(2) 1008/ 6000CFA : 3307                		cmp/gt	r0,r3
-(2) 1009/ 6000CFC : 8B09                		bf	.face_out
-(2) 1010/ 6000CFE : 600B                		neg	r0,r0
-(2) 1011/ 6000D00 : 3403                		cmp/ge	r0,r4
-(2) 1012/ 6000D02 : 8906                		bt	.face_out
-(2) 1013/ 6000D04 :                     
-(2) 1014/ 6000D04 :                     ; --------------------------------
-(2) 1015/ 6000D04 :                     
-(2) 1016/ 6000D04 :                     .face_ok:
-(2) 1017/ 6000D04 : C50A                		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0	; Add 1 face to the list
-(2) 1018/ 6000D06 : 7001                		add	#1,r0
-(2) 1019/ 6000D08 : C10A                		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
-(2) 1020/ 6000D0A : 2852                		mov	r5,@r8				; Store current Z to Zlist
-(2) 1021/ 6000D0C : 18D1                		mov	r13,@(4,r8)			; And it's address
-(2) 1022/ 6000D0E : 7808                		add	#8,r8
-(2) 1023/ 6000D10 : 7D38                		add	#sizeof_polygn,r13
-(2) 1024/ 6000D12 :                     .face_out:
-(2) 1025/ 6000D12 : 4910                		dt	r9
-(2) 1026/ 6000D14 : 8901                		bt	.finish_this
-(2) 1027/ 6000D16 : AF27                		bra	.next_face
-(2) 1028/ 6000D18 : 0009                		nop
-(2) 1029/ 6000D1A :                     .finish_this:
-(2) 1030/ 6000D1A : 6083                		mov	r8,r0
-(2) 1031/ 6000D1C : C202                		mov	r0,@(marsGbl_CurrZList,gbr)
-(2) 1032/ 6000D1E : 60D3                		mov	r13,r0
-(2) 1033/ 6000D20 : C203                		mov	r0,@(marsGbl_CurrFacePos,gbr)
-(2) 1034/ 6000D22 :                     .exit_model:
-(2) 1035/ 6000D22 : 4F26                		lds	@r15+,pr
-(2) 1036/ 6000D24 : 000B                		rts
-(2) 1037/ 6000D26 : 0009                		nop
-(2) 1038/ 6000D28 :                     		align 4
-(2) 1039/ 6000D28 : 3FFF FFFF 0000 E000 		ltorg
-                    7FFF FFFF 0600 5AB0 
+(2)  902/ 6000C12 :                     ; --------------------------------
+(2)  903/ 6000C12 :                     ; Read faces
+(2)  904/ 6000C12 :                     ; --------------------------------
+(2)  905/ 6000C12 :                     
+(2)  906/ 6000C12 :                     .go_faces:
+(2)  907/ 6000C12 : 61D3                		mov	r13,r1
+(2)  908/ 6000C14 : 7108                		add 	#polygn_points,r1
+(2)  909/ 6000C16 : 66B3                		mov	r11,r6
+(2)  910/ 6000C18 : 6073                		mov	r7,r0
+(2)  911/ 6000C1A : 4000                		shll	r0
+(2)  912/ 6000C1C : 3B0C                		add	r0,r11
+(2)  913/ 6000C1E : 2F86                		mov 	r8,@-r15
+(2)  914/ 6000C20 : 2F96                		mov 	r9,@-r15
+(2)  915/ 6000C22 : 2FB6                		mov 	r11,@-r15
+(2)  916/ 6000C24 : 2FC6                		mov 	r12,@-r15
+(2)  917/ 6000C26 : 2FD6                		mov 	r13,@-r15
+(2)  918/ 6000C28 : 9888                		mov	#-160,r8
+(2)  919/ 6000C2A : 698B                		neg	r8,r9
+(2)  920/ 6000C2C : EB90                		mov	#-112,r11
+(2)  921/ 6000C2E : 6CBB                		neg	r11,r12
+(2)  922/ 6000C30 : D53F                		mov	#$7FFFFFFF,r5
+(2)  923/ 6000C32 : EDFF                		mov	#$FFFFFFFF,r13
+(2)  924/ 6000C34 :                     
+(2)  925/ 6000C34 :                     	; New method, might speed up
+(2)  926/ 6000C34 :                     	; a little...
+(2)  927/ 6000C34 :                     	rept 3
+(2)  928/ 6000C34 :                     		mov	#0,r0
+(2)  929/ 6000C34 :                     		mov.w 	@r6+,r0
+(2)  930/ 6000C34 :                     		mov	#$C,r4
+(2)  931/ 6000C34 :                     		mulu	r4,r0
+(2)  932/ 6000C34 :                     		sts	macl,r0
+(2)  933/ 6000C34 :                     		mov	r10,r4
+(2)  934/ 6000C34 :                     		add 	r0,r4
+(2)  935/ 6000C34 :                     		mov	@r4,r2
+(2)  936/ 6000C34 :                     		mov	@(4,r4),r3
+(2)  937/ 6000C34 :                     		mov	@(8,r4),r4
+(2)  938/ 6000C34 :                     		bsr	mdlrd_setpoint
+(2)  939/ 6000C34 :                     		nop
+(2)  940/ 6000C34 :                     		mov	r2,@r1
+(2)  941/ 6000C34 :                     		mov	r3,@(4,r1)
+(2)  942/ 6000C34 :                     		add	#8,r1
+(2)  943/ 6000C34 :                     	endm
+(2)  928/ 6000C34 : E000                		mov	#0,r0
+(2)  929/ 6000C36 : 6065                		mov.w 	@r6+,r0
+(2)  930/ 6000C38 : E40C                		mov	#$C,r4
+(2)  931/ 6000C3A : 204E                		mulu	r4,r0
+(2)  932/ 6000C3C : 001A                		sts	macl,r0
+(2)  933/ 6000C3E : 64A3                		mov	r10,r4
+(2)  934/ 6000C40 : 340C                		add 	r0,r4
+(2)  935/ 6000C42 : 6242                		mov	@r4,r2
+(2)  936/ 6000C44 : 5341                		mov	@(4,r4),r3
+(2)  937/ 6000C46 : 5442                		mov	@(8,r4),r4
+(2)  938/ 6000C48 : B07A                		bsr	mdlrd_setpoint
+(2)  939/ 6000C4A : 0009                		nop
+(2)  940/ 6000C4C : 2122                		mov	r2,@r1
+(2)  941/ 6000C4E : 1131                		mov	r3,@(4,r1)
+(2)  942/ 6000C50 : 7108                		add	#8,r1
+(2)  928/ 6000C52 : E000                		mov	#0,r0
+(2)  929/ 6000C54 : 6065                		mov.w 	@r6+,r0
+(2)  930/ 6000C56 : E40C                		mov	#$C,r4
+(2)  931/ 6000C58 : 204E                		mulu	r4,r0
+(2)  932/ 6000C5A : 001A                		sts	macl,r0
+(2)  933/ 6000C5C : 64A3                		mov	r10,r4
+(2)  934/ 6000C5E : 340C                		add 	r0,r4
+(2)  935/ 6000C60 : 6242                		mov	@r4,r2
+(2)  936/ 6000C62 : 5341                		mov	@(4,r4),r3
+(2)  937/ 6000C64 : 5442                		mov	@(8,r4),r4
+(2)  938/ 6000C66 : B06B                		bsr	mdlrd_setpoint
+(2)  939/ 6000C68 : 0009                		nop
+(2)  940/ 6000C6A : 2122                		mov	r2,@r1
+(2)  941/ 6000C6C : 1131                		mov	r3,@(4,r1)
+(2)  942/ 6000C6E : 7108                		add	#8,r1
+(2)  928/ 6000C70 : E000                		mov	#0,r0
+(2)  929/ 6000C72 : 6065                		mov.w 	@r6+,r0
+(2)  930/ 6000C74 : E40C                		mov	#$C,r4
+(2)  931/ 6000C76 : 204E                		mulu	r4,r0
+(2)  932/ 6000C78 : 001A                		sts	macl,r0
+(2)  933/ 6000C7A : 64A3                		mov	r10,r4
+(2)  934/ 6000C7C : 340C                		add 	r0,r4
+(2)  935/ 6000C7E : 6242                		mov	@r4,r2
+(2)  936/ 6000C80 : 5341                		mov	@(4,r4),r3
+(2)  937/ 6000C82 : 5442                		mov	@(8,r4),r4
+(2)  938/ 6000C84 : B05C                		bsr	mdlrd_setpoint
+(2)  939/ 6000C86 : 0009                		nop
+(2)  940/ 6000C88 : 2122                		mov	r2,@r1
+(2)  941/ 6000C8A : 1131                		mov	r3,@(4,r1)
+(2)  942/ 6000C8C : 7108                		add	#8,r1
+(2)  944/ 6000C8E : E003                		mov	#3,r0			; Triangle?
+(2)  945/ 6000C90 : 3700                		cmp/eq	r0,r7
+(2)  946/ 6000C92 : 890D                		bt	.allfcsdone
+(2)  947/ 6000C94 : E000                		mov	#0,r0			; Do forth point for Quad
+(2)  948/ 6000C96 : 6065                		mov.w 	@r6+,r0
+(2)  949/ 6000C98 : E40C                		mov	#$C,r4
+(2)  950/ 6000C9A : 204E                		mulu	r4,r0
+(2)  951/ 6000C9C : 001A                		sts	macl,r0
+(2)  952/ 6000C9E : 64A3                		mov	r10,r4
+(2)  953/ 6000CA0 : 340C                		add 	r0,r4
+(2)  954/ 6000CA2 : 6242                		mov	@r4,r2
+(2)  955/ 6000CA4 : 5341                		mov	@(4,r4),r3
+(2)  956/ 6000CA6 : 5442                		mov	@(8,r4),r4
+(2)  957/ 6000CA8 : B04A                		bsr	mdlrd_setpoint
+(2)  958/ 6000CAA : 0009                		nop
+(2)  959/ 6000CAC : 2122                		mov	r2,@r1
+(2)  960/ 6000CAE : 1131                		mov	r3,@(4,r1)
+(2)  961/ 6000CB0 :                     .allfcsdone:
+(2)  962/ 6000CB0 :                     
+(2)  963/ 6000CB0 : 6183                		mov	r8,r1
+(2)  964/ 6000CB2 : 6293                		mov	r9,r2
+(2)  965/ 6000CB4 : 63B3                		mov	r11,r3
+(2)  966/ 6000CB6 : 64C3                		mov	r12,r4
+(2)  967/ 6000CB8 : 66D3                		mov	r13,r6
+(2)  968/ 6000CBA : 6DF6                		mov	@r15+,r13
+(2)  969/ 6000CBC : 6CF6                		mov	@r15+,r12
+(2)  970/ 6000CBE : 6BF6                		mov	@r15+,r11
+(2)  971/ 6000CC0 : 69F6                		mov	@r15+,r9
+(2)  972/ 6000CC2 : 68F6                		mov	@r15+,r8
+(2)  973/ 6000CC4 :                     		
+(2)  974/ 6000CC4 :                     	; NOTE: if you don't like how the perspective works
+(2)  975/ 6000CC4 :                     	; change this register depending how you want to ignore
+(2)  976/ 6000CC4 :                     	; faces closer to the camera:
+(2)  977/ 6000CC4 :                     	; 
+(2)  978/ 6000CC4 :                     	; r5 - Back Z point, keep affine limitations
+(2)  979/ 6000CC4 :                     	; r6 - Front Z point, skip face but larger faces are affected
+(2)  980/ 6000CC4 : 4511                		cmp/pz	r5
+(2)  981/ 6000CC6 : 8924                		bt	.face_out
+(2)  982/ 6000CC8 : D01A                		mov	#RAM_Mars_ObjCamera,r0
+(2)  983/ 6000CCA : 5701                		mov	@(cam_y_pos,r0),r7
+(2)  984/ 6000CCC : 4709                		shlr2	r7
+(2)  985/ 6000CCE : 4709                		shlr2	r7
+(2)  986/ 6000CD0 : 4709                		shlr2	r7
+(2)  987/ 6000CD2 : 4701                		shlr	r7
+(2)  988/ 6000CD4 : 677F                		exts	r7,r7
+(2)  989/ 6000CD6 : 4715                		cmp/pl	r7
+(2)  990/ 6000CD8 : 8B00                		bf	.revrscam
+(2)  991/ 6000CDA : 677B                		neg	r7,r7
+(2)  992/ 6000CDC :                     .revrscam:
+(2)  993/ 6000CDC : 902F                		mov	#MAX_ZDIST,r0
+(2)  994/ 6000CDE : 3703                		cmp/ge	r0,r7
+(2)  995/ 6000CE0 : 8900                		bt	.camlimit
+(2)  996/ 6000CE2 : 6703                		mov	r0,r7
+(2)  997/ 6000CE4 :                     .camlimit:
+(2)  998/ 6000CE4 :                     ; 		cmp/pl	r6
+(2)  999/ 6000CE4 :                     ; 		bt	.face_out
+(2) 1000/ 6000CE4 : 902B                		mov	#MAX_ZDIST,r0		; Draw distance
+(2) 1001/ 6000CE6 : 307C                		add 	r7,r0
+(2) 1002/ 6000CE8 : 3503                		cmp/ge	r0,r5
+(2) 1003/ 6000CEA : 8B12                		bf	.face_out
+(2) 1004/ 6000CEC :                     		
+(2) 1005/ 6000CEC : 9026                		mov	#-(SCREEN_WIDTH/2),r0
+(2) 1006/ 6000CEE : 3107                		cmp/gt	r0,r1
+(2) 1007/ 6000CF0 : 8B0F                		bf	.face_out
+(2) 1008/ 6000CF2 : 600B                		neg	r0,r0
+(2) 1009/ 6000CF4 : 3203                		cmp/ge	r0,r2
+(2) 1010/ 6000CF6 : 890C                		bt	.face_out
+(2) 1011/ 6000CF8 : E090                		mov	#-(SCREEN_HEIGHT/2),r0
+(2) 1012/ 6000CFA : 3307                		cmp/gt	r0,r3
+(2) 1013/ 6000CFC : 8B09                		bf	.face_out
+(2) 1014/ 6000CFE : 600B                		neg	r0,r0
+(2) 1015/ 6000D00 : 3403                		cmp/ge	r0,r4
+(2) 1016/ 6000D02 : 8906                		bt	.face_out
+(2) 1017/ 6000D04 :                     
+(2) 1018/ 6000D04 :                     ; --------------------------------
+(2) 1019/ 6000D04 :                     
+(2) 1020/ 6000D04 :                     .face_ok:
+(2) 1021/ 6000D04 : C50A                		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0	; Add 1 face to the list
+(2) 1022/ 6000D06 : 7001                		add	#1,r0
+(2) 1023/ 6000D08 : C10A                		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
+(2) 1024/ 6000D0A : 2852                		mov	r5,@r8				; Store current Z to Zlist
+(2) 1025/ 6000D0C : 18D1                		mov	r13,@(4,r8)			; And it's address
+(2) 1026/ 6000D0E : 7808                		add	#8,r8
+(2) 1027/ 6000D10 :                     
+(2) 1028/ 6000D10 :                     ; 		mov	@(marsGbl_CurrFacePos,gbr),r0
+(2) 1029/ 6000D10 :                     	; Copy from cache to currpos
+(2) 1030/ 6000D10 :                     	; goes here
+(2) 1031/ 6000D10 : 7D38                		add	#sizeof_polygn,r13
+(2) 1032/ 6000D12 :                     ; 		mov	r0,@(marsGbl_CurrFacePos,gbr)	
+(2) 1033/ 6000D12 :                     		
+(2) 1034/ 6000D12 :                     .face_out:
+(2) 1035/ 6000D12 : 4910                		dt	r9
+(2) 1036/ 6000D14 : 8901                		bt	.finish_this
+(2) 1037/ 6000D16 : AF27                		bra	.next_face
+(2) 1038/ 6000D18 : 0009                		nop
+(2) 1039/ 6000D1A :                     .finish_this:
+(2) 1040/ 6000D1A : 6083                		mov	r8,r0
+(2) 1041/ 6000D1C : C202                		mov	r0,@(marsGbl_CurrZList,gbr)
+(2) 1042/ 6000D1E : 60D3                		mov	r13,r0				; TODO: Delete after the cache
+(2) 1043/ 6000D20 : C203                		mov	r0,@(marsGbl_CurrFacePos,gbr)	; method is made
+(2) 1044/ 6000D22 :                     .exit_model:
+(2) 1045/ 6000D22 : 4F26                		lds	@r15+,pr
+(2) 1046/ 6000D24 : 000B                		rts
+(2) 1047/ 6000D26 : 0009                		nop
+(2) 1048/ 6000D28 :                     		align 4
+(2) 1049/ 6000D28 : 3FFF FFFF 0000 E000 		ltorg
+                    7FFF FFFF 0600 5B90 
                     0100 1FFF FF60 F000 
-(2) 1040/ 6000D40 :                     
-(2) 1041/ 6000D40 :                     ; ----------------------------------------	
-(2) 1042/ 6000D40 :                     ; Modify position to current point
-(2) 1043/ 6000D40 :                     ; ----------------------------------------
-(2) 1044/ 6000D40 :                     
-(2) 1045/ 6000D40 :                     		align 4
-(2) 1046/ 6000D40 :                     mdlrd_setpoint:
-(2) 1047/ 6000D40 : 4F22                		sts	pr,@-r15
-(2) 1048/ 6000D42 : 2F56                		mov 	r5,@-r15
-(2) 1049/ 6000D44 : 2F66                		mov 	r6,@-r15
-(2) 1050/ 6000D46 : 2F76                		mov 	r7,@-r15
-(2) 1051/ 6000D48 : 2F86                		mov 	r8,@-r15
-(2) 1052/ 6000D4A : 2F96                		mov 	r9,@-r15
-(2) 1053/ 6000D4C : 2FA6                		mov 	r10,@-r15
-(2) 1054/ 6000D4E : 2FB6                		mov 	r11,@-r15
-(2) 1055/ 6000D50 :                     		
-(2) 1056/ 6000D50 :                     	; Object rotation
-(2) 1057/ 6000D50 : 6523                		mov	r2,r5			; r5 - X
-(2) 1058/ 6000D52 : 6643                		mov	r4,r6			; r6 - Z
-(2) 1059/ 6000D54 : 50E5                  		mov 	@(mdl_x_rot,r14),r0
-(2) 1060/ 6000D56 : 4009                  		shlr2	r0
-(2) 1061/ 6000D58 : 4001                  		shlr	r0
-(2) 1062/ 6000D5A : B082                  		bsr	mdlrd_rotate
-(2) 1063/ 6000D5C : 4019                		shlr8	r0
-(2) 1064/ 6000D5E : 6273                   		mov	r7,r2
-(2) 1065/ 6000D60 : 6533                   		mov	r3,r5
-(2) 1066/ 6000D62 : 6683                  		mov	r8,r6
-(2) 1067/ 6000D64 : 50E6                  		mov 	@(mdl_y_rot,r14),r0
-(2) 1068/ 6000D66 : 4009                  		shlr2	r0
-(2) 1069/ 6000D68 : 4001                  		shlr	r0
-(2) 1070/ 6000D6A : B07A                  		bsr	mdlrd_rotate
-(2) 1071/ 6000D6C : 4019                		shlr8	r0
-(2) 1072/ 6000D6E : 6483                   		mov	r8,r4
-(2) 1073/ 6000D70 : 6523                   		mov	r2,r5
-(2) 1074/ 6000D72 : 6673                   		mov	r7,r6
-(2) 1075/ 6000D74 : 50E7                   		mov 	@(mdl_z_rot,r14),r0
-(2) 1076/ 6000D76 : 4009                  		shlr2	r0
-(2) 1077/ 6000D78 : 4001                  		shlr	r0
-(2) 1078/ 6000D7A : B072                  		bsr	mdlrd_rotate
-(2) 1079/ 6000D7C : 4019                		shlr8	r0
-(2) 1080/ 6000D7E : 6273                   		mov	r7,r2
-(2) 1081/ 6000D80 : 6383                   		mov	r8,r3
-(2) 1082/ 6000D82 : 55E2                		mov	@(mdl_x_pos,r14),r5
-(2) 1083/ 6000D84 : 56E3                		mov	@(mdl_y_pos,r14),r6
-(2) 1084/ 6000D86 : 57E4                		mov	@(mdl_z_pos,r14),r7
-(2) 1085/ 6000D88 : 4519                		shlr8	r5
-(2) 1086/ 6000D8A : 4619                		shlr8	r6
-(2) 1087/ 6000D8C : 4719                		shlr8	r7
-(2) 1088/ 6000D8E : 655F                		exts	r5,r5
-(2) 1089/ 6000D90 : 666F                		exts	r6,r6		
-(2) 1090/ 6000D92 : 677F                		exts	r7,r7		
-(2) 1091/ 6000D94 : 325C                		add 	r5,r2
-(2) 1092/ 6000D96 : 336C                		add 	r6,r3
-(2) 1093/ 6000D98 : 347C                		add 	r7,r4
-(2) 1094/ 6000D9A :                     
-(2) 1095/ 6000D9A :                     	; Include camera changes
-(2) 1096/ 6000D9A : DB2E                		mov 	#RAM_Mars_ObjCamera,r11
-(2) 1097/ 6000D9C : 55B0                		mov	@(cam_x_pos,r11),r5
-(2) 1098/ 6000D9E : 56B1                		mov	@(cam_y_pos,r11),r6
-(2) 1099/ 6000DA0 : 57B2                		mov	@(cam_z_pos,r11),r7
-(2) 1100/ 6000DA2 : 50E0                		mov	@(mdl_data,r14),r0		; Layout object?
-(2) 1101/ 6000DA4 : 4000                		shll	r0
-(2) 1102/ 6000DA6 : 4015                		cmp/pl	r0
-(2) 1103/ 6000DA8 : 8902                		bt	.lay_move
-(2) 1104/ 6000DAA : D02B                		mov	#$FFFFF,r0			; Limit camera movement
-(2) 1105/ 6000DAC : 2509                		and	r0,r5
-(2) 1106/ 6000DAE :                     ; 		and	r0,r6
-(2) 1107/ 6000DAE : 2709                		and	r0,r7
-(2) 1108/ 6000DB0 :                     .lay_move:
-(2) 1109/ 6000DB0 : 4519                		shlr8	r5
-(2) 1110/ 6000DB2 : 4619                		shlr8	r6
-(2) 1111/ 6000DB4 : 4719                		shlr8	r7
-(2) 1112/ 6000DB6 : 655F                		exts	r5,r5
-(2) 1113/ 6000DB8 : 666F                		exts	r6,r6		
-(2) 1114/ 6000DBA : 677F                		exts	r7,r7
-(2) 1115/ 6000DBC : 3258                		sub 	r5,r2
-(2) 1116/ 6000DBE : 3368                		sub 	r6,r3
-(2) 1117/ 6000DC0 : 347C                		add 	r7,r4
-(2) 1118/ 6000DC2 :                     
-(2) 1119/ 6000DC2 : 6523                		mov	r2,r5
-(2) 1120/ 6000DC4 : 6643                		mov	r4,r6
-(2) 1121/ 6000DC6 : 50B3                  		mov 	@(cam_x_rot,r11),r0
-(2) 1122/ 6000DC8 : 4009                  		shlr2	r0
-(2) 1123/ 6000DCA : 4001                  		shlr	r0
-(2) 1124/ 6000DCC : B049                  		bsr	mdlrd_rotate
-(2) 1125/ 6000DCE : 4019                		shlr8	r0
-(2) 1126/ 6000DD0 : 6273                   		mov	r7,r2
-(2) 1127/ 6000DD2 : 6483                   		mov	r8,r4
-(2) 1128/ 6000DD4 : 6533                   		mov	r3,r5
-(2) 1129/ 6000DD6 : 6683                  		mov	r8,r6
-(2) 1130/ 6000DD8 : 50B4                  		mov 	@(cam_y_rot,r11),r0
-(2) 1131/ 6000DDA : 4009                  		shlr2	r0
-(2) 1132/ 6000DDC : 4001                  		shlr	r0
-(2) 1133/ 6000DDE : B040                  		bsr	mdlrd_rotate
-(2) 1134/ 6000DE0 : 4019                		shlr8	r0
-(2) 1135/ 6000DE2 : 6483                   		mov	r8,r4
-(2) 1136/ 6000DE4 : 6523                   		mov	r2,r5
-(2) 1137/ 6000DE6 : 6673                   		mov	r7,r6
-(2) 1138/ 6000DE8 : 50B5                   		mov 	@(cam_z_rot,r11),r0
-(2) 1139/ 6000DEA : 4009                  		shlr2	r0
-(2) 1140/ 6000DEC : 4001                  		shlr	r0
-(2) 1141/ 6000DEE : B038                  		bsr	mdlrd_rotate
-(2) 1142/ 6000DF0 : 4019                		shlr8	r0
-(2) 1143/ 6000DF2 : 6273                   		mov	r7,r2
-(2) 1144/ 6000DF4 : 6383                   		mov	r8,r3
-(2) 1145/ 6000DF6 :                     
-(2) 1146/ 6000DF6 :                     	; Weak perspective projection
-(2) 1147/ 6000DF6 :                     	; this is the best I got,
-(2) 1148/ 6000DF6 :                     	; It breaks on large faces
-(2) 1149/ 6000DF6 : 9833                		mov 	#_JR,r8
-(2) 1150/ 6000DF8 : D718                		mov	#360<<16,r7
-(2) 1151/ 6000DFA : 604B                		neg	r4,r0		; reverse Z
-(2) 1152/ 6000DFC : 4015                		cmp/pl	r0
-(2) 1153/ 6000DFE : 8900                		bt	.inside
-(2) 1154/ 6000E00 : E001                		mov	#1,r0
-(2) 1155/ 6000E02 :                     .inside:
-(2) 1156/ 6000E02 : 2802                		mov 	r0,@r8
-(2) 1157/ 6000E04 : 1871                		mov 	r7,@(4,r8)
-(2) 1158/ 6000E06 : 0009                		nop
-(2) 1159/ 6000E08 : 5781                		mov 	@(4,r8),r7
-(2) 1160/ 6000E0A :                     .zmulti:
-(2) 1161/ 6000E0A : 327D                		dmuls	r7,r2
-(2) 1162/ 6000E0C : 000A                		sts	mach,r0
-(2) 1163/ 6000E0E : 021A                		sts	macl,r2
-(2) 1164/ 6000E10 : 220D                		xtrct	r0,r2
-(2) 1165/ 6000E12 : 337D                		dmuls	r7,r3
-(2) 1166/ 6000E14 : 000A                		sts	mach,r0
-(2) 1167/ 6000E16 : 031A                		sts	macl,r3
-(2) 1168/ 6000E18 : 230D                		xtrct	r0,r3
-(2) 1169/ 6000E1A :                     
-(2) 1170/ 6000E1A : 6BF6                		mov	@r15+,r11
-(2) 1171/ 6000E1C : 6AF6                		mov	@r15+,r10
-(2) 1172/ 6000E1E : 69F6                		mov	@r15+,r9
-(2) 1173/ 6000E20 : 68F6                		mov	@r15+,r8
-(2) 1174/ 6000E22 : 67F6                		mov	@r15+,r7
-(2) 1175/ 6000E24 : 66F6                		mov	@r15+,r6
-(2) 1176/ 6000E26 : 65F6                		mov	@r15+,r5
-(2) 1177/ 6000E28 :                     		
-(2) 1178/ 6000E28 :                     	; Set the most far points
-(2) 1179/ 6000E28 :                     	; for each direction (X,Y,Z)
-(2) 1180/ 6000E28 : 34D7                		cmp/gt	r13,r4
-(2) 1181/ 6000E2A : 8B00                		bf	.save_z2
-(2) 1182/ 6000E2C : 6D43                		mov	r4,r13
-(2) 1183/ 6000E2E :                     .save_z2:
-(2) 1184/ 6000E2E : 3457                		cmp/gt	r5,r4
-(2) 1185/ 6000E30 : 8900                		bt	.save_z
-(2) 1186/ 6000E32 : 6543                		mov	r4,r5
-(2) 1187/ 6000E34 :                     .save_z:
-(2) 1188/ 6000E34 : 3287                		cmp/gt	r8,r2
-(2) 1189/ 6000E36 : 8B00                		bf	.x_lw
-(2) 1190/ 6000E38 : 6823                		mov	r2,r8
-(2) 1191/ 6000E3A :                     .x_lw:
-(2) 1192/ 6000E3A : 3297                		cmp/gt	r9,r2
-(2) 1193/ 6000E3C : 8900                		bt	.x_rw
-(2) 1194/ 6000E3E : 6923                		mov	r2,r9
-(2) 1195/ 6000E40 :                     .x_rw:
-(2) 1196/ 6000E40 : 33B7                		cmp/gt	r11,r3
-(2) 1197/ 6000E42 : 8B00                		bf	.y_lw
-(2) 1198/ 6000E44 : 6B33                		mov	r3,r11
-(2) 1199/ 6000E46 :                     .y_lw:
-(2) 1200/ 6000E46 : 33C7                		cmp/gt	r12,r3
-(2) 1201/ 6000E48 : 8900                		bt	.y_rw
-(2) 1202/ 6000E4A : 6C33                		mov	r3,r12
-(2) 1203/ 6000E4C :                     .y_rw:
-(2) 1204/ 6000E4C :                     
-(2) 1205/ 6000E4C : 4F26                		lds	@r15+,pr
-(2) 1206/ 6000E4E : 000B                		rts
-(2) 1207/ 6000E50 : 0009                		nop
-(2) 1208/ 6000E52 :                     		align 4
-(2) 1209/ 6000E54 : 0600 5AB0 000F FFFF 		ltorg
+(2) 1050/ 6000D40 :                     
+(2) 1051/ 6000D40 :                     ; ----------------------------------------	
+(2) 1052/ 6000D40 :                     ; Modify position to current point
+(2) 1053/ 6000D40 :                     ; ----------------------------------------
+(2) 1054/ 6000D40 :                     
+(2) 1055/ 6000D40 :                     		align 4
+(2) 1056/ 6000D40 :                     mdlrd_setpoint:
+(2) 1057/ 6000D40 : 4F22                		sts	pr,@-r15
+(2) 1058/ 6000D42 : 2F56                		mov 	r5,@-r15
+(2) 1059/ 6000D44 : 2F66                		mov 	r6,@-r15
+(2) 1060/ 6000D46 : 2F76                		mov 	r7,@-r15
+(2) 1061/ 6000D48 : 2F86                		mov 	r8,@-r15
+(2) 1062/ 6000D4A : 2F96                		mov 	r9,@-r15
+(2) 1063/ 6000D4C : 2FA6                		mov 	r10,@-r15
+(2) 1064/ 6000D4E : 2FB6                		mov 	r11,@-r15
+(2) 1065/ 6000D50 :                     		
+(2) 1066/ 6000D50 :                     	; Object rotation
+(2) 1067/ 6000D50 : 6523                		mov	r2,r5			; r5 - X
+(2) 1068/ 6000D52 : 6643                		mov	r4,r6			; r6 - Z
+(2) 1069/ 6000D54 : 50E5                  		mov 	@(mdl_x_rot,r14),r0
+(2) 1070/ 6000D56 : 4009                  		shlr2	r0
+(2) 1071/ 6000D58 : 4001                  		shlr	r0
+(2) 1072/ 6000D5A : B082                  		bsr	mdlrd_rotate
+(2) 1073/ 6000D5C : 4019                		shlr8	r0
+(2) 1074/ 6000D5E : 6273                   		mov	r7,r2
+(2) 1075/ 6000D60 : 6533                   		mov	r3,r5
+(2) 1076/ 6000D62 : 6683                  		mov	r8,r6
+(2) 1077/ 6000D64 : 50E6                  		mov 	@(mdl_y_rot,r14),r0
+(2) 1078/ 6000D66 : 4009                  		shlr2	r0
+(2) 1079/ 6000D68 : 4001                  		shlr	r0
+(2) 1080/ 6000D6A : B07A                  		bsr	mdlrd_rotate
+(2) 1081/ 6000D6C : 4019                		shlr8	r0
+(2) 1082/ 6000D6E : 6483                   		mov	r8,r4
+(2) 1083/ 6000D70 : 6523                   		mov	r2,r5
+(2) 1084/ 6000D72 : 6673                   		mov	r7,r6
+(2) 1085/ 6000D74 : 50E7                   		mov 	@(mdl_z_rot,r14),r0
+(2) 1086/ 6000D76 : 4009                  		shlr2	r0
+(2) 1087/ 6000D78 : 4001                  		shlr	r0
+(2) 1088/ 6000D7A : B072                  		bsr	mdlrd_rotate
+(2) 1089/ 6000D7C : 4019                		shlr8	r0
+(2) 1090/ 6000D7E : 6273                   		mov	r7,r2
+(2) 1091/ 6000D80 : 6383                   		mov	r8,r3
+(2) 1092/ 6000D82 : 55E2                		mov	@(mdl_x_pos,r14),r5
+(2) 1093/ 6000D84 : 56E3                		mov	@(mdl_y_pos,r14),r6
+(2) 1094/ 6000D86 : 57E4                		mov	@(mdl_z_pos,r14),r7
+(2) 1095/ 6000D88 : 4519                		shlr8	r5
+(2) 1096/ 6000D8A : 4619                		shlr8	r6
+(2) 1097/ 6000D8C : 4719                		shlr8	r7
+(2) 1098/ 6000D8E : 655F                		exts	r5,r5
+(2) 1099/ 6000D90 : 666F                		exts	r6,r6		
+(2) 1100/ 6000D92 : 677F                		exts	r7,r7		
+(2) 1101/ 6000D94 : 325C                		add 	r5,r2
+(2) 1102/ 6000D96 : 336C                		add 	r6,r3
+(2) 1103/ 6000D98 : 347C                		add 	r7,r4
+(2) 1104/ 6000D9A :                     
+(2) 1105/ 6000D9A :                     	; Include camera changes
+(2) 1106/ 6000D9A : DB2E                		mov 	#RAM_Mars_ObjCamera,r11
+(2) 1107/ 6000D9C : 55B0                		mov	@(cam_x_pos,r11),r5
+(2) 1108/ 6000D9E : 56B1                		mov	@(cam_y_pos,r11),r6
+(2) 1109/ 6000DA0 : 57B2                		mov	@(cam_z_pos,r11),r7
+(2) 1110/ 6000DA2 : 50E0                		mov	@(mdl_data,r14),r0		; Layout object?
+(2) 1111/ 6000DA4 : 4000                		shll	r0
+(2) 1112/ 6000DA6 : 4015                		cmp/pl	r0
+(2) 1113/ 6000DA8 : 8902                		bt	.lay_move
+(2) 1114/ 6000DAA : D02B                		mov	#$FFFFF,r0			; Limit camera movement
+(2) 1115/ 6000DAC : 2509                		and	r0,r5
+(2) 1116/ 6000DAE :                     ; 		and	r0,r6
+(2) 1117/ 6000DAE : 2709                		and	r0,r7
+(2) 1118/ 6000DB0 :                     .lay_move:
+(2) 1119/ 6000DB0 : 4519                		shlr8	r5
+(2) 1120/ 6000DB2 : 4619                		shlr8	r6
+(2) 1121/ 6000DB4 : 4719                		shlr8	r7
+(2) 1122/ 6000DB6 : 655F                		exts	r5,r5
+(2) 1123/ 6000DB8 : 666F                		exts	r6,r6		
+(2) 1124/ 6000DBA : 677F                		exts	r7,r7
+(2) 1125/ 6000DBC : 3258                		sub 	r5,r2
+(2) 1126/ 6000DBE : 3368                		sub 	r6,r3
+(2) 1127/ 6000DC0 : 347C                		add 	r7,r4
+(2) 1128/ 6000DC2 :                     
+(2) 1129/ 6000DC2 : 6523                		mov	r2,r5
+(2) 1130/ 6000DC4 : 6643                		mov	r4,r6
+(2) 1131/ 6000DC6 : 50B3                  		mov 	@(cam_x_rot,r11),r0
+(2) 1132/ 6000DC8 : 4009                  		shlr2	r0
+(2) 1133/ 6000DCA : 4001                  		shlr	r0
+(2) 1134/ 6000DCC : B049                  		bsr	mdlrd_rotate
+(2) 1135/ 6000DCE : 4019                		shlr8	r0
+(2) 1136/ 6000DD0 : 6273                   		mov	r7,r2
+(2) 1137/ 6000DD2 : 6483                   		mov	r8,r4
+(2) 1138/ 6000DD4 : 6533                   		mov	r3,r5
+(2) 1139/ 6000DD6 : 6683                  		mov	r8,r6
+(2) 1140/ 6000DD8 : 50B4                  		mov 	@(cam_y_rot,r11),r0
+(2) 1141/ 6000DDA : 4009                  		shlr2	r0
+(2) 1142/ 6000DDC : 4001                  		shlr	r0
+(2) 1143/ 6000DDE : B040                  		bsr	mdlrd_rotate
+(2) 1144/ 6000DE0 : 4019                		shlr8	r0
+(2) 1145/ 6000DE2 : 6483                   		mov	r8,r4
+(2) 1146/ 6000DE4 : 6523                   		mov	r2,r5
+(2) 1147/ 6000DE6 : 6673                   		mov	r7,r6
+(2) 1148/ 6000DE8 : 50B5                   		mov 	@(cam_z_rot,r11),r0
+(2) 1149/ 6000DEA : 4009                  		shlr2	r0
+(2) 1150/ 6000DEC : 4001                  		shlr	r0
+(2) 1151/ 6000DEE : B038                  		bsr	mdlrd_rotate
+(2) 1152/ 6000DF0 : 4019                		shlr8	r0
+(2) 1153/ 6000DF2 : 6273                   		mov	r7,r2
+(2) 1154/ 6000DF4 : 6383                   		mov	r8,r3
+(2) 1155/ 6000DF6 :                     
+(2) 1156/ 6000DF6 :                     	; Weak perspective projection
+(2) 1157/ 6000DF6 :                     	; this is the best I got,
+(2) 1158/ 6000DF6 :                     	; It breaks on large faces
+(2) 1159/ 6000DF6 : 9833                		mov 	#_JR,r8
+(2) 1160/ 6000DF8 : D718                		mov	#360<<16,r7
+(2) 1161/ 6000DFA : 604B                		neg	r4,r0		; reverse Z
+(2) 1162/ 6000DFC : 4015                		cmp/pl	r0
+(2) 1163/ 6000DFE : 8900                		bt	.inside
+(2) 1164/ 6000E00 : E001                		mov	#1,r0
+(2) 1165/ 6000E02 :                     .inside:
+(2) 1166/ 6000E02 : 2802                		mov 	r0,@r8
+(2) 1167/ 6000E04 : 1871                		mov 	r7,@(4,r8)
+(2) 1168/ 6000E06 : 0009                		nop
+(2) 1169/ 6000E08 : 5781                		mov 	@(4,r8),r7
+(2) 1170/ 6000E0A :                     .zmulti:
+(2) 1171/ 6000E0A : 327D                		dmuls	r7,r2
+(2) 1172/ 6000E0C : 000A                		sts	mach,r0
+(2) 1173/ 6000E0E : 021A                		sts	macl,r2
+(2) 1174/ 6000E10 : 220D                		xtrct	r0,r2
+(2) 1175/ 6000E12 : 337D                		dmuls	r7,r3
+(2) 1176/ 6000E14 : 000A                		sts	mach,r0
+(2) 1177/ 6000E16 : 031A                		sts	macl,r3
+(2) 1178/ 6000E18 : 230D                		xtrct	r0,r3
+(2) 1179/ 6000E1A :                     
+(2) 1180/ 6000E1A : 6BF6                		mov	@r15+,r11
+(2) 1181/ 6000E1C : 6AF6                		mov	@r15+,r10
+(2) 1182/ 6000E1E : 69F6                		mov	@r15+,r9
+(2) 1183/ 6000E20 : 68F6                		mov	@r15+,r8
+(2) 1184/ 6000E22 : 67F6                		mov	@r15+,r7
+(2) 1185/ 6000E24 : 66F6                		mov	@r15+,r6
+(2) 1186/ 6000E26 : 65F6                		mov	@r15+,r5
+(2) 1187/ 6000E28 :                     		
+(2) 1188/ 6000E28 :                     	; Set the most far points
+(2) 1189/ 6000E28 :                     	; for each direction (X,Y,Z)
+(2) 1190/ 6000E28 : 34D7                		cmp/gt	r13,r4
+(2) 1191/ 6000E2A : 8B00                		bf	.save_z2
+(2) 1192/ 6000E2C : 6D43                		mov	r4,r13
+(2) 1193/ 6000E2E :                     .save_z2:
+(2) 1194/ 6000E2E : 3457                		cmp/gt	r5,r4
+(2) 1195/ 6000E30 : 8900                		bt	.save_z
+(2) 1196/ 6000E32 : 6543                		mov	r4,r5
+(2) 1197/ 6000E34 :                     .save_z:
+(2) 1198/ 6000E34 : 3287                		cmp/gt	r8,r2
+(2) 1199/ 6000E36 : 8B00                		bf	.x_lw
+(2) 1200/ 6000E38 : 6823                		mov	r2,r8
+(2) 1201/ 6000E3A :                     .x_lw:
+(2) 1202/ 6000E3A : 3297                		cmp/gt	r9,r2
+(2) 1203/ 6000E3C : 8900                		bt	.x_rw
+(2) 1204/ 6000E3E : 6923                		mov	r2,r9
+(2) 1205/ 6000E40 :                     .x_rw:
+(2) 1206/ 6000E40 : 33B7                		cmp/gt	r11,r3
+(2) 1207/ 6000E42 : 8B00                		bf	.y_lw
+(2) 1208/ 6000E44 : 6B33                		mov	r3,r11
+(2) 1209/ 6000E46 :                     .y_lw:
+(2) 1210/ 6000E46 : 33C7                		cmp/gt	r12,r3
+(2) 1211/ 6000E48 : 8900                		bt	.y_rw
+(2) 1212/ 6000E4A : 6C33                		mov	r3,r12
+(2) 1213/ 6000E4C :                     .y_rw:
+(2) 1214/ 6000E4C :                     
+(2) 1215/ 6000E4C : 4F26                		lds	@r15+,pr
+(2) 1216/ 6000E4E : 000B                		rts
+(2) 1217/ 6000E50 : 0009                		nop
+(2) 1218/ 6000E52 :                     		align 4
+(2) 1219/ 6000E54 : 0600 5B90 000F FFFF 		ltorg
                     0168 0000 FF00      
-(2) 1210/ 6000E62 :                     
-(2) 1211/ 6000E62 :                     ; ------------------------------
-(2) 1212/ 6000E62 :                     ; Rotate point
-(2) 1213/ 6000E62 :                     ;
-(2) 1214/ 6000E62 :                     ; Entry:
-(2) 1215/ 6000E62 :                     ; r5: x
-(2) 1216/ 6000E62 :                     ; r6: y
-(2) 1217/ 6000E62 :                     ; r0: theta
-(2) 1218/ 6000E62 :                     ;
-(2) 1219/ 6000E62 :                     ; Returns:
-(2) 1220/ 6000E62 :                     ; r7: (x  cos @) + (y sin @)
-(2) 1221/ 6000E62 :                     ; r8: (x -sin @) + (y cos @)
-(2) 1222/ 6000E62 :                     ; ------------------------------
-(2) 1223/ 6000E62 :                     
-(2) 1224/ 6000E62 :                     mdlrd_rotate:
-(2) 1225/ 6000E62 : 9741                    		mov	#$7FF,r7
-(2) 1226/ 6000E64 : 2079                    		and	r7,r0
-(2) 1227/ 6000E66 : 4008                   		shll2	r0
-(2) 1228/ 6000E68 : D71A                		mov	#sin_table,r7
-(2) 1229/ 6000E6A : D81B                		mov	#sin_table+$800,r8
-(2) 1230/ 6000E6C : 097E                		mov	@(r0,r7),r9
-(2) 1231/ 6000E6E : 0A8E                		mov	@(r0,r8),r10
-(2) 1232/ 6000E70 :                     
-(2) 1233/ 6000E70 : 3A5D                		dmuls	r5,r10		; x cos @
-(2) 1234/ 6000E72 : 071A                		sts	macl,r7
-(2) 1235/ 6000E74 : 000A                		sts	mach,r0
-(2) 1236/ 6000E76 : 270D                		xtrct	r0,r7
-(2) 1237/ 6000E78 : 396D                		dmuls	r6,r9		; y sin @
-(2) 1238/ 6000E7A : 081A                		sts	macl,r8
-(2) 1239/ 6000E7C : 000A                		sts	mach,r0
-(2) 1240/ 6000E7E : 280D                		xtrct	r0,r8
-(2) 1241/ 6000E80 : 378C                		add	r8,r7
-(2) 1242/ 6000E82 :                     
-(2) 1243/ 6000E82 : 699B                		neg	r9,r9
-(2) 1244/ 6000E84 : 395D                		dmuls	r5,r9		; x -sin @
-(2) 1245/ 6000E86 : 081A                		sts	macl,r8
-(2) 1246/ 6000E88 : 000A                		sts	mach,r0
-(2) 1247/ 6000E8A : 280D                		xtrct	r0,r8
-(2) 1248/ 6000E8C : 3A6D                		dmuls	r6,r10		; y cos @
-(2) 1249/ 6000E8E : 091A                		sts	macl,r9
-(2) 1250/ 6000E90 : 000A                		sts	mach,r0
-(2) 1251/ 6000E92 : 290D                		xtrct	r0,r9
-(2) 1252/ 6000E94 : 389C                		add	r9,r8
-(2) 1253/ 6000E96 : 000B                 		rts
-(2) 1254/ 6000E98 : 0009                		nop
-(2) 1255/ 6000E9A :                     		align 4
-(2) 1256/ 6000E9C :                     	
-(2) 1257/ 6000E9C :                     ; ------------------------------------------------
-(2) 1258/ 6000E9C :                     ; MarsVideo_SetWatchdog
-(2) 1259/ 6000E9C :                     ; 
-(2) 1260/ 6000E9C :                     ; Starts interrupt for drawing the polygon pieces
-(2) 1261/ 6000E9C :                     ; ------------------------------------------------
-(2) 1262/ 6000E9C :                     
-(2) 1263/ 6000E9C :                     MarsVideo_SetWatchdog:
-(2) 1264/ 6000E9C : 4F03                		stc	sr,@-r15
-(2) 1265/ 6000E9E : 0002                		stc	sr,r0
-(2) 1266/ 6000EA0 : CBF0                		or	#$F0,r0				; Disable interrupts first
-(2) 1267/ 6000EA2 : 400E                		ldc	r0,sr
-(2) 1268/ 6000EA4 : D00D                		mov	#RAM_Mars_VdpDrwList,r0		; Reset the piece-drawing pointer
-(2) 1269/ 6000EA6 : C200                		mov	r0,@(marsGbl_PlyPzList_R,gbr)	; on both READ and WRITE pointers
-(2) 1270/ 6000EA8 : C201                		mov	r0,@(marsGbl_PlyPzList_W,gbr)
-(2) 1271/ 6000EAA : E000                		mov	#0,r0				; Reset polygon pieces counter
-(2) 1272/ 6000EAC : C10C                		mov.w	r0,@(marsGbl_PzListCntr,gbr)
-(2) 1273/ 6000EAE : D10C                		mov	#Cach_ClrLines,r1		; Line counter for the framebuffer-clear routine
-(2) 1274/ 6000EB0 : 901B                		mov	#224,r0
-(2) 1275/ 6000EB2 : 2102                		mov	r0,@r1
-(2) 1276/ 6000EB4 : E008                		mov	#8,r0				; Set starting watchdog task to $08 (Clear framebuffer)
-(2) 1277/ 6000EB6 : C10D                		mov.w	r0,@(marsGbl_DrwTask,gbr)
-(2) 1278/ 6000EB8 : D10A                		mov	#_vdpreg,r1
-(2) 1279/ 6000EBA :                     .wait_fb:
-(2) 1280/ 6000EBA : 8515                		mov.w	@($A,r1),r0			; Framebuffer available?
-(2) 1281/ 6000EBC : C802                		tst	#2,r0
-(2) 1282/ 6000EBE : 8BFC                		bf	.wait_fb
-(2) 1283/ 6000EC0 : 9014                		mov.w	#$A1,r0				; Pre-start SVDP fill line at address $A1
-(2) 1284/ 6000EC2 : 8113                		mov.w	r0,@(6,r1)
-(2) 1285/ 6000EC4 : 9113                		mov	#$FFFFFE80,r1
-(2) 1286/ 6000EC6 : 9013                		mov.w	#$5AFF,r0			; Watchdog wait timer
-(2) 1287/ 6000EC8 : 2101                		mov.w	r0,@r1
-(2) 1288/ 6000ECA : 9012                		mov.w	#$A538,r0			; Enable watchdog
-(2) 1289/ 6000ECC : 2101                		mov.w	r0,@r1
-(2) 1290/ 6000ECE : 4F07                		ldc	@r15+,sr			; Restore interrupts
-(2) 1291/ 6000ED0 : 000B                		rts
-(2) 1292/ 6000ED2 : 0009                		nop
-(2) 1293/ 6000ED4 :                     		align 4
-(2) 1294/ 6000ED4 : 0600 1E4C 0600 264C 		ltorg
-                    0600 D6F8 C000 0764 
+(2) 1220/ 6000E62 :                     
+(2) 1221/ 6000E62 :                     ; ------------------------------
+(2) 1222/ 6000E62 :                     ; Rotate point
+(2) 1223/ 6000E62 :                     ;
+(2) 1224/ 6000E62 :                     ; Entry:
+(2) 1225/ 6000E62 :                     ; r5: x
+(2) 1226/ 6000E62 :                     ; r6: y
+(2) 1227/ 6000E62 :                     ; r0: theta
+(2) 1228/ 6000E62 :                     ;
+(2) 1229/ 6000E62 :                     ; Returns:
+(2) 1230/ 6000E62 :                     ; r7: (x  cos @) + (y sin @)
+(2) 1231/ 6000E62 :                     ; r8: (x -sin @) + (y cos @)
+(2) 1232/ 6000E62 :                     ; ------------------------------
+(2) 1233/ 6000E62 :                     
+(2) 1234/ 6000E62 :                     mdlrd_rotate:
+(2) 1235/ 6000E62 : 9741                    		mov	#$7FF,r7
+(2) 1236/ 6000E64 : 2079                    		and	r7,r0
+(2) 1237/ 6000E66 : 4008                   		shll2	r0
+(2) 1238/ 6000E68 : D71A                		mov	#sin_table,r7
+(2) 1239/ 6000E6A : D81B                		mov	#sin_table+$800,r8
+(2) 1240/ 6000E6C : 097E                		mov	@(r0,r7),r9
+(2) 1241/ 6000E6E : 0A8E                		mov	@(r0,r8),r10
+(2) 1242/ 6000E70 :                     
+(2) 1243/ 6000E70 : 3A5D                		dmuls	r5,r10		; x cos @
+(2) 1244/ 6000E72 : 071A                		sts	macl,r7
+(2) 1245/ 6000E74 : 000A                		sts	mach,r0
+(2) 1246/ 6000E76 : 270D                		xtrct	r0,r7
+(2) 1247/ 6000E78 : 396D                		dmuls	r6,r9		; y sin @
+(2) 1248/ 6000E7A : 081A                		sts	macl,r8
+(2) 1249/ 6000E7C : 000A                		sts	mach,r0
+(2) 1250/ 6000E7E : 280D                		xtrct	r0,r8
+(2) 1251/ 6000E80 : 378C                		add	r8,r7
+(2) 1252/ 6000E82 :                     
+(2) 1253/ 6000E82 : 699B                		neg	r9,r9
+(2) 1254/ 6000E84 : 395D                		dmuls	r5,r9		; x -sin @
+(2) 1255/ 6000E86 : 081A                		sts	macl,r8
+(2) 1256/ 6000E88 : 000A                		sts	mach,r0
+(2) 1257/ 6000E8A : 280D                		xtrct	r0,r8
+(2) 1258/ 6000E8C : 3A6D                		dmuls	r6,r10		; y cos @
+(2) 1259/ 6000E8E : 091A                		sts	macl,r9
+(2) 1260/ 6000E90 : 000A                		sts	mach,r0
+(2) 1261/ 6000E92 : 290D                		xtrct	r0,r9
+(2) 1262/ 6000E94 : 389C                		add	r9,r8
+(2) 1263/ 6000E96 : 000B                 		rts
+(2) 1264/ 6000E98 : 0009                		nop
+(2) 1265/ 6000E9A :                     		align 4
+(2) 1266/ 6000E9C :                     	
+(2) 1267/ 6000E9C :                     ; ------------------------------------------------
+(2) 1268/ 6000E9C :                     ; MarsVideo_SetWatchdog
+(2) 1269/ 6000E9C :                     ; 
+(2) 1270/ 6000E9C :                     ; Starts interrupt for drawing the polygon pieces
+(2) 1271/ 6000E9C :                     ; ------------------------------------------------
+(2) 1272/ 6000E9C :                     
+(2) 1273/ 6000E9C :                     MarsVideo_SetWatchdog:
+(2) 1274/ 6000E9C : 4F03                		stc	sr,@-r15
+(2) 1275/ 6000E9E : 0002                		stc	sr,r0
+(2) 1276/ 6000EA0 : CBF0                		or	#$F0,r0				; Disable interrupts first
+(2) 1277/ 6000EA2 : 400E                		ldc	r0,sr
+(2) 1278/ 6000EA4 : D00D                		mov	#RAM_Mars_VdpDrwList,r0		; Reset the piece-drawing pointer
+(2) 1279/ 6000EA6 : C200                		mov	r0,@(marsGbl_PlyPzList_R,gbr)	; on both READ and WRITE pointers
+(2) 1280/ 6000EA8 : C201                		mov	r0,@(marsGbl_PlyPzList_W,gbr)
+(2) 1281/ 6000EAA : E000                		mov	#0,r0				; Reset polygon pieces counter
+(2) 1282/ 6000EAC : C10C                		mov.w	r0,@(marsGbl_PzListCntr,gbr)
+(2) 1283/ 6000EAE : D10C                		mov	#Cach_ClrLines,r1		; Line counter for the framebuffer-clear routine
+(2) 1284/ 6000EB0 : 901B                		mov	#224,r0
+(2) 1285/ 6000EB2 : 2102                		mov	r0,@r1
+(2) 1286/ 6000EB4 : E008                		mov	#8,r0				; Set starting watchdog task to $08 (Clear framebuffer)
+(2) 1287/ 6000EB6 : C10D                		mov.w	r0,@(marsGbl_DrwTask,gbr)
+(2) 1288/ 6000EB8 : D10A                		mov	#_vdpreg,r1
+(2) 1289/ 6000EBA :                     .wait_fb:
+(2) 1290/ 6000EBA : 8515                		mov.w	@($A,r1),r0			; Framebuffer available?
+(2) 1291/ 6000EBC : C802                		tst	#2,r0
+(2) 1292/ 6000EBE : 8BFC                		bf	.wait_fb
+(2) 1293/ 6000EC0 : 9014                		mov.w	#$A1,r0				; Pre-start SVDP fill line at address $A1
+(2) 1294/ 6000EC2 : 8113                		mov.w	r0,@(6,r1)
+(2) 1295/ 6000EC4 : 9113                		mov	#$FFFFFE80,r1
+(2) 1296/ 6000EC6 : 9013                		mov.w	#$5AFF,r0			; Watchdog wait timer
+(2) 1297/ 6000EC8 : 2101                		mov.w	r0,@r1
+(2) 1298/ 6000ECA : 9012                		mov.w	#$A538,r0			; Enable watchdog
+(2) 1299/ 6000ECC : 2101                		mov.w	r0,@r1
+(2) 1300/ 6000ECE : 4F07                		ldc	@r15+,sr			; Restore interrupts
+(2) 1301/ 6000ED0 : 000B                		rts
+(2) 1302/ 6000ED2 : 0009                		nop
+(2) 1303/ 6000ED4 :                     		align 4
+(2) 1304/ 6000ED4 : 0600 1F2C 0600 272C 		ltorg
+                    0600 D7D8 C000 0764 
                     2000 4100 07FF 00E0 
                     00A1 FE80 5AFF A538 
-(2) 1295/ 6000EF4 :                     
+(2) 1305/ 6000EF4 :                     
 (1)  582/ 6000EF4 :                     		include "system/mars/sound.asm"
 (2)    1/ 6000EF4 :                     ; ====================================================================
 (2)    2/ 6000EF4 :                     ; ----------------------------------------------------------------
@@ -8833,10 +8843,10 @@
 (2)  240/ 600102C : 000B                		rts
 (2)  241/ 600102E : 0009                		nop
 (2)  242/ 6001030 :                     		align 4
-(2)  243/ 6001030 : 0601 6BF8 0601 6AF8 		ltorg
-                    0601 69FC 0601 69FC 
-                    0601 69FC FF00 0000 
-                    2000 4024 0601 69FC 
+(2)  243/ 6001030 : 0601 6CD8 0601 6BD8 		ltorg
+                    0601 6ADC 0601 6ADC 
+                    0601 6ADC FF00 0000 
+                    2000 4024 0601 6ADC 
                     00FF FFFF 2000 4034 
                     2000 4036 03FF      
 (2)  244/ 600105E :                     
@@ -9069,9 +9079,9 @@
 (2)  432/ 6001150 :                     
 (2)  433/ 6001150 :                     ; ====================================================================
 (2)  434/ 6001150 :                     
-(2)  435/ 6001150 : 2000 4000 0601 69FC 		ltorg			; Save literals
-                    0601 69FC FF00 0000 
-                    0601 69FC 0601 69FC 
+(2)  435/ 6001150 : 2000 4000 0601 6ADC 		ltorg			; Save literals
+                    0601 6ADC FF00 0000 
+                    0601 6ADC 0601 6ADC 
                     0105 0415 00F0      
 (2)  436/ 600116E :                     
 (1)  583/ 600116E :                     		align 4
@@ -9329,16 +9339,16 @@
 (1)  835/ 60012CA : 0009                		nop
 (1)  836/ 60012CC :                     		align 4
 (1)  837/ 60012CC : 0604 0000 2000 4020 		ltorg
-                    534C 4156 0600 5A5C 
+                    534C 4156 0600 5B3C 
                     2000 4000 0600 16C8 
                     C000 0000 0600 06AA 
                     2000 402E 0600 121C 
-                    0601 63F8 0600 0E9C 
-                    0601 53F8 0601 69F8 
-                    0601 57F8 0601 69FA 
+                    0601 64D8 0600 0E9C 
+                    0601 54D8 0601 6AD8 
+                    0601 58D8 0601 6ADA 
                     C000 037E 2000 4100 
                     2000 4021 FE10 FEE2 
-                    FEE4 00F0 FE92 01DA 
+                    FEE4 00F0 FE92 0212 
                     FE80 A518           
 (1)  838/ 6001328 :                     
 (1)  839/ 6001328 :                     ; ====================================================================
@@ -9564,15 +9574,15 @@
 (1) 1059/ 6001452 :                     		align 4
 (1) 1060/ 6001454 : 2000 4000 2000 4020 		ltorg
                     534C 4156 0603 F000 
-                    0600 5A5C 0600 1E30 
+                    0600 5B3C 0600 1F10 
                     C000 0000 0600 0AF6 
-                    2000 402F 0601 65F8 
-                    2000 4022 0600 66F8 
-                    0600 9EF8 0601 5BF8 
-                    0600 0790 0600 5AF8 
-                    0600 0B0E 0601 53F8 
-                    0601 69F8 0601 57F8 
-                    0601 69FA 2000 402E 
+                    2000 402F 0601 66D8 
+                    2000 4022 0600 67D8 
+                    0600 9FD8 0601 5CD8 
+                    0600 0790 0600 5BD8 
+                    0600 0B0E 0601 54D8 
+                    0601 6AD8 0601 58D8 
+                    0601 6ADA 2000 402E 
                     FE10 FEE2 FEE4 FE80 
                     5A7F A538 00F0 FE92 
                     0006                
@@ -9657,7 +9667,7 @@
 (1) 1139/ 6001528 : 000B                		rts
 (1) 1140/ 600152A : 0009                		nop
 (1) 1141/ 600152C :                     		align 4
-(1) 1142/ 600152C : 0601 5BF8 0100      		ltorg
+(1) 1142/ 600152C : 0601 5CD8 0100      		ltorg
 (1) 1143/ 6001532 :                     
 (1) 1144/ 6001532 :                     ; ====================================================================
 (1) 1145/ 6001532 :                     ; --------------------------------------------------------
@@ -9985,9 +9995,9 @@
 (1) 1432/ 600167C :                     ; ----------------------------------------
 (1) 1433/ 600167C :                     
 (1) 1434/ 600167C : 2000 4100 0600 074C 		ltorg
-                    0600 5CA8 0600 5CA8 
+                    0600 5D88 0600 5D88 
                     0600 0AF6 0600 0812 
-                    0600 5AB0 0000 FFFF 
+                    0600 5B90 0000 FFFF 
 (1) 1435/ 600169C :                     
 (1) 1436/ 600169C :                     ; =================================================================
 (1) 1437/ 600169C :                     ; ------------------------------------------------
@@ -10624,8 +10634,8 @@
 (2)  570/FFFFFFFFC0000356 : 0009                		nop
 (2)  571/FFFFFFFFC0000358 :                     		align 4
 (2)  572/FFFFFFFFC0000358 : 2402 0200 2000 4100 		ltorg
-                    C000 0704 0601 53F8 
-                    0600 D6F8 0140 FF00 
+                    C000 0704 0601 54D8 
+                    0600 D7D8 0140 FF00 
                     1FFF 00FF 00E0 013F 
                     FE80 A518 5A00      
 (2)  573/FFFFFFFFC000037E :                     
@@ -10849,7 +10859,7 @@
 (2)  791/FFFFFFFFC00004AA :                     		align 4
 (2)  792/FFFFFFFFC00004AC : C000 0704 C000 0714 		ltorg
                     C000 0724 7FFF FFFF 
-                    0601 53F8 0600 D6F8 
+                    0601 54D8 0600 D7D8 
                     00A0 00E0           
 (2)  793/FFFFFFFFC00004C8 :                     
 (2)  794/FFFFFFFFC00004C8 :                     ; --------------------------------
@@ -11114,239 +11124,240 @@
 (2) 1050/FFFFFFFFC00006B2 :                     		align 4
 (2) 1051/FFFFFFFFC00006B4 : C000 0744 C000 0744 		ltorg
                     C000 0754 C000 0754 
-                    0601 53F8 0600 D6F8 
+                    0601 54D8 0600 D7D8 
 (2) 1052/FFFFFFFFC00006CC :                     
 (2) 1053/FFFFFFFFC00006CC :                     ; ------------------------------------------------
 (2) 1054/FFFFFFFFC00006CC :                     
 (2) 1055/FFFFFFFFC00006CC :                     		align 4
 (2) 1056/FFFFFFFFC00006CC :                     Cach_LnDrw_L	ds.l 14			;
-(2) 1057/FFFFFFFFC0000704 :                     Cach_LnDrw_S	ds.l 0			; Reads backwards
+(2) 1057/FFFFFFFFC0000704 :                     Cach_LnDrw_S	ds.l 0			; <-- Reads backwards
 (2) 1058/FFFFFFFFC0000704 :                     CachDDA_Top	ds.l 2*2		; First 2 points
 (2) 1059/FFFFFFFFC0000714 :                     CachDDA_Last	ds.l 2*2		; Triangle or Quad (+8)
 (2) 1060/FFFFFFFFC0000724 :                     CachDDA_Src	ds.l 4*2
 (2) 1061/FFFFFFFFC0000744 :                     CachDDA_Src_L	ds.l 4			; X/DX/Y/DX result for textures
 (2) 1062/FFFFFFFFC0000754 :                     CachDDA_Src_R	ds.l 4
-(2) 1063/FFFFFFFFC0000764 :                     Cach_ClrLines	ds.l 1
-(2) 1064/FFFFFFFFC0000768 :                     
-(2) 1065/FFFFFFFFC0000768 :                     ; ------------------------------------------------
-(2) 1066/ 6001E30 :                     .end:		phase CACHE_MASTER+.end&$1FFF
-(2) 1067/ 6001E30 :                     CACHE_MASTER_E:
-(2) 1068/ 6001E30 :                     		align 4
-(2) 1069/ 6001E30 :                     
-(2) 1070/ 6001E30 :                     ; ====================================================================
-(2) 1071/ 6001E30 :                     ; ----------------------------------------------------------------
-(2) 1072/ 6001E30 :                     ; Video CACHE routines for Slave CPU
-(2) 1073/ 6001E30 :                     ; ----------------------------------------------------------------
-(2) 1074/ 6001E30 :                     
-(2) 1075/ 6001E30 :                     		align 4
-(2) 1076/ 6001E30 :                     CACHE_SLAVE:
-(2) 1077/FFFFFFFFC0000000 :                     		phase $C0000000
-(2) 1078/FFFFFFFFC0000000 :                     ; ------------------------------------------------
-(2) 1079/FFFFFFFFC0000000 : 534C 4156 4520 4341 		dc.b "SLAVE CACHE CODE GOES HERE"
+(2) 1063/FFFFFFFFC0000764 :                     Cach_ClrLines	ds.l 1			; Current lines to clear
+(2) 1064/FFFFFFFFC0000768 :                     Cach_CurrPlygn	ds.l sizeof_polygn	; Current polygon in modelread
+(2) 1065/FFFFFFFFC0000848 :                     
+(2) 1066/FFFFFFFFC0000848 :                     ; ------------------------------------------------
+(2) 1067/ 6001F10 :                     .end:		phase CACHE_MASTER+.end&$1FFF
+(2) 1068/ 6001F10 :                     CACHE_MASTER_E:
+(2) 1069/ 6001F10 :                     		align 4
+(2) 1070/ 6001F10 :                     
+(2) 1071/ 6001F10 :                     ; ====================================================================
+(2) 1072/ 6001F10 :                     ; ----------------------------------------------------------------
+(2) 1073/ 6001F10 :                     ; Video CACHE routines for Slave CPU
+(2) 1074/ 6001F10 :                     ; ----------------------------------------------------------------
+(2) 1075/ 6001F10 :                     
+(2) 1076/ 6001F10 :                     		align 4
+(2) 1077/ 6001F10 :                     CACHE_SLAVE:
+(2) 1078/FFFFFFFFC0000000 :                     		phase $C0000000
+(2) 1079/FFFFFFFFC0000000 :                     ; ------------------------------------------------
+(2) 1080/FFFFFFFFC0000000 : 534C 4156 4520 4341 		dc.b "SLAVE CACHE CODE GOES HERE"
                     4348 4520 434F 4445 
                     2047 4F45 5320 4845 
                     5245                
-(2) 1080/FFFFFFFFC000001A :                     ; ------------------------------------------------
-(2) 1081/ 6001E4A :                     .end:		phase CACHE_SLAVE+.end&$1FFF
-(2) 1082/ 6001E4A :                     CACHE_SLAVE_E:
-(2) 1083/ 6001E4A :                     		align 4
-(2) 1084/ 6001E4C :                     
-(1) 1496/ 6001E4C :                     		
-(1) 1497/ 6001E4C :                     ; ====================================================================
-(1) 1498/ 6001E4C :                     ; ----------------------------------------------------------------
-(1) 1499/ 6001E4C :                     ; Data
-(1) 1500/ 6001E4C :                     ; ----------------------------------------------------------------
-(1) 1501/ 6001E4C :                     
-(1) 1502/ 6001E4C :                     		align 4
-(1) 1503/ 6001E4C :                     sin_table	binclude "system/mars/data/sinedata.bin"
-(1) 1504/ 600464C :                     		align 4
-(1) 1505/ 600464C :                     		include "data/mars_sdram.asm"
-(2)    1/ 600464C :                     ; ====================================================================
-(2)    2/ 600464C :                     ; ----------------------------------------------------------------
-(2)    3/ 600464C :                     ; SH2 SDRAM user data
-(2)    4/ 600464C :                     ; 
-(2)    5/ 600464C :                     ; This data is stored on SDRAM, it's always available to use
-(2)    6/ 600464C :                     ; and can be re-writeable
-(2)    7/ 600464C :                     ; Put small sections of data like palettes or small models
-(2)    8/ 600464C :                     ; ----------------------------------------------------------------
-(2)    9/ 600464C :                     
-(2)   10/ 600464C :                     		include  "data/mars/objects/incl_sdram.asm"		; Models and palettes will go here
-(3)    1/ 600464C :                     ; --------------------------------------------------------
-(3)    2/ 600464C :                     ; Palettes
-(3)    3/ 600464C :                     ; --------------------------------------------------------
-(3)    4/ 600464C :                     
-(3)    5/ 600464C :                     Palette_Intro:	binclude "data/mars/objects/mtrl/intro_pal.bin"
-(3)    6/ 600466C :                     		align 4
-(3)    7/ 600466C :                     Palette_Map:	binclude "data/mars/objects/mtrl/marscity_pal.bin"
-(3)    8/ 600486C :                     		align 4
-(3)    9/ 600486C :                     		
-(3)   10/ 600486C :                     ; --------------------------------------------------------
-(3)   11/ 600486C :                     ; Objects
-(3)   12/ 600486C :                     ; --------------------------------------------------------
-(3)   13/ 600486C :                     
-(3)   14/ 600486C :                     		include "data/mars/objects/mdl/intro/head.asm"
-(4)    1/ 600486C :                     MarsObj_intro:
-(4)    2/ 600486C : 0002 0008           		dc.w 2,8
-(4)    3/ 6004870 : 0600 4880 0600 48E0 		dc.l .vert,.face,.vrtx,.mtrl
-                    0600 4910 0600 4930 
-(4)    4/ 6004880 :                     .vert:		binclude "data/mars/objects/mdl/intro/vert.bin"
-(4)    5/ 60048E0 :                     .face:		binclude "data/mars/objects/mdl/intro/face.bin"
-(4)    6/ 6004910 :                     .vrtx:		binclude "data/mars/objects/mdl/intro/vrtx.bin"
-(4)    7/ 6004930 :                     .mtrl:		include "data/mars/objects/mdl/intro/mtrl.asm"
-(5)    1/ 6004930 : 0205 800C           	 dc.l Textr_intro
-(5)    2/ 6004934 : 00B4                	 dc.w 180
-(5)    3/ 6004936 : 0000                	 dc.w 0
-(5)    4/ 6004938 :                     
-(4)    8/ 6004938 :                     		align 4
-(4)    9/ 6004938 :                     
-(3)   15/ 6004938 :                     		
-(3)   16/ 6004938 :                     ; --------------------------------------------------------
-(3)   17/ 6004938 :                     ; Maps
-(3)   18/ 6004938 :                     ; --------------------------------------------------------
-(3)   19/ 6004938 :                     
-(3)   20/ 6004938 :                     		include "data/mars/maps/map_marscity.asm"
-(4)    1/ 6004938 :                     ; --------------------------------------------------------
-(4)    2/ 6004938 :                     ; Map layouts
-(4)    3/ 6004938 :                     ; --------------------------------------------------------
-(4)    4/ 6004938 :                     
-(4)    5/ 6004938 :                     ; Layout block is 10m*10m
-(4)    6/ 6004938 :                     ; center center: X=E,Y=10
-(4)    7/ 6004938 :                     
-(4)    8/ 6004938 :                     TEST_LAYOUT:
-(4)    9/ 6004938 :                     		include "data/mars/maps/map0_data.asm"
-(5)    1/ 6004938 : 0600 513C           		dc.l .blocks
-(5)    2/ 600493C :                     		binclude "data/mars/maps/map0_lay.bin"
-(5)    3/ 600513C :                     		align 4
-(5)    4/ 600513C :                     .blocks:
-(5)    5/ 600513C : 0600 5144 0000 0000 		dc.l MarsMapPz_road_main,0
-(5)    6/ 6005144 :                     		include "data/mars/maps/pz/road_main.asm"
-(6)    1/ 6005144 :                     MarsMapPz_road_main:
-(6)    2/ 6005144 : 004E 005F           		dc.w 78,95
-(6)    3/ 6005148 : 0600 5158 0600 55CC 		dc.l .vert,.face,.vrtx,.mtrl
-                    0600 58DC 0600 5A5C 
-(6)    4/ 6005158 :                     .vert:		binclude "data/mars/maps/pz/road_main_vert.bin"
-(6)    5/ 60055CC :                     .face:		binclude "data/mars/maps/pz/road_main_face.bin"
-(6)    6/ 60058DC :                     .vrtx:		binclude "data/mars/maps/pz/road_main_vrtx.bin"
-(6)    7/ 6005A5C :                     .mtrl:		include "data/mars/maps/pz/road_main_mtrl.asm"
-(7)    1/ 6005A5C :                     
-(6)    8/ 6005A5C :                     		align 4
-(5)    7/ 6005A5C :                     
-(4)   10/ 6005A5C :                     
-(3)   21/ 6005A5C :                     
-(3)   22/ 6005A5C :                     
-(2)   11/ 6005A5C :                     
-(1) 1506/ 6005A5C :                     
-(1) 1507/ 6005A5C :                     ; ====================================================================
-(1) 1508/ 6005A5C :                     ; ----------------------------------------------------------------
-(1) 1509/ 6005A5C :                     ; MARS SH2 RAM
-(1) 1510/ 6005A5C :                     ; ----------------------------------------------------------------
-(1) 1511/ 6005A5C :                     
-(1) 1512/ 6005A5C :                     SH2_RAM:
-(1) 1513/ 6005A5C : (MACRO)             		struct SH2_RAM
-(1) 1513/ 6005A5C : =$6005A5C           GLBL_LASTPC     set *
-(1) 1513/    A0B8 :                                     dephase
-(1) 1513/    A0B8 : =$A0B8              GLBL_LASTORG    set *
-(1) 1513/ 6005A5C :                                     phase SH2_RAM
-(1) 1520/ 6005A5C :                     MarsRam_System	ds.b (sizeof_marssys-MarsRam_System)
-(1) 1521/ 6005AB0 :                     MarsRam_Video	ds.b (sizeof_marsvid-MarsRam_Video)
-(1) 1522/ 60169FC :                     MarsRam_Sound	ds.b (sizeof_marssnd-MarsRam_Sound)
-(1) 1523/ 6016C14 :                     sizeof_marsram	ds.l 0
-(1) 1525/ 6016C14 :                     
-(1) 1526/ 6016C14 :                     .here:
-(1) 1530/ 6016C14 : (MACRO)             		finish
-(1) 1530/ 6005A5C :                                     !org GLBL_LASTORG
-(1) 1530/ 6005A5C :                                     phase GLBL_LASTPC
-(1) 1531/ 6005A5C :                     		
-(1) 1532/ 6005A5C :                     ; ====================================================================
-(1) 1533/ 6005A5C :                     ; ----------------------------------------------------------------
-(1) 1534/ 6005A5C :                     ; MARS Sound RAM
-(1) 1535/ 6005A5C :                     ; ----------------------------------------------------------------
-(1) 1536/ 6005A5C :                     
-(1) 1537/ 6005A5C : (MACRO)             			struct MarsRam_Sound
-(1) 1537/ 6005A5C : =$6005A5C           GLBL_LASTPC     set *
-(1) 1537/    A0B8 :                                     dephase
-(1) 1537/    A0B8 : =$A0B8              GLBL_LASTORG    set *
-(1) 1537/ 60169FC :                                     phase MARSRAM_SOUND
-(1) 1538/ 60169FC :                     MarsSnd_PwmChnls	ds.b sizeof_sndchn*MAX_PWMCHNL
-(1) 1539/ 6016AF8 :                     MarsSnd_PwmTrkData	ds.b $80*2
-(1) 1540/ 6016BF8 :                     MarsSnd_PwmPlyData	ds.l 7
-(1) 1541/ 6016C14 :                     sizeof_marssnd		ds.l 0
-(1) 1542/ 6016C14 : (MACRO)             			finish
-(1) 1542/ 60169FC :                                     !org GLBL_LASTORG
-(1) 1542/ 6005A5C :                                     phase GLBL_LASTPC
-(1) 1543/ 6005A5C :                     
-(1) 1544/ 6005A5C :                     ; ====================================================================
-(1) 1545/ 6005A5C :                     ; ----------------------------------------------------------------
-(1) 1546/ 6005A5C :                     ; MARS Video RAM
-(1) 1547/ 6005A5C :                     ; ----------------------------------------------------------------
-(1) 1548/ 6005A5C :                     
-(1) 1549/ 6005A5C : (MACRO)             			struct MarsRam_Video
-(1) 1549/ 6005A5C : =$6005A5C           GLBL_LASTPC     set *
-(1) 1549/    A0B8 :                                     dephase
-(1) 1549/    A0B8 : =$A0B8              GLBL_LASTORG    set *
-(1) 1549/ 6005AB0 :                                     phase MARSRAM_VIDEO
-(1) 1550/ 6005AB0 :                     RAM_Mars_ObjCamera	ds.b sizeof_camera		; Camera buffer
-(1) 1551/ 6005AD8 :                     RAM_Mars_ObjLayout	ds.b sizeof_layout		; Layout buffer
-(1) 1552/ 6005AF8 :                     RAM_Mars_Objects	ds.b sizeof_mdlobj*MAX_MODELS	; Objects list
-(1) 1553/ 60066F8 :                     RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
-(1) 1554/ 6009EF8 :                     RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
-(1) 1555/ 600D6F8 :                     RAM_Mars_VdpDrwList	ds.b sizeof_plypz*MAX_SVDP_PZ	; Pieces list
-(1) 1556/ 60130F8 :                     RAM_Mars_FbDrwnBuff	ds.b (SCREEN_WIDTH/8)*SCREEN_HEIGHT
-(1) 1557/ 60153F8 :                     RAM_Mars_VdpDrwList_e	ds.l 0				; (end-of-list label)
-(1) 1558/ 60153F8 :                     RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer list(s)
-(1) 1559/ 60157F8 :                     RAM_Mars_PlgnList_1	ds.l MAX_FACES
-(1) 1560/ 6015BF8 :                     RAM_Mars_Plgn_ZList	ds.l MAX_FACES*2		; Z value / foward faces
-(1) 1561/ 60163F8 :                     RAM_Mars_MdTasksFifo_M	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Request list for Master: SVDP and PWM interaction exclusive
-(1) 1562/ 60165F8 :                     RAM_Mars_MdTasksFifo_S	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Request list for Slave: Controlling objects and camera
-(1) 1563/ 60167F8 :                     RAM_Mars_Palette	ds.w 256			; Indexed palette
-(1) 1564/ 60169F8 :                     RAM_Mars_PlgnNum_0	ds.w 1				; Number of polygons to read, both buffers
-(1) 1565/ 60169FA :                     RAM_Mars_PlgnNum_1	ds.w 1				;
-(1) 1566/ 60169FC :                     sizeof_marsvid		ds.l 0
-(1) 1567/ 60169FC : (MACRO)             			finish
-(1) 1567/ 6005AB0 :                                     !org GLBL_LASTORG
-(1) 1567/ 6005A5C :                                     phase GLBL_LASTPC
-(1) 1568/ 6005A5C :                     			
-(1) 1569/ 6005A5C :                     ; ====================================================================
-(1) 1570/ 6005A5C :                     ; ----------------------------------------------------------------
-(1) 1571/ 6005A5C :                     ; MARS System RAM
-(1) 1572/ 6005A5C :                     ; ----------------------------------------------------------------
-(1) 1573/ 6005A5C :                     
-(1) 1574/ 6005A5C : (MACRO)             			struct MarsRam_System
-(1) 1574/ 6005A5C : =$6005A5C           GLBL_LASTPC     set *
-(1) 1574/    A0B8 :                                     dephase
-(1) 1574/    A0B8 : =$A0B8              GLBL_LASTORG    set *
-(1) 1574/ 6005A5C :                                     phase MARSRAM_SYSTEM
-(1) 1575/ 6005A5C :                     RAM_Mars_Global		ds.w sizeof_MarsGbl		; keep it as a word
-(1) 1576/ 6005AB0 :                     sizeof_marssys		ds.l 0
-(1) 1577/ 6005AB0 : (MACRO)             			finish
-(1) 1577/ 6005A5C :                                     !org GLBL_LASTORG
-(1) 1577/ 6005A5C :                                     phase GLBL_LASTPC
-(1) 1578/ 6005A5C :                     
-      62/ 6005A5C :                     		ltorg
-      63/ 6005A5C :                     		cpu 68000
-      64/ 6005A5C :                     		padding off
-      65/    A0B8 :                     		dephase
-      66/    A0B8 :                     MARS_RAMDATA_E:
-      67/    A0B8 :                     		align 4
-      68/    A0B8 :                     
-      69/    A0B8 :                     ; --------------------------------------------------------
-      70/    A0B8 :                     ; SINGLE MD BANK
-      71/    A0B8 :                     ; 
-      72/    A0B8 :                     ; $900000 - $9FFFFF
-      73/    A0B8 :                     ; --------------------------------------------------------
-      74/    A0B8 :                     
-      75/    A0B8 :                     		align 4
-      76/  90A0B8 :                     		phase $900000+*				; Only one currently
-      77/  90A0B8 :                     		include "data/md_bank0.asm"
-(1)    1/  90A0B8 :                     ; ====================================================================
-(1)    2/  90A0B8 :                     ; ----------------------------------------------------------------
-(1)    3/  90A0B8 :                     ; Single 68k DATA BANK for MD ($900000-$9FFFFF)
-(1)    4/  90A0B8 :                     ; for stuff other than DMA transfers
-(1)    5/  90A0B8 :                     ; 
-(1)    6/  90A0B8 :                     ; Maximum size: $0FFFFF bytes
-(1)    7/  90A0B8 :                     ; ----------------------------------------------------------------
-(1)    8/  90A0B8 :                     
-(1)    9/  90A0B8 :                     		align $8000
+(2) 1081/FFFFFFFFC000001A :                     ; ------------------------------------------------
+(2) 1082/ 6001F2A :                     .end:		phase CACHE_SLAVE+.end&$1FFF
+(2) 1083/ 6001F2A :                     CACHE_SLAVE_E:
+(2) 1084/ 6001F2A :                     		align 4
+(2) 1085/ 6001F2C :                     
+(1) 1496/ 6001F2C :                     		
+(1) 1497/ 6001F2C :                     ; ====================================================================
+(1) 1498/ 6001F2C :                     ; ----------------------------------------------------------------
+(1) 1499/ 6001F2C :                     ; Data
+(1) 1500/ 6001F2C :                     ; ----------------------------------------------------------------
+(1) 1501/ 6001F2C :                     
+(1) 1502/ 6001F2C :                     		align 4
+(1) 1503/ 6001F2C :                     sin_table	binclude "system/mars/data/sinedata.bin"
+(1) 1504/ 600472C :                     		align 4
+(1) 1505/ 600472C :                     		include "data/mars_sdram.asm"
+(2)    1/ 600472C :                     ; ====================================================================
+(2)    2/ 600472C :                     ; ----------------------------------------------------------------
+(2)    3/ 600472C :                     ; SH2 SDRAM user data
+(2)    4/ 600472C :                     ; 
+(2)    5/ 600472C :                     ; This data is stored on SDRAM, it's always available to use
+(2)    6/ 600472C :                     ; and can be re-writeable
+(2)    7/ 600472C :                     ; Put small sections of data like palettes or small models
+(2)    8/ 600472C :                     ; ----------------------------------------------------------------
+(2)    9/ 600472C :                     
+(2)   10/ 600472C :                     		include  "data/mars/objects/incl_sdram.asm"		; Models and palettes will go here
+(3)    1/ 600472C :                     ; --------------------------------------------------------
+(3)    2/ 600472C :                     ; Palettes
+(3)    3/ 600472C :                     ; --------------------------------------------------------
+(3)    4/ 600472C :                     
+(3)    5/ 600472C :                     Palette_Intro:	binclude "data/mars/objects/mtrl/intro_pal.bin"
+(3)    6/ 600474C :                     		align 4
+(3)    7/ 600474C :                     Palette_Map:	binclude "data/mars/objects/mtrl/marscity_pal.bin"
+(3)    8/ 600494C :                     		align 4
+(3)    9/ 600494C :                     		
+(3)   10/ 600494C :                     ; --------------------------------------------------------
+(3)   11/ 600494C :                     ; Objects
+(3)   12/ 600494C :                     ; --------------------------------------------------------
+(3)   13/ 600494C :                     
+(3)   14/ 600494C :                     		include "data/mars/objects/mdl/intro/head.asm"
+(4)    1/ 600494C :                     MarsObj_intro:
+(4)    2/ 600494C : 0002 0008           		dc.w 2,8
+(4)    3/ 6004950 : 0600 4960 0600 49C0 		dc.l .vert,.face,.vrtx,.mtrl
+                    0600 49F0 0600 4A10 
+(4)    4/ 6004960 :                     .vert:		binclude "data/mars/objects/mdl/intro/vert.bin"
+(4)    5/ 60049C0 :                     .face:		binclude "data/mars/objects/mdl/intro/face.bin"
+(4)    6/ 60049F0 :                     .vrtx:		binclude "data/mars/objects/mdl/intro/vrtx.bin"
+(4)    7/ 6004A10 :                     .mtrl:		include "data/mars/objects/mdl/intro/mtrl.asm"
+(5)    1/ 6004A10 : 0205 800C           	 dc.l Textr_intro
+(5)    2/ 6004A14 : 00B4                	 dc.w 180
+(5)    3/ 6004A16 : 0000                	 dc.w 0
+(5)    4/ 6004A18 :                     
+(4)    8/ 6004A18 :                     		align 4
+(4)    9/ 6004A18 :                     
+(3)   15/ 6004A18 :                     		
+(3)   16/ 6004A18 :                     ; --------------------------------------------------------
+(3)   17/ 6004A18 :                     ; Maps
+(3)   18/ 6004A18 :                     ; --------------------------------------------------------
+(3)   19/ 6004A18 :                     
+(3)   20/ 6004A18 :                     		include "data/mars/maps/map_marscity.asm"
+(4)    1/ 6004A18 :                     ; --------------------------------------------------------
+(4)    2/ 6004A18 :                     ; Map layouts
+(4)    3/ 6004A18 :                     ; --------------------------------------------------------
+(4)    4/ 6004A18 :                     
+(4)    5/ 6004A18 :                     ; Layout block is 10m*10m
+(4)    6/ 6004A18 :                     ; center center: X=E,Y=10
+(4)    7/ 6004A18 :                     
+(4)    8/ 6004A18 :                     TEST_LAYOUT:
+(4)    9/ 6004A18 :                     		include "data/mars/maps/map0_data.asm"
+(5)    1/ 6004A18 : 0600 521C           		dc.l .blocks
+(5)    2/ 6004A1C :                     		binclude "data/mars/maps/map0_lay.bin"
+(5)    3/ 600521C :                     		align 4
+(5)    4/ 600521C :                     .blocks:
+(5)    5/ 600521C : 0600 5224 0000 0000 		dc.l MarsMapPz_road_main,0
+(5)    6/ 6005224 :                     		include "data/mars/maps/pz/road_main.asm"
+(6)    1/ 6005224 :                     MarsMapPz_road_main:
+(6)    2/ 6005224 : 004E 005F           		dc.w 78,95
+(6)    3/ 6005228 : 0600 5238 0600 56AC 		dc.l .vert,.face,.vrtx,.mtrl
+                    0600 59BC 0600 5B3C 
+(6)    4/ 6005238 :                     .vert:		binclude "data/mars/maps/pz/road_main_vert.bin"
+(6)    5/ 60056AC :                     .face:		binclude "data/mars/maps/pz/road_main_face.bin"
+(6)    6/ 60059BC :                     .vrtx:		binclude "data/mars/maps/pz/road_main_vrtx.bin"
+(6)    7/ 6005B3C :                     .mtrl:		include "data/mars/maps/pz/road_main_mtrl.asm"
+(7)    1/ 6005B3C :                     
+(6)    8/ 6005B3C :                     		align 4
+(5)    7/ 6005B3C :                     
+(4)   10/ 6005B3C :                     
+(3)   21/ 6005B3C :                     
+(3)   22/ 6005B3C :                     
+(2)   11/ 6005B3C :                     
+(1) 1506/ 6005B3C :                     
+(1) 1507/ 6005B3C :                     ; ====================================================================
+(1) 1508/ 6005B3C :                     ; ----------------------------------------------------------------
+(1) 1509/ 6005B3C :                     ; MARS SH2 RAM
+(1) 1510/ 6005B3C :                     ; ----------------------------------------------------------------
+(1) 1511/ 6005B3C :                     
+(1) 1512/ 6005B3C :                     SH2_RAM:
+(1) 1513/ 6005B3C : (MACRO)             		struct SH2_RAM
+(1) 1513/ 6005B3C : =$6005B3C           GLBL_LASTPC     set *
+(1) 1513/    A198 :                                     dephase
+(1) 1513/    A198 : =$A198              GLBL_LASTORG    set *
+(1) 1513/ 6005B3C :                                     phase SH2_RAM
+(1) 1520/ 6005B3C :                     MarsRam_System	ds.b (sizeof_marssys-MarsRam_System)
+(1) 1521/ 6005B90 :                     MarsRam_Video	ds.b (sizeof_marsvid-MarsRam_Video)
+(1) 1522/ 6016ADC :                     MarsRam_Sound	ds.b (sizeof_marssnd-MarsRam_Sound)
+(1) 1523/ 6016CF4 :                     sizeof_marsram	ds.l 0
+(1) 1525/ 6016CF4 :                     
+(1) 1526/ 6016CF4 :                     .here:
+(1) 1530/ 6016CF4 : (MACRO)             		finish
+(1) 1530/ 6005B3C :                                     !org GLBL_LASTORG
+(1) 1530/ 6005B3C :                                     phase GLBL_LASTPC
+(1) 1531/ 6005B3C :                     		
+(1) 1532/ 6005B3C :                     ; ====================================================================
+(1) 1533/ 6005B3C :                     ; ----------------------------------------------------------------
+(1) 1534/ 6005B3C :                     ; MARS Sound RAM
+(1) 1535/ 6005B3C :                     ; ----------------------------------------------------------------
+(1) 1536/ 6005B3C :                     
+(1) 1537/ 6005B3C : (MACRO)             			struct MarsRam_Sound
+(1) 1537/ 6005B3C : =$6005B3C           GLBL_LASTPC     set *
+(1) 1537/    A198 :                                     dephase
+(1) 1537/    A198 : =$A198              GLBL_LASTORG    set *
+(1) 1537/ 6016ADC :                                     phase MARSRAM_SOUND
+(1) 1538/ 6016ADC :                     MarsSnd_PwmChnls	ds.b sizeof_sndchn*MAX_PWMCHNL
+(1) 1539/ 6016BD8 :                     MarsSnd_PwmTrkData	ds.b $80*2
+(1) 1540/ 6016CD8 :                     MarsSnd_PwmPlyData	ds.l 7
+(1) 1541/ 6016CF4 :                     sizeof_marssnd		ds.l 0
+(1) 1542/ 6016CF4 : (MACRO)             			finish
+(1) 1542/ 6016ADC :                                     !org GLBL_LASTORG
+(1) 1542/ 6005B3C :                                     phase GLBL_LASTPC
+(1) 1543/ 6005B3C :                     
+(1) 1544/ 6005B3C :                     ; ====================================================================
+(1) 1545/ 6005B3C :                     ; ----------------------------------------------------------------
+(1) 1546/ 6005B3C :                     ; MARS Video RAM
+(1) 1547/ 6005B3C :                     ; ----------------------------------------------------------------
+(1) 1548/ 6005B3C :                     
+(1) 1549/ 6005B3C : (MACRO)             			struct MarsRam_Video
+(1) 1549/ 6005B3C : =$6005B3C           GLBL_LASTPC     set *
+(1) 1549/    A198 :                                     dephase
+(1) 1549/    A198 : =$A198              GLBL_LASTORG    set *
+(1) 1549/ 6005B90 :                                     phase MARSRAM_VIDEO
+(1) 1550/ 6005B90 :                     RAM_Mars_ObjCamera	ds.b sizeof_camera		; Camera buffer
+(1) 1551/ 6005BB8 :                     RAM_Mars_ObjLayout	ds.b sizeof_layout		; Layout buffer
+(1) 1552/ 6005BD8 :                     RAM_Mars_Objects	ds.b sizeof_mdlobj*MAX_MODELS	; Objects list
+(1) 1553/ 60067D8 :                     RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
+(1) 1554/ 6009FD8 :                     RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
+(1) 1555/ 600D7D8 :                     RAM_Mars_VdpDrwList	ds.b sizeof_plypz*MAX_SVDP_PZ	; Pieces list
+(1) 1556/ 60131D8 :                     RAM_Mars_FbDrwnBuff	ds.b (SCREEN_WIDTH/8)*SCREEN_HEIGHT
+(1) 1557/ 60154D8 :                     RAM_Mars_VdpDrwList_e	ds.l 0				; (end-of-list label)
+(1) 1558/ 60154D8 :                     RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer list(s)
+(1) 1559/ 60158D8 :                     RAM_Mars_PlgnList_1	ds.l MAX_FACES
+(1) 1560/ 6015CD8 :                     RAM_Mars_Plgn_ZList	ds.l MAX_FACES*2		; Z value / foward faces
+(1) 1561/ 60164D8 :                     RAM_Mars_MdTasksFifo_M	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Request list for Master: SVDP and PWM interaction exclusive
+(1) 1562/ 60166D8 :                     RAM_Mars_MdTasksFifo_S	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Request list for Slave: Controlling objects and camera
+(1) 1563/ 60168D8 :                     RAM_Mars_Palette	ds.w 256			; Indexed palette
+(1) 1564/ 6016AD8 :                     RAM_Mars_PlgnNum_0	ds.w 1				; Number of polygons to read, both buffers
+(1) 1565/ 6016ADA :                     RAM_Mars_PlgnNum_1	ds.w 1				;
+(1) 1566/ 6016ADC :                     sizeof_marsvid		ds.l 0
+(1) 1567/ 6016ADC : (MACRO)             			finish
+(1) 1567/ 6005B90 :                                     !org GLBL_LASTORG
+(1) 1567/ 6005B3C :                                     phase GLBL_LASTPC
+(1) 1568/ 6005B3C :                     			
+(1) 1569/ 6005B3C :                     ; ====================================================================
+(1) 1570/ 6005B3C :                     ; ----------------------------------------------------------------
+(1) 1571/ 6005B3C :                     ; MARS System RAM
+(1) 1572/ 6005B3C :                     ; ----------------------------------------------------------------
+(1) 1573/ 6005B3C :                     
+(1) 1574/ 6005B3C : (MACRO)             			struct MarsRam_System
+(1) 1574/ 6005B3C : =$6005B3C           GLBL_LASTPC     set *
+(1) 1574/    A198 :                                     dephase
+(1) 1574/    A198 : =$A198              GLBL_LASTORG    set *
+(1) 1574/ 6005B3C :                                     phase MARSRAM_SYSTEM
+(1) 1575/ 6005B3C :                     RAM_Mars_Global		ds.w sizeof_MarsGbl		; keep it as a word
+(1) 1576/ 6005B90 :                     sizeof_marssys		ds.l 0
+(1) 1577/ 6005B90 : (MACRO)             			finish
+(1) 1577/ 6005B3C :                                     !org GLBL_LASTORG
+(1) 1577/ 6005B3C :                                     phase GLBL_LASTPC
+(1) 1578/ 6005B3C :                     
+      62/ 6005B3C :                     		ltorg
+      63/ 6005B3C :                     		cpu 68000
+      64/ 6005B3C :                     		padding off
+      65/    A198 :                     		dephase
+      66/    A198 :                     MARS_RAMDATA_E:
+      67/    A198 :                     		align 4
+      68/    A198 :                     
+      69/    A198 :                     ; --------------------------------------------------------
+      70/    A198 :                     ; SINGLE MD BANK
+      71/    A198 :                     ; 
+      72/    A198 :                     ; $900000 - $9FFFFF
+      73/    A198 :                     ; --------------------------------------------------------
+      74/    A198 :                     
+      75/    A198 :                     		align 4
+      76/  90A198 :                     		phase $900000+*				; Only one currently
+      77/  90A198 :                     		include "data/md_bank0.asm"
+(1)    1/  90A198 :                     ; ====================================================================
+(1)    2/  90A198 :                     ; ----------------------------------------------------------------
+(1)    3/  90A198 :                     ; Single 68k DATA BANK for MD ($900000-$9FFFFF)
+(1)    4/  90A198 :                     ; for stuff other than DMA transfers
+(1)    5/  90A198 :                     ; 
+(1)    6/  90A198 :                     ; Maximum size: $0FFFFF bytes
+(1)    7/  90A198 :                     ; ----------------------------------------------------------------
+(1)    8/  90A198 :                     
+(1)    9/  90A198 :                     		align $8000
 (1)   10/  910000 :                     		include "data/sound/tracks.asm"
 (2)    1/  910000 :                     ; ================================================================
 (2)    2/  910000 :                     ; ------------------------------------------------------------
@@ -11564,7 +11575,7 @@
      104/  260568 :                     ; 		rompad (ROM_END&$FF0000)+$40000
      105/  260568 :                     		align $8000
      106/  268000 :                     
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 2 - 3/24/2021 21:18:19
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 2 - 3/25/2021 0:43:11
 
 
   symbol table (* = unused):
@@ -11591,10 +11602,10 @@
  CACHDDA_LAST :    FFFFFFFFC0000714 C |  CACHDDA_SRC :     FFFFFFFFC0000724 C |
  CACHDDA_SRC_L :   FFFFFFFFC0000744 C |  CACHDDA_SRC_R :   FFFFFFFFC0000754 C |
  CACHDDA_TOP :     FFFFFFFFC0000704 C |  CACHE_MASTER :             60016C8 C |
- CACHE_MASTER_E :           6001E30 C |  CACHE_SLAVE :              6001E30 C |
- CACHE_SLAVE.END : FFFFFFFFC000001A C |  CACHE_SLAVE_E :            6001E4A C |
- CACH_CLRLINES :   FFFFFFFFC0000764 C |
- CACH_CLRLINES.END :                                       FFFFFFFFC0000768 C |
+ CACHE_MASTER_E :           6001F10 C |  CACHE_SLAVE :              6001F10 C |
+ CACHE_SLAVE.END : FFFFFFFFC000001A C |  CACHE_SLAVE_E :            6001F2A C |
+ CACH_CLRLINES :   FFFFFFFFC0000764 C | *CACH_CURRPLYGN :  FFFFFFFFC0000768 C |
+ CACH_CURRPLYGN.END :                                      FFFFFFFFC0000848 C |
  CACH_LNDRW_L :    FFFFFFFFC00006CC C |  CACH_LNDRW_S :    FFFFFFFFC0000704 C |
  CAMERA_INTRO :              911628 C | *CAM_ANIMDATA :                  18 C |
 *CAM_ANIMFRAME :                 1C C | *CAM_ANIMSPD :                   24 C |
@@ -11635,7 +11646,7 @@
  DAC_PLAY :                     F14 C |  DAC_REFILL :                   F6E C |
  DAC_REFILL.FDF4DONE :          FBE C |  DAC_REFILL.FDF7 :             1030 C |
  DAC_REFILL.FDF72 :             FE9 C |  DAC_REFILL.FDFRETURN :        1033 C |
-*DAC_REFILL.KEEPCNTR :          F97 C | *DATE :                   3/24/2021 - |
+*DAC_REFILL.KEEPCNTR :          F97 C | *DATE :                   3/25/2021 - |
  DDACCNTR :                      25 C |  DDACFIFOMID :                   28 C |
  DDACPNTR :                      22 C | *DISPENBL :                      40 - |
  DKY :                            C - | *DMAENBL :                       10 - |
@@ -11697,7 +11708,7 @@
 *GEMATRK_YUKI_BLK :          910000 C | *GEMATRK_YUKI_INS :          9115E8 C |
 *GEMATRK_YUKI_PATT :         91000C C |  GEMA_INIT :                    B71 C |
  GET_CMDBYTE :                  BC6 C |  GET_CMDBYTE.GETCBYTEL :        BC9 C |
- GLBL_LASTORG :                A0B8 - |  GLBL_LASTPC :              6005A5C - |
+ GLBL_LASTORG :                A198 - |  GLBL_LASTPC :              6005B3C - |
 *HAS64 :                          1 - | *HASDSP :                         0 - |
 *HASFPU :                         0 - | *HASPMMU :                        0 - |
 *HBLK :                          40 - | *HCOUNT :                         5 - |
@@ -11886,9 +11897,9 @@
  MARSLAY_READ :             6000790 C |  MARSLAY_READ.NO_LAY :      60007FA C |
  MARSLAY_READ.NO_XR_UPD :   60007F2 C |  MARSLAY_READ.NO_X_UPD :    60007E0 C |
  MARSLAY_READ.NO_Y_UPD :    60007CE C |  MARSLAY_READ.NO_Z_UPD :    60007BC C |
- MARSMAPPZ_ROAD_MAIN :      6005144 C |  MARSMAPPZ_ROAD_MAIN.FACE : 60055CC C |
- MARSMAPPZ_ROAD_MAIN.MTRL : 6005A5C C |  MARSMAPPZ_ROAD_MAIN.VERT : 6005158 C |
- MARSMAPPZ_ROAD_MAIN.VRTX : 60058DC C |  MARSMDL_INIT :             6000AF6 C |
+ MARSMAPPZ_ROAD_MAIN :      6005224 C |  MARSMAPPZ_ROAD_MAIN.FACE : 60056AC C |
+ MARSMAPPZ_ROAD_MAIN.MTRL : 6005B3C C |  MARSMAPPZ_ROAD_MAIN.VERT : 6005238 C |
+ MARSMAPPZ_ROAD_MAIN.VRTX : 60059BC C |  MARSMDL_INIT :             6000AF6 C |
  MARSMDL_INIT.CLNUP :       6000AFC C |  MARSMDL_READMODEL :        6000B0E C |
  MARSMDL_READMODEL.ALLFCSDONE :                                     6000CB0 C |
  MARSMDL_READMODEL.ALLUVDONE :                                      6000BD2 C |
@@ -11906,12 +11917,12 @@
  MARSMDL_READMODEL.SET_TRI :                                        6000B82 C |
  MARSMDL_READMODEL.SOLID_TYPE :                                     6000BFC C |
  MARSMDL_READMODEL.WAIT_CAMANIM :                                   6000B52 C |
- MARSOBJ_INTRO :            600486C C |  MARSOBJ_INTRO.FACE :       60048E0 C |
- MARSOBJ_INTRO.MTRL :       6004930 C |  MARSOBJ_INTRO.VERT :       6004880 C |
- MARSOBJ_INTRO.VRTX :       6004910 C |  MARSRAM_SOUND :            60169FC C |
- MARSRAM_SYSTEM :           6005A5C C |  MARSRAM_VIDEO :            6005AB0 C |
- MARSSND_PWMCHNLS :         60169FC C |  MARSSND_PWMPLYDATA :       6016BF8 C |
- MARSSND_PWMTRKDATA :       6016AF8 C |  MARSSOUND_INIT :           600105E C |
+ MARSOBJ_INTRO :            600494C C |  MARSOBJ_INTRO.FACE :       60049C0 C |
+ MARSOBJ_INTRO.MTRL :       6004A10 C |  MARSOBJ_INTRO.VERT :       6004960 C |
+ MARSOBJ_INTRO.VRTX :       60049F0 C |  MARSRAM_SOUND :            6016ADC C |
+ MARSRAM_SYSTEM :           6005B3C C |  MARSRAM_VIDEO :            6005B90 C |
+ MARSSND_PWMCHNLS :         6016ADC C |  MARSSND_PWMPLYDATA :       6016CD8 C |
+ MARSSND_PWMTRKDATA :       6016BD8 C |  MARSSOUND_INIT :           600105E C |
  MARSSOUND_INIT.CLR_ENBL :  600107E C |  MARSSOUND_PWMENABLE :      60010F8 C |
  MARSSOUND_READPWM :        6000EF4 C |  MARSSOUND_READPWM.LMUCH :  600100E C |
  MARSSOUND_READPWM.LOOP :   6000FA2 C |
@@ -11960,7 +11971,7 @@
  MARS_ENTRY.NO_MARS :           918 C |  MARS_ENTRY.RAMCODE :           84A C |
  MARS_ENTRY.RESTARTICD :        85A C |  MARS_ENTRY.WAITFRAME :         8D0 C |
  MARS_ENTRY.WM :                892 C |  MARS_ENTRY.WS :                89C C |
- MARS_RAMDATA :                465C C |  MARS_RAMDATA_E :              A0B8 C |
+ MARS_RAMDATA :                465C C |  MARS_RAMDATA_E :              A198 C |
  MARS_SCOMM :                   B0C C |  MARS_SCOMM.DISBLD :            B48 C |
  MARS_SCOMM.NEXT :              B30 C |  MARS_SCOMM.PLAY :              B56 C |
  MARS_SCOMM.PLAYBCK :           B2A C |  MARS_ZCOMM :                   E77 C |
@@ -12039,7 +12050,7 @@
  ON_PRESS :                       4 C | *PACKING :                        0 - |
 *PADDING :                        0 - | *PADDINGSOFAR :                   0 - |
  PAD_ID :                         0 C |  PAD_VER :                        1 C |
- PALETTE_INTRO :            600464C C |  PALETTE_MAP :              600466C C |
+ PALETTE_INTRO :            600472C C |  PALETTE_MAP :              600474C C |
 *PEN :                           20 - |  PLAYONCHIP :                   1EF C |
  PLAYONCHIP.CONT_PSG :          2D6 C |  PLAYONCHIP.DO_CHNL :           230 C |
  PLAYONCHIP.EFF_X :             279 C |  PLAYONCHIP.FMPAN_LIST :        297 C |
@@ -12119,15 +12130,15 @@
  RAM_CAM_YPOS :    FFFFFFFFFFFF8804 C |  RAM_CAM_YROT :    FFFFFFFFFFFF8810 C |
  RAM_CAM_ZPOS :    FFFFFFFFFFFF8808 C |  RAM_CAM_ZROT :    FFFFFFFFFFFF8814 C |
  RAM_FRAMECOUNT :  FFFFFFFFFFFF9638 C |  RAM_INITFLUG :    FFFFFFFFFFFF9644 C |
- RAM_INPUTDATA :   FFFFFFFFFFFF9000 C | *RAM_MARS_FBDRWNBUFF :      60130F8 C |
- RAM_MARS_GLOBAL :          6005A5C C |  RAM_MARS_MDTASKSFIFO_M :   60163F8 C |
- RAM_MARS_MDTASKSFIFO_S :   60165F8 C |  RAM_MARS_OBJCAMERA :       6005AB0 C |
- RAM_MARS_OBJECTS :         6005AF8 C |  RAM_MARS_OBJLAYOUT :       6005AD8 C |
- RAM_MARS_PALETTE :         60167F8 C |  RAM_MARS_PLGNLIST_0 :      60153F8 C |
- RAM_MARS_PLGNLIST_1 :      60157F8 C |  RAM_MARS_PLGNNUM_0 :       60169F8 C |
- RAM_MARS_PLGNNUM_1 :       60169FA C |  RAM_MARS_PLGN_ZLIST :      6015BF8 C |
- RAM_MARS_POLYGONS_0 :      60066F8 C |  RAM_MARS_POLYGONS_1 :      6009EF8 C |
- RAM_MARS_VDPDRWLIST :      600D6F8 C |  RAM_MARS_VDPDRWLIST_E :    60153F8 C |
+ RAM_INPUTDATA :   FFFFFFFFFFFF9000 C | *RAM_MARS_FBDRWNBUFF :      60131D8 C |
+ RAM_MARS_GLOBAL :          6005B3C C |  RAM_MARS_MDTASKSFIFO_M :   60164D8 C |
+ RAM_MARS_MDTASKSFIFO_S :   60166D8 C |  RAM_MARS_OBJCAMERA :       6005B90 C |
+ RAM_MARS_OBJECTS :         6005BD8 C |  RAM_MARS_OBJLAYOUT :       6005BB8 C |
+ RAM_MARS_PALETTE :         60168D8 C |  RAM_MARS_PLGNLIST_0 :      60154D8 C |
+ RAM_MARS_PLGNLIST_1 :      60158D8 C |  RAM_MARS_PLGNNUM_0 :       6016AD8 C |
+ RAM_MARS_PLGNNUM_1 :       6016ADA C |  RAM_MARS_PLGN_ZLIST :      6015CD8 C |
+ RAM_MARS_POLYGONS_0 :      60067D8 C |  RAM_MARS_POLYGONS_1 :      6009FD8 C |
+ RAM_MARS_VDPDRWLIST :      600D7D8 C |  RAM_MARS_VDPDRWLIST_E :    60154D8 C |
  RAM_MDGLOBAL :    FFFFFFFFFFFF9814 C |  RAM_MDLCURRMD :   FFFFFFFFFFFF8824 C |
  RAM_MDMARSHINT :  FFFFFFFFFFFF964E C |  RAM_MDMARSTCNTM : FFFFFFFFFFFF9654 C |
  RAM_MDMARSTCNTS : FFFFFFFFFFFF9656 C |  RAM_MDMARSTSKM :  FFFFFFFFFFFF9218 C |
@@ -12152,15 +12163,15 @@
  SH2_MASTER :               6000000 C |  SH2_M_ENTRY :              6001170 C |
  SH2_M_ENTRY.WAIT_MD :      60011A0 C |  SH2_M_ENTRY.WAIT_SLAVE :   60011AA C |
  SH2_M_HOTSTART :           60011B6 C |  SH2_M_HOTSTART.COPY :      60011D6 C |
- SH2_RAM :                  6005A5C C |  SH2_SLAVE :                6000124 C |
+ SH2_RAM :                  6005B3C C |  SH2_SLAVE :                6000124 C |
  SH2_S_ENTRY :              6001328 C |  SH2_S_ENTRY.WAIT_MD :      600135A C |
  SH2_S_HOTSTART :           6001370 C |  SH2_S_HOTSTART.COPY :      6001390 C |
-*SHIFT :                          3 - |  SIN_TABLE :                6001E4C C |
+*SHIFT :                          3 - |  SIN_TABLE :                6001F2C C |
  SIZEOF_CAMERA :                 28 C |  SIZEOF_INPUT :                   6 C |
  SIZEOF_LAYOUT :                 20 C |  SIZEOF_MARSGBL :                2A C |
-*SIZEOF_MARSRAM :           6016C14 C | *SIZEOF_MARSRAM.HERE :      6016C14 C |
- SIZEOF_MARSSND :           6016C14 C |  SIZEOF_MARSSYS :           6005AB0 C |
- SIZEOF_MARSVID :           60169FC C |  SIZEOF_MDGLBL :   FFFFFFFFFFFF8828 C |
+*SIZEOF_MARSRAM :           6016CF4 C | *SIZEOF_MARSRAM.HERE :      6016CF4 C |
+ SIZEOF_MARSSND :           6016CF4 C |  SIZEOF_MARSSYS :           6005B90 C |
+ SIZEOF_MARSVID :           6016ADC C |  SIZEOF_MDGLBL :   FFFFFFFFFFFF8828 C |
  SIZEOF_MDLOBJ :                 30 C | *SIZEOF_MDRAM :    FFFFFFFFFFFF8828 C |
  SIZEOF_MDSND :    FFFFFFFFFFFF967A C |  SIZEOF_MDSYS :    FFFFFFFFFFFF965A C |
  SIZEOF_MDVID :    FFFFFFFFFFFF9814 C |  SIZEOF_PLYPZ :                  3C C |
@@ -12227,11 +12238,11 @@
  S_IRQ_PWM :                6000570 C |  S_IRQ_V :                  6000604 C |
  S_IRQ_VRES :               6000618 C |  S_IRQ_VRES.MARS_RESET :    6000662 C |
  S_IRQ_VRES.MD_RESET :      6000630 C |  S_IRQ_VRES.SH_WAIT :       600063C C |
- S_IRQ_VRES.VRESLOOP :      600066A C |  TEST_LAYOUT :              6004938 C |
- TEST_LAYOUT.BLOCKS :       600513C C |  TEXTR_INTRO :              205800C C |
+ S_IRQ_VRES.VRESLOOP :      600066A C |  TEST_LAYOUT :              6004A18 C |
+ TEST_LAYOUT.BLOCKS :       600521C C |  TEXTR_INTRO :              205800C C |
 *TEXTR_MARSCITY :           201800C C |  TH :                      20000000 - |
  TICKCNT :                       1C C |  TICKFLAG :                      1A C |
-*TIME :                    21:18:19 - |  TIMERCTL :                      30 - |
+*TIME :                     0:43:11 - |  TIMERCTL :                      30 - |
 *TMR :                           2C - |  TRANSFERROM :                  C3B C |
  TRANSFERROM.DOUBLE :           C5C C |  TRANSFERROM.TRANSFER :         C85 C |
  TRANSFERROM.X68KLAST :         CC8 C |  TRANSFERROM.X68KLOOP :         CB4 C |
@@ -12330,10 +12341,10 @@
 *_TCSR :                          1 - | *_TIER :                          0 - |
  _TOCR :                          7 - |  _VDPREG :                 20004100 - |
 
-   1358 symbols
-    220 unused symbols
+   1359 symbols
+    221 unused symbols
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 3 - 3/24/2021 21:18:19
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 3 - 3/25/2021 0:43:11
 
 
   defined macros:
@@ -12347,7 +12358,7 @@ STRUCT                                |
 
       9 macros
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 4 - 3/24/2021 21:18:19
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 4 - 3/25/2021 0:43:11
 
 
   defined functions:
@@ -12356,7 +12367,7 @@ STRUCT                                |
 NOTZ80                                | LOCATE                               
 MAPSIZE                               | DOUBLEWORD                           
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 5 - 3/24/2021 21:18:19
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 5 - 3/25/2021 0:43:11
 
 
   codepages:
@@ -12365,10 +12376,10 @@ MAPSIZE                               | DOUBLEWORD
 STANDARD (0 changed characters)
 
 
-0.27 seconds assembly time
+0.26 seconds assembly time
 
-  11078 lines source file
-  11460 lines incl. macro expansions
+  11089 lines source file
+  11471 lines incl. macro expansions
       9 passes
       0 errors
       0 warnings

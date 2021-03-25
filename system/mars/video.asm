@@ -752,9 +752,12 @@ MarsMdl_Init:
 		align 4
 		ltorg
 
+; ------------------------------------------------
+; Read model
+; ------------------------------------------------
+
 MarsMdl_ReadModel:
 		sts	pr,@-r15
-
 		mov	@(mdl_animdata,r14),r13
 		cmp/pl	r13
 		bf	.no_anim
@@ -794,6 +797,7 @@ MarsMdl_ReadModel:
 .no_anim:
 
 	; Now start reading
+; 		mov	#Cach_CurrPlygn,r13
 		mov	@(marsGbl_CurrFacePos,gbr),r0
 		mov	r0,r13				; r13 - output faces
 		mov	#$3FFFFFFF,r0
@@ -1020,7 +1024,13 @@ MarsMdl_ReadModel:
 		mov	r5,@r8				; Store current Z to Zlist
 		mov	r13,@(4,r8)			; And it's address
 		add	#8,r8
+
+; 		mov	@(marsGbl_CurrFacePos,gbr),r0
+	; Copy from cache to currpos
+	; goes here
 		add	#sizeof_polygn,r13
+; 		mov	r0,@(marsGbl_CurrFacePos,gbr)	
+		
 .face_out:
 		dt	r9
 		bt	.finish_this
@@ -1029,8 +1039,8 @@ MarsMdl_ReadModel:
 .finish_this:
 		mov	r8,r0
 		mov	r0,@(marsGbl_CurrZList,gbr)
-		mov	r13,r0
-		mov	r0,@(marsGbl_CurrFacePos,gbr)
+		mov	r13,r0				; TODO: Delete after the cache
+		mov	r0,@(marsGbl_CurrFacePos,gbr)	; method is made
 .exit_model:
 		lds	@r15+,pr
 		rts
