@@ -176,24 +176,30 @@ MarsSound_ReadPwm:
 .mono_a
 		and	r1,r3
 		mov 	@(mchnsnd_bank,r8),r1
+		mov 	@(mchnsnd_pitch,r8),r9
 		or	r1,r3
 		mov.b	@r3+,r1
 		mov	r1,r2
 		tst	#%100,r0
 		bt	.mono
 		mov.b	@r3+,r2
+		shll	r9
 .mono:
+		add	r9,r4
+		mov	r4,@(mchnsnd_read,r8)
+		
+
 		mov	#$FF,r3
 		and	r3,r1
 		and	r3,r2
-	; volume goes here...
-		mov 	@(mchnsnd_pitch,r8),r3
-		tst	#%100,r0
-		bt	.mono_i
-		shll	r3		
-.mono_i:
-		add	r3,r4
-		mov	r4,@(mchnsnd_read,r8)
+		
+; 		mov	r1,r3
+; 		shlr2	r3
+; 		add	r3,r1
+; 		mov	r2,r3
+; 		shlr2	r3
+; 		add	r3,r2
+
 .skip:
 		add	#1,r1
 		add	#1,r2
@@ -222,10 +228,6 @@ MarsSound_ReadPwm:
 ; 		mov.b	@r3,r0
 ; 		tst	#$80,r0
 ; 		bf	.retry
-; 		mov	#_sysreg+comm4,r3
-;  		mov.w	r5,@r3
-;  		mov	r6,r0
-;  		mov.w	r0,@(2,r3)
  		
 		mov	@r15+,r9
 		mov	@r15+,r8
@@ -240,18 +242,18 @@ MarsSound_ReadPwm:
 		align 4
 		ltorg
 
-; ====================================================================
-; ----------------------------------------------------------------
-; Mars PWM control (Runs on VBlank)
-; ----------------------------------------------------------------
-
-MarsSound_Run:
-		sts	pr,@-r15
-
-		lds	@r15+,pr
-		rts
-		nop
-		align 4
+; ; ====================================================================
+; ; ----------------------------------------------------------------
+; ; Mars PWM control (Runs on VBlank)
+; ; ----------------------------------------------------------------
+; 
+; MarsSound_Run:
+; 		sts	pr,@-r15
+; 
+; 		lds	@r15+,pr
+; 		rts
+; 		nop
+; 		align 4
 
 ; ====================================================================
 ; ----------------------------------------------------------------

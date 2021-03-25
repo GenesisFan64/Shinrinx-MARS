@@ -1,5 +1,5 @@
 MarsMapPz_road_main:
-		dc.w 64,81
+		dc.w 78,95
 		dc.l .vert,.face,.vrtx,.mtrl
 .vert:		binclude "data/mars/maps/pz/road_main_vert.bin"
 .face:		binclude "data/mars/maps/pz/road_main_face.bin"

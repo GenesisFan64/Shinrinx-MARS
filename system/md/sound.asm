@@ -46,41 +46,8 @@ Sound_Init:
 ; Call this on VBlank only.
 ; --------------------------------------------------------
 
-		align $100			; ASL's fault for this
+; 		align $100			; ASL's fault for this
 Sound_Update:
-
-	; Special check to transfer a copy
-	; of a track's instrument list
-	; from Z80 to 68k then to SH2
-	; for PWM playback
-; 		bsr	sndLockZ80
-; 		lea	(z80_cpu),a0
-; 		lea	(z80_cpu+reqMarsTrnf),a1
-; 		moveq	#0,d4
-; 		move.b	1(a1),d4
-; 		lsl.l	#8,d4
-; 		move.b	(a1),d4
-; 		bsr	sndUnlockZ80
-; 		tst.w	d4
-; 		beq.s	.no_req
-; 		lea	(a0,d4.w),a0
-; 		lea	(RAM_SndInsCopy),a2
-; 		move.w	#$80-1,d1
-; 		bsr	sndLockZ80
-; .copydata:
-; 		move.b	(a0)+,d0
-; 		move.b	d0,(a2)+
-; 		dbf	d1,.copydata
-; 		move.b	#0,(a1)
-; 		move.b	#0,1(a1)
-; 		bsr	sndUnlockZ80
-; 		lea	(RAM_SndInsCopy),a0
-; 		lea	(sysmars_reg+comm14),a1
-; 		move.w	#$80*2,d0
-; 		moveq	#2,d1			; Transfer mode 2: Instrument copy
-; 		moveq	#0,d2
-; 		bra	sysMdMars_Transfer
-; .no_req:
 		rts
 
 ; --------------------------------------------------------

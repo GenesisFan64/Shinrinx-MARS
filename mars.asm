@@ -85,7 +85,7 @@ MARS_RAMDATA_E:
 		include "data/md_dma.asm"
 		
 ; --------------------------------------------------------
-; MARS ROM data for SH2
+; MARS ROM data seen on SH2
 ; 
 ; This section will be gone if RV=1
 ; --------------------------------------------------------

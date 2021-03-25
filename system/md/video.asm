@@ -33,13 +33,13 @@ Video_Init:
 
 	; Transfer the DMA tasks to RAM
 	; TODO: change this later, we are on RAM already...
-		lea	Video_RamCode(pc),a0
-		lea	(RAM_ExRamSub).w,a1
-		move.w	#((Video_RamCode_e-Video_RamCode)/2)-1,d0
-.copy:
-		move.w	(a0)+,d1
-		move.w	d1,(a1)+
-		dbf	d0,.copy
+; 		lea	Video_RamCode(pc),a0
+; 		lea	(RAM_ExRamSub).w,a1
+; 		move.w	#((Video_RamCode_e-Video_RamCode)/2)-1,d0
+; .copy:
+; 		move.w	(a0)+,d1
+; 		move.w	d1,(a1)+
+; 		dbf	d0,.copy
 		rts
 
 ; ====================================================================
@@ -666,25 +666,11 @@ Video_Copy:
 		move.w	d4,(a4)
 		rts
 
-; --------------------------------------------------------
-; Video_LoadArt
-; 
-; notes below
-; --------------------------------------------------------
-
-Video_LoadArt:
-		jmp	(RAM_ExRamSub).l	; (first routine)
 
 ; ====================================================================
 ; --------------------------------------------------------
-; DMA ROM to VDP Transfers, sets RV=1
+; DMA ROM to VDP Transfer, sets RV=1
 ; --------------------------------------------------------
-
-Video_RamCode:
-		bra.w	.load_art
-		bra.w	.load_art
-		bra.w	.load_art
-		bra.w	.load_art
 
 ; --------------------------------------------------------
 ; Load graphics using DMA
@@ -700,7 +686,9 @@ Video_RamCode:
 ; RV bit must be set before starting DMA
 ; --------------------------------------------------------
 
-.load_art:
+Video_LoadArt:
+		move.w	sp,d6
+		move.w	#$2700,sr
 		lea	(vdp_ctrl),a4
 		move.w	#$8100,d4
 		move.b	(RAM_VdpRegs+1),d4
@@ -753,18 +741,21 @@ Video_RamCode:
 		lsr.w	#8,d4
 		cmp.b	#$FF,d4
 		beq.s	.from_ram
+
+	; TODO: interrupt both CPUS with a wait flag
 		move.w	(sysmars_reg+dreqctl).l,d4	; Set RV=1
-		or.w	#1,d4				; (68k ROM map moves to $000000)
-		move.w	d4,(sysmars_reg+dreqctl).l	; Make sure SH2 isn't touching ROM
+		or.w	#1,d4				; 68k ROM map moves to $000000, $880000/$900000=trash
+		move.w	d4,(sysmars_reg+dreqctl).l
  		move.w	d5,-(sp)
-		move.w	(sp)+,(a4)			; Second write
+		move.w	(sp)+,(a4)			; Second write, CPU freezes until it DMA ends
 		move.w	(sysmars_reg+dreqctl).l,d4	; Set RV=0
-		and.w	#%11111110,d4			; (68k ROM map returns to $880000)
+		and.w	#%11111110,d4			; 68k ROM map returns to $880000/$900000
 		move.w	d4,(sysmars_reg+dreqctl).l
 		move.w	#0,(z80_bus).l
 		move.w	#$8100,d4
 		move.b	(RAM_VdpRegs+1),d4
 		move.w	d4,(a4)
+		move.w	d6,sr
 		rts
 .from_ram:
  		move.w	d5,-(sp)
@@ -772,18 +763,14 @@ Video_RamCode:
 		move.w	#$8100,d4
 		move.b	(RAM_VdpRegs+1),d4
 		move.w	d4,(a4)
+		move.w	d6,sr
 		rts
-		
-; --------------------------------------------------------
-
-Video_RamCode_e:
-		align 2
 
 ; ====================================================================
 ; --------------------------------------------------------
 ; Video data
 ; --------------------------------------------------------
-
+		align $80
 list_vdpregs:
 		dc.b $04			; HBlank int off, HV Counter on
 		dc.b $44			; Display ON, VBlank int off

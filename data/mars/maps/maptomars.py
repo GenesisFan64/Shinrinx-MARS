@@ -24,7 +24,7 @@ import os
 # me.transform(EXPORT_GLOBAL_MATRIX @ ob_mat)
 # to
 # me.transform(EXPORT_GLOBAL_MATRIX)
-SCALE_SIZE	  = 0x1000#0x100
+SCALE_SIZE	  = 0xA00#0x100
 
 img_width         = 1			# failsafe.
 img_height        = 1
