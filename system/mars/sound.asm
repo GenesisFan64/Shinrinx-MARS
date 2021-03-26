@@ -46,7 +46,8 @@ MarsSound_ReadPwm:
 		mov	r7,@-r15
 		mov	r8,@-r15
 		mov	r9,@-r15
-
+		sts	macl,@-r15
+		
 ; ------------------------------------------------
 ; Process PWM request(s) from GEMA sound driver
 		mov.w	@(marsGbl_PwmTrkUpd,gbr),r0
@@ -93,6 +94,11 @@ MarsSound_ReadPwm:
 		and	#$FF,r0
 		or	r4,r0
 		mov	r0,@(mchnsnd_pitch,r6)
+		mov.b	@(6,r8),r0
+		and	#$FF,r0
+		shll2	r0
+		mov	r0,@(mchnsnd_vol,r6)	
+
 		mov.b	@(5,r8),r0
 		shll2	r0
 		shll	r0
@@ -114,7 +120,10 @@ MarsSound_ReadPwm:
 		mov	r0,@(mchnsnd_end,r6)
 		mov	@r4+,r0
 		mov	r0,@(mchnsnd_loop,r6)
-		mov	@r4+,r0
+; 		mov	@r4+,r1
+		mov.b	@(7,r8),r0
+		and	#$FF,r0
+; 		or	r1,r0
 		mov	r0,@(mchnsnd_flags,r6)
 		mov	#1,r0
 		mov	r0,@(mchnsnd_enbl,r6)
@@ -170,7 +179,7 @@ MarsSound_ReadPwm:
 		mov	#$00FFFFFF,r1
 		mov 	r4,r3
 		shlr8	r3
-		tst	#%100,r0
+		tst	#%10000000,r0
 		bt	.mono_a
 		add	#-1,r1
 .mono_a
@@ -180,26 +189,36 @@ MarsSound_ReadPwm:
 		or	r1,r3
 		mov.b	@r3+,r1
 		mov	r1,r2
-		tst	#%100,r0
+		tst	#%10000000,r0
 		bt	.mono
 		mov.b	@r3+,r2
 		shll	r9
 .mono:
 		add	r9,r4
 		mov	r4,@(mchnsnd_read,r8)
-		
-
 		mov	#$FF,r3
 		and	r3,r1
 		and	r3,r2
-		
-; 		mov	r1,r3
-; 		shlr2	r3
-; 		add	r3,r1
-; 		mov	r2,r3
-; 		shlr2	r3
-; 		add	r3,r2
 
+	; Volume goes down only.
+	; vol=0 normal
+		mov	@(mchnsnd_vol,r8),r9
+		add	#1,r9
+		mulu	r9,r1
+		sts	macl,r4
+		shlr8	r4
+		sub	r4,r1
+		mulu	r9,r2
+		sts	macl,r4
+		shlr8	r4
+		sub	r4,r2
+		tst	#%00000001,r0		; TODO: temporal way to check L/R
+		bf	.no_l
+		mov	#$7F,r1
+.no_l:
+		tst	#%00000010,r0
+		bf	.skip	
+		mov	#$7F,r2		
 .skip:
 		add	#1,r1
 		add	#1,r2
@@ -228,7 +247,8 @@ MarsSound_ReadPwm:
 ; 		mov.b	@r3,r0
 ; 		tst	#$80,r0
 ; 		bf	.retry
- 		
+	
+		lds	@r15+,macl
 		mov	@r15+,r9
 		mov	@r15+,r8
 		mov	@r15+,r7
@@ -332,8 +352,9 @@ MarsSound_SetPwm:
 		mov 	r0,@(mchnsnd_bank,r8)
 		
 		mov 	r5,@(mchnsnd_pitch,r8)
-		mov 	r6,@(mchnsnd_vol,r8)		
+		mov 	r6,@(mchnsnd_vol,r8)
 		mov 	r7,@(mchnsnd_flags,r8)
+
 		mov 	r2,r0				; Set MSB
 		mov 	#$FF000000,r7
 		and 	r7,r0

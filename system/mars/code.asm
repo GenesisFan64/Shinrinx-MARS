@@ -206,7 +206,7 @@ m_irq_cmd:
 .finish_s:
 		mov	#1,r0
 		mov.w	r0,@(marsGbl_PwmTrkUpd,gbr)
-		mov	#$80,r0		; SH is busy
+		mov	#$80,r0
 		mov.b	r0,@(1,r1)
 
 .finish:
@@ -1360,9 +1360,9 @@ CmdTaskMd_CameraPos:
 ; @($08,r14) - Start point
 ; @($0C,r14) - End point
 ; @($10,r14) - Loop point
-; @($14,r14) - Volume
-; @($18,r14) - Settings: %00000000 00000000LR | LR - output bits
-; @($1C,r14) - Pitch
+; @($14,r14) - Pitch
+; @($18,r14) - Volume
+; @($1C,r14) - Settings: %00000000 00000000LR | LR - output bits
 ; ------------------------------------------------
 
 CmdTaskMd_PWM_SetChnl:
@@ -1371,9 +1371,9 @@ CmdTaskMd_PWM_SetChnl:
 		mov	@($08,r14),r2
 		mov	@($0C,r14),r3
 		mov	@($10,r14),r4
-		mov	@($1C,r14),r5	; TODO: reorder this
-		mov	@($14,r14),r6
-		mov	@($18,r14),r7
+		mov	@($14,r14),r5
+		mov	@($18,r14),r6
+		mov	@($1C,r14),r7
 		bsr	MarsSound_SetPwm
 		nop
 		lds	@r15+,pr

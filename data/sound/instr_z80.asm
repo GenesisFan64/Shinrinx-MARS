@@ -28,8 +28,8 @@ FmIns_Piano_m1:
 
 ; FmIns_Bass_gum:
 ; 		binclude "data/sound/instr/fm/bass_gum.gsx",2478h,20h
-; FmIns_Bass_calm:
-; 		binclude "data/sound/instr/fm/bass_calm.gsx",2478h,20h
+FmIns_Bass_calm:
+		binclude "data/sound/instr/fm/bass_calm.gsx",2478h,20h
 ; FmIns_Bass_heavy:
 ; 		binclude "data/sound/instr/fm/bass_heavy.gsx",2478h,20h
 ; FmIns_Bass_ambient:
@@ -38,6 +38,8 @@ FmIns_Piano_m1:
 ; 		binclude "data/sound/instr/fm/brass_gummy.gsx",2478h,20h
 ; FmIns_Flaute_1:
 ; 		binclude "data/sound/instr/fm/flaute_1.gsx",2478h,20h
+FmIns_Bass_1:
+		binclude "data/sound/instr/fm/bass_2.gsx",2478h,20h
 FmIns_Bass_2:
 		binclude "data/sound/instr/fm/bass_2.gsx",2478h,20h
 FmIns_Bass_3:
@@ -50,6 +52,9 @@ FmIns_Bass_6:
 		binclude "data/sound/instr/fm/bass_6.gsx",2478h,20h
 FmIns_Bass_7:
 		binclude "data/sound/instr/fm/bass_7.gsx",2478h,20h
+FmIns_Bass_heavy:
+		binclude "data/sound/instr/fm/bass_heavy.gsx",2478h,20h
+
 ; FmIns_Bass_synth:
 ; 		binclude "data/sound/instr/fm/bass_synth_1.gsx",2478h,20h
 ; FmIns_Guitar_1:

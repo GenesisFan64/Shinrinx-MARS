@@ -679,39 +679,77 @@ playonchip
 		ret	z
 		cp	1
 		ret	z
-		cp	5
+		cp	2
+		jp	z,.fm_eff
+		cp	3
+		jp	z,.fm_eff
+		cp	4
 		ret	z
-
-	; TODO: a list
+		cp	5
+		jp	z,.pwm_eff
+		ret
+.fm_eff:
 		ld	a,(iy+chnl_EffId)	; Eff X?
 		cp	24
-		jp	z,.eff_X
+		jp	z,.eff_X_fm
 		ret
-.eff_X:
+.eff_X_fm:
 		call	.srch_fm
+		cp	-1
+		ret	z
 		push	hl
 		pop	ix
 		ld	a,(iy+chnl_EffArg)
 		rlca
 		rlca
 		and	00000011b
-		ld	de,.fmpan_list
-		add 	a,e
+		ld	hl,.fmpan_list
+		ld	de,0
 		ld	e,a
+		add	hl,de
 		ld	a,(ix+7)
 		and	00111111b
 		ld	b,a
-		ld	a,(de)
+		ld	a,(hl)
 		or	b
 		ld	(ix+7),a
 		ret
-
 .fmpan_list:
 		db 080h		; 000h
 		db 080h		; 040h
 		db 0C0h		; 080h
 		db 040h		; 0C0h
-		
+
+
+.pwm_eff:
+		ld	a,(iy+chnl_EffId)	; Eff X?
+		cp	24
+		jp	z,.eff_X_pwm
+		ret
+.eff_X_pwm:
+		call	.srch_pwm
+		cp	-1
+		ret	z
+		push	hl
+		pop	ix
+		ld	a,(iy+chnl_EffArg)
+		rlca
+		rlca
+		and	00000011b
+		ld	hl,.pwmpan_list
+		ld	de,0
+		ld	e,a
+		add	hl,de
+		ld	a,(hl)
+		ld	(ix+7),a
+		ret
+	
+.pwmpan_list:
+		db 001h		; 000h
+		db 001h		; 040h
+		db 003h		; 080h
+		db 002h		; 0C0h
+
 ; ----------------------------------------
 ; Set new instrument
 ; ----------------------------------------
@@ -1021,7 +1059,8 @@ playonchip
  		ld	a,(iy+chnl_Vol)
 		sub	a,40h
 		neg	a
- 		ld	(ix+6),a		; put ins number
+; 		add	a,a
+ 		ld	(ix+6),a		; put vol number
 		ret
 		
 ; ----------------------------------------
@@ -1219,7 +1258,7 @@ playonchip
 		ld	b,(ix+5)
 		add	a,b
 		ld	b,0
-	rept 7				; Separate as octave(b) and note(c)
+	rept 7				; Separate notedata as octave(b) and note(c)
 		ld	c,a
 		sub	12
 		or	a
@@ -1312,6 +1351,7 @@ playonchip
 		inc	hl
 		ld	a,(hl)
 		ld	(ix+4),a
+
 		ld	a,(ix)		; Tell SH2 we want to play channel
 		or	01000000b
 		ld	(ix),a
@@ -3331,43 +3371,43 @@ PWMVTBL		db 00h		; 0 - PWM entry, bit7:locked bit6:update for 68k
 		dw 0		; 3 - Pitch (note)
 		db 0		; 5 - Instrument number
 		db 0		; 6 - Volume
-		db 0		; 7 - Panning
+		db 11b		; 7 - Panning
 		db 01h
 		dw 0
 		dw 0
 		db 0
 		db 0
-		db 0
+		db 11b
 		db 02h
 		dw 0
 		dw 0
 		db 0
 		db 0
-		db 0
+		db 11b
 		db 03h
 		dw 0
 		dw 0
 		db 0
 		db 0
-		db 0
+		db 11b
 		db 04h
 		dw 0
 		dw 0
 		db 0
 		db 0
-		db 0
+		db 11b
 		db 05h
 		dw 0
 		dw 0
 		db 0
 		db 0
-		db 0
+		db 11b
 		db 06h
 		dw 0
 		dw 0
 		db 0
 		db 0
-		db 0
+		db 11b
 		db -1
 
 psgcom		db 00h,00h,00h,00h	;  0 command 1 = key on, 2 = key off, 4 = stop snd
