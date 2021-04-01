@@ -7,4 +7,4 @@
 ; Put small sections of data like palettes or small models
 ; ----------------------------------------------------------------
 
-		include  "data/mars/objects/incl_sdram.asm"		; Models and palettes will go here
+		include  "data/mars/incl_sdram.asm"		; Models and palettes will go here

@@ -182,7 +182,7 @@ MD_GmMode0:
 		clr.l	(RAM_Cam_Xrot).l
 		clr.l	(RAM_Cam_Yrot).l
 		clr.l	(RAM_Cam_Zrot).l
-		move.l	#-$A000,(RAM_Cam_Ypos).l
+		move.l	#-$10000,(RAM_Cam_Ypos).l
 
 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
 		moveq	#0,d1

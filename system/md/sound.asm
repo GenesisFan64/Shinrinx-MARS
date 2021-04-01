@@ -46,7 +46,7 @@ Sound_Init:
 ; Call this on VBlank only.
 ; --------------------------------------------------------
 
-; 		align $100			; ASL's fault for this
+; 		align $80			; ASL's fault for this
 Sound_Update:
 		rts
 

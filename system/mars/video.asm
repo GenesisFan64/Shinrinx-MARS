@@ -15,10 +15,10 @@
 ; Settings
 ; ----------------------------------------
 
-MAX_FACES	equ	256		; Maximum polygon faces (models,sprites) to store on buffer
+MAX_FACES	equ	384		; Maximum polygon faces (models,sprites) to store on buffer
 MAX_SVDP_PZ	equ	384		; This list is for both read and write, increase the value if needed
 MAX_MODELS	equ	64		; Note: First 9 models are reserved for layout map
-MAX_ZDIST	equ	-$1000		; Max drawing distance (-Z max)
+MAX_ZDIST	equ	-$2800		; Max drawing distance (-Z max)
 LAY_WIDTH	equ	$20*2		; Layout data width * 2
 
 ; ----------------------------------------
@@ -264,6 +264,45 @@ MarsVideo_LoadPal:
 		bf/s	.loop
 		add 	#2,r6
 .badlen:
+		rts
+		nop
+		align 4
+		ltorg
+
+; ------------------------------------------------
+; MarsVideo_SetWatchdog
+; 
+; Starts interrupt for drawing the polygon pieces
+; ------------------------------------------------
+
+MarsVideo_SetWatchdog:
+		stc	sr,@-r15
+		stc	sr,r0
+		or	#$F0,r0				; Disable interrupts first
+		ldc	r0,sr
+		mov	#RAM_Mars_VdpDrwList,r0		; Reset the piece-drawing pointer
+		mov	r0,@(marsGbl_PlyPzList_R,gbr)	; on both READ and WRITE pointers
+		mov	r0,@(marsGbl_PlyPzList_W,gbr)
+		mov	#0,r0				; Reset polygon pieces counter
+		mov.w	r0,@(marsGbl_PzListCntr,gbr)
+		mov	#Cach_ClrLines,r1		; Line counter for the framebuffer-clear routine
+		mov	#224,r0
+		mov	r0,@r1
+		mov	#8,r0				; Set starting watchdog task to $08 (Clear framebuffer)
+		mov.w	r0,@(marsGbl_DrwTask,gbr)
+		mov	#_vdpreg,r1
+.wait_fb:
+		mov.w	@($A,r1),r0			; Framebuffer available?
+		tst	#2,r0
+		bf	.wait_fb
+		mov.w	#$A1,r0				; Pre-start SVDP fill line at address $A1
+		mov.w	r0,@(6,r1)
+		mov	#$FFFFFE80,r1
+		mov.w	#$5AFF,r0			; Watchdog wait timer
+		mov.w	r0,@r1
+		mov.w	#$A538,r0			; Enable watchdog
+		mov.w	r0,@r1
+		ldc	@r15+,sr			; Restore interrupts
 		rts
 		nop
 		align 4
@@ -1281,42 +1320,3 @@ mdlrd_rotate:
  		rts
 		nop
 		align 4
-	
-; ------------------------------------------------
-; MarsVideo_SetWatchdog
-; 
-; Starts interrupt for drawing the polygon pieces
-; ------------------------------------------------
-
-MarsVideo_SetWatchdog:
-		stc	sr,@-r15
-		stc	sr,r0
-		or	#$F0,r0				; Disable interrupts first
-		ldc	r0,sr
-		mov	#RAM_Mars_VdpDrwList,r0		; Reset the piece-drawing pointer
-		mov	r0,@(marsGbl_PlyPzList_R,gbr)	; on both READ and WRITE pointers
-		mov	r0,@(marsGbl_PlyPzList_W,gbr)
-		mov	#0,r0				; Reset polygon pieces counter
-		mov.w	r0,@(marsGbl_PzListCntr,gbr)
-		mov	#Cach_ClrLines,r1		; Line counter for the framebuffer-clear routine
-		mov	#224,r0
-		mov	r0,@r1
-		mov	#8,r0				; Set starting watchdog task to $08 (Clear framebuffer)
-		mov.w	r0,@(marsGbl_DrwTask,gbr)
-		mov	#_vdpreg,r1
-.wait_fb:
-		mov.w	@($A,r1),r0			; Framebuffer available?
-		tst	#2,r0
-		bf	.wait_fb
-		mov.w	#$A1,r0				; Pre-start SVDP fill line at address $A1
-		mov.w	r0,@(6,r1)
-		mov	#$FFFFFE80,r1
-		mov.w	#$5AFF,r0			; Watchdog wait timer
-		mov.w	r0,@r1
-		mov.w	#$A538,r0			; Enable watchdog
-		mov.w	r0,@r1
-		ldc	@r15+,sr			; Restore interrupts
-		rts
-		nop
-		align 4
-		ltorg

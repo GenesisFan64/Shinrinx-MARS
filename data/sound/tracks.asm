@@ -78,10 +78,10 @@ GemaTrk_Yuki_patt:
 		binclude "data/sound/tracks/marscomm_patt.bin"
 GemaTrk_Yuki_ins:
 		gemaInsPwm -17,PwmIns_TECHNOBASSD
-		gemaInsFm    0,FmIns_Bass_heavy
+		gemaInsFm    0,FmIns_Bass_metal
 		gemaInsPwm -17,PwmIns_WHODSNARE
 		gemaInsPsgN  0,PsgIns_00,%100
-		gemaInsFm    0,FmIns_Bass_1
+		gemaInsFm    0,FmIns_Bass_2
 		gemaInsPwm -17,PwmIns_TECHNOBASSD
 		gemaInsPwm -17,PwmIns_SPHEAVY1
 		gemaInsPwm -17,PwmIns_MCLSTRNG

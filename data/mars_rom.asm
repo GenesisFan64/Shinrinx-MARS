@@ -9,10 +9,15 @@
 ; also, reading from here is slow (supposedly)
 ; ----------------------------------------------------------------
 
-		include  "data/mars/objects/incl_rom.asm"	; All textures will go in ROM
+; --------------------------------------------------------
+; Maps
+; --------------------------------------------------------
 
-PWM_STEREO:	binclude "data/sound/pwm_st.wav",$2C,$200000
-PWM_STEREO_e:
+		align $8000
+		include  "data/mars/incl_rom.asm"	; All textures will go in ROM
+
+; PWM_STEREO:	binclude "data/sound/pwm_st.wav",$2C,$200000
+; PWM_STEREO_e:
 		align 4
 PwmInsWav_SPHEAVY1:
 		binclude "data/sound/instr/smpl/SPHEAVY1.wav",$2C

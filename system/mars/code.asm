@@ -1068,7 +1068,7 @@ slave_loop:
 
 ; Bubble sorting
 slv_sort_z:
-		sts	pr,@-r15
+; 		sts	pr,@-r15
 		mov	#0,r0					; Reset current PlgnNum
 		mov.w	r0,@r13
 		mov	#RAM_Mars_Plgn_ZList,r12	
@@ -1135,7 +1135,7 @@ slv_sort_z:
 		add 	#8,r10
 		mov.w	r8,@r13
 .z_end:
-		lds	@r15+,pr
+; 		lds	@r15+,pr
 		rts
 		nop
 		align 4
@@ -1553,8 +1553,8 @@ RAM_Mars_Objects	ds.b sizeof_mdlobj*MAX_MODELS	; Objects list
 RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
 RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
 RAM_Mars_VdpDrwList	ds.b sizeof_plypz*MAX_SVDP_PZ	; Pieces list
-RAM_Mars_FbDrwnBuff	ds.b (SCREEN_WIDTH/8)*SCREEN_HEIGHT
 RAM_Mars_VdpDrwList_e	ds.l 0				; (end-of-list label)
+; RAM_Mars_FbDrwnBuff	ds.b (SCREEN_WIDTH/8)*SCREEN_HEIGHT
 RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer list(s)
 RAM_Mars_PlgnList_1	ds.l MAX_FACES
 RAM_Mars_Plgn_ZList	ds.l MAX_FACES*2		; Z value / foward faces

@@ -770,7 +770,7 @@ Video_LoadArt:
 ; --------------------------------------------------------
 ; Video data
 ; --------------------------------------------------------
-		align $80
+
 list_vdpregs:
 		dc.b $04			; HBlank int off, HV Counter on
 		dc.b $44			; Display ON, VBlank int off

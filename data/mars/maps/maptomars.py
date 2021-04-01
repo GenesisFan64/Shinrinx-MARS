@@ -59,18 +59,9 @@ if len(sys.argv) == 4:
 #if not os.path.exists("pz/"+object_name):
     #os.makedirs("pz/"+object_name)
 
-list_vertices = list()
-list_faces    = list()
+#list_vertices = list()
+#list_faces    = list()
 vertex_list   = list()
-reading       = True
-random_mode   = True
-used_triangles= 0
-used_quads    = 0
-solidcolor    = 1
-random_color  = 1
-indx_color    = 0
-mtrl_curr     = 0
-mtrl_index    = 0
 
 map_file      = open(TAG_OBJECTSDIR+"/"+object_name+"/layout.txt","r")
 out_laydata   = open(object_name+"_lay.bin","wb")
@@ -83,9 +74,9 @@ mappz_list    = map_file.readline().replace("\n","").split(" ")
 # -------------------------------------------------
 
 curr_pz=0
-
 num_pz = len(mappz_list)
 for curr_rdpz in range(0,num_pz):
+  #print("converting:"+mappz_list[curr_pz])
   model_file    = open(TAG_OBJECTSDIR+"/"+object_name+"/"+mappz_list[curr_pz]+".obj","r")
   material_file = open(TAG_OBJECTSDIR+"/"+object_name+"/"+mappz_list[curr_pz]+".mtl","r")	# CHECK BELOW
   out_head      = open("pz/"+mappz_list[curr_pz]+".asm","w")	# header
@@ -94,6 +85,16 @@ for curr_rdpz in range(0,num_pz):
   #out_vertex    = open(object_name+"_vrtx.bin","wb")	# texture vertex (MOVED)
   out_mtrl      = open("pz/"+mappz_list[curr_pz]+"_mtrl.asm","w")
 
+  used_triangles= 0
+  used_quads    = 0
+  solidcolor    = 1
+  random_color  = 1
+  indx_color    = 0
+  mtrl_curr     = 0
+  mtrl_index    = 0
+
+  reading=True
+  random_mode   = True
   while reading:
     text=model_file.readline()
     if text=="":
@@ -530,10 +531,16 @@ for curr_rdpz in range(0,num_pz):
   out_head.write('.face:\t\tbinclude "data/mars/maps/pz/'+mappz_list[curr_pz]+'_face.bin"\n')
   out_head.write('.vrtx:\t\tbinclude "data/mars/maps/pz/'+mappz_list[curr_pz]+'_vrtx.bin"\n')
   out_head.write('.mtrl:\t\tinclude "data/mars/maps/pz/'+mappz_list[curr_pz]+'_mtrl.asm"\n')
+  
+  model_file.close()
+  material_file.close()
+  out_vertices.close()
+  out_faces.close()
+  out_mtrl.close()
   curr_pz += 1
 
-
 out_head.write("\t\talign 4")
+out_head.close()
 
 #======================================================================
 # ----------------------------
@@ -557,7 +564,6 @@ out_layout.write(".blocks:\n")
 # TODO: automatic sort
 for i in range(0,len(mappz_list)):
 	a = mappz_list[i]
-	print(a)
 	out_layout.write("\t\tdc.l MarsMapPz_"+a+",0\n")
 
 for i in range(0,len(mappz_list)):
@@ -580,11 +586,5 @@ for i in range(0,len(mappz_list)):
 
 print("Vert:",num_vert,"Face:",used_triangles+used_quads)
 print("Poly:",used_triangles,"Quad:",used_quads)
-model_file.close()
-material_file.close()
-out_vertices.close()
-out_faces.close()
-out_head.close()
-out_mtrl.close()
 out_laydata.close()
 out_layout.close()

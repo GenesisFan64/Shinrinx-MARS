@@ -30,9 +30,9 @@ Engine_Code:
 ; Include system features
 ; --------------------------------------------------------
 
+		include	"system/md/sound.asm"
 		include	"system/md/system.asm"
 		include	"system/md/video.asm"
-		include	"system/md/sound.asm"
 		
 ; --------------------------------------------------------
 ; Initialize system
