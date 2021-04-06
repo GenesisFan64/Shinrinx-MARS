@@ -1,6 +1,6 @@
 ; ====================================================================
 ; ----------------------------------------------------------------
-; Video CACHE routines for Master CPU
+; CACHE code for Master CPU
 ; ----------------------------------------------------------------
 
 		align 4
@@ -28,14 +28,14 @@ m_irq_custom:
 ; .task_08:
 		mov	r2,@-r15
 		mov	#_vdpreg,r1
-		mov.b	@(marsGbl_CurrFb,gbr),r0
-		mov	r0,r2
-.wait_frmswp:	mov.b	@(framectl,r1),r0
-		cmp/eq	r0,r2
-		bf	.wait_frmswp
-.wait_fb:	mov.w   @($A,r1), r0		; Framebuffer free?
-		tst     #2,r0
-		bf      .wait_fb
+; 		mov.b	@(marsGbl_CurrFb,gbr),r0
+; 		mov	r0,r2
+; .wait_frmswp:	mov.b	@(framectl,r1),r0
+; 		cmp/eq	r0,r2
+; 		bf	.wait_frmswp
+; .wait_fb:	mov.w   @($A,r1), r0		; Framebuffer free?
+; 		tst     #2,r0
+; 		bf      .wait_fb
 		mov.w   @(6,r1),r0		; SVDP-fill address
 		add     #$5F,r0			; Preincrement
 		mov.w   r0,@(6,r1)
@@ -48,7 +48,7 @@ m_irq_custom:
 		mov.w   r0,@r1
 		or      #$20,r0			; ON
 		mov.w   r0,@r1
-		mov.w   #$5A10,r0
+		mov.w   #$5A10,r0		; Timer before next watchdog
 		mov.w   r0,@r1
 		mov	#Cach_ClrLines,r1	; Decrement a line to progress
 		mov	@r1,r0
@@ -136,9 +136,8 @@ drwtsk_01:
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 		bra	drwtask_exit
 		mov	#$7F,r2
-
 .has_pz:
-		mov	r3,@-r15
+		mov	r3,@-r15			; Save all these regs
 		mov	r4,@-r15
 		mov	r5,@-r15
 		mov	r6,@-r15
@@ -170,7 +169,7 @@ drwtsk1_newpz:
 		bf	.len_max
 		mov	r0,r10
 .len_max:
-		sub	r9,r10			; r10: Turn it into Y lenght (Bottom - Top)
+		sub	r9,r10			; Turn r10 into line lenght (Bottom - Top)
 		cmp/pl	r10
 		bt	drwtsk1_vld_y
 .invld_y:
@@ -213,7 +212,7 @@ drwtsk1_vld_y:
 
 drwtsk_texmode:
 		mov.w	@(marsGbl_DivReq_M,gbr),r0	; Waste interrupt if MarsVideo_MakePolygon is in the
-		cmp/eq	#1,r0				; middle of division
+		cmp/eq	#1,r0				; middle of HW-division
 		bf	.texvalid
 		bra	drwtask_return
 		nop
@@ -225,9 +224,9 @@ drwtsk_texmode:
 		mov	@(plypz_src_yr,r14),r8		; Texture Y down
 
 drwsld_nxtline_tex:
-		cmp/pz	r9				; Y Line below 0?
+		cmp/pz	r9				; Y Start below 0?
 		bf	drwsld_updline_tex
-		mov	drwtex_tagshght,r0		; Y Line after 224?
+		mov	tag_yhght,r0		; Y Start after 224?
 		cmp/ge	r0,r9
 		bt	drwtex_gonxtpz
 		mov	r2,@-r15
@@ -272,11 +271,11 @@ drwsld_nxtline_tex:
 		sub	r7,r8
 
 	; Calculate new DX values
-		mov	#_JR,r0				; r6/r2
+		mov	#_JR,r0				; r6 / r2
 		mov	r2,@r0
 		mov	r6,@(4,r0)
 		nop
-		mov	@(4,r0),r6			; r8/r2
+		mov	@(4,r0),r6			; r8 / r2
 		mov	r2,@r0
 		mov	r8,@(4,r0)
 		nop
@@ -322,7 +321,10 @@ drwsld_nxtline_tex:
 		shlr16	r4
 		and	r2,r4
 		and	r0,r13
-		mov	r9,@-r15
+; 		mov	r9,@-r15
+		
+	; TODO: implement some sort of
+	; duffs device
 .tex_xloop:
 		mov	r7,r2
 		shlr16	r2
@@ -343,7 +345,9 @@ drwsld_nxtline_tex:
 		dt	r12
 		bf/s	.tex_xloop
 		add	r8,r7				; Update Y
-		mov	@r15+,r9
+		
+
+; 		mov	@r15+,r9
 .tex_skip_line:
 		mov	@r15+,r13
 		mov	@r15+,r10
@@ -371,7 +375,7 @@ drwtex_gonxtpz:
 		bra	drwsld_nextpz
 		nop
 		align 4
-drwtex_tagshght	dc.l	SCREEN_HEIGHT
+tag_yhght	dc.l	SCREEN_HEIGHT
 
 ; ------------------------------------
 ; Solid Color
@@ -427,14 +431,14 @@ drwsld_nxtline:
 		and	r0,r12
 		mov	r12,r0
 		sub	r11,r0
-; 		mov	#6,r5
-; 		cmp/gt	r5,r0
-; 		bf	drwsld_lowpixls
+		cmp/pl	r0
+		bf	drwsld_updline
 .wait:		mov.w	@(10,r13),r0
 		tst	#2,r0
 		bf	.wait
 		mov	r12,r0
 		sub	r11,r0
+		mov	r0,r12
 		shlr	r0
 		mov.w	r0,@(4,r13)	; length
 		mov	r11,r0
@@ -448,12 +452,12 @@ drwsld_nxtline:
 		shll8	r0
 		or	r6,r0
 		mov.w	r0,@(8,r13)	; Set data
-		
-	; If the line is large, leave it to VDP
-	; and exit interrupt, we will come back
-	; with more lines to draw
+
+; 	If the line is too large, leave it to VDP
+; 	and exit interrupt, we will come back
+; 	with more lines to draw
 		mov	#$28,r0
-		cmp/ge	r0,r12
+		cmp/gt	r0,r12
 		bf	drwsld_updline
 		mov	#2,r0
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
@@ -473,38 +477,13 @@ drwsld_nxtline:
 		mov	r13,@-r0
 		mov	r14,@-r0
 		bra	drwtask_return
-		mov	#0,r2
+		mov	#0,r2			; No timer: Exit and re-enter
 drwsld_updline:
 		add	r2,r1
 		add	r4,r3
 		dt	r10
 		bf/s	drwsld_nxtline
 		add	#1,r9
-		
-; ------------------------------------
-; if lower than 6 pixels
-; (TODO: check this later)
-
-; drwsld_lowpixls:
-; 		cmp/pl	r0
-; 		bf	drwsld_updline
-; 		mov	r0,r12
-; 		mov	r9,r0
-; 		add	#1,r0
-; 		shll8	r0
-; 		shll	r0
-; 		add 	r11,r0
-; 		mov	#_overwrite+$200,r5
-; 		add	r0,r5
-; .wait_fb	mov.w	@(10,r13),r0
-; 		tst	#2,r0
-; 		bf	.wait_fb
-; 		mov	#-1,r0
-; .perpixl:
-; 		mov.b	r0,@r5
-; 		dt	r12
-; 		bf/s	.perpixl
-; 		add	#1,r5
 
 ; ------------------------------------		
 		
@@ -528,7 +507,7 @@ drwsld_nextpz:
 ; 		mov.w	r0,@(marsGbl_PzListCntr,gbr)
 .finish_it:
 		bra	drwtask_return
-		mov	#$10,r2
+		mov	#$10,r2			; Timer for next watchdog
 
 ; --------------------------------
 ; Task $00
@@ -1069,16 +1048,19 @@ CACHE_MASTER_E:
 
 ; ====================================================================
 ; ----------------------------------------------------------------
-; Video CACHE routines for Slave CPU
+; CACHE code for Slave CPU
 ; ----------------------------------------------------------------
 
 		align 4
 CACHE_SLAVE:
 		phase $C0000000
 ; ------------------------------------------------
-		dc.b "SLAVE CACHE CODE GOES HERE"
+
+
+; ------------------------------------------------
 		align 4
-Cach_CurrPlygn	ds.l sizeof_polygn	; Current polygon in modelread
+Cach_CurrPlygn	ds.b sizeof_polygn	; Current polygon in modelread
+Cach_TestTimer	dc.l 0
 
 ; ------------------------------------------------
 .end:		phase CACHE_SLAVE+.end&$1FFF

@@ -36,8 +36,8 @@ marsGbl_VIntFlag_S	ds.w 1		; Same thing but for the Slave CPU
 marsGbl_DivReq_M	ds.w 1		; Flag to tell Watchdog we are in the middle of division
 marsGbl_CurrFb		ds.w 1		; Current framebuffer number
 marsGbl_PalDmaMidWr	ds.w 1		; Enable this flag if modifing RAM_Mars_Palette
-marsGbl_ZSortReq	ds.w 1		; Flag to request Zsort in Slave's watchdogd
-marsGbl_PwmTrkUpd	ds.w 1		; Flag to update PWM tracks (Z80 then here)
+marsGbl_ZSortReq	ds.w 1		; Flag to request Zsort in Slave's watchdog
+marsGbl_PwmTrkUpd	ds.w 1		; Flag to update PWM tracks (from Z80 then PWM IRQ)
 sizeof_MarsGbl		ds.l 0
 			finish
 			
@@ -260,6 +260,9 @@ m_irq_v:
 .wait		mov.b	@(vdpsts,r1),r0
 		tst	#$20,r0
 		bt	.wait
+; .wait2:	mov.w	@(vdpsts,r1),r0
+; 		tst	#%10,r0
+; 		bf	.wait2
 		stc	sr,@-r15
 		mov	r2,@-r15
 		mov	r3,@-r15
@@ -689,10 +692,10 @@ SH2_M_HotStart:
 master_loop:
 	; --------------------
 	; DEBUG counter
-		mov	#_sysreg+comm0,r4	; DEBUG COUNTER
-		mov.b	@r4,r0
-		add	#1,r0
-		mov.b	r0,@r4
+; 		mov	#_sysreg+comm0,r4	; DEBUG COUNTER
+; 		mov.b	@r4,r0
+; 		add	#1,r0
+; 		mov.b	r0,@r4
 	; --------------------
 	
 		mov	#_sysreg+comm14,r1
@@ -786,6 +789,10 @@ master_loop:
 		mov.w	@r13,r13
 		cmp/pl	r13
 		bf	.skip
+		
+		mov	r13,r0
+		mov	#_sysreg+comm0,r1
+		mov.w	r0,@r1
 .loop:
 		mov	r14,@-r15
 		mov	r13,@-r15
@@ -814,17 +821,20 @@ master_loop:
 		mov.w   #$A518,r0
 		mov.w   r0,@r1
 		mov	#_vdpreg,r1			; Framebuffer swap request
-		mov.b	@(framectl,r1),r0		; watchdog will check for it later
-		xor	#1,r0
+.waitfb:	mov.w	@(vdpsts,r1),r0			; Wait until linefills are done.
+		tst	#%10,r0
+		bf	.waitfb
+		mov.b	@(framectl,r1),r0		; Frameswap request
+		xor	#1,r0				; Watchdog will check for it later
 		mov.b	r0,@(framectl,r1)
-		mov.b	r0,@(marsGbl_CurrFb,gbr)
+		mov.b	r0,@(marsGbl_CurrFb,gbr)	; Save new bit
 
 	; --------------------
 	; DEBUG counter
-		mov	#_sysreg+comm0+1,r4
-		mov.b	@r4,r0
-		add	#1,r0
-		mov.b	r0,@r4
+; 		mov	#_sysreg+comm0+1,r4
+; 		mov.b	@r4,r0
+; 		add	#1,r0
+; 		mov.b	r0,@r4
 	; --------------------
 
 		mov	#_sysreg+comm14,r1		; Clear task number
@@ -881,12 +891,6 @@ SH2_S_Entry:
 		mov.l	#"SLAV",r0
 		mov.l	r0,@(8,r2)
 
-		mov	#$FFFFFE80,r1
-		mov.w	#$5A7F,r0			; Watchdog wait timer
-		mov.w	r0,@r1
-		mov.w	#$A538,r0			; Watchdog ON
-		mov.w	r0,@r1
-		
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; Slave main code
@@ -998,6 +1002,11 @@ slave_loop:
 		mov	r0,@(marsGbl_CurrFacePos,gbr)
 		mov	#RAM_Mars_Plgn_ZList,r0
 		mov	r0,@(marsGbl_CurrZList,gbr)
+		mov	#$FFFFFE80,r1
+		mov.w	#$5A7F,r0			; Watchdog wait timer
+		mov.w	r0,@r1
+		mov.w	#$A538,r0			; Watchdog ON
+		mov.w	r0,@r1
 
 ; ----------------------------------------
 
@@ -1010,10 +1019,9 @@ slave_loop:
 		mov	@(mdl_data,r14),r0		; Object model data == 0 or -1?
 		cmp/pl	r0
 		bf	.invlid
-		mov	r13,@-r15
 		mov	#MarsMdl_ReadModel,r0
 		jsr	@r0
-		nop
+		mov	r13,@-r15
 		mov	@r15+,r13
 .invlid:
 		dt	r13
@@ -1034,21 +1042,33 @@ slave_loop:
 		mov 	#RAM_Mars_PlgnList_1,r14
 		mov 	#RAM_Mars_PlgnNum_1,r13
 .swap_now:
+; 		stc	sr,@-r15
+; 		mov	#$F0,r0
+; 		ldc	r0,sr
+; 		mov	#0,r0
+; 		mov.w	r0,@(marsGbl_ZReady,gbr)
+; 		ldc 	@r15+,sr
+.wait_z:
+; 		mov.w	@(marsGbl_ZReady,gbr),r0
+; 		cmp/eq	#1,r0
+; 		bf	.wait_z
+		mov.l   #$FFFFFE80,r1			; Stop watchdog
+		mov.w   #$A518,r0
+		mov.w   r0,@r1
 		bsr	slv_sort_z
 		nop
-
+		
 ; ----------------------------------------
 
-		mov.l	#_sysreg+comm14,r1		; Master CPU still drawing pieces?
+		mov	#_sysreg+comm14,r2
 .mstr_busy:
-		mov.b	@r1,r0
+		mov.b	@r2,r0
 		and	#$7F,r0
 		cmp/eq	#0,r0
 		bf	slave_loop			; Skip frame
 		mov.w	@(marsGbl_PolyBuffNum,gbr),r0	; Swap polygon buffer
  		xor	#1,r0
  		mov.w	r0,@(marsGbl_PolyBuffNum,gbr)
-		mov	#_sysreg+comm14,r2
  		mov	#1,r1				; Set task $01 to Master
 		mov.b	@r2,r0
 		and	#$80,r0
@@ -1068,10 +1088,9 @@ slave_loop:
 
 ; Bubble sorting
 slv_sort_z:
-; 		sts	pr,@-r15
 		mov	#0,r0					; Reset current PlgnNum
 		mov.w	r0,@r13
-		mov	#RAM_Mars_Plgn_ZList,r12	
+		mov	#RAM_Mars_Plgn_ZList,r12
 		mov	#2,r11
 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0		; Check number of faces to sort
 		cmp/gt	r11,r0
@@ -1135,7 +1154,6 @@ slv_sort_z:
 		add 	#8,r10
 		mov.w	r8,@r13
 .z_end:
-; 		lds	@r15+,pr
 		rts
 		nop
 		align 4
@@ -1440,47 +1458,70 @@ CmdTaskMd_PWM_Enable:
 
 s_irq_custom:
 		mov	r2,@-r15
+		mov	r3,@-r15
+		mov	r4,@-r15
+		mov	r5,@-r15
+		mov	r6,@-r15
+		mov	r7,@-r15
 		mov	#_FRT,r1
 		mov.b   @(7,r1),r0
 		xor     #2,r0
 		mov.b   r0,@(7,r1)
+		
+		mov.w	@(marsGbl_ZSortReq,gbr),r0
+		cmp/eq	#1,r0
+		bf	.no_req
+		mov	#0,r0
+		mov.w	r0,@(marsGbl_ZSortReq,gbr)
+		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0		; Check number of faces to sort
+		mov	r0,r6
+		mov	#2,r1
+		cmp/gt	r1,r0
+		bf	.no_req
+		mov	r6,r3
+		add	#-1,r0
+		mov	r0,r6
+		
+		mov	#RAM_Mars_Plgn_ZList,r7
+.loop:
+		mov	r7,r5
+		mov	r7,r4	
+		add	#8,r4
+		mov	@r5,r3		; Our Z
+		mov	@r4,r0
+		cmp/gt	r0,r3
+		bt	.insert
+		mov	@r4,r3
+		mov	@r5,r2
+		mov	r2,@r4
+		mov	r3,@r5
+		mov	@(4,r4),r3
+		mov	@(4,r5),r2
+		mov	r2,@(4,r4)
+		mov	r3,@(4,r5)
+		bra	.no_req
+		nop
+.insert:	
+		dt	r6
+		bf/s	.loop
+		add	#8,r7
 
-; 		mov.w	@(marsGbl_ZSortReq,gbr),r0
-; 		cmp/eq	#1,r0
-; 		bf	.no_req
-; 		xor	r0,r0
-; 		mov.w	r0,@(marsGbl_ZSortReq,gbr)
-; 
-; ; 	; Sorting task starts here
-; ; 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
-; ; 		cmp/eq	#0,r0
-; ; 		bt	.no_request
-; ; 		mov	r3,@-r15
-; ; 		mov	r4,@-r15
-; ; 		mov	r5,@-r15
-; ; 		mov	r6,@-r15
-; ; 		mov	#CS3+$44,r1
-; ; 		mov	@r1,r0
-; ; 		add 	#1,r0
-; ; 		mov	r0,@r1
-; ; 		mov	@r15+,r6
-; ; 		mov	@r15+,r5
-; ; 		mov	@r15+,r4
-; ; 		mov	@r15+,r3
-; ; .no_request:
-; ; 	; End
-; ; 
-; 
-; .no_req:
+.no_req:
 		mov	#$FFFFFE80,r1
 		mov.w   #$A518,r0		; Watchdog OFF
 		mov.w   r0,@r1
-		or      #$20,r0
+		or      #$20,r0			; ON again
 		mov.w   r0,@r1
 		mov	#1,r2
-		mov.w   #$5A7F,r0		; Timer for next one
+		mov.w   #$5A3F,r0		; Timer for the next one
 		or	r2,r0
 		mov.w	r0,@r1
+
+		mov	@r15+,r7
+		mov	@r15+,r6
+		mov	@r15+,r5
+		mov	@r15+,r4
+		mov	@r15+,r3
 		mov	@r15+,r2
 		rts
 		nop
@@ -1509,6 +1550,7 @@ sin_table	binclude "system/mars/data/sinedata.bin"
 ; MARS SH2 RAM
 ; ----------------------------------------------------------------
 
+		align $10
 SH2_RAM:
 		struct SH2_RAM
 	if MOMPASS=1

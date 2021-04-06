@@ -15,10 +15,10 @@
 ; Settings
 ; ----------------------------------------
 
-MAX_FACES	equ	384		; Maximum polygon faces (models,sprites) to store on buffer
-MAX_SVDP_PZ	equ	384		; This list is for both read and write, increase the value if needed
-MAX_MODELS	equ	64		; Note: First 9 models are reserved for layout map
-MAX_ZDIST	equ	-$2800		; Max drawing distance (-Z max)
+MAX_FACES	equ	500		; Maximum polygon faces (models,sprites) to store on buffer
+MAX_SVDP_PZ	equ	500+48		; This list is for both read and write, increase the value if needed
+MAX_MODELS	equ	12		; Note: First 9 models are reserved for layout map
+MAX_ZDIST	equ	-$1C00		; Max drawing distance (-Z max)
 LAY_WIDTH	equ	$20*2		; Layout data width * 2
 
 ; ----------------------------------------
@@ -291,8 +291,12 @@ MarsVideo_SetWatchdog:
 		mov	#8,r0				; Set starting watchdog task to $08 (Clear framebuffer)
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 		mov	#_vdpreg,r1
-.wait_fb:
-		mov.w	@($A,r1),r0			; Framebuffer available?
+		mov.b	@(marsGbl_CurrFb,gbr),r0
+		mov	r0,r2
+.wait_frmswp:	mov.b	@(framectl,r1),r0
+		cmp/eq	r0,r2
+		bf	.wait_frmswp
+.wait_fb:	mov.w	@($A,r1),r0			; Framebuffer available?
 		tst	#2,r0
 		bf	.wait_fb
 		mov.w	#$A1,r0				; Pre-start SVDP fill line at address $A1
@@ -836,10 +840,8 @@ MarsMdl_ReadModel:
 .no_anim:
 
 	; Now start reading
-		mov	#Cach_CurrPlygn,r13		; r13 - output faces
-; 		mov	@(marsGbl_CurrFacePos,gbr),r0
-; 		mov	r0,r13				; r13 - output faces
 		mov	#$3FFFFFFF,r0
+		mov	#Cach_CurrPlygn,r13		; r13 - output face
 		mov	@(mdl_data,r14),r12		; r12 - model header
 		and	r0,r12
 		mov 	@(8,r12),r11			; r11 - face data
@@ -856,6 +858,8 @@ MarsMdl_ReadModel:
 		nop
 		align 4
 .tag_maxfaces:	dc.l	MAX_FACES
+
+; --------------------------------
 
 .can_build:
 		mov.w	@r11+,r4			; Read type from model
@@ -889,7 +893,7 @@ MarsMdl_ReadModel:
 		mov.w	r0,@r5
 		add	#4,r5
 	endm
-		mov	#3,r0			; Triangle?
+		mov	#3,r0				; Triangle?
 		cmp/eq	r0,r7
 		bt	.alluvdone
 		mov.w	@r11+,r0			; Read UV index			
@@ -905,7 +909,7 @@ MarsMdl_ReadModel:
 		and	#$FF,r0
 		mov	r0,r1
 		mov	r4,r0
-		mov	#$1FFF,r5
+		mov	.tag_andmtrl,r5
 		and	r5,r0
 		shll2	r0
 		shll	r0
@@ -922,13 +926,14 @@ MarsMdl_ReadModel:
 		mov	r0,@(polygn_mtrl,r13)
 		bra	.go_faces
 		nop
+.tag_andmtrl:
+		dc.l $1FFF
 
 ; --------------------------------
 ; Set texture material
 ; --------------------------------
 
 .solid_type:
-
 		mov	@(mdl_option,r14),r0
 		and	#$FF,r0
 		mov	r0,r1
@@ -964,8 +969,7 @@ MarsMdl_ReadModel:
 		mov	#$7FFFFFFF,r5
 		mov	#$FFFFFFFF,r13
 
-	; New method, might speed up
-	; a little...
+	; Do 3 points
 	rept 3
 		mov	#0,r0
 		mov.w 	@r6+,r0
@@ -983,10 +987,12 @@ MarsMdl_ReadModel:
 		mov	r3,@(4,r1)
 		add	#8,r1
 	endm
+	
+	; Check quad
 		mov	#3,r0			; Triangle?
 		cmp/eq	r0,r7
-		bt	.allfcsdone
-		mov	#0,r0			; Do forth point for Quad
+		bt	.alldone
+		mov	#0,r0
 		mov.w 	@r6+,r0
 		mov	#$C,r4
 		mulu	r4,r0
@@ -1000,7 +1006,7 @@ MarsMdl_ReadModel:
 		nop
 		mov	r2,@r1
 		mov	r3,@(4,r1)
-.allfcsdone:
+.alldone:
 
 		mov	r8,r1
 		mov	r9,r2
@@ -1020,7 +1026,7 @@ MarsMdl_ReadModel:
 	; r5 - Back Z point, keep affine limitations
 	; r6 - Front Z point, skip face but larger faces are affected
 		cmp/pz	r5
-		bt	.face_out
+		bt	.go_fout
 		mov	#RAM_Mars_ObjCamera,r0
 		mov	@(cam_y_pos,r0),r7
 		shlr2	r7
@@ -1055,40 +1061,34 @@ MarsMdl_ReadModel:
 		bf	.face_out
 		neg	r0,r0
 		cmp/ge	r0,r4
-		bt	.face_out
-
+		bf	.face_ok
+.go_fout:	bra	.face_out
+		nop
+		
 ; --------------------------------
 
 .face_ok:
 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0	; Add 1 face to the list
 		add	#1,r0
 		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
-	
 	; NEW: copy cache polygon
-	; to final position
+	; to current buff face
 		mov	@(marsGbl_CurrFacePos,gbr),r0
 		mov	r13,r2
 		mov	r0,r1
 		mov	r5,@r8				; Store current Z to Zlist
 		mov	r1,@(4,r8)			; And it's address
-	rept sizeof_polygn/4
-		mov	@r2+,r0
-		mov	r0,@r1
-		add	#4,r1
+		mov	#1,r0
+		mov.w	r0,@(marsGbl_ZSortReq,gbr)
+		
+	rept sizeof_polygn/2
+		mov.w	@r2+,r0
+		mov.w	r0,@r1
+		add	#2,r1
 	endm
-; 		bra	*
-; 		nop
-
 		add	#8,r8				; Update from Zlist
 		mov	r1,r0				; TODO: Delete after the cache
 		mov	r0,@(marsGbl_CurrFacePos,gbr)	; method is made
-
-; 		mov	@(marsGbl_CurrFacePos,gbr),r0
-	; Copy from cache to currpos
-	; goes here
-; 		add	#sizeof_polygn,r13
-; 		mov	r0,@(marsGbl_CurrFacePos,gbr)	
-		
 .face_out:
 		dt	r9
 		bt	.finish_this
@@ -1214,7 +1214,7 @@ mdlrd_setpoint:
 	; this is the best I got,
 	; It breaks on large faces
 		mov 	#_JR,r8
-		mov	#360<<16,r7
+		mov	#320<<16,r7
 		neg	r4,r0		; reverse Z
 		cmp/pl	r0
 		bt	.inside
