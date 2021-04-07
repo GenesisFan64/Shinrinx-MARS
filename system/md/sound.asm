@@ -2741,10 +2741,10 @@ mars_zcomm:
 		jp	nz,.wait_cmd
 		call	dac_me
 .loop:
-		nop				; CRITICAL
-		nop
-		nop
-		nop
+		call	dac_me
+		ld	a,(ix+(comm4+1))	; SH ready?
+		cp	2
+		jr	nz,.loop
 		ld	a,(ix+(comm4+1))	; SH ready?
 		cp	2
 		jr	nz,.loop

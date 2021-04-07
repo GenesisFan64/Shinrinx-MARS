@@ -28,14 +28,14 @@ m_irq_custom:
 ; .task_08:
 		mov	r2,@-r15
 		mov	#_vdpreg,r1
-; 		mov.b	@(marsGbl_CurrFb,gbr),r0
-; 		mov	r0,r2
-; .wait_frmswp:	mov.b	@(framectl,r1),r0
-; 		cmp/eq	r0,r2
-; 		bf	.wait_frmswp
-; .wait_fb:	mov.w   @($A,r1), r0		; Framebuffer free?
-; 		tst     #2,r0
-; 		bf      .wait_fb
+		mov.b	@(marsGbl_CurrFb,gbr),r0
+		mov	r0,r2
+.wait_frmswp:	mov.b	@(framectl,r1),r0
+		cmp/eq	r0,r2
+		bf	.on_clr
+.wait_fb:	mov.w   @($A,r1), r0		; Framebuffer free?
+		tst     #2,r0
+		bf      .wait_fb
 		mov.w   @(6,r1),r0		; SVDP-fill address
 		add     #$5F,r0			; Preincrement
 		mov.w   r0,@(6,r1)
@@ -89,6 +89,9 @@ maindrw_tasks:
 
 drwtsk_02:
 		mov	r2,@-r15
+		mov.w	@(marsGbl_DrwPause,gbr),r0
+		cmp/eq	#1,r0
+		bt	.exit
 		mov	r3,@-r15
 		mov	r4,@-r15
 		mov	r5,@-r15
@@ -122,6 +125,9 @@ drwtsk_02:
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 		bra	drwsld_updline
 		nop
+.exit:		bra	drwtask_exit
+		mov	#$7F,r2
+		align 4
 
 ; --------------------------------
 ; Task $01
@@ -129,12 +135,15 @@ drwtsk_02:
 
 drwtsk_01:
 		mov	r2,@-r15
+		mov.w	@(marsGbl_DrwPause,gbr),r0
+		cmp/eq	#1,r0
+		bt	.exit
 		mov.w	@(marsGbl_PzListCntr,gbr),r0	; Any pieces to draw?
 		cmp/eq	#0,r0
 		bf	.has_pz
 		mov	#0,r0				; If none, just end quickly.
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
-		bra	drwtask_exit
+.exit:		bra	drwtask_exit
 		mov	#$7F,r2
 .has_pz:
 		mov	r3,@-r15			; Save all these regs
@@ -379,6 +388,13 @@ tag_yhght	dc.l	SCREEN_HEIGHT
 
 ; ------------------------------------
 ; Solid Color
+; 
+; r1  - XL
+; r2  - XL DX
+; r3  - XR
+; r4  - XR DX
+; r9  - Y current
+; r10  - Number of lines
 ; ------------------------------------
 
 drwtsk_solidmode:
@@ -399,6 +415,7 @@ drwsld_nxtline:
 		mov	#SCREEN_HEIGHT,r0
 		cmp/gt	r0,r9
 		bt	drwsld_nextpz
+
 		mov	r1,r11
 		mov	r3,r12
 		shlr16	r11
@@ -407,13 +424,13 @@ drwsld_nxtline:
 		exts	r12,r12
 		mov	r12,r0
 		sub	r11,r0
-		cmp/pl	r0
+		cmp/pz	r0
 		bt	.revers
 		mov	r12,r0
 		mov	r11,r12
 		mov	r0,r11
 .revers:
-		mov	#SCREEN_WIDTH-1,r0
+		mov	#SCREEN_WIDTH-2,r0
 		cmp/pl	r12
 		bf	drwsld_updline
 		cmp/gt	r0,r11
@@ -746,12 +763,17 @@ MarsVideo_MakePolygon:
 		mov	r0,r1
 		mov	r0,@(marsGbl_PlyPzList_W,gbr)
 .dontreset:
-		stc	sr,@-r15			; Stop interrupts (including Watchdog)
-		stc	sr,r0
-		or	#$F0,r0
+; 		stc	sr,@-r15			; Stop interrupts (including Watchdog)
+; 		stc	sr,r0
+; 		or	#$F0,r0
+		mov	#1,r0
+		mov.w	r0,@(marsGbl_DrwPause,gbr)
 		bsr	put_piece
-		ldc	r0,sr
-		ldc	@r15+,sr			; Restore interrupts
+		nop
+		mov	#0,r0
+		mov.w	r0,@(marsGbl_DrwPause,gbr)
+; 		ldc	r0,sr
+; 		ldc	@r15+,sr			; Restore interrupts
 		cmp/gt	r9,r8				; Left width > Right width?
 		bf	.lefth2
 		bsr	set_right

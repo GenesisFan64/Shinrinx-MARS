@@ -291,11 +291,6 @@ MarsVideo_SetWatchdog:
 		mov	#8,r0				; Set starting watchdog task to $08 (Clear framebuffer)
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 		mov	#_vdpreg,r1
-		mov.b	@(marsGbl_CurrFb,gbr),r0
-		mov	r0,r2
-.wait_frmswp:	mov.b	@(framectl,r1),r0
-		cmp/eq	r0,r2
-		bf	.wait_frmswp
 .wait_fb:	mov.w	@($A,r1),r0			; Framebuffer available?
 		tst	#2,r0
 		bf	.wait_fb

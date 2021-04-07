@@ -1,5 +1,5 @@
 MarsMapPz_city_floor:
-		dc.w 4,9
+		dc.w 16,25
 		dc.l .vert,.face,.vrtx,.mtrl
 .vert:		binclude "data/mars/maps/pz/city_floor_vert.bin"
 .face:		binclude "data/mars/maps/pz/city_floor_face.bin"

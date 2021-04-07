@@ -61,7 +61,6 @@ if len(sys.argv) == 4:
 
 #list_vertices = list()
 #list_faces    = list()
-vertex_list   = list()
 
 map_file      = open(TAG_OBJECTSDIR+"/"+object_name+"/layout.txt","r")
 out_laydata   = open(object_name+"_lay.bin","wb")
@@ -85,6 +84,7 @@ for curr_rdpz in range(0,num_pz):
   #out_vertex    = open(object_name+"_vrtx.bin","wb")	# texture vertex (MOVED)
   out_mtrl      = open("pz/"+mappz_list[curr_pz]+"_mtrl.asm","w")
 
+  vertex_list   = list()
   used_triangles= 0
   used_quads    = 0
   solidcolor    = 1
@@ -184,7 +184,6 @@ for curr_rdpz in range(0,num_pz):
     if text.find("usemtl") == False:
       material_file.seek(0)
       mtlname = text[7:].rstrip('\r\n')
-      
       a = mtlname[:8]
       
       if a == TAG_NOMATERIAL:
@@ -235,11 +234,11 @@ for curr_rdpz in range(0,num_pz):
                 b = material_file.readline()
                 if b=="":
                     i=False
-                    
+
                 # filename
                 if b.find("map_Kd") == False:
                     tex_fname = b[7:].rstrip('\r\n')
-                    tex_file = open(TAG_OBJECTSDIR+"/"+tex_fname,"rb")
+                    tex_file = open(tex_fname,"rb")
                     # COPYPASTED
                     tex_file.seek(1)
                     color_type = ord(tex_file.read(1))

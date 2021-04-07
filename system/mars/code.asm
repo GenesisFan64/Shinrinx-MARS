@@ -31,6 +31,7 @@ marsGbl_MdlFacesCntr	ds.w 1		; And the number of faces stored on that list
 marsGbl_PolyBuffNum	ds.w 1		; PolygonBuffer switch: READ/WRITE or WRITE/READ
 marsGbl_PzListCntr	ds.w 1		; Number of graphic pieces to draw
 marsGbl_DrwTask		ds.w 1		; Current Drawing task for Watchdog
+marsGbl_DrwPause	ds.w 1		; Pause background drawing
 marsGbl_VIntFlag_M	ds.w 1		; Sets to 0 if VBlank finished on Master CPU
 marsGbl_VIntFlag_S	ds.w 1		; Same thing but for the Slave CPU
 marsGbl_DivReq_M	ds.w 1		; Flag to tell Watchdog we are in the middle of division
@@ -257,12 +258,12 @@ m_irq_v:
 	; pass it locks both SOURCE and DESTINATION
 	; data sections
 		mov	#_vdpreg,r1			; Wait for palette access ok
+.wait2:		mov.w	@(vdpsts,r1),r0
+		tst	#2,r0
+		bf	.wait2
 .wait		mov.b	@(vdpsts,r1),r0
 		tst	#$20,r0
 		bt	.wait
-; .wait2:	mov.w	@(vdpsts,r1),r0
-; 		tst	#%10,r0
-; 		bf	.wait2
 		stc	sr,@-r15
 		mov	r2,@-r15
 		mov	r3,@-r15
@@ -1002,11 +1003,11 @@ slave_loop:
 		mov	r0,@(marsGbl_CurrFacePos,gbr)
 		mov	#RAM_Mars_Plgn_ZList,r0
 		mov	r0,@(marsGbl_CurrZList,gbr)
-		mov	#$FFFFFE80,r1
-		mov.w	#$5A7F,r0			; Watchdog wait timer
-		mov.w	r0,@r1
-		mov.w	#$A538,r0			; Watchdog ON
-		mov.w	r0,@r1
+; 		mov	#$FFFFFE80,r1
+; 		mov.w	#$5A7F,r0			; Watchdog wait timer
+; 		mov.w	r0,@r1
+; 		mov.w	#$A538,r0			; Watchdog ON
+; 		mov.w	r0,@r1
 
 ; ----------------------------------------
 
@@ -1052,9 +1053,9 @@ slave_loop:
 ; 		mov.w	@(marsGbl_ZReady,gbr),r0
 ; 		cmp/eq	#1,r0
 ; 		bf	.wait_z
-		mov.l   #$FFFFFE80,r1			; Stop watchdog
-		mov.w   #$A518,r0
-		mov.w   r0,@r1
+; 		mov.l   #$FFFFFE80,r1			; Stop watchdog
+; 		mov.w   #$A518,r0
+; 		mov.w   r0,@r1
 		bsr	slv_sort_z
 		nop
 		
@@ -1086,7 +1087,7 @@ slave_loop:
 ; r13 - Number of polygons processed
 ; --------------------------------------------------------
 
-; Bubble sorting
+
 slv_sort_z:
 		mov	#0,r0					; Reset current PlgnNum
 		mov.w	r0,@r13
@@ -1094,21 +1095,24 @@ slv_sort_z:
 		mov	#2,r11
 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0		; Check number of faces to sort
 		cmp/gt	r11,r0
-		bf	.z_fewfaces
+		bf	.z_copypos
 		mov	r0,r11
-; if faces > 2
+
+; Bubble sorting
+; r10 - numof faces - 1
+; r12 - base Zsort list
+
 .z_normal:
-		mov	#MAX_FACES,r11
-		cmp/ge	r11,r0
+		mov	#MAX_FACES,r0
+		cmp/ge	r0,r11
 		bf	.z_ranout
-		mov	r11,r0
-.z_ranout:
 		mov	r0,r11
-		mov	r0,r10
+.z_ranout:
+		mov	r11,r10
 		add	#-1,r10
 		mov	r10,r7
-		add	#-1,r7
-		cmp/pl	r7
+; 		add	#-1,r7
+		cmp/pl	r10
 		bf	.z_end
 .z_outer:
 		mov	r10,r8
@@ -1135,22 +1139,27 @@ slv_sort_z:
 ; only 1 or 2 faces
 ; TODO: this is too much for 2 faces...
 
-.z_fewfaces:
+; r14 - Facelist to draw
+; r13 - numof faces to set to read
+; r12 - Zlist: Zpos,Faceaddr
+; r11 - faces to process
+
+.z_copypos:
 		mov	r12,r10
 		mov	r11,r9
 		mov	#0,r8
-.next_face:
+.next:
 		mov	@(4,r10),r7
 		cmp/pl	r7
-		bf	.no_face
+		bf	.noface
 		mov	#0,r0
 		mov	r0,@(4,r10)
 		mov	r7,@r14
 		add	#4,r14
 		add	#1,r8
-.no_face:
+.noface:
 		dt	r9
-		bf/s	.next_face
+		bf/s	.next
 		add 	#8,r10
 		mov.w	r8,@r13
 .z_end:
@@ -1513,7 +1522,7 @@ s_irq_custom:
 		or      #$20,r0			; ON again
 		mov.w   r0,@r1
 		mov	#1,r2
-		mov.w   #$5A3F,r0		; Timer for the next one
+		mov.w   #$5A01,r0		; Timer for the next one
 		or	r2,r0
 		mov.w	r0,@r1
 
@@ -1596,7 +1605,6 @@ RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
 RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
 RAM_Mars_VdpDrwList	ds.b sizeof_plypz*MAX_SVDP_PZ	; Pieces list
 RAM_Mars_VdpDrwList_e	ds.l 0				; (end-of-list label)
-; RAM_Mars_FbDrwnBuff	ds.b (SCREEN_WIDTH/8)*SCREEN_HEIGHT
 RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer list(s)
 RAM_Mars_PlgnList_1	ds.l MAX_FACES
 RAM_Mars_Plgn_ZList	ds.l MAX_FACES*2		; Z value / foward faces
