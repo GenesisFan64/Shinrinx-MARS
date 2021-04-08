@@ -35,3 +35,7 @@ PwmInsWav_TECHNOBASSD:
 		binclude "data/sound/instr/smpl/ST-72_techno-bassd3.wav",$2C
 PwmInsWav_TECHNOBASSD_e:
 		align 4
+PwmInsWav_Synth:
+		binclude "data/sound/instr/smpl/amiga_synth.wav",$2C
+PwmInsWav_Synth_e:
+		align 4

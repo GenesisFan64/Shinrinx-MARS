@@ -15,10 +15,10 @@
 ; Settings
 ; ----------------------------------------
 
-MAX_FACES	equ	500		; Maximum polygon faces (models,sprites) to store on buffer
-MAX_SVDP_PZ	equ	500+48		; This list is for both read and write, increase the value if needed
+MAX_FACES	equ	600		; Maximum polygon faces (models,sprites) to store on buffer
+MAX_SVDP_PZ	equ	600+56		; This list is for both read and write, increase the value if needed
 MAX_MODELS	equ	12		; Note: First 9 models are reserved for layout map
-MAX_ZDIST	equ	-$1C00		; Max drawing distance (-Z max)
+MAX_ZDIST	equ	-$1900		; Max drawing distance (-Z max)
 LAY_WIDTH	equ	$20*2		; Layout data width * 2
 
 ; ----------------------------------------
@@ -264,6 +264,11 @@ MarsVideo_LoadPal:
 		bf/s	.loop
 		add 	#2,r6
 .badlen:
+		mov	#RAM_Mars_Palette,r1
+		mov.w	@r1,r0
+		mov	#$7FFF,r2
+		and	r2,r0
+		mov.w	r0,@r1
 		rts
 		nop
 		align 4

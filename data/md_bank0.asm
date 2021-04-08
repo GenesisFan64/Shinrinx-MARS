@@ -8,7 +8,6 @@
 
 		align $8000
 		include "data/sound/tracks.asm"
-
 		align 4
 CAMERA_INTRO:	binclude "data/mars/objects/anim/intro_anim.bin"
 		align 4

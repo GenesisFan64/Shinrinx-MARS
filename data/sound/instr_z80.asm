@@ -73,10 +73,10 @@ FmIns_Bass_metal:
 ; 		binclude "data/sound/instr/fm/brass_cave.gsx",2478h,20h
 FmIns_Brass_Gem:
 		binclude "data/sound/instr/fm/brass_gem.gsx",2478h,20h
-; FmIns_Piano_Small:
-; 		binclude "data/sound/instr/fm/piano_small.gsx",2478h,20h
-; FmIns_Trumpet_2:
-; 		binclude "data/sound/instr/fm/trumpet_2.gsx",2478h,20h
+FmIns_Piano_Small:
+		binclude "data/sound/instr/fm/piano_small.gsx",2478h,20h
+FmIns_Trumpet_2:
+		binclude "data/sound/instr/fm/trumpet_2.gsx",2478h,20h
 ; FmIns_Bell_Glass:
 ; 		binclude "data/sound/instr/fm/bell_glass.gsx",2478h,20h
 ; FmIns_Marimba_1:

@@ -257,7 +257,7 @@ m_irq_v:
 	; TODO: DMA works but after the first
 	; pass it locks both SOURCE and DESTINATION
 	; data sections
-		mov	#_vdpreg,r1			; Wait for palette access ok
+		mov	#_vdpreg,r1			; Wait for palette access
 .wait2:		mov.w	@(vdpsts,r1),r0
 		tst	#2,r0
 		bf	.wait2

@@ -1,5 +1,5 @@
 MarsMapPz_blvd_main:
-		dc.w 186,256
+		dc.w 186,290
 		dc.l .vert,.face,.vrtx,.mtrl
 .vert:		binclude "data/mars/maps/pz/blvd_main_vert.bin"
 .face:		binclude "data/mars/maps/pz/blvd_main_face.bin"

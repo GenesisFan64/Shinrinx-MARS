@@ -400,9 +400,12 @@ System_MdMars_SlvSendDrop:
 		move.b	(a1),d7
 		and.w	#$80,d7
 		beq.s	.go_s
+		moveq	#-1,d7
 		rts
 .go_s:		clr.w	(RAM_MdMarsTCntS).w
-		bra	sysMdMars_Transfer
+		bsr	sysMdMars_Transfer
+		moveq	#0,d7
+		rts
 		
 ; a0 - task pointer and args
 ; a1 - task list counter

@@ -37,6 +37,7 @@ RAM_CamData	ds.l 1
 RAM_CamFrame	ds.l 1
 RAM_CamTimer	ds.l 1
 RAM_MdlCurrMd	ds.w 1
+RAM_BgCamera	ds.w 1
 RAM_BgCamCurr	ds.w 1
 sizeof_mdglbl	ds.l 0
 		finish
@@ -58,7 +59,7 @@ MD_GmMode0:
 		move.l	#GemaTrk_Yuki_patt,d0
 		move.l	#GemaTrk_Yuki_blk,d1
 		move.l	#GemaTrk_Yuki_ins,d2
-		moveq	#7,d3
+		moveq	#2,d3
 		moveq	#0,d4
 		bsr	SoundReq_SetTrack
 ; 		moveq	#6,d1
@@ -184,6 +185,20 @@ MD_GmMode0:
 		clr.l	(RAM_Cam_Zrot).l
 		move.l	#-$10000,(RAM_Cam_Ypos).l
 
+		lea	MdPal_Bg(pc),a0
+		move.w	#0,d0
+		move.w	#16-1,d1
+		bsr	Video_LoadPal
+		lea	MdMap_Bg(pc),a0
+		move.l	#locate(1,0,0),d0
+		move.l	#mapsize(512,256),d1
+		move.w	#1,d2
+		bsr	Video_LoadMap
+		move.l	#MdGfx_Bg,d0
+		move.w	#(MdGfx_Bg_e-MdGfx_Bg),d1
+		move.w	#1,d2
+		bsr	Video_LoadArt
+
 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
 		moveq	#0,d1
 		bsr	System_MdMars_MstTask		; Wait until it finishes.
@@ -199,7 +214,7 @@ MD_GmMode0:
 		move.l	#Palette_Map,d1
 		moveq	#0,d2
 		move.l	#256,d3
-		moveq	#0,d4
+		move.l	#$8000,d4
 		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
 		bsr	System_MdMars_MstAddTask
 		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
@@ -214,8 +229,13 @@ MD_GmMode0:
 		bsr	System_MdMars_SlvSendAll	; both SH2
 
 .mode1_loop:
+		move.l	#$7C000003,(vdp_ctrl).l
+		move.w	(RAM_BgCamCurr).l,d0
+		lsr.w	#3,d0
+		move.w	#0,(vdp_data).l
+		move.w	d0,(vdp_data).l
 		lea	str_Status(pc),a0
-		move.l	#locate(0,1,25),d0
+		move.l	#locate(0,1,1),d0
 		bsr	Video_Print
 
 	; temporal camera
@@ -254,6 +274,12 @@ MD_GmMode0:
 		move.l	#CmdTaskMd_CameraPos,d0		; Load map
 		bsr	System_MdMars_SlvAddTask		
 		bsr	System_MdMars_SlvSendDrop
+; 		bne.s	.busy
+; 		move.l	(RAM_Cam_Xrot),d1
+; 		neg.l	d1
+; 		lsr.l	#7,d1
+; 		move.w	d1,(RAM_BgCamCurr).l
+; .busy:
 		rts
 
 ; 		lea	.trklist(pc),a0
@@ -344,8 +370,8 @@ MdMdl_CamAnimate:
 		move.l	(a1)+,(RAM_Cam_Xrot).l
 		move.l	(a1)+,(RAM_Cam_Yrot).l
 		move.l	(a1)+,(RAM_Cam_Zrot).l
-; 		lsr.l	#7,d1
-; 		move.w	d1,(RAM_BgCamera).l
+		lsr.l	#7,d1
+		move.w	d1,(RAM_BgCamera).l
 .no_camanim:
 		moveq	#0,d0
 		rts
@@ -535,3 +561,10 @@ str_Status:
 		dc.l sysmars_reg+comm12
 		dc.l sysmars_reg+comm14
 		align 4
+
+MdPal_Bg:
+		binclude "data/md/bg/bg_pal.bin"
+		align 2
+MdMap_Bg:
+		binclude "data/md/bg/bg_map.bin"
+		align 2

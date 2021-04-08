@@ -271,13 +271,14 @@ for curr_rdpz in range(0,num_pz):
                       has_img = True
                       random_mode = False
                       
-                          # register name
+                      # register name
                       b = tex_fname.split("/")[-1:]
                       a = b[0].split(".")
                       outname = a[0]
 
                       if int(CONVERT_TEX) == True:
-                        print("TEXTURE Material:",mtlname)
+                        a = mtlname.split(".")
+                        print("TEXTURE Material:",a)
                         has_img = True
 
                         output_file = open("mtrl/"+outname+"_pal.bin","wb")

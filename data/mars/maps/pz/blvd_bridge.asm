@@ -1,5 +1,5 @@
 MarsMapPz_blvd_bridge:
-		dc.w 283,1172
+		dc.w 396,1449
 		dc.l .vert,.face,.vrtx,.mtrl
 .vert:		binclude "data/mars/maps/pz/blvd_bridge_vert.bin"
 .face:		binclude "data/mars/maps/pz/blvd_bridge_face.bin"

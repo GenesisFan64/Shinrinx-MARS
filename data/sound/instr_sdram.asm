@@ -1,8 +1,8 @@
 ; ====================================================================
 ; ----------------------------------------------------------------
-; PWM Instruments
-; Stored on 32X's SDRAM area
-; but sample data is stored on the 32X's ROM view area
+; PWM Instrument pointers stored on 32X's SDRAM area
+; the sample data is stored on the 32X's ROM view area
+; (data/mars_rom.asm)
 ; ----------------------------------------------------------------
 
 		align 4
@@ -34,5 +34,10 @@ PwmIns_WHODSNARE:
 PwmIns_TECHNOBASSD:
 		dc.l PwmInsWav_TECHNOBASSD
 		dc.l PwmInsWav_TECHNOBASSD_e
+		dc.l -1
+		dc.l 0
+PwmIns_Synth:
+		dc.l PwmInsWav_Synth
+		dc.l PwmInsWav_Synth_e
 		dc.l -1
 		dc.l 0

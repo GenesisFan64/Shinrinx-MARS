@@ -72,16 +72,56 @@ gemaInsNull	macro
 ; 		gemaInsPsgN 0,PsgIns_Bass,%011
 ; 		gemaInsPsg  0,PsgIns_03
 
+; GemaTrk_Yuki_blk:
+; 		binclude "data/sound/tracks/marscomm_blk.bin"
+; GemaTrk_Yuki_patt:
+; 		binclude "data/sound/tracks/marscomm_patt.bin"
+; GemaTrk_Yuki_ins:
+; 		gemaInsPwm -17,PwmIns_TECHNOBASSD
+; 		gemaInsFm    0,FmIns_Bass_metal
+; 		gemaInsPwm -17,PwmIns_WHODSNARE
+; 		gemaInsPsgN  0,PsgIns_00,%100
+; 		gemaInsFm    0,FmIns_Bass_2
+; 		gemaInsPwm -17,PwmIns_TECHNOBASSD
+; 		gemaInsPwm -17,PwmIns_SPHEAVY1
+; 		gemaInsPwm -17,PwmIns_MCLSTRNG
+
 GemaTrk_Yuki_blk:
-		binclude "data/sound/tracks/marscomm_blk.bin"
+		binclude "data/sound/tracks/yuki_blk.bin"
 GemaTrk_Yuki_patt:
-		binclude "data/sound/tracks/marscomm_patt.bin"
+		binclude "data/sound/tracks/yuki_patt.bin"
 GemaTrk_Yuki_ins:
-		gemaInsPwm -17,PwmIns_TECHNOBASSD
-		gemaInsFm    0,FmIns_Bass_metal
-		gemaInsPwm -17,PwmIns_WHODSNARE
-		gemaInsPsgN  0,PsgIns_00,%100
-		gemaInsFm    0,FmIns_Bass_2
-		gemaInsPwm -17,PwmIns_TECHNOBASSD
-		gemaInsPwm -17,PwmIns_SPHEAVY1
-		gemaInsPwm -17,PwmIns_MCLSTRNG
+		gemaInsNull
+		gemaInsFm   0,FmIns_Trumpet_2
+		gemaInsFm   0,FmIns_Bass_2
+		gemaInsNull
+		gemaInsNull
+		gemaInsFm   0,FmIns_Piano_Small
+		gemaInsPsg  0,PsgIns_02
+		gemaInsPsgN 0,PsgIns_Snare,%100
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
+		gemaInsNull
