@@ -1080,7 +1080,10 @@ playonchip
 		cp	5
 		jp	z,.note_pwm
 		call	dac_me
-		
+		inc	hl
+		ld	c,(hl)
+		push	bc
+
 	; PSG mode 0 and 1
 		cp	1
 		jr	nz,.notnse
@@ -1094,6 +1097,7 @@ playonchip
 		ld	a,(hl)		; Get pseudo channel slot
 		cp	-1
 		ret	z
+		pop	bc
 		push	hl		; save this hl
 		and	11b
 		call	dac_me
@@ -1107,6 +1111,7 @@ playonchip
 		jp	z,.pstop
 		cp	-1
 		jp	z,.poff
+		add	a,c
 		ld	hl,psgFreq_List
 		add	a,a
 		ld	e,a

@@ -16,9 +16,9 @@
 ; ----------------------------------------
 
 MAX_FACES	equ	600		; Maximum polygon faces (models,sprites) to store on buffer
-MAX_SVDP_PZ	equ	600+56		; This list is for both read and write, increase the value if needed
+MAX_SVDP_PZ	equ	600+48		; This list is for both read and write, increase the value if needed
 MAX_MODELS	equ	12		; Note: First 9 models are reserved for layout map
-MAX_ZDIST	equ	-$1900		; Max drawing distance (-Z max)
+MAX_ZDIST	equ	-$1B00		; Max drawing distance (-Z max)
 LAY_WIDTH	equ	$20*2		; Layout data width * 2
 
 ; ----------------------------------------
@@ -281,10 +281,10 @@ MarsVideo_LoadPal:
 ; ------------------------------------------------
 
 MarsVideo_SetWatchdog:
-		stc	sr,@-r15
-		stc	sr,r0
-		or	#$F0,r0				; Disable interrupts first
-		ldc	r0,sr
+; 		stc	sr,@-r15
+; 		stc	sr,r0
+; 		or	#$F0,r0				; Disable interrupts first
+; 		ldc	r0,sr
 		mov	#RAM_Mars_VdpDrwList,r0		; Reset the piece-drawing pointer
 		mov	r0,@(marsGbl_PlyPzList_R,gbr)	; on both READ and WRITE pointers
 		mov	r0,@(marsGbl_PlyPzList_W,gbr)
@@ -306,7 +306,7 @@ MarsVideo_SetWatchdog:
 		mov.w	r0,@r1
 		mov.w	#$A538,r0			; Enable watchdog
 		mov.w	r0,@r1
-		ldc	@r15+,sr			; Restore interrupts
+; 		ldc	@r15+,sr			; Restore interrupts
 		rts
 		nop
 		align 4
@@ -893,10 +893,10 @@ MarsMdl_ReadModel:
 		mov.w	r0,@r5
 		add	#4,r5
 	endm
-		mov	#3,r0				; Triangle?
+		mov	#3,r0			; Triangle?
 		cmp/eq	r0,r7
-		bt	.alluvdone
-		mov.w	@r11+,r0			; Read UV index			
+		bt	.alluvdone		; If yes, skip this
+		mov.w	@r11+,r0		; Read extra UV index			
 		extu	r0,r0
 		shll2	r0
 		mov	@(r6,r0),r0
@@ -987,11 +987,9 @@ MarsMdl_ReadModel:
 		mov	r3,@(4,r1)
 		add	#8,r1
 	endm
-	
-	; Check quad
 		mov	#3,r0			; Triangle?
 		cmp/eq	r0,r7
-		bt	.alldone
+		bt	.alldone		; If yes, skip this
 		mov	#0,r0
 		mov.w 	@r6+,r0
 		mov	#$C,r4
@@ -1007,7 +1005,6 @@ MarsMdl_ReadModel:
 		mov	r2,@r1
 		mov	r3,@(4,r1)
 .alldone:
-
 		mov	r8,r1
 		mov	r9,r2
 		mov	r11,r3
@@ -1071,24 +1068,26 @@ MarsMdl_ReadModel:
 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0	; Add 1 face to the list
 		add	#1,r0
 		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
-	; NEW: copy cache polygon
-	; to current buff face
+		mov	#3,r2
+		cmp/gt	r2,r0
+		bf	.not_en
+		mov	#1,r0
+		mov.w	r0,@(marsGbl_ZSortReq,gbr)
+.not_en:
 		mov	@(marsGbl_CurrFacePos,gbr),r0
 		mov	r13,r2
 		mov	r0,r1
 		mov	r5,@r8				; Store current Z to Zlist
 		mov	r1,@(4,r8)			; And it's address
-		mov	#1,r0
-		mov.w	r0,@(marsGbl_ZSortReq,gbr)
-		
-	rept sizeof_polygn/2
+		add	#8,r8				; Next Zlist entry
+	rept sizeof_polygn/2				; Copy words manually
 		mov.w	@r2+,r0
 		mov.w	r0,@r1
 		add	#2,r1
 	endm
-		add	#8,r8				; Update from Zlist
 		mov	r1,r0				; TODO: Delete after the cache
 		mov	r0,@(marsGbl_CurrFacePos,gbr)	; method is made
+		
 .face_out:
 		dt	r9
 		bt	.finish_this

@@ -791,6 +791,7 @@ master_loop:
 		cmp/pl	r13
 		bf	.skip
 		
+		
 		mov	r13,r0
 		mov	#_sysreg+comm0,r1
 		mov.w	r0,@r1
@@ -979,10 +980,10 @@ slave_loop:
 
 	; --------------------
 	; DEBUG counter
-		mov	#_sysreg+comm2,r4		; DEBUG COUNTER
-		mov.w	@r4,r0
-		add	#1,r0
-		mov.w	r0,@r4
+; 		mov	#_sysreg+comm2,r4		; DEBUG COUNTER
+; 		mov.w	@r4,r0
+; 		add	#1,r0
+; 		mov.w	r0,@r4
 	; --------------------
 	
 ; --------------------------------------------------------
@@ -1003,11 +1004,11 @@ slave_loop:
 		mov	r0,@(marsGbl_CurrFacePos,gbr)
 		mov	#RAM_Mars_Plgn_ZList,r0
 		mov	r0,@(marsGbl_CurrZList,gbr)
-; 		mov	#$FFFFFE80,r1
-; 		mov.w	#$5A7F,r0			; Watchdog wait timer
-; 		mov.w	r0,@r1
-; 		mov.w	#$A538,r0			; Watchdog ON
-; 		mov.w	r0,@r1
+		mov	#$FFFFFE80,r1
+		mov.w	#$5A7F,r0			; Watchdog wait timer
+		mov.w	r0,@r1
+		mov.w	#$A538,r0			; Watchdog ON
+		mov.w	r0,@r1
 
 ; ----------------------------------------
 
@@ -1050,19 +1051,26 @@ slave_loop:
 ; 		mov.w	r0,@(marsGbl_ZReady,gbr)
 ; 		ldc 	@r15+,sr
 .wait_z:
-; 		mov.w	@(marsGbl_ZReady,gbr),r0
-; 		cmp/eq	#1,r0
-; 		bf	.wait_z
-; 		mov.l   #$FFFFFE80,r1			; Stop watchdog
-; 		mov.w   #$A518,r0
-; 		mov.w   r0,@r1
+		mov.w	@(marsGbl_ZSortReq,gbr),r0
+		cmp/eq	#1,r0
+		bt	.wait_z
+		mov.l   #$FFFFFE80,r1			; Stop watchdog
+		mov.w   #$A518,r0
+		mov.w   r0,@r1
 		bsr	slv_sort_z
 		nop
 		
 ; ----------------------------------------
 
+		mov	#_sysreg+comm2,r4		; DEBUG COUNTER
+		mov	#0,r0
+		mov.w	r0,@r4
 		mov	#_sysreg+comm14,r2
 .mstr_busy:
+; 		mov.w	@r4,r0
+; 		add	#1,r0
+; 		mov.w	r0,@r4
+		
 		mov.b	@r2,r0
 		and	#$7F,r0
 		cmp/eq	#0,r0
@@ -1087,7 +1095,6 @@ slave_loop:
 ; r13 - Number of polygons processed
 ; --------------------------------------------------------
 
-
 slv_sort_z:
 		mov	#0,r0					; Reset current PlgnNum
 		mov.w	r0,@r13
@@ -1099,41 +1106,34 @@ slv_sort_z:
 		mov	r0,r11
 
 ; Bubble sorting
-; r10 - numof faces - 1
-; r12 - base Zsort list
-
-.z_normal:
-		mov	#MAX_FACES,r0
-		cmp/ge	r0,r11
-		bf	.z_ranout
-		mov	r0,r11
-.z_ranout:
-		mov	r11,r10
-		add	#-1,r10
-		mov	r10,r7
-; 		add	#-1,r7
-		cmp/pl	r10
-		bf	.z_end
-.z_outer:
-		mov	r10,r8
-		mov	r12,r9
-.z_inner:
-		mov	@r9,r0
-		mov	@(8,r9),r1
-		cmp/gt	r1,r0
-		bf	.z_high			; bf=back to front, bt=front to back
-		mov	r1,@r9
-		mov	r0,@(8,r9)
-		mov	@(4,r9),r0
-		mov	@($C,r9),r1
-		mov	r1,@(4,r9)
-		mov	r0,@($C,r9)
-.z_high:
-		dt	r8
-		bf/s	.z_inner
-		add	#8,r9
-		dt	r7
-		bf	.z_outer
+; r14 - Output face points
+; r13 - Numof polygons result (set number to @r13)
+; r12 - base Zsort list (Zpos,Facedata)
+; r11 - faces used
+; 		mov	r11,r9
+; 		add	#-2,r9
+; .z_loop:
+; 		mov	r12,r10
+; 		mov	#1,r7
+; 		mov	r9,r8
+; .z_next:
+; 		mov	@r10,r0
+; 		mov	@(8,r10),r1
+; 		cmp/gt	r1,r0
+; 		bf	.z_keep
+; 		mov	r1,@r10
+; 		mov	r0,@(8,r10)
+; 		mov	@(4,r10),r0
+; 		mov	@($C,r10),r1
+; 		mov	r1,@(4,r10)
+; 		mov	r0,@($C,r10)
+; 		mov	#-1,r7
+; .z_keep:
+; 		dt	r8
+; 		bf/s	.z_next
+; 		add	#8,r10
+; 		cmp/pl	r7
+; 		bf	.z_loop
 
 ; ----------------------------------------
 ; only 1 or 2 faces
@@ -1476,44 +1476,33 @@ s_irq_custom:
 		mov.b   @(7,r1),r0
 		xor     #2,r0
 		mov.b   r0,@(7,r1)
-		
 		mov.w	@(marsGbl_ZSortReq,gbr),r0
 		cmp/eq	#1,r0
 		bf	.no_req
+
+	; DONT CALL THIS
+	; IF NUMOF FACES < 2
+		mov	#RAM_Mars_Plgn_ZList,r3
+		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
+		mov	r0,r4
+		add	#-2,r4
+.z_next:
+		mov	@r3,r0
+		mov	@(8,r3),r1
+		cmp/gt	r1,r0
+		bf	.z_keep
+		mov	r1,@r3
+		mov	r0,@(8,r3)
+		mov	@(4,r3),r0
+		mov	@($C,r3),r1
+		mov	r1,@(4,r3)
+		mov	r0,@($C,r3)
+.z_keep:
+		dt	r4
+		bf/s	.z_next
+		add	#8,r3
 		mov	#0,r0
 		mov.w	r0,@(marsGbl_ZSortReq,gbr)
-		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0		; Check number of faces to sort
-		mov	r0,r6
-		mov	#2,r1
-		cmp/gt	r1,r0
-		bf	.no_req
-		mov	r6,r3
-		add	#-1,r0
-		mov	r0,r6
-		
-		mov	#RAM_Mars_Plgn_ZList,r7
-.loop:
-		mov	r7,r5
-		mov	r7,r4	
-		add	#8,r4
-		mov	@r5,r3		; Our Z
-		mov	@r4,r0
-		cmp/gt	r0,r3
-		bt	.insert
-		mov	@r4,r3
-		mov	@r5,r2
-		mov	r2,@r4
-		mov	r3,@r5
-		mov	@(4,r4),r3
-		mov	@(4,r5),r2
-		mov	r2,@(4,r4)
-		mov	r3,@(4,r5)
-		bra	.no_req
-		nop
-.insert:	
-		dt	r6
-		bf/s	.loop
-		add	#8,r7
 
 .no_req:
 		mov	#$FFFFFE80,r1

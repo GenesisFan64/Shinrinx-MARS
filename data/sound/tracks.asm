@@ -87,41 +87,9 @@ gemaInsNull	macro
 ; 		gemaInsPwm -17,PwmIns_MCLSTRNG
 
 GemaTrk_Yuki_blk:
-		binclude "data/sound/tracks/yuki_blk.bin"
+		binclude "data/sound/tracks/yui_blk.bin"
 GemaTrk_Yuki_patt:
-		binclude "data/sound/tracks/yuki_patt.bin"
+		binclude "data/sound/tracks/yui_patt.bin"
 GemaTrk_Yuki_ins:
-		gemaInsNull
-		gemaInsFm   0,FmIns_Trumpet_2
-		gemaInsFm   0,FmIns_Bass_2
-		gemaInsNull
-		gemaInsNull
-		gemaInsFm   0,FmIns_Piano_Small
-		gemaInsPsg  0,PsgIns_02
-		gemaInsPsgN 0,PsgIns_Snare,%100
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
-		gemaInsNull
+		gemaInsPwm  0,PwmIns_Piano
+		gemaInsPsg  0,PsgIns_01

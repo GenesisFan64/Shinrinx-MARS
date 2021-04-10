@@ -59,7 +59,7 @@ MD_GmMode0:
 		move.l	#GemaTrk_Yuki_patt,d0
 		move.l	#GemaTrk_Yuki_blk,d1
 		move.l	#GemaTrk_Yuki_ins,d2
-		moveq	#2,d3
+		moveq	#5,d3
 		moveq	#0,d4
 		bsr	SoundReq_SetTrack
 ; 		moveq	#6,d1

@@ -7,7 +7,7 @@
 ; ----------------------------------------------------------------
 
 PsgIns_00:	db 00h,0FFh,40h,00h, 80h
-PsgIns_01:	db 40h, 40h,80h,01h, 10h
+PsgIns_01:	db 00h,0FFh,00h,01h, 01h
 PsgIns_02:	db 00h,0FFh,80h,04h, 04h
 PsgIns_03:	db 30h,0FFh, -1,00h, 04h
 PsgIns_Bass:	db 00h,0FFh, -1,01h, 01h
@@ -75,6 +75,8 @@ FmIns_Brass_Gem:
 		binclude "data/sound/instr/fm/brass_gem.gsx",2478h,20h
 FmIns_Piano_Small:
 		binclude "data/sound/instr/fm/piano_small.gsx",2478h,20h
+FmIns_Piano:
+		binclude "data/sound/instr/fm/piano_m1.gsx",2478h,20h
 FmIns_Trumpet_2:
 		binclude "data/sound/instr/fm/trumpet_2.gsx",2478h,20h
 ; FmIns_Bell_Glass:

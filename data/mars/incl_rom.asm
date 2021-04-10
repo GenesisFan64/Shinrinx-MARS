@@ -4,8 +4,6 @@
 ; ----------------------------------------------------------------
 
 		align 4
-
-
 Textr_marscity:
 Textr_marscity.001:
 Textr_marscity.002:

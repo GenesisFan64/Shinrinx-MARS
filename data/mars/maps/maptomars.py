@@ -46,7 +46,7 @@ has_img       = False
 use_img       = False
 
 object_name   = sys.argv[1]
-CONVERT_TEX=1
+CONVERT_TEX   = True
 
 INCR_Y=0
 INDXBASE=0
@@ -61,7 +61,7 @@ if len(sys.argv) == 4:
 
 #list_vertices = list()
 #list_faces    = list()
-
+list_mtrl     = list()
 map_file      = open(TAG_OBJECTSDIR+"/"+object_name+"/layout.txt","r")
 out_laydata   = open(object_name+"_lay.bin","wb")
 out_layout    = open(object_name+"_data.asm","w")
@@ -275,17 +275,16 @@ for curr_rdpz in range(0,num_pz):
                       b = tex_fname.split("/")[-1:]
                       a = b[0].split(".")
                       outname = a[0]
-
+                      list_mtrl.append(outname)
+                      
                       if int(CONVERT_TEX) == True:
                         a = mtlname.split(".")
-                        print("TEXTURE Material:",a)
+                        print("TEXTURE Material:",a[0])
                         has_img = True
-
                         output_file = open("mtrl/"+outname+"_pal.bin","wb")
                         d = pal_len
                         while d:
                           d -= 1
-
                           a = (ord(tex_file.read(1)) & 0xF8 ) << 7
                           a |= (ord(tex_file.read(1)) & 0xF8 ) << 2
                           a |= (ord(tex_file.read(1)) & 0xF8 ) >> 3

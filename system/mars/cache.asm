@@ -330,7 +330,6 @@ drwsld_nxtline_tex:
 		shlr16	r4
 		and	r2,r4
 		and	r0,r13
-; 		mov	r9,@-r15
 		
 	; TODO: implement some sort of
 	; duffs device
@@ -354,9 +353,7 @@ drwsld_nxtline_tex:
 		dt	r12
 		bf/s	.tex_xloop
 		add	r8,r7				; Update Y
-		
 
-; 		mov	@r15+,r9
 .tex_skip_line:
 		mov	@r15+,r13
 		mov	@r15+,r10
@@ -494,7 +491,7 @@ drwsld_nxtline:
 		mov	r13,@-r0
 		mov	r14,@-r0
 		bra	drwtask_return
-		mov	#0,r2			; No timer: Exit and re-enter
+		mov	#8,r2			; No timer: Exit and re-enter
 drwsld_updline:
 		add	r2,r1
 		add	r4,r3
@@ -524,7 +521,7 @@ drwsld_nextpz:
 ; 		mov.w	r0,@(marsGbl_PzListCntr,gbr)
 .finish_it:
 		bra	drwtask_return
-		mov	#$10,r2			; Timer for next watchdog
+		mov	#$08,r2			; Timer for next watchdog
 
 ; --------------------------------
 ; Task $00
@@ -584,8 +581,8 @@ drwtask_exit:
 
 MarsVideo_MakePolygon:
 		sts	pr,@-r15
-		mov	#CachDDA_Top,r12
-		mov	#CachDDA_Last,r13
+		mov	#Cach_DDA_Top,r12
+		mov	#Cach_DDA_Last,r13
 		mov	@(polygn_type,r14),r0
 		shlr16	r0
 		shlr8	r0
@@ -595,7 +592,7 @@ MarsVideo_MakePolygon:
 .tringl:
 		mov	r14,r1
 		mov	r12,r2
-		mov	#CachDDA_Src,r3
+		mov	#Cach_DDA_Src,r3
 		add	#polygn_points,r1
 		tst	#PLGN_SPRITE,r0			; PLGN_SPRITE set?
 		bt	.plgn_pnts
@@ -799,7 +796,7 @@ set_left:
 		add	#$20,r8			; To read Texture SRC points
 		mov	@r8,r4
 		mov	@(4,r8),r5
-		mov	#CachDDA_Src_L,r8
+		mov	#Cach_DDA_Src_L,r8
 		mov	r4,r0
 		shll16	r0
 		mov	r0,@r8
@@ -845,9 +842,9 @@ set_left:
 		mov	@(4,r0),r4
 		shll8	r4
 		shll8	r5
-		mov	#CachDDA_Src_L+$C,r0
+		mov	#Cach_DDA_Src_L+$C,r0
 		mov	r4,@r0
-		mov	#CachDDA_Src_L+4,r0
+		mov	#Cach_DDA_Src_L+4,r0
 		mov	r5,@r0
 		mov	@r2,r5
 		sub 	r1,r5
@@ -874,7 +871,7 @@ set_right:
 		add	#$20,r9
 		mov	@r9,r6
 		mov	@(4,r9),r7
-		mov	#CachDDA_Src_R,r9
+		mov	#Cach_DDA_Src_R,r9
 		mov	r6,r0
 		shll16	r0
 		mov	r0,@r9
@@ -920,9 +917,9 @@ set_right:
 		mov	@(4,r0),r6
 		shll8	r6
 		shll8	r7
-		mov	#CachDDA_Src_R+4,r0
+		mov	#Cach_DDA_Src_R+4,r0
 		mov	r7,@r0
-		mov	#CachDDA_Src_R+$C,r0
+		mov	#Cach_DDA_Src_R+$C,r0
 		mov	r6,@r0
 		mov	@r3,r7
 		sub 	r1,r7
@@ -980,7 +977,7 @@ put_piece:
 		or	r2,r3
 		mov	r3,@(plypz_ypos,r1)
 		mov	r3,@-r15
-		mov	#CachDDA_Src_L,r2
+		mov	#Cach_DDA_Src_L,r2
 		mov	@r2,r5
 		mov	r5,@(plypz_src_xl,r1)
 		mov	@(4,r2),r7
@@ -995,10 +992,10 @@ put_piece:
 		sts	macl,r3
 		add 	r2,r5
 		add	r3,r8
-		mov	#CachDDA_Src_L,r2
+		mov	#Cach_DDA_Src_L,r2
 		mov	r5,@r2
 		mov	r8,@(8,r2)
-		mov	#CachDDA_Src_R,r2
+		mov	#Cach_DDA_Src_R,r2
 		mov	@r2,r5
 		mov	r5,@(plypz_src_xr,r1)
 		mov	@(4,r2),r7
@@ -1013,7 +1010,7 @@ put_piece:
 		sts	macl,r3
 		add 	r2,r5
 		add	r3,r8
-		mov	#CachDDA_Src_R,r2
+		mov	#Cach_DDA_Src_R,r2
 		mov	r5,@r2
 		mov	r8,@(8,r2)
 		mov	@r15+,r3
@@ -1056,11 +1053,11 @@ put_piece:
 		align 4
 Cach_LnDrw_L	ds.l 14			;
 Cach_LnDrw_S	ds.l 0			; <-- Reads backwards
-CachDDA_Top	ds.l 2*2		; First 2 points
-CachDDA_Last	ds.l 2*2		; Triangle or Quad (+8)
-CachDDA_Src	ds.l 4*2
-CachDDA_Src_L	ds.l 4			; X/DX/Y/DX result for textures
-CachDDA_Src_R	ds.l 4
+Cach_DDA_Top	ds.l 2*2		; First 2 points
+Cach_DDA_Last	ds.l 2*2		; Triangle or Quad (+8)
+Cach_DDA_Src	ds.l 4*2
+Cach_DDA_Src_L	ds.l 4			; X/DX/Y/DX result for textures
+Cach_DDA_Src_R	ds.l 4
 Cach_ClrLines	ds.l 1			; Current lines to clear
 
 ; ------------------------------------------------
@@ -1078,7 +1075,8 @@ CACHE_SLAVE:
 		phase $C0000000
 ; ------------------------------------------------
 
-
+	; code goes here...
+	
 ; ------------------------------------------------
 		align 4
 Cach_CurrPlygn	ds.b sizeof_polygn	; Current polygon in modelread
