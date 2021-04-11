@@ -31,13 +31,14 @@ Engine_Code:
 ; --------------------------------------------------------
 
 		include	"system/md/sound.asm"
-		include	"system/md/system.asm"
 		include	"system/md/video.asm"
+		include	"system/md/system.asm"
 		
 ; --------------------------------------------------------
 ; Initialize system
 ; --------------------------------------------------------
 
+		align 2
 MD_Main:
 		bsr 	Sound_init
 		bsr 	Video_init

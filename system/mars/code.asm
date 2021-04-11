@@ -779,19 +779,17 @@ master_loop:
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0	; Start drawing polygons from the READ buffer
 		tst     #1,r0				; Check for which buffer to use
 		bt	.page_2
-		mov 	#RAM_Mars_PlgnList_0,r14
+		mov 	#RAM_Mars_Plgn_ZList_0+4,r14
 		mov	#RAM_Mars_PlgnNum_0,r13
 		bra	.cont_plgn
 		nop
 .page_2:
-		mov 	#RAM_Mars_PlgnList_1,r14
+		mov 	#RAM_Mars_Plgn_ZList_1+4,r14
 		mov	#RAM_Mars_PlgnNum_1,r13
 .cont_plgn:
 		mov.w	@r13,r13
 		cmp/pl	r13
 		bf	.skip
-		
-		
 		mov	r13,r0
 		mov	#_sysreg+comm0,r1
 		mov.w	r0,@r1
@@ -809,7 +807,7 @@ master_loop:
 		mov	@r15+,r14
 		dt	r13
 		bf/s	.loop
-		add	#4,r14
+		add	#8,r14
 .skip:
 
 	; --------------------------------------
@@ -995,14 +993,16 @@ slave_loop:
 		mov	#0,r0
 		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
 		mov 	#RAM_Mars_Polygons_0,r1
+		mov	#RAM_Mars_Plgn_ZList_0,r2
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		tst     #1,r0
 		bt	.go_mdl
 		mov 	#RAM_Mars_Polygons_1,r1
+		mov	#RAM_Mars_Plgn_ZList_1,r2
 .go_mdl:
 		mov	r1,r0
 		mov	r0,@(marsGbl_CurrFacePos,gbr)
-		mov	#RAM_Mars_Plgn_ZList,r0
+		mov	r2,r0
 		mov	r0,@(marsGbl_CurrZList,gbr)
 		mov	#$FFFFFE80,r1
 		mov.w	#$5A7F,r0			; Watchdog wait timer
@@ -1025,6 +1025,11 @@ slave_loop:
 		jsr	@r0
 		mov	r13,@-r15
 		mov	@r15+,r13
+		mov	#0,r0
+		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0	; Ran out of space to store faces?
+		mov	#MAX_FACES,r1
+		cmp/ge	r1,r0
+		bt	.skip
 .invlid:
 		dt	r13
 		bf/s	.loop
@@ -1033,23 +1038,14 @@ slave_loop:
 
 ; ----------------------------------------
 
+		mov 	#RAM_Mars_PlgnNum_0,r13
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		tst     #1,r0
-		bf	.page_2
-		mov 	#RAM_Mars_PlgnList_0,r14
-		mov 	#RAM_Mars_PlgnNum_0,r13
-		bra	.swap_now
-		nop
-.page_2:
-		mov 	#RAM_Mars_PlgnList_1,r14
+		bt	.page_2
 		mov 	#RAM_Mars_PlgnNum_1,r13
-.swap_now:
-; 		stc	sr,@-r15
-; 		mov	#$F0,r0
-; 		ldc	r0,sr
-; 		mov	#0,r0
-; 		mov.w	r0,@(marsGbl_ZReady,gbr)
-; 		ldc 	@r15+,sr
+.page_2:
+		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
+		mov.w	r0,@r13
 .wait_z:
 		mov.w	@(marsGbl_ZSortReq,gbr),r0
 		cmp/eq	#1,r0
@@ -1057,8 +1053,8 @@ slave_loop:
 		mov.l   #$FFFFFE80,r1			; Stop watchdog
 		mov.w   #$A518,r0
 		mov.w   r0,@r1
-		bsr	slv_sort_z
-		nop
+; 		bsr	slv_sort_z
+; 		nop
 		
 ; ----------------------------------------
 
@@ -1067,10 +1063,6 @@ slave_loop:
 		mov.w	r0,@r4
 		mov	#_sysreg+comm14,r2
 .mstr_busy:
-; 		mov.w	@r4,r0
-; 		add	#1,r0
-; 		mov.w	r0,@r4
-		
 		mov.b	@r2,r0
 		and	#$7F,r0
 		cmp/eq	#0,r0
@@ -1095,78 +1087,78 @@ slave_loop:
 ; r13 - Number of polygons processed
 ; --------------------------------------------------------
 
-slv_sort_z:
-		mov	#0,r0					; Reset current PlgnNum
-		mov.w	r0,@r13
-		mov	#RAM_Mars_Plgn_ZList,r12
-		mov	#2,r11
-		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0		; Check number of faces to sort
-		cmp/gt	r11,r0
-		bf	.z_copypos
-		mov	r0,r11
-
-; Bubble sorting
-; r14 - Output face points
-; r13 - Numof polygons result (set number to @r13)
-; r12 - base Zsort list (Zpos,Facedata)
-; r11 - faces used
-; 		mov	r11,r9
-; 		add	#-2,r9
-; .z_loop:
+; slv_sort_z:
+; 		mov	#0,r0					; Reset current PlgnNum
+; 		mov.w	r0,@r13
+; 		mov	#RAM_Mars_Plgn_ZList_0,r12
+; 		mov	#2,r11
+; 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0		; Check number of faces to sort
+; 		cmp/gt	r11,r0
+; 		bf	.z_copypos
+; 		mov	r0,r11
+; 
+; ; Bubble sorting
+; ; r14 - Output face points
+; ; r13 - Numof polygons result (set number to @r13)
+; ; r12 - base Zsort list (Zpos,Facedata)
+; ; r11 - faces used
+; ; 		mov	r11,r9
+; ; 		add	#-2,r9
+; ; .z_loop:
+; ; 		mov	r12,r10
+; ; 		mov	#1,r7
+; ; 		mov	r9,r8
+; ; .z_next:
+; ; 		mov	@r10,r0
+; ; 		mov	@(8,r10),r1
+; ; 		cmp/gt	r1,r0
+; ; 		bf	.z_keep
+; ; 		mov	r1,@r10
+; ; 		mov	r0,@(8,r10)
+; ; 		mov	@(4,r10),r0
+; ; 		mov	@($C,r10),r1
+; ; 		mov	r1,@(4,r10)
+; ; 		mov	r0,@($C,r10)
+; ; 		mov	#-1,r7
+; ; .z_keep:
+; ; 		dt	r8
+; ; 		bf/s	.z_next
+; ; 		add	#8,r10
+; ; 		cmp/pl	r7
+; ; 		bf	.z_loop
+; 
+; ; ----------------------------------------
+; ; only 1 or 2 faces
+; ; TODO: this is too much for 2 faces...
+; 
+; ; r14 - Facelist to draw
+; ; r13 - numof faces to set to read
+; ; r12 - Zlist: Zpos,Faceaddr
+; ; r11 - faces to process
+; 
+; .z_copypos:
 ; 		mov	r12,r10
-; 		mov	#1,r7
-; 		mov	r9,r8
-; .z_next:
-; 		mov	@r10,r0
-; 		mov	@(8,r10),r1
-; 		cmp/gt	r1,r0
-; 		bf	.z_keep
-; 		mov	r1,@r10
-; 		mov	r0,@(8,r10)
-; 		mov	@(4,r10),r0
-; 		mov	@($C,r10),r1
-; 		mov	r1,@(4,r10)
-; 		mov	r0,@($C,r10)
-; 		mov	#-1,r7
-; .z_keep:
-; 		dt	r8
-; 		bf/s	.z_next
-; 		add	#8,r10
+; 		mov	r11,r9
+; 		mov	#0,r8
+; .next:
+; 		mov	@(4,r10),r7
 ; 		cmp/pl	r7
-; 		bf	.z_loop
-
-; ----------------------------------------
-; only 1 or 2 faces
-; TODO: this is too much for 2 faces...
-
-; r14 - Facelist to draw
-; r13 - numof faces to set to read
-; r12 - Zlist: Zpos,Faceaddr
-; r11 - faces to process
-
-.z_copypos:
-		mov	r12,r10
-		mov	r11,r9
-		mov	#0,r8
-.next:
-		mov	@(4,r10),r7
-		cmp/pl	r7
-		bf	.noface
-		mov	#0,r0
-		mov	r0,@(4,r10)
-		mov	r7,@r14
-		add	#4,r14
-		add	#1,r8
-.noface:
-		dt	r9
-		bf/s	.next
-		add 	#8,r10
-		mov.w	r8,@r13
-.z_end:
-		rts
-		nop
-		align 4
-		ltorg
+; 		bf	.noface
+; 		mov	#0,r0
+; 		mov	r0,@(4,r10)
+; 		mov	r7,@r14
+; 		add	#4,r14
+; 		add	#1,r8
+; .noface:
+; 		dt	r9
+; 		bf/s	.next
+; 		add 	#8,r10
+; 		mov.w	r8,@r13
+; .z_end:
+; 		rts
+; 		nop
+; 		align 4
+; 		ltorg
 
 ; ====================================================================
 ; --------------------------------------------------------
@@ -1482,10 +1474,17 @@ s_irq_custom:
 
 	; DONT CALL THIS
 	; IF NUMOF FACES < 2
-		mov	#RAM_Mars_Plgn_ZList,r3
+		mov	#RAM_Mars_Plgn_ZList_0,r3
+		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
+		tst     #1,r0
+		bt	.page_2
+		mov	#RAM_Mars_Plgn_ZList_1,r3
+.page_2:
 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
 		mov	r0,r4
 		add	#-2,r4
+		cmp/pz	r4
+		bf	.no_req
 .z_next:
 		mov	@r3,r0
 		mov	@(8,r3),r1
@@ -1594,9 +1593,8 @@ RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
 RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
 RAM_Mars_VdpDrwList	ds.b sizeof_plypz*MAX_SVDP_PZ	; Pieces list
 RAM_Mars_VdpDrwList_e	ds.l 0				; (end-of-list label)
-RAM_Mars_PlgnList_0	ds.l MAX_FACES			; Pointer list(s)
-RAM_Mars_PlgnList_1	ds.l MAX_FACES
-RAM_Mars_Plgn_ZList	ds.l MAX_FACES*2		; Z value / foward faces
+RAM_Mars_Plgn_ZList_0	ds.l MAX_FACES*2		; Z value / foward faces
+RAM_Mars_Plgn_ZList_1	ds.l MAX_FACES*2		; Z value / foward faces
 RAM_Mars_MdTasksFifo_M	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Request list for Master: SVDP and PWM interaction exclusive
 RAM_Mars_MdTasksFifo_S	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Request list for Slave: Controlling objects and camera
 RAM_Mars_Palette	ds.w 256			; Indexed palette

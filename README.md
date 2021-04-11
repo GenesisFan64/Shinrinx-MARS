@@ -1,7 +1,7 @@
 # Shinrinx-MARS
 A 3D Polygon system for the Sega 32X, inspired by the Zyrinx tech demo
 
-This is a rewrite of MdlRenderer-MARS, it uses the Watchdog interrupt to drawing the polygons on the background
+This is a rewrite of MdlRenderer-MARS, it uses the Watchdog interrupt to draw the polygons on the background
 
 ** For NTSC Systems, Untested on PAL **
 
@@ -15,6 +15,7 @@ Features:
 Current issues/notes:
 - Soft-reset might freeze everything (65% chance)
 - Perspective calculation is weak, doesn't work properly outside of the camera (Darxide and even the Zyrinx tech demo has problems with perspective)
+- Solid-color polygons might loose lines
 - Texture points in triangles might not map correctly, not sure if it a bug in the script or a limitation of DDA.
 
 Please note that current 32X emulators ignore some hardware restrictions and bugs of the system:
@@ -24,6 +25,6 @@ Please note that current 32X emulators ignore some hardware restrictions and bug
 - SH2's DMA locks Palette (HW bug I found, or probably did something wrong): If transfering indexed-palette data to SuperVDP's Palette using DMA, the first transfer will work, then the DMA will get locked, both Source and Destination areas can't be rewritten
 - PWM's sound limit (for each channel: Left and Right) is $3FF, not $FFF mentioned in the docs
 
-A prebuilt binary is located in the /out folder (rom_mars.bin) for testing, works on any Genesis/MD flashcart WITH the 32X already inserted, If it doesn't boot: it probably broke during coding, ROM is for NTSC systems, can be played on PAL but with the
+A prebuilt binary is located in the /out folder (rom_mars.bin) for testing, works on any Genesis/MD flashcart WITH the 32X already inserted, If it doesn't boot: it probably broke during coding, ROM is for NTSC systems, can be played on PAL but with slowdown.
 
 For more info check the official hardware manual (32X Hardware Manual.pdf)

@@ -331,8 +331,7 @@ drwsld_nxtline_tex:
 		and	r2,r4
 		and	r0,r13
 		
-	; TODO: implement some sort of
-	; duffs device
+	; TODO: implement duffs device
 .tex_xloop:
 		mov	r7,r2
 		shlr16	r2
@@ -342,11 +341,8 @@ drwsld_nxtline_tex:
 		shlr16	r2
 		add	r2,r0
 		mov.b	@(r0,r11),r0			; Read pixel
-; 		cmp/eq	#0,r0				; If texture pixel == 0
-; 		bt	.blnk				; then don't add
 		add	r13,r0
 		and	#$FF,r0
-; .blnk:
 		mov.b	r0,@r10	   			; Write pixel
 		add 	#1,r10
 		add	r6,r5				; Update X
@@ -491,7 +487,7 @@ drwsld_nxtline:
 		mov	r13,@-r0
 		mov	r14,@-r0
 		bra	drwtask_return
-		mov	#8,r2			; No timer: Exit and re-enter
+		mov	#$10,r2			; No timer: Exit and re-enter
 drwsld_updline:
 		add	r2,r1
 		add	r4,r3
@@ -521,7 +517,7 @@ drwsld_nextpz:
 ; 		mov.w	r0,@(marsGbl_PzListCntr,gbr)
 .finish_it:
 		bra	drwtask_return
-		mov	#$08,r2			; Timer for next watchdog
+		mov	#$10,r2			; Timer for next watchdog
 
 ; --------------------------------
 ; Task $00
@@ -551,11 +547,11 @@ drwtask_return:
 		mov	@r15+,r3
 drwtask_exit:
 		mov.l   #$FFFFFE80,r1
-		mov.w   #$A518,r0
+		mov.w   #$A518,r0	; OFF
 		mov.w   r0,@r1
-		or      #$20,r0
+		or      #$20,r0		; ON
 		mov.w   r0,@r1
-		mov.w   #$5A00,r0
+		mov.w   #$5A00,r0	; r2 - Timer
 		or	r2,r0
 		mov.w   r0,@r1
 		mov	@r15+,r2

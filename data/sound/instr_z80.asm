@@ -7,7 +7,7 @@
 ; ----------------------------------------------------------------
 
 PsgIns_00:	db 00h,0FFh,40h,00h, 80h
-PsgIns_01:	db 00h,0FFh,00h,01h, 01h
+PsgIns_01:	db 00h,0FFh,00h,03h, 03h
 PsgIns_02:	db 00h,0FFh,80h,04h, 04h
 PsgIns_03:	db 30h,0FFh, -1,00h, 04h
 PsgIns_Bass:	db 00h,0FFh, -1,01h, 01h

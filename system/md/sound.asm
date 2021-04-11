@@ -250,7 +250,7 @@ sndReq_sbyte:
 ; code change, DAC sample rate is 16000hz base
 ; ----------------------------------------------------------------
 
-		align $100
+		align $80
 Z80_CODE:
 		cpu Z80			; Set Z80 here
 		phase 0			; And set PC to 0
