@@ -43,7 +43,7 @@ MD_Main:
 		bsr 	Sound_init
 		bsr 	Video_init
 		bsr	System_Init
-		include "code/md/gm_mode0.asm"
+		include "code/gm_mode0.asm"
 		dephase
 Engine_Code_end:
 		align 2

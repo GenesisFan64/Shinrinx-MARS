@@ -3,22 +3,14 @@
 ; MARS Video
 ; ----------------------------------------------------------------
 
-; MARS Polygons
-; 
-; type format:
-;   0 - end-of-list
-;  -1 - skip polygon (already drawn)
-; $03 - triangle
-; $04 - quad
-
 ; ----------------------------------------
 ; Settings
 ; ----------------------------------------
 
-MAX_FACES	equ	600		; Maximum polygon faces (models,sprites) to store on buffer
-MAX_SVDP_PZ	equ	600+64		; This list is for both read and write, increase the value if needed
+MAX_FACES	equ	700		; Maximum polygon faces (models,sprites) to store on buffer
+MAX_SVDP_PZ	equ	700+64		; This list is for both read and write, increase the value if needed
 MAX_MODELS	equ	12		; Note: First 9 models are reserved for layout map
-MAX_ZDIST	equ	-$1B00		; Max drawing distance (-Z max)
+MAX_ZDIST	equ	-$2000		; Max drawing distance (-Z max)
 LAY_WIDTH	equ	$20*2		; Layout data width * 2
 
 ; ----------------------------------------
@@ -31,7 +23,7 @@ SCREEN_HEIGHT	equ	224
 ; MSB
 PLGN_TEXURE	equ	%10000000
 PLGN_TRI	equ	%01000000
-PLGN_SPRITE	equ	%00100000
+PLGN_SPRITE	equ	%00100000	; TODO: get this working for 2D games...
 
 ; ----------------------------------------
 ; Structs
@@ -167,60 +159,60 @@ MarsVideo_Init:
 ; Clear the current framebuffer
 ; ------------------------------------
 
-MarsVideo_ClearFrame:
-		mov	#_vdpreg,r1
-.wait2		mov.w	@(10,r1),r0		; Wait for FEN to clear
-		and	#%10,r0
-		cmp/eq	#2,r0
-		bt	.wait2
-
-		mov	#255,r2			; 256 words per pass
-		mov	#$100,r3		; Starting address
-		mov	#0,r4			; Clear to zero
-		mov	#256,r5			; Increment address by 256
-		mov	#((512*240)/256)/2,r6	; 140 passes
-.loop
-		mov	r2,r0
-		mov.w	r0,@(4,r1)		; Set length
-		mov	r3,r0
-		mov.w	r0,@(6,r1)		; Set address
-		mov	r4,r0
-		mov.w	r0,@(8,r1)		; Set data
-		add	r5,r3
-		
-.wait		mov.w	@(10,r1),r0		; Wait for FEN to clear
-		and	#%10,r0
-		cmp/eq	#2,r0
-		bt	.wait
-		dt	r6
-		bf	.loop
-		rts
-		nop
-		align 4
+; MarsVideo_ClearFrame:
+; 		mov	#_vdpreg,r1
+; .wait2		mov.w	@(10,r1),r0		; Wait for FEN to clear
+; 		and	#%10,r0
+; 		cmp/eq	#2,r0
+; 		bt	.wait2
+; 
+; 		mov	#255,r2			; r2 - lenght: 256 words per pass
+; 		mov	#$200/2,r3		; r3 - Start address / 2
+; 		mov	#0,r4			; r4 - data (zero)
+; 		mov	#256,r5			; Increment address by 256
+; 		mov	#((512*240)/256)/2,r6	; 140 passes
+; .loop
+; 		mov	r2,r0
+; 		mov.w	r0,@(4,r1)		; Set length
+; 		mov	r3,r0
+; 		mov.w	r0,@(6,r1)		; Set address
+; 		mov	r4,r0
+; 		mov.w	r0,@(8,r1)		; Set data
+; 		add	r5,r3
+; 		
+; .wait		mov.w	@(10,r1),r0		; Wait for FEN to clear
+; 		and	#%10,r0
+; 		cmp/eq	#2,r0
+; 		bt	.wait
+; 		dt	r6
+; 		bf	.loop
+; 		rts
+; 		nop
+; 		align 4
 
 ; ------------------------------------
 ; MarsVideo_FrameSwap
 ; ------------------------------------
 
-MarsVideo_FrameSwap:
-		mov.l	#_vdpreg,r2
-.wait_fb:
-		mov.w	@($A,r2),r0
-		tst	#2,r0
-		bf	.wait_fb
-		mov.w	@($A,r2),r0
-		xor	#1,r0
-		mov.w	r0,@($A,r2)
-		and	#1,r0
-		mov	r0,r1
-.wait_result:
-		mov.w	@($A,r2),r0
-		and	#1,r0
-		cmp/eq	r0,r1
-		bf	.wait_result
-		rts
-		nop
-		align 4
+; MarsVideo_FrameSwap:
+; 		mov.l	#_vdpreg,r2
+; .wait_fb:
+; 		mov.w	@($A,r2),r0
+; 		tst	#2,r0
+; 		bf	.wait_fb
+; 		mov.w	@($A,r2),r0
+; 		xor	#1,r0
+; 		mov.w	r0,@($A,r2)
+; 		and	#1,r0
+; 		mov	r0,r1
+; .wait_result:
+; 		mov.w	@($A,r2),r0
+; 		and	#1,r0
+; 		cmp/eq	r0,r1
+; 		bf	.wait_result
+; 		rts
+; 		nop
+; 		align 4
 
 ; ------------------------------------
 ; MarsVdp_LoadPal
@@ -264,8 +256,8 @@ MarsVideo_LoadPal:
 		bf/s	.loop
 		add 	#2,r6
 .badlen:
-		mov	#RAM_Mars_Palette,r1
-		mov.w	@r1,r0
+		mov	#RAM_Mars_Palette,r1	; lazy fix
+		mov.w	@r1,r0			; for background
 		mov	#$7FFF,r2
 		and	r2,r0
 		mov.w	r0,@r1
@@ -277,7 +269,8 @@ MarsVideo_LoadPal:
 ; ------------------------------------------------
 ; MarsVideo_SetWatchdog
 ; 
-; Starts interrupt for drawing the polygon pieces
+; Initialize watchdog interrupt with
+; default settings
 ; ------------------------------------------------
 
 MarsVideo_SetWatchdog:
@@ -296,15 +289,15 @@ MarsVideo_SetWatchdog:
 		mov	#8,r0				; Set starting watchdog task to $08 (Clear framebuffer)
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 		mov	#_vdpreg,r1
-.wait_fb:	mov.w	@($A,r1),r0			; Framebuffer available?
+.wait_fb:	mov.w	@($A,r1),r0			; Wait until framebuffer is unlocked
 		tst	#2,r0
 		bf	.wait_fb
 		mov.w	#$A1,r0				; Pre-start SVDP fill line at address $A1
-		mov.w	r0,@(6,r1)
+		mov.w	r0,@(6,r1)			; $5F gets added on watchdog: $A1+$5F=$100
 		mov	#$FFFFFE80,r1
-		mov.w	#$5AFF,r0			; Watchdog wait timer
+		mov.w	#$5AFF,r0			; Watchdog timer
 		mov.w	r0,@r1
-		mov.w	#$A538,r0			; Enable watchdog
+		mov.w	#$A538,r0			; Enable this watchdog
 		mov.w	r0,@r1
 ; 		ldc	@r15+,sr			; Restore interrupts
 		rts
@@ -834,14 +827,13 @@ MarsMdl_ReadModel:
 		mov	r4,@(mdl_x_rot,r14)
 		mov	r5,@(mdl_y_rot,r14)
 		mov	r6,@(mdl_z_rot,r14)
-		mov	#1,r0				; TEMPORAL timer
+		mov	#1,r0				; TODO: make a timer setting
 .wait_camanim:
 		mov	r0,@(mdl_animtimer,r14)	
 .no_anim:
-
 	; Now start reading
 		mov	#$3FFFFFFF,r0
-		mov	#Cach_CurrPlygn,r13		; r13 - output face
+		mov	#Cach_CurrPlygn,r13		; r13 - temporal face output
 		mov	@(mdl_data,r14),r12		; r12 - model header
 		and	r0,r12
 		mov 	@(8,r12),r11			; r11 - face data
@@ -862,25 +854,25 @@ MarsMdl_ReadModel:
 ; --------------------------------
 
 .can_build:
-		mov.w	@r11+,r4			; Read type from model
-		mov	#3,r7				; r7 - Current polygon type: triangle (3)
+		mov.w	@r11+,r4		; Read type
+		mov	#3,r7			; r7 - Current polygon type: triangle (3)
 		mov	r4,r0
 		shlr8	r0
-		tst	#PLGN_TRI,r0			; Model face uses triangle?
+		tst	#PLGN_TRI,r0		; Model face uses triangle?
 		bf	.set_tri
-		add	#1,r7				; Face is quad, r7 = 4 points
+		add	#1,r7			; Face is quad, r7 = 4 points
 .set_tri:
-		cmp/pl	r4				; Faces uses texture?
+		cmp/pl	r4			; Faces uses texture? ($8xxx)
 		bt	.solid_type
 
 ; --------------------------------
 ; Set texture material
 ; --------------------------------
 
-		mov	@($C,r12),r6			; r6 - Material data
-		mov	r13,r5				; r5 - Go to UV section 
+		mov	@($C,r12),r6		; r6 - Material data
+		mov	r13,r5			; r5 - Go to UV section 
 		add 	#polygn_srcpnts,r5
-		mov	r7,r3				; r3 - copy of current face points (3 or 4)
+		mov	r7,r3			; r3 - copy of current face points (3 or 4)
 
 	; New method
 	rept 3
@@ -1046,7 +1038,7 @@ MarsMdl_ReadModel:
 		add 	r7,r0
 		cmp/ge	r0,r5
 		bf	.face_out
-		
+
 		mov	#-(SCREEN_WIDTH/2),r0
 		cmp/gt	r0,r1
 		bf	.face_out
@@ -1065,15 +1057,6 @@ MarsMdl_ReadModel:
 ; --------------------------------
 
 .face_ok:
-		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0	; Add 1 face to the list
-		add	#1,r0
-		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
-		mov	#3,r2
-		cmp/gt	r2,r0
-		bf	.not_en
-		mov	#1,r0
-		mov.w	r0,@(marsGbl_ZSortReq,gbr)
-.not_en:
 		mov	@(marsGbl_CurrFacePos,gbr),r0
 		mov	r13,r2
 		mov	r0,r1
@@ -1087,7 +1070,15 @@ MarsMdl_ReadModel:
 	endm
 		mov	r1,r0				; TODO: Delete after the cache
 		mov	r0,@(marsGbl_CurrFacePos,gbr)	; method is made
-		
+		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0	; Add 1 face to the list
+		add	#1,r0
+		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
+		mov	r0,r1
+		mov	@(marsGbl_ZSortReq,gbr),r0
+		cmp/eq	#1,r0
+		bt	.face_out
+		mov	#1,r0
+		mov.w	r0,@(marsGbl_ZSortReq,gbr)
 .face_out:
 		dt	r9
 		bt	.finish_this

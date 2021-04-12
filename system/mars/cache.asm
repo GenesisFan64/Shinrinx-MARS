@@ -76,7 +76,7 @@ maindrw_tasks:
 		nop
 		align 4
 .list:
-		dc.l drwtsk_01		; (null entry, but failsafe)
+		dc.l drwtsk_01		; (null entry)
 		dc.l drwtsk_01		; Main drawing routine
 		dc.l drwtsk_02		; Resume from solid color
 
@@ -220,7 +220,7 @@ drwtsk1_vld_y:
 ; ------------------------------------
 
 drwtsk_texmode:
-		mov.w	@(marsGbl_DivReq_M,gbr),r0	; Waste interrupt if MarsVideo_MakePolygon is in the
+		mov.w	@(marsGbl_DivStop_M,gbr),r0	; Waste interrupt if MarsVideo_MakePolygon is in the
 		cmp/eq	#1,r0				; middle of HW-division
 		bf	.texvalid
 		bra	drwtask_return
@@ -280,6 +280,8 @@ drwsld_nxtline_tex:
 		sub	r7,r8
 
 	; Calculate new DX values
+	; make sure DIV is available
+	; (marsGbl_DivStop_M == 0)
 		mov	#_JR,r0				; r6 / r2
 		mov	r2,@r0
 		mov	r6,@(4,r0)
@@ -487,7 +489,7 @@ drwsld_nxtline:
 		mov	r13,@-r0
 		mov	r14,@-r0
 		bra	drwtask_return
-		mov	#$10,r2			; No timer: Exit and re-enter
+		mov	#$10,r2			; Exit and re-enter
 drwsld_updline:
 		add	r2,r1
 		add	r4,r3
@@ -498,10 +500,10 @@ drwsld_updline:
 ; ------------------------------------		
 		
 drwsld_nextpz:
-		mov.w	@(marsGbl_PzListCntr,gbr),r0	; -1 piece
+		mov.w	@(marsGbl_PzListCntr,gbr),r0	; Decrement piece
 		add	#-1,r0
 		mov.w	r0,@(marsGbl_PzListCntr,gbr)
-		add	#sizeof_plypz,r14		; Point to next piece for the next interrupt
+		add	#sizeof_plypz,r14		; And set new point
 		mov	r14,r0
 		mov	#RAM_Mars_VdpDrwList_e,r14	; End-of-list?
 		cmp/ge	r14,r0
@@ -511,9 +513,10 @@ drwsld_nextpz:
 		mov	r0,@(marsGbl_PlyPzList_R,gbr)
 ; 		mov.w	@(marsGbl_PzListCntr,gbr),r0
 ; 		cmp/eq	#0,r0
-; 		bt/s	.finish_it
+; 		bt	.finish_it
 ; 		add	#-1,r0
 ; 		bra	drwtsk1_newpz
+; 		nop
 ; 		mov.w	r0,@(marsGbl_PzListCntr,gbr)
 .finish_it:
 		bra	drwtask_return
@@ -825,7 +828,7 @@ set_left:
 		shll8	r5
 		sts	mach,r8
 		mov	#1,r0				; Stopsign for HW Division
-		mov.w	r0,@(marsGbl_DivReq_M,gbr)
+		mov.w	r0,@(marsGbl_DivStop_M,gbr)
 		mov	#_JR,r0				; HW DIV
 		mov	r8,@r0
 		mov	r5,@(4,r0)
@@ -853,7 +856,7 @@ set_left:
 		nop
 		mov	@(4,r0),r5
 		mov	#0,r0				; Resume HW Division
-		mov.w	r0,@(marsGbl_DivReq_M,gbr)
+		mov.w	r0,@(marsGbl_DivStop_M,gbr)
 		shll8	r5
 .lft_skip:
 		rts
@@ -900,7 +903,7 @@ set_right:
 		shll8	r7
 		sts	mach,r9
 		mov	#1,r0				; Resume HW Division
-		mov.w	r0,@(marsGbl_DivReq_M,gbr)
+		mov.w	r0,@(marsGbl_DivStop_M,gbr)
 		mov	#_JR,r0				; HW DIV
 		mov	r9,@r0
 		mov	r7,@(4,r0)
@@ -928,7 +931,7 @@ set_right:
 		nop
 		mov	@(4,r0),r7
 		mov	#0,r0				; Resume HW Division
-		mov.w	r0,@(marsGbl_DivReq_M,gbr)
+		mov.w	r0,@(marsGbl_DivStop_M,gbr)
 		shll8	r7
 .rgt_skip:
 		rts

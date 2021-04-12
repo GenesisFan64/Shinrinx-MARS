@@ -6,19 +6,28 @@
 ; Note that this section will be gone if the Genesis side is
 ; perfoming a DMA ROM-to-VDP Transfer (setting RV=1)
 ; 
-; also, reading from here is slow (supposedly)
+; But reading data from here is slow on hardware
 ; ----------------------------------------------------------------
 
 ; --------------------------------------------------------
-; Maps
+; Textures
 ; --------------------------------------------------------
 
-		align $8000
-		include  "data/mars/incl_rom.asm"	; All textures will go in ROM
+		align 4
+Textr_marscity:
+Textr_marscity.001:
+Textr_marscity.002:
+Textr_marscity.004:
+		binclude "data/mars/maps/mtrl/marscity_art.bin"
+		align 4
+Textr_intro:
+		binclude "data/mars/objects/mtrl/intro_art.bin"
+		align 4
+
 
 ; PWM_STEREO:	binclude "data/sound/pwm_st.wav",$2C,$200000
 ; PWM_STEREO_e:
-		align 4
+; 		align 4
 ; PwmInsWav_SPHEAVY1:
 ; 		binclude "data/sound/instr/smpl/SPHEAVY1.wav",$2C
 ; PwmInsWav_SPHEAVY1_e:

@@ -34,7 +34,7 @@ marsGbl_DrwTask		ds.w 1		; Current Drawing task for Watchdog
 marsGbl_DrwPause	ds.w 1		; Pause background drawing
 marsGbl_VIntFlag_M	ds.w 1		; Sets to 0 if VBlank finished on Master CPU
 marsGbl_VIntFlag_S	ds.w 1		; Same thing but for the Slave CPU
-marsGbl_DivReq_M	ds.w 1		; Flag to tell Watchdog we are in the middle of division
+marsGbl_DivStop_M	ds.w 1		; Flag to tell Watchdog we are in the middle of division
 marsGbl_CurrFb		ds.w 1		; Current framebuffer number
 marsGbl_PalDmaMidWr	ds.w 1		; Enable this flag if modifing RAM_Mars_Palette
 marsGbl_ZSortReq	ds.w 1		; Flag to request Zsort in Slave's watchdog
@@ -786,6 +786,8 @@ master_loop:
 .page_2:
 		mov 	#RAM_Mars_Plgn_ZList_1+4,r14
 		mov	#RAM_Mars_PlgnNum_1,r13
+		nop
+		nop
 .cont_plgn:
 		mov.w	@r13,r13
 		cmp/pl	r13
@@ -1035,6 +1037,8 @@ slave_loop:
 		bf/s	.loop
 		add	#sizeof_mdlobj,r14
 .skip:
+; 		mov	#1,r0
+; 		mov.w	r0,@(marsGbl_ZSortReq,gbr)
 
 ; ----------------------------------------
 
@@ -1474,14 +1478,18 @@ s_irq_custom:
 
 	; DONT CALL THIS
 	; IF NUMOF FACES < 2
+		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
+		mov	r0,r2
+		mov	#3,r1
+		cmp/gt	r1,r2
+		bf	.no_faces
 		mov	#RAM_Mars_Plgn_ZList_0,r3
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		tst     #1,r0
 		bt	.page_2
 		mov	#RAM_Mars_Plgn_ZList_1,r3
 .page_2:
-		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
-		mov	r0,r4
+		mov	r2,r4
 		add	#-2,r4
 		cmp/pz	r4
 		bf	.no_req
@@ -1500,6 +1508,7 @@ s_irq_custom:
 		dt	r4
 		bf/s	.z_next
 		add	#8,r3
+.no_faces:
 		mov	#0,r0
 		mov.w	r0,@(marsGbl_ZSortReq,gbr)
 
@@ -1510,7 +1519,7 @@ s_irq_custom:
 		or      #$20,r0			; ON again
 		mov.w   r0,@r1
 		mov	#1,r2
-		mov.w   #$5A01,r0		; Timer for the next one
+		mov.w   #$5A00,r0		; Timer for the next one
 		or	r2,r0
 		mov.w	r0,@r1
 
