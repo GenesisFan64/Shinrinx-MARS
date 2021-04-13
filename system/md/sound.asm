@@ -2107,6 +2107,7 @@ updtrack:
 ; --------------------------------------------------------
 
 mars_scomm:
+		ret
 		ld	de,(reqMarsTrnf)	; New PWM ins data?
 		ld	a,e
 		or	d

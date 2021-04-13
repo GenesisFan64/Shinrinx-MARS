@@ -6,7 +6,37 @@
 		align 4
 CACHE_MASTER:
 		phase $C0000000
-
+; 
+; Mstr_MkAllPz:
+; 		sts	pr,@-r15
+; 		mov.w	@r13,r13
+; 		cmp/pl	r13
+; 		bf	.skip
+; 		mov	r13,r0
+; 		mov	#_sysreg+comm0,r1
+; 		mov.w	r0,@r1
+; .loop:
+; 		mov	r14,@-r15
+; 		mov	r13,@-r15
+; 		mov	@r14,r14			; Get location of the polygon
+; 		cmp/pl	r14
+; 		bf	.invalid
+; 		mov 	#MarsVideo_MakePolygon,r0
+; 		jsr	@r0
+; 		nop
+; .invalid:
+; 		mov	@r15+,r13
+; 		mov	@r15+,r14
+; 		dt	r13
+; 		bf/s	.loop
+; 		add	#8,r14
+; .skip:
+; 		lds	@r15+,pr
+; 		rts
+; 		nop
+; 		align 4
+; 		ltorg
+		
 ; ------------------------------------------------
 ; MASTER Background tasks
 ; ------------------------------------------------

@@ -650,13 +650,14 @@ SH2_M_HotStart:
 		ldc	r14,gbr
 		mov	#$F0,r0					; Interrupts OFF
 		ldc	r0,sr
-		mov	#_CCR,r1
-		mov	#0,r0					; Cache OFF
+		mov.l	#_CCR,r1
+		mov	#%00001000,r0				; Cache OFF
 		mov.w	r0,@r1
 		mov	#%00011001,r0				; Cache purge / Two-way mode / Cache ON
 		mov.w	r0,@r1
 		mov	#_sysreg,r1
-		mov	#VIRQ_ON|CMDIRQ_ON|PWMIRQ_ON,r0		; Enable these interrupts		
+		mov	#VIRQ_ON|CMDIRQ_ON|PWMIRQ_ON,r0		; Enable these interrupts
+; 		mov	#VIRQ_ON|CMDIRQ_ON,r0			; Enable these interrupts
     		mov.b	r0,@(intmask,r1)
 		mov 	#CACHE_MASTER,r1			; Load 3D Routines on CACHE	
 		mov 	#$C0000000,r2				; Those run more faster here supposedly...
@@ -678,11 +679,6 @@ SH2_M_HotStart:
 		
 ; ------------------------------------------------
 
-		mov	#_CCR,r1
-		mov	#%00001000,r0		; Two-way mode
-		mov.w	r0,@r1
-		mov	#%00011001,r0		; Cache purge / Two-way mode / Cache ON
-		mov.w	r0,@r1
 		mov.l	#$20,r0			; Interrupts ON
 		ldc	r0,sr
 
@@ -693,7 +689,7 @@ SH2_M_HotStart:
 master_loop:
 	; --------------------
 	; DEBUG counter
-; 		mov	#_sysreg+comm0,r4	; DEBUG COUNTER
+; 		mov	#_sysreg+comm2,r4		; DEBUG COUNTER
 ; 		mov.b	@r4,r0
 ; 		add	#1,r0
 ; 		mov.b	r0,@r4
@@ -761,11 +757,11 @@ master_loop:
 ; --------------------------------------------------------
 
 .draw_objects:
-		mov	#$FFFFFE92,r0
-		mov	#8,r1
-		mov.b	r1,@r0
-		mov	#$19,r1
-		mov.b	r1,@r0
+		mov	#_CCR,r1			; <-- Required for Watchdog
+		mov	#%00001000,r0			; Two-way mode
+		mov.w	r0,@r1
+		mov	#%00011001,r0			; Cache purge / Two-way mode / Cache ON
+		mov.w	r0,@r1
 		mov	#MarsVideo_SetWatchdog,r0
 		jsr	@r0
 		nop
@@ -789,12 +785,16 @@ master_loop:
 		nop
 		nop
 .cont_plgn:
+		mov	#_sysreg+comm0,r1
+; 		mov	#Mstr_MkAllPz,r0
+; 		jsr	@r0
+; 		nop
+
 		mov.w	@r13,r13
+		mov.w	r13,@r1
 		cmp/pl	r13
 		bf	.skip
 		mov	r13,r0
-		mov	#_sysreg+comm0,r1
-		mov.w	r0,@r1
 .loop:
 		mov	r14,@-r15
 		mov	r13,@-r15
@@ -812,6 +812,11 @@ master_loop:
 		add	#8,r14
 .skip:
 
+; 		mov	#_sysreg+comm2+1,r4		; DEBUG COUNTER
+; 		mov.b	@r4,r0
+; 		add	#1,r0
+; 		mov.b	r0,@r4
+		
 	; --------------------------------------
 .wait_pz: 	mov.w	@(marsGbl_PzListCntr,gbr),r0	; Any pieces remaining on interrupt?
 		cmp/eq	#0,r0
@@ -905,7 +910,7 @@ SH2_S_HotStart:
 		mov.l	#$F0,r0				; Interrupts OFF
 		ldc	r0,sr
 		mov.l	#_CCR,r1
-		mov	#0,r0				; Cache OFF
+		mov	#%00001000,r0			; Cache OFF
 		mov.w	r0,@r1
 		mov	#%00011001,r0			; Cache purge / Two-way mode / Cache ON
 		mov.w	r0,@r1
@@ -931,11 +936,6 @@ SH2_S_HotStart:
 		
 ; ------------------------------------------------
 
-		mov	#_CCR,r1
-		mov	#%00001000,r0			; Two-way mode
-		mov.w	r0,@r1
-		mov	#%00011001,r0			; Cache purge / Two-way mode / Cache ON
-		mov.w	r0,@r1
 		mov.l	#$20,r0				; Interrupts ON
 		ldc	r0,sr
 		
@@ -977,13 +977,15 @@ slave_loop:
 		and	#$7F,r0
 		mov.b	r0,@r1
 .no_req:
+		mov	#_sysreg+comm15,r1
+		mov.b	@r1,r0
+		and	#$7F,r0
+		cmp/eq	#1,r0
+		bf	slave_loop
 
 	; --------------------
 	; DEBUG counter
-; 		mov	#_sysreg+comm2,r4		; DEBUG COUNTER
-; 		mov.w	@r4,r0
-; 		add	#1,r0
-; 		mov.w	r0,@r4
+
 	; --------------------
 	
 ; --------------------------------------------------------
@@ -1014,6 +1016,11 @@ slave_loop:
 
 ; ----------------------------------------
 
+		mov	#_CCR,r1			; <-- Required for Watchdog
+		mov	#%00001000,r0			; Two-way mode
+		mov.w	r0,@r1
+		mov	#%00011001,r0			; Cache purge / Two-way mode / Cache ON
+		mov.w	r0,@r1
 		mov	#MarsLay_Read,r0		; Build layout inside camera
 		jsr	@r0				; takes 9 object slots
 		nop
@@ -1042,14 +1049,6 @@ slave_loop:
 
 ; ----------------------------------------
 
-		mov 	#RAM_Mars_PlgnNum_0,r13
-		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
-		tst     #1,r0
-		bt	.page_2
-		mov 	#RAM_Mars_PlgnNum_1,r13
-.page_2:
-		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
-		mov.w	r0,@r13
 .wait_z:
 		mov.w	@(marsGbl_ZSortReq,gbr),r0
 		cmp/eq	#1,r0
@@ -1059,11 +1058,19 @@ slave_loop:
 		mov.w   r0,@r1
 ; 		bsr	slv_sort_z
 ; 		nop
-		
+
 ; ----------------------------------------
 
+		mov 	#RAM_Mars_PlgnNum_0,r13
+		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
+		tst     #1,r0
+		bt	.page_2
+		mov 	#RAM_Mars_PlgnNum_1,r13
+.page_2:
+		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
+		mov.w	r0,@r13
 		mov	#_sysreg+comm2,r4		; DEBUG COUNTER
-		mov	#0,r0
+; 		mov	#0,r0
 		mov.w	r0,@r4
 		mov	#_sysreg+comm14,r2
 .mstr_busy:
@@ -1079,6 +1086,11 @@ slave_loop:
 		and	#$80,r0
 		or	r1,r0
 		mov.b	r0,@r2
+		
+		mov	#_sysreg+comm15,r1
+		mov.b	@r1,r0
+		and	#$80,r0
+		mov.b	r0,@r1
 		bra	slave_loop
 		nop
 		align 4
@@ -1372,6 +1384,29 @@ CmdTaskMd_CameraPos:
 		mov	r4,@(cam_x_rot,r12)
 		mov	r5,@(cam_y_rot,r12)
 		mov	r6,@(cam_z_rot,r12)
+		rts
+		nop
+		align 4
+
+; ------------------------------------------------
+; Set camera position
+; 
+; @($04,r14) - Camera slot (TODO)
+; @($08,r14) - Camera X pos
+; @($0C,r14) - Camera Y pos
+; @($10,r14) - Camera Z pos
+; @($14,r14) - Camera X rot
+; @($18,r14) - Camera Y rot
+; @($1C,r14) - Camera Z rot
+; ------------------------------------------------
+
+CmdTaskMd_UpdModels:
+		mov	#_sysreg+comm15,r1
+		mov	#1,r2
+		mov.b	@r1,r0
+		and	#$80,r0
+		or	r2,r0
+		mov.b	r0,@r1
 		rts
 		nop
 		align 4
