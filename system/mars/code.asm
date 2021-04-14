@@ -775,21 +775,19 @@ master_loop:
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0	; Start drawing polygons from the READ buffer
 		tst     #1,r0				; Check for which buffer to use
 		bt	.page_2
-		mov 	#RAM_Mars_Plgn_ZList_0+4,r14
+		mov 	#RAM_Mars_Plgn_ZList_0,r14
 		mov	#RAM_Mars_PlgnNum_0,r13
 		bra	.cont_plgn
 		nop
 .page_2:
-		mov 	#RAM_Mars_Plgn_ZList_1+4,r14
+		mov 	#RAM_Mars_Plgn_ZList_1,r14
 		mov	#RAM_Mars_PlgnNum_1,r13
 		nop
 		nop
 .cont_plgn:
-		mov	#_sysreg+comm0,r1
-; 		mov	#Mstr_MkAllPz,r0
-; 		jsr	@r0
+; 		bsr	slv_sort_z
 ; 		nop
-
+		mov	#_sysreg+comm0,r1
 		mov.w	@r13,r13
 		mov.w	r13,@r1
 		cmp/pl	r13
@@ -798,7 +796,7 @@ master_loop:
 .loop:
 		mov	r14,@-r15
 		mov	r13,@-r15
-		mov	@r14,r14			; Get location of the polygon
+		mov	@(4,r14),r14			; Get location of the polygon
 		cmp/pl	r14
 		bf	.invalid
 		mov 	#MarsVideo_MakePolygon,r0
@@ -852,6 +850,57 @@ master_loop:
 		nop
 		align 4
 		ltorg
+
+; ; --------------------------------------------------------
+; ; Sort all faces in the current buffer
+; ; 
+; ; r14 - Polygon list
+; ; r13 - Number of polygons processed
+; ; --------------------------------------------------------
+; 
+; slv_sort_z:
+; 		mov	r14,r12
+; 		mov	#2,r11
+; 		mov.w	@r13,r0				; Check number of faces to sort
+; 		cmp/gt	r11,r0
+; 		bf	.z_copypos
+; 		mov	r0,r11
+; 
+; ; Bubble sorting
+; ; r14 - Output face points
+; ; r13 - Numof polygons result (set number to @r13)
+; ; r12 - base Zsort list (Zpos,Facedata)
+; ; r11 - faces used
+; 		mov	r11,r9
+; 		add	#-2,r9
+; .z_loop:
+; 		mov	r12,r10
+; 		mov	#1,r7
+; 		mov	r9,r8
+; .z_next:
+; 		mov	@r10,r0
+; 		mov	@(8,r10),r1
+; 		cmp/gt	r1,r0
+; 		bf	.z_keep
+; 		mov	r1,@r10
+; 		mov	r0,@(8,r10)
+; 		mov	@(4,r10),r0
+; 		mov	@($C,r10),r1
+; 		mov	r1,@(4,r10)
+; 		mov	r0,@($C,r10)
+; 		mov	#-1,r7
+; .z_keep:
+; 		dt	r8
+; 		bf/s	.z_next
+; 		add	#8,r10
+; 		cmp/pl	r7
+; 		bf	.z_loop
+; 
+; .z_copypos:
+; 		rts
+; 		nop
+; 		align 4
+; 		ltorg
 
 ; ====================================================================
 ; ----------------------------------------------------------------
@@ -1044,8 +1093,8 @@ slave_loop:
 		bf/s	.loop
 		add	#sizeof_mdlobj,r14
 .skip:
-; 		mov	#1,r0
-; 		mov.w	r0,@(marsGbl_ZSortReq,gbr)
+		mov	#1,r0
+		mov.w	r0,@(marsGbl_ZSortReq,gbr)
 
 ; ----------------------------------------
 
@@ -1056,19 +1105,20 @@ slave_loop:
 		mov.l   #$FFFFFE80,r1			; Stop watchdog
 		mov.w   #$A518,r0
 		mov.w   r0,@r1
-; 		bsr	slv_sort_z
-; 		nop
 
 ; ----------------------------------------
 
+; 		mov 	#RAM_Mars_Plgn_ZList_0,r14
 		mov 	#RAM_Mars_PlgnNum_0,r13
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		tst     #1,r0
 		bt	.page_2
+; 		mov 	#RAM_Mars_Plgn_ZList_1,r14
 		mov 	#RAM_Mars_PlgnNum_1,r13
 .page_2:
 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
 		mov.w	r0,@r13
+
 		mov	#_sysreg+comm2,r4		; DEBUG COUNTER
 ; 		mov	#0,r0
 		mov.w	r0,@r4
@@ -1077,7 +1127,7 @@ slave_loop:
 		mov.b	@r2,r0
 		and	#$7F,r0
 		cmp/eq	#0,r0
-		bf	slave_loop			; Skip frame
+		bf	.mstr_busy			; Skip frame
 		mov.w	@(marsGbl_PolyBuffNum,gbr),r0	; Swap polygon buffer
  		xor	#1,r0
  		mov.w	r0,@(marsGbl_PolyBuffNum,gbr)
@@ -1095,86 +1145,6 @@ slave_loop:
 		nop
 		align 4
 		ltorg
-
-; --------------------------------------------------------
-; Sort all faces in the current buffer
-; 
-; r14 - Polygon list
-; r13 - Number of polygons processed
-; --------------------------------------------------------
-
-; slv_sort_z:
-; 		mov	#0,r0					; Reset current PlgnNum
-; 		mov.w	r0,@r13
-; 		mov	#RAM_Mars_Plgn_ZList_0,r12
-; 		mov	#2,r11
-; 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0		; Check number of faces to sort
-; 		cmp/gt	r11,r0
-; 		bf	.z_copypos
-; 		mov	r0,r11
-; 
-; ; Bubble sorting
-; ; r14 - Output face points
-; ; r13 - Numof polygons result (set number to @r13)
-; ; r12 - base Zsort list (Zpos,Facedata)
-; ; r11 - faces used
-; ; 		mov	r11,r9
-; ; 		add	#-2,r9
-; ; .z_loop:
-; ; 		mov	r12,r10
-; ; 		mov	#1,r7
-; ; 		mov	r9,r8
-; ; .z_next:
-; ; 		mov	@r10,r0
-; ; 		mov	@(8,r10),r1
-; ; 		cmp/gt	r1,r0
-; ; 		bf	.z_keep
-; ; 		mov	r1,@r10
-; ; 		mov	r0,@(8,r10)
-; ; 		mov	@(4,r10),r0
-; ; 		mov	@($C,r10),r1
-; ; 		mov	r1,@(4,r10)
-; ; 		mov	r0,@($C,r10)
-; ; 		mov	#-1,r7
-; ; .z_keep:
-; ; 		dt	r8
-; ; 		bf/s	.z_next
-; ; 		add	#8,r10
-; ; 		cmp/pl	r7
-; ; 		bf	.z_loop
-; 
-; ; ----------------------------------------
-; ; only 1 or 2 faces
-; ; TODO: this is too much for 2 faces...
-; 
-; ; r14 - Facelist to draw
-; ; r13 - numof faces to set to read
-; ; r12 - Zlist: Zpos,Faceaddr
-; ; r11 - faces to process
-; 
-; .z_copypos:
-; 		mov	r12,r10
-; 		mov	r11,r9
-; 		mov	#0,r8
-; .next:
-; 		mov	@(4,r10),r7
-; 		cmp/pl	r7
-; 		bf	.noface
-; 		mov	#0,r0
-; 		mov	r0,@(4,r10)
-; 		mov	r7,@r14
-; 		add	#4,r14
-; 		add	#1,r8
-; .noface:
-; 		dt	r9
-; 		bf/s	.next
-; 		add 	#8,r10
-; 		mov.w	r8,@r13
-; .z_end:
-; 		rts
-; 		nop
-; 		align 4
-; 		ltorg
 
 ; ====================================================================
 ; --------------------------------------------------------

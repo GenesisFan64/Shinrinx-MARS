@@ -7,8 +7,8 @@
 ; Settings
 ; ----------------------------------------
 
-MAX_FACES	equ	600		; Maximum polygon faces (models,sprites) to store on buffer
-MAX_SVDP_PZ	equ	600+64		; This list is for both read and write, increase the value if needed
+MAX_FACES	equ	700		; Maximum polygon faces (models,sprites) to store on buffer
+MAX_SVDP_PZ	equ	700+64		; This list is for both read and write, increase the value if needed
 MAX_MODELS	equ	12		; Note: First 9 models are reserved for layout map
 MAX_ZDIST	equ	-$1C00		; Max drawing distance (-Z max)
 LAY_WIDTH	equ	$20*2		; Layout data width * 2
@@ -1057,12 +1057,21 @@ MarsMdl_ReadModel:
 ; --------------------------------
 
 .face_ok:
+
+	; TODO: slot swap
+		mov	#RAM_Mars_Plgn_ZList_0,r7
+		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
+		tst     #1,r0
+		bt	.page_2
+		mov	#RAM_Mars_Plgn_ZList_1,r7
+.page_2:
 		mov	@(marsGbl_CurrFacePos,gbr),r0
 		mov	r13,r2
 		mov	r0,r1
 		mov	r5,@r8				; Store current Z to Zlist
 		mov	r1,@(4,r8)			; And it's address
 		add	#8,r8				; Next Zlist entry
+
 	rept sizeof_polygn/2				; Copy words manually
 		mov.w	@r2+,r0
 		mov.w	r0,@r1
@@ -1208,7 +1217,10 @@ mdlrd_setpoint:
 		neg	r4,r0		; reverse Z
 		cmp/pl	r0
 		bt	.inside
-		mov	#1,r0
+		
+; 		mov	#320<<8,r7
+		bra	.zmulti
+		nop
 .inside:
 		mov 	r0,@r8
 		mov 	r7,@(4,r8)

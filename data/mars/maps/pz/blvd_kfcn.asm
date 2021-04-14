@@ -1,5 +1,5 @@
 MarsMapPz_blvd_kfcn:
-		dc.w 198,856
+		dc.w 65,974
 		dc.l .vert,.face,.vrtx,.mtrl
 .vert:		binclude "data/mars/maps/pz/blvd_kfcn_vert.bin"
 .face:		binclude "data/mars/maps/pz/blvd_kfcn_face.bin"

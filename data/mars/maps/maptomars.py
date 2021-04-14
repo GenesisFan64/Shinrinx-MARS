@@ -195,6 +195,7 @@ for curr_rdpz in range(0,num_pz):
       # SOLID COLOR normal
       elif a == TAG_MARSCOLOR:
         a = mtlname.split("_")
+        #print(a)
         #out_mtrl.write("\t dc.l "+str(a[1])+","+str(0)+"\n")  <-- if needed
         #indx_color += 1
         indx_color = int(a[1])

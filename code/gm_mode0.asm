@@ -122,18 +122,7 @@ MD_GmMode0:
 		moveq	#0,d3
 		move.l	#CmdTaskMd_ObjectSet,d0
 		bsr	System_MdMars_SlvAddTask	; Load object
-; 		move.l	#TEST_LAYOUT,d1
-; 		move.l	#CmdTaskMd_MakeMap,d0
-; 		bsr	System_MdMars_SlvAddTask	; Load map
 		bsr	System_MdMars_SlvSendAll	; both SH2
-		move.l	#CAMERA_INTRO,(RAM_CamData).l
-		bsr	MdMdl_CamAnimate
-; 		move.l	#TEST_WAV,d0
-; 		move.l	#(TEST_WAV_E-TEST_WAV),d1
-; 		move.l	#0,d2
-; 		move.w	#$100,d3
-; 		moveq	#%01,d4
-; 		bsr	SoundReq_SetSample
 
 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
 		moveq	#0,d1
@@ -149,11 +138,14 @@ MD_GmMode0:
 		bsr	System_MdMars_MstAddTask
 		bsr	System_MdMars_MstSendAll
 
+		move.l	#CAMERA_INTRO,(RAM_CamData).l
+		bsr	MdMdl_CamAnimate
+
 .mode0_loop:
 		bsr	MdMdl_CamAnimate
 		bpl.s	.stay
 		move.w	#1,(RAM_MdlCurrMd).w
-; 		rts
+		rts
 .stay:
 		moveq	#0,d1
 		move.l	(RAM_Cam_Xpos),d2
@@ -163,7 +155,9 @@ MD_GmMode0:
 		move.l	(RAM_Cam_Yrot),d6
 		move.l	(RAM_Cam_Zrot),d7
 		move.l	#CmdTaskMd_CameraPos,d0		; Load map
-		bsr	System_MdMars_SlvAddTask	
+		bsr	System_MdMars_SlvAddTask
+		move.l	#CmdTaskMd_UpdModels,d0
+		bsr	System_MdMars_SlvAddTask
 		bsr	System_MdMars_SlvSendDrop
 		rts
 
