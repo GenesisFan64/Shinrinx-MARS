@@ -220,6 +220,7 @@ MD_GmMode0:
 		moveq	#1,d1
 		bsr	System_MdMars_MstAddTask
 		bsr	System_MdMars_MstSendAll	; Send requests to
+		bsr	.first_draw
 
 .mode1_loop:
 		move.l	#$7C000003,(vdp_ctrl).l
@@ -232,8 +233,8 @@ MD_GmMode0:
 		bsr	Video_Print
 
 	; temporal camera
-		moveq	#0,d0
-		move.w	(Controller_1+on_hold).l,d7
+		moveq	#0,d6
+		move.w	(Controller_1+on_press).l,d7
 		btst	#bitJoyUp,d7
 		beq.s	.nou
 		add.l	#var_MoveSpd,(RAM_Cam_Zpos).l
@@ -266,6 +267,7 @@ MD_GmMode0:
 .nob:
 		tst.w	d6
 		beq.s	.nel
+.first_draw:
 		moveq	#0,d1
 		move.l	(RAM_Cam_Xpos),d2
 		move.l	(RAM_Cam_Ypos),d3

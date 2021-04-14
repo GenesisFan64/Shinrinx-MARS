@@ -954,7 +954,7 @@ MarsMdl_ReadModel:
 		mov 	r11,@-r15
 		mov 	r12,@-r15
 		mov 	r13,@-r15
-		mov	#-160,r8
+		mov	.tag_xl,r8
 		neg	r8,r9
 		mov	#-112,r11
 		neg	r11,r12
@@ -1037,41 +1037,77 @@ MarsMdl_ReadModel:
 		mov	#MAX_ZDIST,r0		; Draw distance
 		add 	r7,r0
 		cmp/ge	r0,r5
-		bf	.face_out
-
+		bf	.go_fout
 		mov	#-(SCREEN_WIDTH/2),r0
 		cmp/gt	r0,r1
-		bf	.face_out
+		bf	.go_fout
 		neg	r0,r0
 		cmp/ge	r0,r2
-		bt	.face_out
+		bt	.go_fout
 		mov	#-(SCREEN_HEIGHT/2),r0
 		cmp/gt	r0,r3
-		bf	.face_out
+		bf	.go_fout
 		neg	r0,r0
 		cmp/ge	r0,r4
 		bf	.face_ok
 .go_fout:	bra	.face_out
 		nop
-		
+		align 4
+.tag_xl:	dc.l -160
+
 ; --------------------------------
 
 .face_ok:
-
-	; TODO: slot swap
-		mov	#RAM_Mars_Plgn_ZList_0,r7
+		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0	; Add 1 face to the list
+		add	#1,r0
+		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
+		mov	@(marsGbl_CurrFacePos,gbr),r0
+		mov	r0,r1
+		mov	r13,r2
+		mov	r5,@r8				; Store current Z to Zlist
+		mov	r1,@(4,r8)			; And it's address
+		
+		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
+		cmp/eq	#1,r0
+		bt	.first_face
+		cmp/eq	#2,r0
+		bt	.first_face
+	; r7 - Curr Z
+	; r6 - Past Z
+		mov	r8,r7
+		add	#-8,r7
+		mov	#RAM_Mars_Plgn_ZList_0,r6
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		tst     #1,r0
 		bt	.page_2
-		mov	#RAM_Mars_Plgn_ZList_1,r7
+		mov	#RAM_Mars_Plgn_ZList_1,r6
 .page_2:
-		mov	@(marsGbl_CurrFacePos,gbr),r0
-		mov	r13,r2
-		mov	r0,r1
-		mov	r5,@r8				; Store current Z to Zlist
-		mov	r1,@(4,r8)			; And it's address
-		add	#8,r8				; Next Zlist entry
+		cmp/ge	r6,r7
+		bf	.first_face2
+		mov	@(8,r7),r4
+		mov	@r7,r5
+		cmp/eq	r4,r5
+		bt	.first_face
+		cmp/gt	r4,r5
+		bf	.swap_me
+		mov	@r7,r4
+		mov	@(8,r7),r5
+		mov	r5,@r7
+		mov	r4,@(8,r7)
+		mov	@(4,r7),r4
+		mov	@($C,r7),r5
+		mov	r5,@(4,r7)
+		mov	r4,@($C,r7)
+.swap_me:
+		bra	.page_2
+		add	#-8,r7
+.first_face2
+; 		bra	*
+; 		nop
+.first_face:
 
+
+		add	#8,r8				; Next Zlist entry
 	rept sizeof_polygn/2				; Copy words manually
 		mov.w	@r2+,r0
 		mov.w	r0,@r1
@@ -1079,15 +1115,13 @@ MarsMdl_ReadModel:
 	endm
 		mov	r1,r0				; TODO: Delete after the cache
 		mov	r0,@(marsGbl_CurrFacePos,gbr)	; method is made
-		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0	; Add 1 face to the list
-		add	#1,r0
-		mov.w	r0,@(marsGbl_MdlFacesCntr,gbr)
-		mov	r0,r1
-		mov	@(marsGbl_ZSortReq,gbr),r0
-		cmp/eq	#1,r0
-		bt	.face_out
-		mov	#1,r0
-		mov.w	r0,@(marsGbl_ZSortReq,gbr)
+
+; 		mov	r0,r1
+; 		mov	@(marsGbl_ZSortReq,gbr),r0
+; 		cmp/eq	#1,r0
+; 		bt	.face_out
+; 		mov	#1,r0
+; 		mov.w	r0,@(marsGbl_ZSortReq,gbr)
 .face_out:
 		dt	r9
 		bt	.finish_this

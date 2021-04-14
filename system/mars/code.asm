@@ -1605,6 +1605,7 @@ RAM_Mars_ObjLayout	ds.b sizeof_layout		; Layout buffer
 RAM_Mars_Objects	ds.b sizeof_mdlobj*MAX_MODELS	; Objects list
 RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
 RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
+RAM_Mars_PlgnDrwList	ds.w sizeof_polygn*$20		; Master piece list to draw
 RAM_Mars_VdpDrwList	ds.b sizeof_plypz*MAX_SVDP_PZ	; Pieces list
 RAM_Mars_VdpDrwList_e	ds.l 0				; (end-of-list label)
 RAM_Mars_Plgn_ZList_0	ds.l MAX_FACES*2		; Z value / foward faces
