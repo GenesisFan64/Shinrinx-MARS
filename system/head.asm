@@ -164,12 +164,12 @@
 		dc.b "MARS CHECK MODE "			; Module name
 		dc.l 0					; Version (always 0)
 		dc.l MARS_RAMDATA			; Set to 0 if SH2 code points to ROM
-		dc.l 0					; No info, set to zero.
+		dc.l 0					; Zero.
 		dc.l MARS_RAMDATA_e-MARS_RAMDATA	; Set to 4 if SH2 code points to ROM
 		dc.l SH2_M_Entry			; Master SH2 PC (SH2 map area)
 		dc.l SH2_S_Entry			; Slave SH2 PC (SH2 map area)
-		dc.l SH2_Master				; Master SH2 default VBR (Vector table)
-		dc.l SH2_Slave				; Slave SH2 default VBR (Vector table)
+		dc.l SH2_Master				; Master SH2 default vector table (vbr)
+		dc.l SH2_Slave				; Slave SH2 default vector table (vbr)
 		binclude "system/mars/data/security.bin"
 
 ; ====================================================================
@@ -229,7 +229,7 @@ MARS_Entry:
 		lea	($A10000).l,a5			; a5 - MD's I/O area base
 		move.l	#-64,a4				; a4 - $FFFFFF9C
 		move.w	#3900,d7			; d7 - loop this many times
-		lea	($880000+$6E4),a1		; Jump to ?res_wait (check ICD_MARS.PRG for detail)
+		lea	($880000+$6E4),a1		; Jump to ?res_wait (check ICD_MARS.PRG for details)
 		jmp	(a1)
 .adapterenable:
 		lea	(sysmars_reg),a5

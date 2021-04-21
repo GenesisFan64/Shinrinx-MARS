@@ -74,21 +74,35 @@ m_irq_bad:
 ; ------------------------------------------------
 
 m_irq_pwm:
-		mov	#_sysreg+monowidth,r1
-		mov.b	@r1,r0
- 		tst	#$80,r0
- 		bf	.exit
-		sts	pr,@-r15
-		mov	#MarsSound_ReadPwm,r0
-		jsr	@r0
-		nop
-		lds	@r15+,pr
-.exit:		mov	#_FRT,r1
+; 		mov	#_sysreg+monowidth,r1
+; 		mov.b	@r1,r0
+;  		tst	#$80,r0
+;  		bf	.exit
+; 		sts	pr,@-r15
+; 		mov	#MarsSound_ReadPwm,r0
+; 		jsr	@r0
+; 		nop
+; 		lds	@r15+,pr
+; .exit:		mov	#_FRT,r1
+; 		mov.b	@(7,r1),r0
+; 		xor	#2,r0
+; 		mov.b	r0,@(7,r1)
+; 		mov	#_sysreg+pwmintclr,r1
+; 		mov.w	r0,@r1
+; 		rts
+; 		nop
+; 		align 4
+		mov	#_FRT,r1
 		mov.b	@(7,r1),r0
 		xor	#2,r0
 		mov.b	r0,@(7,r1)
 		mov	#_sysreg+pwmintclr,r1
 		mov.w	r0,@r1
+		nop
+		nop
+		nop
+		nop
+		nop
 		rts
 		nop
 		align 4
@@ -97,8 +111,7 @@ m_irq_pwm:
 ; ------------------------------------------------
 ; Master | CMD Interrupt
 ; 
-; Recieve task list from 68k
-; OR control the sound PWM with Z80
+; Recieve data from Genesis
 ; ------------------------------------------------
 
 m_irq_cmd:
@@ -108,20 +121,19 @@ m_irq_cmd:
 		mov.b	r0,@(7,r1)
 		mov	#_sysreg+cmdintclr,r1
 		mov.w	r0,@r1
-		
 		mov	r2,@-r15
 		mov	r3,@-r15
 		mov	r4,@-r15
 		stc	sr,@-r15
 		mov	#$F0,r0
 		ldc	r0,sr
-		
+
 ; ----------------------------------------
 
-		mov	#_sysreg+comm4,r1	; Check if Z80
-		mov.b	@(0,r1),r0		; called first
-		cmp/eq	#0,r0
-		bf	.pwm_play
+; 		mov	#_sysreg+comm4,r1	; Check if Z80
+; 		mov.b	@(0,r1),r0		; called first
+; 		cmp/eq	#0,r0
+; 		bf	.pwm_play
 
 ; ----------------------------------------
 ; Transfer from 68K
@@ -159,56 +171,54 @@ m_irq_cmd:
 		bra	.next_comm
 		add	#4,r2
 
-; ----------------------------------------
-; Transfer from Z80
-; ----------------------------------------
-
-.pwm_play:
-		cmp/eq	#$20,r0
-		bt	.play_all
-		mov	#MarsSnd_PwmTrkData,r2
-		cmp/eq	#$21,r0
-		bt	.next_commz
-		mov	#MarsSnd_PwmPlyData,r2
-		add	#-1,r0
-		and	#%11111,r0
-		shll2	r0
-		shll	r0
-		add	r0,r2
-.next_commz:
-		mov	#2,r0		; SH is ready
-		mov.b	r0,@(1,r1)
-.wait_z_b:
-		mov.b	@(0,r1),r0	; get Z80 status
-		cmp/eq	#0,r0
-		bt	.finish_s
-		and	#$80,r0
-		cmp/eq	#0,r0		; is Z80 busy?
-		bt	.wait_z_b
-		mov	#1,r0		; SH is busy
-		mov.b	r0,@(1,r1)
-.wait_z_c:
-		mov.b	@(0,r1),r0
-		cmp/eq	#0,r0
-		bt	.finish_s
-		and	#$40,r0
-		cmp/eq	#$40,r0		; Z80 ready?
-		bf	.wait_z_c
-		mov.w	@(2,r1),r0	; word write.
-		mov.w	r0,@r2
-		bra	.next_commz
-		add	#2,r2
-		align 4
-.play_all:
-
-
-; ----------------------------------------
-
-.finish_s:
-		mov	#1,r0
-		mov.w	r0,@(marsGbl_PwmTrkUpd,gbr)
-		mov	#$80,r0
-		mov.b	r0,@(1,r1)
+; ; ----------------------------------------
+; ; Transfer from Z80
+; ; ----------------------------------------
+; 
+; .pwm_play:
+; 		cmp/eq	#$20,r0
+; 		bt	.finish_s
+; 		mov	#MarsSnd_PwmTrkData,r2
+; 		cmp/eq	#$21,r0
+; 		bt	.next_commz
+; 		mov	#MarsSnd_PwmPlyData,r2
+; 		add	#-1,r0
+; 		and	#%11111,r0
+; 		shll2	r0
+; 		shll	r0
+; 		add	r0,r2
+; .next_commz:
+; 		mov	#2,r0		; SH is ready
+; 		mov.b	r0,@(1,r1)
+; .wait_z_b:
+; 		mov.b	@(0,r1),r0	; get Z80 status
+; 		cmp/eq	#0,r0
+; 		bt	.finish_s
+; 		and	#$80,r0
+; 		cmp/eq	#0,r0		; is Z80 busy?
+; 		bt	.wait_z_b
+; 		mov	#1,r0		; SH is busy
+; 		mov.b	r0,@(1,r1)
+; .wait_z_c:
+; 		mov.b	@(0,r1),r0
+; 		cmp/eq	#0,r0
+; 		bt	.finish_s
+; 		and	#$40,r0
+; 		cmp/eq	#$40,r0		; Z80 ready?
+; 		bf	.wait_z_c
+; 		mov.w	@(2,r1),r0	; word write.
+; 		mov.w	r0,@r2
+; 		bra	.next_commz
+; 		add	#2,r2
+; 		align 4
+; 
+; ; ----------------------------------------
+; 
+; .finish_s:
+; 		mov	#1,r0
+; 		mov.w	r0,@(marsGbl_PwmTrkUpd,gbr)
+; 		mov	#$80,r0
+; 		mov.b	r0,@(1,r1)
 
 .finish:
 		ldc 	@r15+,sr
@@ -426,7 +436,7 @@ s_irq_pwm:
 ; ------------------------------------------------
 ; Slave | CMD Interrupt
 ; 
-; Process request from MD
+; Recieve data from Genesis
 ; ------------------------------------------------
 
 s_irq_cmd:
@@ -436,11 +446,23 @@ s_irq_cmd:
 		mov.b	r0,@(7,r1)
 		mov	#_sysreg+cmdintclr,r1
 		mov.w	r0,@r1
-
 		mov	r2,@-r15
 		mov	r3,@-r15
-		mov	#RAM_Mars_MdTasksFifo_S,r2
+		mov	r4,@-r15
+		stc	sr,@-r15
+		mov	#$F0,r0
+		ldc	r0,sr
+
+; ----------------------------------------
+; Transfer from 68K
+; ----------------------------------------
+
 		mov	#_sysreg+comm8,r1
+		mov	#RAM_Mars_MdTasksFifo_S,r2
+		mov	#_sysreg+comm15,r3	; Also process tasks
+		mov.b	@r3,r0			; after this
+		or	#$80,r0
+		mov.b	r0,@r3
 .next_comm:
 		mov	#2,r0		; SH is ready
 		mov.b	r0,@(1,r1)
@@ -467,21 +489,14 @@ s_irq_cmd:
 		bra	.next_comm
 		add	#4,r2
 .finish:
-		mov	#0,r0		; SH is done
-		mov.b	r0,@(1,r1)
-
-		mov	#_sysreg+comm15,r1	; Start tasks on Slave
-		mov.b	@r1,r0
-		or	#$80,r0
-		mov.b	r0,@r1		
+		ldc 	@r15+,sr
+		mov 	@r15+,r4
 		mov 	@r15+,r3
 		mov 	@r15+,r2
-		nop
-		nop
-		nop
 		rts
 		nop
 		align 4
+		ltorg
 		
 ; =================================================================
 ; ------------------------------------------------
@@ -656,8 +671,7 @@ SH2_M_HotStart:
 		mov	#%00011001,r0				; Cache purge / Two-way mode / Cache ON
 		mov.w	r0,@r1
 		mov	#_sysreg,r1
-		mov	#VIRQ_ON|CMDIRQ_ON|PWMIRQ_ON,r0		; Enable these interrupts
-; 		mov	#VIRQ_ON|CMDIRQ_ON,r0			; Enable these interrupts
+		mov	#VIRQ_ON|CMDIRQ_ON,r0		; Enable these interrupts
     		mov.b	r0,@(intmask,r1)
 		mov 	#CACHE_MASTER,r1			; Load 3D Routines on CACHE	
 		mov 	#$C0000000,r2				; Those run more faster here supposedly...
@@ -674,9 +688,9 @@ SH2_M_HotStart:
 		mov	#MarsVideo_Init,r0		; Init Video
 		jsr	@r0
 		nop
-		bsr	MarsSound_Init			; Init Sound
-		nop
-		
+; 		bsr	MarsSound_Init			; Init Sound
+; 		nop
+
 ; ------------------------------------------------
 
 		mov.l	#$20,r0			; Interrupts ON
@@ -964,7 +978,7 @@ SH2_S_HotStart:
 		mov	#%00011001,r0			; Cache purge / Two-way mode / Cache ON
 		mov.w	r0,@r1
 		mov	#_sysreg,r1
-		mov	#VIRQ_ON|CMDIRQ_ON,r0		; Enable these interrupts		
+		mov	#CMDIRQ_ON,r0			; Enable these interrupts	
     		mov.b	r0,@(intmask,r1)
 		mov 	#CACHE_SLAVE,r1			; Load 3D Routines on CACHE	
 		mov 	#$C0000000,r2			; Those run more faster here supposedly...
@@ -982,7 +996,7 @@ SH2_S_HotStart:
 		mov	#MarsMdl_Init,r0
 		jsr	@r0
 		nop
-		
+
 ; ------------------------------------------------
 
 		mov.l	#$20,r0				; Interrupts ON
@@ -1381,81 +1395,81 @@ CmdTaskMd_UpdModels:
 		nop
 		align 4
 
-; ------------------------------------------------
-; Set PWM to play
+; ; ------------------------------------------------
+; ; Set PWM to play
+; ; 
+; ; @($04,r14) - Channel slot
+; ; @($08,r14) - Start point
+; ; @($0C,r14) - End point
+; ; @($10,r14) - Loop point
+; ; @($14,r14) - Pitch
+; ; @($18,r14) - Volume
+; ; @($1C,r14) - Settings: %00000000 00000000LR | LR - output bits
+; ; ------------------------------------------------
 ; 
-; @($04,r14) - Channel slot
-; @($08,r14) - Start point
-; @($0C,r14) - End point
-; @($10,r14) - Loop point
-; @($14,r14) - Pitch
-; @($18,r14) - Volume
-; @($1C,r14) - Settings: %00000000 00000000LR | LR - output bits
-; ------------------------------------------------
-
-CmdTaskMd_PWM_SetChnl:
-		sts	pr,@-r15
-		mov	@($04,r14),r1
-		mov	@($08,r14),r2
-		mov	@($0C,r14),r3
-		mov	@($10,r14),r4
-		mov	@($14,r14),r5
-		mov	@($18,r14),r6
-		mov	@($1C,r14),r7
-		bsr	MarsSound_SetPwm
-		nop
-		lds	@r15+,pr
-		rts
-		nop
-		align 4
-
-; ------------------------------------------------
-; Set PWM pitch to multiple channels
+; CmdTaskMd_PWM_SetChnl:
+; 		sts	pr,@-r15
+; 		mov	@($04,r14),r1
+; 		mov	@($08,r14),r2
+; 		mov	@($0C,r14),r3
+; 		mov	@($10,r14),r4
+; 		mov	@($14,r14),r5
+; 		mov	@($18,r14),r6
+; 		mov	@($1C,r14),r7
+; 		bsr	MarsSound_SetPwm
+; 		nop
+; 		lds	@r15+,pr
+; 		rts
+; 		nop
+; 		align 4
 ; 
-; @($04,r14) - Channel 0 pitch
-; @($08,r14) - Channel 1 pitch
-; @($0C,r14) - Channel 2 pitch
-; @($10,r14) - Channel 3 pitch
-; @($14,r14) - Channel 4 pitch
-; @($18,r14) - Channel 5 pitch
-; @($1C,r14) - Channel 6 pitch
-; ------------------------------------------------
-
-CmdTaskMd_PWM_MultPitch:
-		sts	pr,@-r15
-		mov	#$FFFF,r7
-		mov	r14,r13
-		add	#4,r13
-		mov	#0,r1
-	rept MAX_PWMCHNL		; MAX: 7
-		mov	@r13+,r2
-		and	r7,r2
-		bsr	MarsSound_SetPwmPitch
-		nop
-		add	#1,r1
-	endm
-		lds	@r15+,pr
-		rts
-		nop
-		align 4
-
-; ------------------------------------------------
-; Enable/Disable PWM channels from playing
+; ; ------------------------------------------------
+; ; Set PWM pitch to multiple channels
+; ; 
+; ; @($04,r14) - Channel 0 pitch
+; ; @($08,r14) - Channel 1 pitch
+; ; @($0C,r14) - Channel 2 pitch
+; ; @($10,r14) - Channel 3 pitch
+; ; @($14,r14) - Channel 4 pitch
+; ; @($18,r14) - Channel 5 pitch
+; ; @($1C,r14) - Channel 6 pitch
+; ; ------------------------------------------------
 ; 
-; @($04,r14) - Channel slot
-; @($08,r14) - Enable/Disable/Restart
-; ------------------------------------------------
-
-CmdTaskMd_PWM_Enable:
-		sts	pr,@-r15
-		mov	@($04,r14),r1
-		mov	@($08,r14),r2
-		bsr	MarsSound_PwmEnable
-		nop
-		lds	@r15+,pr
-		rts
-		nop
-		align 4
+; CmdTaskMd_PWM_MultPitch:
+; 		sts	pr,@-r15
+; 		mov	#$FFFF,r7
+; 		mov	r14,r13
+; 		add	#4,r13
+; 		mov	#0,r1
+; 	rept MAX_PWMCHNL		; MAX: 7
+; 		mov	@r13+,r2
+; 		and	r7,r2
+; 		bsr	MarsSound_SetPwmPitch
+; 		nop
+; 		add	#1,r1
+; 	endm
+; 		lds	@r15+,pr
+; 		rts
+; 		nop
+; 		align 4
+; 
+; ; ------------------------------------------------
+; ; Enable/Disable PWM channels from playing
+; ; 
+; ; @($04,r14) - Channel slot
+; ; @($08,r14) - Enable/Disable/Restart
+; ; ------------------------------------------------
+; 
+; CmdTaskMd_PWM_Enable:
+; 		sts	pr,@-r15
+; 		mov	@($04,r14),r1
+; 		mov	@($08,r14),r2
+; 		bsr	MarsSound_PwmEnable
+; 		nop
+; 		lds	@r15+,pr
+; 		rts
+; 		nop
+; 		align 4
 
 ; ----------------------------------------
 
@@ -1588,8 +1602,8 @@ sizeof_marsram	ds.l 0
 ; ----------------------------------------------------------------
 
 			struct MarsRam_Sound
-MarsSnd_PwmChnls	ds.b sizeof_sndchn*MAX_PWMCHNL
-MarsSnd_PwmTrkData	ds.b $80*2
+; MarsSnd_PwmChnls	ds.b sizeof_sndchn*MAX_PWMCHNL
+; MarsSnd_PwmTrkData	ds.b $80*2
 MarsSnd_PwmPlyData	ds.l 7
 sizeof_marssnd		ds.l 0
 			finish
@@ -1605,8 +1619,8 @@ RAM_Mars_ObjLayout	ds.b sizeof_layout		; Layout buffer
 RAM_Mars_Objects	ds.b sizeof_mdlobj*MAX_MODELS	; Objects list
 RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
 RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
-RAM_Mars_PlgnDrwList	ds.w sizeof_polygn*$20		; Master piece list to draw
 RAM_Mars_VdpDrwList	ds.b sizeof_plypz*MAX_SVDP_PZ	; Pieces list
+; RAM_Mars_DepthBits	ds.b (64)*224
 RAM_Mars_VdpDrwList_e	ds.l 0				; (end-of-list label)
 RAM_Mars_Plgn_ZList_0	ds.l MAX_FACES*2		; Z value / foward faces
 RAM_Mars_Plgn_ZList_1	ds.l MAX_FACES*2		; Z value / foward faces

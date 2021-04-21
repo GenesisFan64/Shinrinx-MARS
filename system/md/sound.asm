@@ -2,11 +2,6 @@
 ; ----------------------------------------------------------------
 ; MD Sound
 ; ----------------------------------------------------------------
-		
-; ====================================================================
-; ----------------------------------------------------------------
-; Subroutines
-; ----------------------------------------------------------------
 
 ; --------------------------------------------------------
 ; Init Sound
@@ -38,6 +33,16 @@ Sound_Init:
 		nop 
 		nop 
 		move.w	#0,(z80_bus).l
+
+; 	PWM init
+; 		lea	(sysmars_reg),a0
+; 		move.w	#$0105,(timerctl,a0)
+; 		move.w	#((((23011361<<1)/22050+1)>>1)+1),d0	; 22050 best
+; 		move.w	d0,(cycle,a0)
+; 		moveq	#1,d0
+; 		move.w	d0,(monowidth,a0)
+; 		move.w	d0,(monowidth,a0)
+; 		move.w	d0,(monowidth,a0)
 		rts
 
 ; --------------------------------------------------------
@@ -46,9 +51,172 @@ Sound_Init:
 ; Call this on VBlank only.
 ; --------------------------------------------------------
 
-; 		align $80			; ASL's fault for this
 Sound_Update:
 		rts
+
+; --------------------------------------------------------
+; Call this every 6 lines of 68k code to play PWM from
+; here.
+; --------------------------------------------------------
+
+; 		align $80
+; Sound_PwmStream:
+; 		movem.l	d0-d7/a0-a2,-(sp)
+; 		moveq 	#0,d5			; LEFT start
+; 		moveq 	#0,d6			; RIGHT start
+; 		lea	(RAM_Pwm_List),a2
+; 		move.w 	#MAX_PWMCHNL-1,d7
+; .loop:
+; 		move.l	(mchnsnd_enbl,a2),d0
+; 		bne.s	.on
+; .silent:
+; 		moveq	#$7F,d0
+; 		move.w	d0,d1
+; 		move.w	d0,d2
+; 		bra	.skip
+; .on:
+; 		move.l 	(mchnsnd_read,a2),a0
+; 		move.l 	(mchnsnd_end,a2),d0
+; 		cmp.l	d0,a0
+; 		bcs.s	.read
+; 		move.l 	(mchnsnd_loop,a2),d0
+; 		cmp.l	#-1,d0
+; 		bne	.loop_me
+; 		move.l 	#0,(mchnsnd_enbl,a2)
+; 		move.l 	(mchnsnd_start,a2),a0
+; 		bra	.silent
+; .loop_me:
+; 		move.l 	(mchnsnd_start,a2),a0
+; 		add	d0,a0
+; 
+; ; read wave
+; .read:
+; 		move.l	(mchnsnd_flags,a2),d0
+; 		move.l 	a0,d3
+; 		lsr.l	#8,d3
+; 		btst	#7,d0
+; 		beq	.mono_a
+; 		moveq	#-1,d1
+; 		and	d1,d3
+; .mono_a
+; 		move.l 	(mchnsnd_pitch,a2),d4
+; 		movea.l	d3,a1
+; 		move.b	(a1)+,d1
+; 		move.b	d1,d2
+; 		btst	#7,d0
+; 		beq	.mono
+; 		move.b	(a1)+,d1
+; 		add.l	d4,d4
+; .mono:
+; 		add	d4,a0
+; 		move.l	a0,(mchnsnd_read,a2)
+; 		and.w	#$FF,d1
+; 		and.w	#$FF,d2
+; 
+; ; 	; Volume is backwards.
+; ; 	; vol=0 normal
+; ; 		move	@(mchnsnd_vol,a2),r9
+; ; 		add	#1,r9
+; ; 		mulu	r9,r1
+; ; 		sts	macl,r4
+; ; 		shlr8	r4
+; ; 		sub	r4,r1
+; ; 		mulu	r9,r2
+; ; 		sts	macl,r4
+; ; 		shlr8	r4
+; ; 		sub	r4,r2
+; ; 		tst	#%00000001,r0		; TODO: temporal way to check L/R
+; ; 		bf	.no_l
+; ; 		move	#$7F,d1
+; ; .no_l:
+; ; 		tst	#%00000010,r0
+; ; 		bf	.skip	
+; ; 		move	#$7F,d2
+; .skip:
+; 		add.w	#1,d1
+; 		add.w	#1,d2
+; 		add.w	d1,d5
+; 		add.w	d2,d6
+; 		adda	#sizeof_pwm,a2
+; 		dbf	d7,.loop
+; ; 		
+; ; 	; ***This check is for emus only***
+; ; 	; It recreates what happens to the PWM
+; ; 	; in real hardware when it overflows
+; ; 		move	#$3FF,r0
+; ; 		cmp/gt	r0,r5
+; ; 		bf	.lmuch
+; ; 		move	r0,r5
+; ; .lmuch:		cmp/gt	r0,r6
+; ; 		bf	.rmuch
+; ; 		move	r0,r6
+; ; .rmuch:
+; 		lea	(sysmars_reg),a2
+;  		move.w	d5,(lchwidth,a2)
+;  		move.w	d6,(rchwidth,a2)
+; 		move.w	(monowidth,a2),d3	; Not needed on HW
+; ; 		bmi.s	.retry
+; 
+; 		movem.l	(sp)+,d0-d7/a0-a2
+; 		rts
+
+; ====================================================================
+; ----------------------------------------------------------------
+; Subroutines
+; ----------------------------------------------------------------
+
+; ; --------------------------------------------------------
+; ; Sound_SetPwm
+; ; 
+; ; Set new sound data to a single channel
+; ; 
+; ; Input:
+; ; d1 | Channel
+; ; d2 | Start address
+; ; d3 | End address
+; ; d4 | Loop address (-1, dont loop)
+; ; d5 | Pitch ($xxxxxx.xx)
+; ; d6 | Volume
+; ; d7 | Flags (Currently: %xxxxxxLR)
+; ; 
+; ; Uses:
+; ; d0,a6
+; ; --------------------------------------------------------
+; 
+; Sound_SetPwm:
+; ; 		stc	sr,r9
+; ; 		mov	#$F0,r0
+; ; 		ldc	r0,sr
+; 		lea	(RAM_Pwm_List),a6
+; ; 		mulu	#sizeof_pwm,d1
+; ; 		adda 	d1,a6
+; 		moveq 	#0,d0
+; 		move.l	d0,(mchnsnd_enbl,a6)
+; 		move.l 	d0,(mchnsnd_read,a6)
+; 		
+; 		move.l	d5,(mchnsnd_pitch,a6)
+; 		move.l	d6,(mchnsnd_vol,a6)
+; 		move.l	d7,(mchnsnd_flags,a6)
+; 
+; 		move.l 	d4,d0				; Set POINTS
+; 		cmp.l	#-1,d0
+; 		beq.s	.endmrk
+; 		lsl.l	#8,d0
+; .endmrk:
+; 		move.l	d0,(mchnsnd_loop,a6)
+; 		move.l 	d3,d0
+; 		lsl.l	#8,d0
+; 		move.l	d0,(mchnsnd_end,a6)
+; 		move.l 	d2,d0
+; 		lsl.l	#8,d0
+; 		move.l	d0,(mchnsnd_start,a6)
+; 		move.l 	d0,(mchnsnd_read,a6)
+; 		moveq 	#1,d0
+; 		move.l 	d0,(mchnsnd_enbl,a6)
+; ;  		ldc	r9,sr
+; 		rts
+; ; 		nop
+; ; 		align 4
 
 ; --------------------------------------------------------
 ; Sound_DMA_Pause
@@ -239,7 +407,7 @@ sndReq_sbyte:
 		andi.b	#$3F,d6
 		move.b	d6,(a5)				; update commZWrite
 		rts
-
+		
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; Z80 Code
@@ -357,7 +525,7 @@ commZRomBlk	db 0			; 68k ROM block flag
 commZRomRd	db 0			; Z80 is reading ROM bit
 psgHatMode	db 0,0,0		; noise mode bits + linked channel
 currTblSrch	dw 0
-reqMarsTrnf	dw 0			; Request instrument transfer to SH2
+; reqMarsTrnf	dw 0			; Request instrument transfer to SH2
 
 ; --------------------------------------------------------
 ; Z80 Interrupt at 0038h
@@ -404,24 +572,22 @@ drv_loop:
 		jr	c,.nobeats
 		ld	(sbeatAcc+1),a	; 1/24 beat passed.
 		set	1,b		; Set BEAT (10b) flag
-		call	dac_me		; painful desync here, play 3 WAV bytes
-		call	dac_me
 		call	dac_me
 .nobeats:
 		ld	a,b
 		or	a
 		jr	z,.neither
-		call	dac_me
+; 		call	dac_me
 		ld	(currTickBits),a; Save BEAT/TICK bits
-; 		call	doenvelope	; TODO: not doing this until channels are fully working
+; 		call	doenvelope	; TODO: probably not doing this...
 		call	check_tick
 		call	playonchip	; Set channels to their respective sound chips
 		call	check_tick
 		call	updtrack	; Update track data
 		call	check_tick
 .neither:
-		call	mars_scomm
-		call	dac_me
+; 		call	mars_scomm
+; 		call	dac_me
 
 .next_cmd:
 		call	dac_fill
@@ -715,11 +881,10 @@ playonchip
 		ld	(ix+7),a
 		ret
 .fmpan_list:
-		db 080h		; 000h
-		db 080h		; 040h
-		db 0C0h		; 080h
-		db 040h		; 0C0h
-
+		db 01000000b	; 000h
+		db 01000000b	; 040h
+		db 00000000b	; 080h
+		db 10000000b	; 0C0h
 
 .pwm_eff:
 		ld	a,(iy+chnl_EffId)	; Eff X?
@@ -784,6 +949,7 @@ playonchip
 		ld	c,a
 		inc	de
 		inc	de
+		call	dac_me
 		jr	.cont_psg
 .ins_ns:
 		push	hl
@@ -795,6 +961,7 @@ playonchip
 		ld	c,a
 		inc	de
 		inc	de
+		call	dac_me
 .cont_psg:
 		inc	hl
 		inc 	hl
@@ -840,6 +1007,7 @@ playonchip
 		ld	l,a
 		ld	(ix+3),l
 		ld	(ix+4),h
+		call	dac_me
 		ld	a,(ix)		; Prepare first FM reg
 		and	11b
 		or	30h
@@ -863,15 +1031,16 @@ playonchip
 		ld	e,(hl)			; 0B0h
 		ld	(ix+6),e
 		call	fm_autoset
+		call	dac_me
 		inc 	hl
 		inc	d
 		inc	d
 		inc	d
 		inc	d
-		call	dac_me
 		ld	a,(ix+7)		; 0B4h
 		ld	b,(hl)
 		or	b
+		call	dac_me
 		ld	(ix+7),a
 		ld	e,a
 		call	fm_autoset
@@ -883,17 +1052,17 @@ playonchip
 
 ; Type 5
 .pwm_ins:
-		push	hl
-		call	.srch_pwm
-		cp	-1
-		ret	z
-		push	hl
-		pop	ix
-		pop	hl
- 		ld	de,
- 		ld	a,(iy+chnl_Ins)
- 		dec	a
- 		ld	(ix+5),a		; put ins number
+; 		push	hl
+; 		call	.srch_pwm
+; 		cp	-1
+; 		ret	z
+; 		push	hl
+; 		pop	ix
+; 		pop	hl
+;  		ld	de,
+;  		ld	a,(iy+chnl_Ins)
+;  		dec	a
+;  		ld	(ix+5),a		; put ins number
 		ret
 
 ; ----------------------------------------
@@ -1264,6 +1433,7 @@ playonchip
 		add	a,b
 		ld	b,0
 	rept 7				; Separate notedata as octave(b) and note(c)
+		call	dac_me
 		ld	c,a
 		sub	12
 		or	a
@@ -1295,6 +1465,7 @@ playonchip
 		ld	e,a
 		ld	(ix+9),a
 		call	fm_autoset
+		call	dac_me
 		dec	d
 		dec	d
 		dec	d
@@ -1303,13 +1474,16 @@ playonchip
 		ld	e,(hl)
 		ld	(ix+10),e
 		call	fm_autoset
-		call	dac_me
 		ld	a,(ix)		; 0B4h
 		and	111b
 		ld	d,0B4h
 		or	d
 		ld	d,a
 		ld	a,(ix+7)
+		ld	e,a
+		cpl	
+		or	11000000b
+		or	e
 		ld	e,a
 		call	fm_autoset
 		call	dac_me
@@ -1330,41 +1504,41 @@ playonchip
 ; ----------------------------------------
 
 .note_pwm:
-		push	hl
-		call	.srch_pwm
-		push	hl
-		pop	ix
-		pop	hl
-		inc	hl
-		
-		call	dac_me
-		ld	a,(iy+chnl_Note)
-		cp	-1
-		jr	z,.pwm_stop
-		cp	-2
-		jr	z,.pwm_stop
-		ld	l,(hl)
-		call	dac_me
-		add	a,l
-		add	a,a
-		ld	de,0
-		ld	e,a
-		ld	hl,wavFreq_Pwm
-		add	hl,de
-		ld	a,(hl)
-		ld	(ix+3),a	; NOTE: big endian
-		inc	hl
-		ld	a,(hl)
-		ld	(ix+4),a
-
-		ld	a,(ix)		; Tell SH2 we want to play channel
-		or	01000000b
-		ld	(ix),a
-		ret
-.pwm_stop:
-		ld	a,(ix)		; Tell SH2 to stop this channel
-		or	00100000b
-		ld	(ix),a
+; 		push	hl
+; 		call	.srch_pwm
+; 		push	hl
+; 		pop	ix
+; 		pop	hl
+; 		inc	hl
+; 		
+; 		call	dac_me
+; 		ld	a,(iy+chnl_Note)
+; 		cp	-1
+; 		jr	z,.pwm_stop
+; 		cp	-2
+; 		jr	z,.pwm_stop
+; 		ld	l,(hl)
+; 		call	dac_me
+; 		add	a,l
+; 		add	a,a
+; 		ld	de,0
+; 		ld	e,a
+; 		ld	hl,wavFreq_Pwm
+; 		add	hl,de
+; 		ld	a,(hl)
+; 		ld	(ix+3),a	; NOTE: big endian
+; 		inc	hl
+; 		ld	a,(hl)
+; 		ld	(ix+4),a
+; 
+; 		ld	a,(ix)		; Tell SH2 we want to play channel
+; 		or	01000000b
+; 		ld	(ix),a
+; 		ret
+; .pwm_stop:
+; 		ld	a,(ix)		; Tell SH2 to stop this channel
+; 		or	00100000b
+; 		ld	(ix),a
 		ret
 		
 ; ----------------------------------------
@@ -1932,7 +2106,7 @@ updtrack:
 		ld	h,(iy+(trk_romIns+1))
 		ld	a,(iy+(trk_romIns+2))
 		ld	de,(currInsData)
-		ld	(reqMarsTrnf),de	; Tell 68k to copy instruments
+; 		ld	(reqMarsTrnf),de	; Tell 68k to copy instruments
 		ld	bc,080h
 		call	transferRom	
 		
@@ -2101,88 +2275,88 @@ updtrack:
 		add	hl,de
 		jr	.chlst_unlk
 
-; --------------------------------------------------------
-; For 32X only:
-; Communicate to Master SH2 using CMD interrupt
-; --------------------------------------------------------
-
-mars_scomm:
-		ret
-		ld	de,(reqMarsTrnf)	; New PWM ins data?
-		ld	a,e
-		or	d
-		jp	z,.playbck
-		call	dac_fill
-		ld	hl,(reqMarsTrnf)
-		ld	c,21h			; 21h: Send copy of Instrlist
-		ld	b,80h/2			; num of words to transfer
-		call	mars_zcomm
-		ld	de,0			; Reset wordflag
-		ld	(reqMarsTrnf),de
-		ret
-.playbck:
-		ld	iy,PWMVTBL
-		ld	b,7			; 7 channels
-.next:
-		push	bc
-		push	iy
-		ld	a,(iy)
-		or	a
-		jp	p,.disbld
-		and	01100000b
-		or	a
-		call	nz,.play
-		res	6,(iy)
-		res	5,(iy)
-.disbld:
-		pop	iy
-		pop	bc
-		ld	de,8
-		call	dac_me		
-		add	iy,de
-		djnz	.next
-		
-; 	; All this code just to tell SH2
-; 	; to update PWM list...
-; 		call	dac_me
-; 		ld	hl,6000h		; Set bank
-; 		ld	(hl),0
-; 		ld	(hl),1
-; 		ld	(hl),0
-; 		ld	(hl),0
-; 		ld	(hl),0
-; 		ld	(hl),0
-; 		ld	(hl),1
-; 		call	dac_me
-; 		ld	(hl),0
-; 		ld	(hl),1
-; 		ld	ix,5100h|8000h		; ix - mars sysreg
-; .wait_md:	ld	a,(ix+comm8)		; 68k got it first?
+; ; --------------------------------------------------------
+; ; For 32X only:
+; ; Communicate to Master SH2 using CMD interrupt
+; ; --------------------------------------------------------
+; 
+; mars_scomm:
+; 		ret
+; 		ld	de,(reqMarsTrnf)	; New PWM ins data?
+; 		ld	a,e
+; 		or	d
+; 		jp	z,.playbck
+; 		call	dac_fill
+; 		ld	hl,(reqMarsTrnf)
+; 		ld	c,21h			; 21h: Send copy of Instrlist
+; 		ld	b,80h/2			; num of words to transfer
+; 		call	mars_zcomm
+; 		ld	de,0			; Reset wordflag
+; 		ld	(reqMarsTrnf),de
+; 		ret
+; .playbck:
+; 		ld	iy,PWMVTBL
+; 		ld	b,7			; 7 channels
+; .next:
+; 		push	bc
+; 		push	iy
+; 		ld	a,(iy)
 ; 		or	a
-; 		jp	nz,.wait_md
+; 		jp	p,.disbld
+; 		and	01100000b
+; 		or	a
+; 		call	nz,.play
+; 		res	6,(iy)
+; 		res	5,(iy)
+; .disbld:
+; 		pop	iy
+; 		pop	bc
+; 		ld	de,8
+; 		call	dac_me		
+; 		add	iy,de
+; 		djnz	.next
+; 		
+; ; 	; All this code just to tell SH2
+; ; 	; to update PWM list...
+; ; 		call	dac_me
+; ; 		ld	hl,6000h		; Set bank
+; ; 		ld	(hl),0
+; ; 		ld	(hl),1
+; ; 		ld	(hl),0
+; ; 		ld	(hl),0
+; ; 		ld	(hl),0
+; ; 		ld	(hl),0
+; ; 		ld	(hl),1
+; ; 		call	dac_me
+; ; 		ld	(hl),0
+; ; 		ld	(hl),1
+; ; 		ld	ix,5100h|8000h		; ix - mars sysreg
+; ; .wait_md:	ld	a,(ix+comm8)		; 68k got it first?
+; ; 		or	a
+; ; 		jp	nz,.wait_md
+; ; 		call	dac_me
+; ; 		ld	(ix+comm4),20h		; Z80 ready
+; ; 		ld	(ix+3),01b		; Master CMD interrupt
+; ; .wait_cmd:	bit	0,(ix+3)		; CMD clear?
+; ; 		jp	nz,.wait_cmd
+; ; 		call	dac_me
+; 		ret
+; 
+; ; bit 6
+; .play:
+; 		ld	a,(iy)
+; 		and	00001111b
+; 		inc	a
+; 		ld	c,a
 ; 		call	dac_me
-; 		ld	(ix+comm4),20h		; Z80 ready
-; 		ld	(ix+3),01b		; Master CMD interrupt
-; .wait_cmd:	bit	0,(ix+3)		; CMD clear?
-; 		jp	nz,.wait_cmd
-; 		call	dac_me
-		ret
-
-; bit 6
-.play:
-		ld	a,(iy)
-		and	00001111b
-		inc	a
-		ld	c,a
-		call	dac_me
-		push	iy
-		pop	hl
-		ld	b,8/2
-		call	mars_zcomm
-		ld	a,(iy)
-		and	10011111b
-		ld	(iy),a
-		ret
+; 		push	iy
+; 		pop	hl
+; 		ld	b,8/2
+; 		call	mars_zcomm
+; 		ld	a,(iy)
+; 		and	10011111b
+; 		ld	(iy),a
+; 		ret
  
 ; ====================================================================
 ; ----------------------------------------------------------------
@@ -2708,76 +2882,76 @@ psg_env:
 		call	dac_me
 		ret
 
-; --------------------------------------------------------
-; Communicate to 32X from here
-; hl - Data to transfer
-; b - WORDS to transfer
-; c - Task id
+; ; --------------------------------------------------------
+; ; Communicate to 32X from here
+; ; hl - Data to transfer
+; ; b - WORDS to transfer
+; ; c - Task id
+; ; 
+; ; Uses comm4/comm6
+; ; --------------------------------------------------------
 ; 
-; Uses comm4/comm6
-; --------------------------------------------------------
-
-mars_zcomm:
-		call	dac_me
-		push	hl
-		ld	hl,6000h		; Set bank
-		ld	(hl),0
-		ld	(hl),1
-		ld	(hl),0
-		ld	(hl),0
-		ld	(hl),0
-		ld	(hl),0
-		ld	(hl),1
-		call	dac_me
-		ld	(hl),0
-		ld	(hl),1
-		pop	hl
-		ld	ix,5100h|8000h		; ix - mars sysreg
-.wait_md:	ld	a,(ix+comm8)		; 68k got it first?
-		or	a
-		jp	nz,.wait_md
-.wait_md2:	ld	a,(ix+comm4+1)		; busy?
-		or	a
-		jp	m,.wait_md2
-		call	dac_me
-		ld	(ix+comm4),c		; Z80 ready
-		ld	(ix+(comm4+1)),1	; SH busy
-		ld	(ix+3),01b		; Master CMD interrupt
-.wait_cmd:	bit	0,(ix+3)		; CMD clear?
-		jp	nz,.wait_cmd
-		call	dac_me
-.loop:
-		call	dac_me
-		ld	a,(ix+(comm4+1))	; SH ready?
-		cp	2
-		jr	nz,.loop
-		ld	a,(ix+(comm4+1))	; SH ready?
-		cp	2
-		jr	nz,.loop
-		ld	a,c			; Z80 is busy
-		or	80h
-		ld	(ix+comm4),a
-		call	dac_me
-		ld	a,b			; check b
-		or	a
-		jr	z,.exit
-		jp	m,.exit
-		ld	a,(hl)
-		ld	(ix+comm6),a
-		call	dac_me
-		inc	hl
-		ld	a,(hl)
-		ld	(ix+comm6+1),a
-		inc	hl
-		call	dac_me
-		ld	a,c			; Z80 is ready
-		or	40h
-		ld	(ix+comm4),a
-		dec	b
-		jr	.loop
-.exit:	
-		ld	(ix+comm4),0		; Z80 finished
-		ret
+; mars_zcomm:
+; 		call	dac_me
+; 		push	hl
+; 		ld	hl,6000h		; Set bank
+; 		ld	(hl),0
+; 		ld	(hl),1
+; 		ld	(hl),0
+; 		ld	(hl),0
+; 		ld	(hl),0
+; 		ld	(hl),0
+; 		ld	(hl),1
+; 		call	dac_me
+; 		ld	(hl),0
+; 		ld	(hl),1
+; 		pop	hl
+; 		ld	ix,5100h|8000h		; ix - mars sysreg
+; .wait_md:	ld	a,(ix+comm8)		; 68k got it first?
+; 		or	a
+; 		jp	nz,.wait_md
+; .wait_md2:	ld	a,(ix+comm4+1)		; busy?
+; 		or	a
+; 		jp	m,.wait_md2
+; 		call	dac_me
+; 		ld	(ix+comm4),c		; Z80 ready
+; 		ld	(ix+(comm4+1)),1	; SH busy
+; 		ld	(ix+3),01b		; Master CMD interrupt
+; .wait_cmd:	bit	0,(ix+3)		; CMD clear?
+; 		jp	nz,.wait_cmd
+; 		call	dac_me
+; .loop:
+; 		call	dac_me
+; 		ld	a,(ix+(comm4+1))	; SH ready?
+; 		cp	2
+; 		jr	nz,.loop
+; 		ld	a,(ix+(comm4+1))	; SH ready?
+; 		cp	2
+; 		jr	nz,.loop
+; 		ld	a,c			; Z80 is busy
+; 		or	80h
+; 		ld	(ix+comm4),a
+; 		call	dac_me
+; 		ld	a,b			; check b
+; 		or	a
+; 		jr	z,.exit
+; 		jp	m,.exit
+; 		ld	a,(hl)
+; 		ld	(ix+comm6),a
+; 		call	dac_me
+; 		inc	hl
+; 		ld	a,(hl)
+; 		ld	(ix+comm6+1),a
+; 		inc	hl
+; 		call	dac_me
+; 		ld	a,c			; Z80 is ready
+; 		or	40h
+; 		ld	(ix+comm4),a
+; 		dec	b
+; 		jr	.loop
+; .exit:	
+; 		ld	(ix+comm4),0		; Z80 finished
+; 		ret
 
 ; ---------------------------------------------
 ; FM send registers

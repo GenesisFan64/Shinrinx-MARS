@@ -7,16 +7,17 @@
 ; Settings
 ; ----------------------------------------
 
-MAX_FACES	equ	700		; Maximum polygon faces (models,sprites) to store on buffer
-MAX_SVDP_PZ	equ	700+64		; This list is for both read and write, increase the value if needed
-MAX_MODELS	equ	12		; Note: First 9 models are reserved for layout map
-MAX_ZDIST	equ	-$1C00		; Max drawing distance (-Z max)
+MAX_FACES	equ	800		; Maximum polygon faces (models,sprites) to store on buffer
+MAX_SVDP_PZ	equ	800+64		; Pieces list: both read and write, increase the value if needed
+MAX_MODELS	equ	24		; Note: First 9 models are reserved for layout map
+MAX_ZDIST	equ	-$2000		; Max drawing distance (-Z max)
 LAY_WIDTH	equ	$20*2		; Layout data width * 2
 
 ; ----------------------------------------
 ; Variables
 ; ----------------------------------------
 
+; 3D drawing size, affects 3D positions too.
 SCREEN_WIDTH	equ	320
 SCREEN_HEIGHT	equ	224
 
@@ -95,6 +96,7 @@ sizeof_plypz	ds.l 0
 		struct 0
 polygn_type	ds.l 1		; %MSTw wwww xxxx aaaa | Type bits and Material option (Width or PalIncr)
 polygn_mtrl	ds.l 1		; Material Type: Color (0-255) or Texture data address
+; polygn_zpos	ds.l 1
 polygn_points	ds.l 4*2	; X/Y positions
 polygn_srcpnts	ds.w 4*2	; X/Y texture points (16-bit), ignored on solidcolor
 sizeof_polygn	ds.l 0
@@ -454,6 +456,8 @@ MarsLay_Draw:
 		mov	@r13+,r12
 		mov	.center_val,r0			; list center point
 		add	r0,r13
+		
+	; X/Y add
 		mov	@(mdllay_x_last,r14),r1
 		mov	@(mdllay_z_last,r14),r2
 		mov	#LAY_WIDTH,r0
@@ -468,8 +472,10 @@ MarsLay_Draw:
 		shar	r2			; extra shift
 		muls	r0,r2
 		sts	macl,r0
-		add	r1,r13
-		sub	r0,r13
+		add	r1,r13			; X add
+		sub	r0,r13			; Y add
+		
+	; Rotation
 		mov	@(mdllay_xr_last,r14),r0
 		shlr16	r0
 		and	#$3F,r0
@@ -479,7 +485,7 @@ MarsLay_Draw:
 		jmp	@r0
 		nop
 		align 4
-.center_val:	dc.l (LAY_WIDTH*$E)+(2*$C)
+.center_val:	dc.l ($E*LAY_WIDTH)+($C*2)
 
 .list:
 		dc.l .front
@@ -1067,15 +1073,18 @@ MarsMdl_ReadModel:
 		mov	r5,@r8				; Store current Z to Zlist
 		mov	r1,@(4,r8)			; And it's address
 		
+	; Sort face, SLOW.
+	; r7 - Curr Z
+	; r6 - Past Z
 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
 		cmp/eq	#1,r0
 		bt	.first_face
 		cmp/eq	#2,r0
 		bt	.first_face
-	; r7 - Curr Z
-	; r6 - Past Z
 		mov	r8,r7
 		add	#-8,r7
+; 		mov	@(marsGbl_CurrZList,gbr),r0
+; 		mov	r0,r6
 		mov	#RAM_Mars_Plgn_ZList_0,r6
 		mov.w   @(marsGbl_PolyBuffNum,gbr),r0
 		tst     #1,r0
@@ -1083,7 +1092,7 @@ MarsMdl_ReadModel:
 		mov	#RAM_Mars_Plgn_ZList_1,r6
 .page_2:
 		cmp/ge	r6,r7
-		bf	.first_face2
+		bf	.first_face
 		mov	@(8,r7),r4
 		mov	@r7,r5
 		cmp/eq	r4,r5
@@ -1101,9 +1110,6 @@ MarsMdl_ReadModel:
 .swap_me:
 		bra	.page_2
 		add	#-8,r7
-.first_face2
-; 		bra	*
-; 		nop
 .first_face:
 
 
@@ -1113,8 +1119,8 @@ MarsMdl_ReadModel:
 		mov.w	r0,@r1
 		add	#2,r1
 	endm
-		mov	r1,r0				; TODO: Delete after the cache
-		mov	r0,@(marsGbl_CurrFacePos,gbr)	; method is made
+		mov	r1,r0
+		mov	r0,@(marsGbl_CurrFacePos,gbr)
 
 ; 		mov	r0,r1
 ; 		mov	@(marsGbl_ZSortReq,gbr),r0
@@ -1243,24 +1249,55 @@ mdlrd_setpoint:
    		mov	r7,r2
    		mov	r8,r3
 
+; 		mov	#-(SCREEN_WIDTH/2)<<4,r6
+; 		cmp/ge	r6,r2
+; 		bf	.x_forz
+; 		neg	r6,r6
+; 		cmp/ge	r6,r2
+; 		bf	.x_rsd
+; .x_forz:
+; 		mov	r6,r2
+; .x_rsd:	
+
+; 		mov	#-(SCREEN_HEIGHT/2),r6
+; 		cmp/ge	r6,r3
+; 		bf	.y_forz
+; 		neg	r6,r6
+; 		cmp/ge	r6,r3
+; 		bf	.y_rsd
+; .y_forz:
+; 		mov	r6,r3
+; .y_rsd:
+
 	; Weak perspective projection
 	; this is the best I got,
 	; It breaks on large faces
 		mov 	#_JR,r8
 		mov	#320<<16,r7
 		neg	r4,r0		; reverse Z
+		add	#-16,r0
 		cmp/pl	r0
 		bt	.inside
-		
-; 		mov	#320<<8,r7
-		bra	.zmulti
-		nop
-.inside:
-		mov 	r0,@r8
-		mov 	r7,@(4,r8)
-		nop
-		mov 	@(4,r8),r7
-.zmulti:
+		shlr	r7
+; 		mov	#-(SCREEN_WIDTH/2)<<8,r6
+; 		cmp/ge	r6,r2
+; 		bf	.x_forz
+; 		neg	r6,r6
+; 		cmp/ge	r6,r2
+; 		bf	.x_rsd
+; .x_forz:
+; 		mov	r6,r2
+; .x_rsd:	
+; 		mov	#-(SCREEN_HEIGHT/2)<<8,r6
+; 		cmp/ge	r6,r3
+; 		bf	.y_forz
+; 		neg	r6,r6
+; 		cmp/ge	r6,r3
+; 		bf	.y_rsd
+; .y_forz:
+; 		mov	r6,r3
+; .y_rsd:
+
 		dmuls	r7,r2
 		sts	mach,r0
 		sts	macl,r2
@@ -1269,6 +1306,22 @@ mdlrd_setpoint:
 		sts	mach,r0
 		sts	macl,r3
 		xtrct	r0,r3
+		bra	.zmulti
+		nop
+.inside:
+		mov 	r0,@r8
+		mov 	r7,@(4,r8)
+		nop
+		mov 	@(4,r8),r7
+		dmuls	r7,r2
+		sts	mach,r0
+		sts	macl,r2
+		xtrct	r0,r2
+		dmuls	r7,r3
+		sts	mach,r0
+		sts	macl,r3
+		xtrct	r0,r3
+.zmulti:
 
 		mov	@r15+,r11
 		mov	@r15+,r10

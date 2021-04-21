@@ -91,5 +91,5 @@ GemaTrk_Yuki_blk:
 GemaTrk_Yuki_patt:
 		binclude "data/sound/tracks/yui_patt.bin"
 GemaTrk_Yuki_ins:
-		gemaInsPwm  0,PwmIns_Piano
+		gemaInsFm  -12,FmIns_Piano_Small
 		gemaInsPsg  0,PsgIns_01

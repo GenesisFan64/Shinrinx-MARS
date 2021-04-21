@@ -78,15 +78,15 @@ MARS_RAMDATA_E:
 		dephase
 
 ; --------------------------------------------------------
-; DATA for DMA transfers, bank-less
+; DATA for DMA transfers, bank-free but
+; Requires RV=1 to enabled
 ; --------------------------------------------------------
 
 		align 4
 		include "data/md_dma.asm"
 		
 ; --------------------------------------------------------
-; MARS ROM data seen on SH2
-; 
+; MARS data for SH2's ROM view
 ; This section will be gone if RV=1
 ; --------------------------------------------------------
 

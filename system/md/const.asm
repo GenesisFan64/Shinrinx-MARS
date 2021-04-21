@@ -9,6 +9,27 @@ MAX_MDTASKS	equ 16			; MAX requests from MD to here
 
 ; ====================================================================
 ; ----------------------------------------------------------------
+; MD Sound
+; ----------------------------------------------------------------
+
+MAX_PWMCHNL	equ	7
+
+; 32X sound channel
+		struct 0
+mchnsnd_enbl	ds.l 1
+mchnsnd_read	ds.l 1		; 0 - off
+mchnsnd_bank	ds.l 1		; CS0-3 OR value
+mchnsnd_start	ds.l 1
+mchnsnd_end	ds.l 1
+mchnsnd_loop	ds.l 1
+mchnsnd_pitch	ds.l 1
+mchnsnd_flags	ds.l 1		; %SLR S-wave format mono/stereo | LR-wave output bits
+mchnsnd_vol	ds.l 1
+sizeof_pwm	ds.l 0
+		finish
+
+; ====================================================================
+; ----------------------------------------------------------------
 ; MD Video
 ; ----------------------------------------------------------------
 
@@ -130,6 +151,7 @@ sizeof_mdsys	ds.l 0
 ; ----------------------------------------------------------------
 
 		struct RAM_MdSound
+RAM_Pwm_List	ds.b sizeof_pwm
 RAM_SndSaveReg	ds.l 8
 sizeof_mdsnd	ds.l 0
 		finish
@@ -157,16 +179,16 @@ sizeof_mdvid	ds.l 0
 		struct MDRAM_START
 	if MOMPASS=1				; First pass: empty sizes
 RAM_ModeBuff	ds.l 0
-RAM_MdSystem	ds.l 0
 RAM_MdSound	ds.l 0
 RAM_MdVideo	ds.l 0
+RAM_MdSystem	ds.l 0
 RAM_MdGlobal	ds.l 0
 sizeof_mdram	ds.l 0
 	else
 RAM_ModeBuff	ds.b MAX_MDERAM			; Second pass: sizes are set
-RAM_MdSystem	ds.b sizeof_mdsys-RAM_MdSystem
 RAM_MdSound	ds.b sizeof_mdsnd-RAM_MdSound
 RAM_MdVideo	ds.b sizeof_mdvid-RAM_MdVideo
+RAM_MdSystem	ds.b sizeof_mdsys-RAM_MdSystem
 RAM_MdGlobal	ds.b sizeof_mdglbl-RAM_MdGlobal
 sizeof_mdram	ds.l 0
 	endif

@@ -5,10 +5,16 @@
 		dc.l MarsMapPz_city_floor,0
 		dc.l MarsMapPz_blvd_main,0
 		dc.l MarsMapPz_blvd_kfcs,0
-		dc.l MarsMapPz_blvd_kfcn,0
+		dc.l MarsMapPz_blvd_kfcmid,0
 		dc.l MarsMapPz_blvd_bridge,0
+		dc.l MarsMapPz_city_septm,0
+		dc.l MarsMapPz_city_multi,0
+		dc.l MarsMapPz_city_kfc,0
 		include "data/mars/maps/pz/city_floor.asm"
 		include "data/mars/maps/pz/blvd_main.asm"
 		include "data/mars/maps/pz/blvd_kfcs.asm"
-		include "data/mars/maps/pz/blvd_kfcn.asm"
+		include "data/mars/maps/pz/blvd_kfcmid.asm"
 		include "data/mars/maps/pz/blvd_bridge.asm"
+		include "data/mars/maps/pz/city_septm.asm"
+		include "data/mars/maps/pz/city_multi.asm"
+		include "data/mars/maps/pz/city_kfc.asm"

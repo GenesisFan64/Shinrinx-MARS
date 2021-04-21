@@ -1,7 +1,7 @@
 # Blender v2.92.0 OBJ File: 'marscity.blend'
 # www.blender.org
 mtllib city_floor.mtl
-o city_floor_Plane.008
+o CITYBASE_Plane.009
 v -0.800000 0.000000 0.799999
 v 0.800000 0.000000 0.799999
 v -0.800000 0.000000 -0.800001

@@ -1,6 +1,8 @@
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; CACHE code for Master CPU
+; 
+; LIMIT: $800 bytes
 ; ----------------------------------------------------------------
 
 		align 4
@@ -298,7 +300,7 @@ drwsld_nxtline_tex:
 .txrevers:
 		cmp/eq	r11,r12				; Same X position?
 		bt	.tex_skip_line
-		mov	#SCREEN_WIDTH,r0		; X right < 0?
+		mov	tag_width,r0		; X right < 0?
 		cmp/pl	r12
 		bf	.tex_skip_line
 		cmp/gt	r0,r11				; X left > 320?
@@ -324,7 +326,7 @@ drwsld_nxtline_tex:
 
 	; Limit X destination points
 	; and correct the texture's X positions
-		mov	#SCREEN_WIDTH,r0		; XR point > 320?
+		mov	tag_width,r0		; XR point > 320?
 		cmp/gt	r0,r12
 		bf	.tr_fix
 		mov	r0,r12				; Force XR to 320
@@ -406,10 +408,23 @@ drwsld_updline_tex:
 		bf/s	drwsld_nxtline_tex
 		add	#1,r9
 drwtex_gonxtpz:
-		bra	drwsld_nextpz
-		nop
+
+		add	#sizeof_plypz,r14		; And set new point
+		mov	r14,r0
+		mov	#RAM_Mars_VdpDrwList_e,r14	; End-of-list?
+		cmp/ge	r14,r0
+		bf	.reset_rd
+		mov	#RAM_Mars_VdpDrwList,r0
+.reset_rd:
+		mov	r0,@(marsGbl_PlyPzList_R,gbr)
+		mov.w	@(marsGbl_PzListCntr,gbr),r0	; Decrement piece
+		add	#-1,r0
+		mov.w	r0,@(marsGbl_PzListCntr,gbr)
+		bra	drwtask_return
+		mov	#$10,r2				; Timer for next watchdog
 		align 4
-tag_yhght	dc.l	SCREEN_HEIGHT
+tag_width:	dc.l	SCREEN_WIDTH
+tag_yhght:	dc.l	SCREEN_HEIGHT
 
 ; ------------------------------------
 ; Solid Color
@@ -430,6 +445,9 @@ drwtsk_solidmode:
 		and	r0,r6
 		add	r5,r6
 		mov	#_vdpreg,r13
+.wait:		mov.w	@(10,r13),r0
+		tst	#2,r0
+		bf	.wait
 drwsld_nxtline:
 		mov	r9,r0
 		add	r10,r0
@@ -475,6 +493,7 @@ drwsld_nxtline:
 		sub	r11,r0
 		cmp/pl	r0
 		bf	drwsld_updline
+
 .wait:		mov.w	@(10,r13),r0
 		tst	#2,r0
 		bf	.wait
@@ -494,7 +513,10 @@ drwsld_nxtline:
 		shll8	r0
 		or	r6,r0
 		mov.w	r0,@(8,r13)	; Set data
-
+; .wait:		mov.w	@(10,r13),r0
+; 		tst	#2,r0
+; 		bf	.wait
+		
 ; 	If the line is too large, leave it to VDP
 ; 	and exit interrupt, we will come back
 ; 	with more lines to draw
@@ -530,9 +552,6 @@ drwsld_updline:
 ; ------------------------------------		
 		
 drwsld_nextpz:
-		mov.w	@(marsGbl_PzListCntr,gbr),r0	; Decrement piece
-		add	#-1,r0
-		mov.w	r0,@(marsGbl_PzListCntr,gbr)
 		add	#sizeof_plypz,r14		; And set new point
 		mov	r14,r0
 		mov	#RAM_Mars_VdpDrwList_e,r14	; End-of-list?
@@ -541,13 +560,14 @@ drwsld_nextpz:
 		mov	#RAM_Mars_VdpDrwList,r0
 .reset_rd:
 		mov	r0,@(marsGbl_PlyPzList_R,gbr)
+		mov.w	@(marsGbl_PzListCntr,gbr),r0	; Decrement piece
+		add	#-1,r0
+		mov.w	r0,@(marsGbl_PzListCntr,gbr)
 ; 		mov.w	@(marsGbl_PzListCntr,gbr),r0
-; 		cmp/eq	#0,r0
-; 		bt	.finish_it
-; 		add	#-1,r0
-; 		bra	drwtsk1_newpz
-; 		nop
-; 		mov.w	r0,@(marsGbl_PzListCntr,gbr)
+		cmp/eq	#0,r0
+		bt	.finish_it
+		bra	drwtsk1_newpz
+		nop
 .finish_it:
 		bra	drwtask_return
 		mov	#$10,r2			; Timer for next watchdog
@@ -1093,10 +1113,15 @@ Cach_ClrLines	ds.l 1			; Current lines to clear
 .end:		phase CACHE_MASTER+.end&$1FFF
 CACHE_MASTER_E:
 		align 4
+	if MOMPASS=6
+		message "MASTER CACHE uses: from \{(CACHE_MASTER_E-CACHE_MASTER)}"
+	endif
 
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; CACHE code for Slave CPU
+; 
+; LIMIT: $800 bytes
 ; ----------------------------------------------------------------
 
 		align 4
@@ -1115,3 +1140,6 @@ Cach_TestTimer	dc.l 0
 .end:		phase CACHE_SLAVE+.end&$1FFF
 CACHE_SLAVE_E:
 		align 4
+	if MOMPASS=6
+		message "SLAVE CACHE uses: from \{(CACHE_SLAVE_E-CACHE_SLAVE)}"
+	endif

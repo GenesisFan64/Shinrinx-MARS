@@ -20,14 +20,10 @@ import os
 # -------------------------------------------------
 
 # REQUIRES MODIFICATION TO export_obj.py IN BLENDER
-# from
-# me.transform(EXPORT_GLOBAL_MATRIX @ ob_mat)
-# to
-# me.transform(EXPORT_GLOBAL_MATRIX)
+# 
+# CHANGE: me.transform(EXPORT_GLOBAL_MATRIX @ ob_mat)
+# TO:     me.transform(EXPORT_GLOBAL_MATRIX)
 SCALE_SIZE	  = 0xA00#0x100
-
-img_width         = 1			# failsafe.
-img_height        = 1
 
 # reserved names for textures
 TAG_NOMATERIAL	  = "MARSNULL"		# random color mode
@@ -40,6 +36,9 @@ TAG_OBJECTSDIR    = "import"		# folder name that stores your objs (and material)
 # -------------------------------------------------
 # Start
 # -------------------------------------------------
+
+img_width         = 1			# failsafe.
+img_height        = 1
 
 num_vert      = 0
 has_img       = False
@@ -569,15 +568,6 @@ for i in range(0,len(mappz_list)):
 for i in range(0,len(mappz_list)):
 	a = mappz_list[i]
 	out_layout.write('\t\tinclude "data/mars/maps/pz/'+a+'.asm"\n')
-
-
-
-		#include "map0"
-		#align 4
-		
-		#dc.l .blocks
- 		#binclude "data/mars/maps/map0_lay.bin"
- 		#align 4
  		
 #======================================================================
 # ----------------------------

@@ -6,7 +6,7 @@
 ; Note that this section will be gone if the Genesis side is
 ; perfoming a DMA ROM-to-VDP Transfer (setting RV=1)
 ; 
-; But reading data from here is slow on hardware
+; Note: Reading data from here is slow on hardware
 ; ----------------------------------------------------------------
 
 ; --------------------------------------------------------
@@ -15,9 +15,6 @@
 
 		align 4
 Textr_marscity:
-Textr_marscity.001:
-Textr_marscity.002:
-Textr_marscity.004:
 		binclude "data/mars/maps/mtrl/marscity_art.bin"
 		align 4
 Textr_intro:

@@ -247,7 +247,8 @@ System_Random:
 ; d4
 ; 
 ; Notes:
-; setting 0 or negative number will skip change
+; writing $00 or a negative number will skip change
+; to the interrupt pointer
 ; --------------------------------------------------------
 
 System_SetInts:
@@ -301,7 +302,7 @@ System_VSync:
 		btst	#bitVint,d4
 		beq.s	System_VSync
 		bsr	System_Input
-; 		bsr	Sound_Update
+		bsr	Sound_Update
 		add.l	#1,(RAM_FrameCount).l
 .inside:	move.w	(vdp_ctrl),d4
 		btst	#bitVint,d4
@@ -339,7 +340,7 @@ System_MdMars_MstTask:
 		lea	(sysmars_reg+comm14),a1
 		movem.l	d0-d7,(a0)
 		move.w	#(MAX_MDTSKARG*4),d0
-		moveq	#1,d1			; Task transfer mode
+		moveq	#1,d1
 		moveq	#0,d2
 		bra	sysMdMars_Transfer
 
@@ -348,7 +349,7 @@ System_MdMars_SlvTask:
 		lea	(sysmars_reg+comm15),a1
 		movem.l	d0-d7,(a0)
 		move.w	#(MAX_MDTSKARG*4),d0
-		moveq	#1,d1			; Task transfer mode
+		moveq	#1,d1
 		moveq	#1,d2
 		bra	sysMdMars_Transfer
 
@@ -361,7 +362,7 @@ System_MdMars_MstSendAll:
 		lea	(sysmars_reg+comm14),a1
 		move.w	(RAM_MdMarsTCntM).w,d0
 		clr.w	(RAM_MdMarsTCntM).w
-		moveq	#1,d1			; Task transfer mode
+		moveq	#1,d1
 		moveq	#0,d2
 		bra	sysMdMars_Transfer
 
@@ -370,7 +371,7 @@ System_MdMars_SlvSendAll:
 		lea	(sysmars_reg+comm15),a1
 		move.w	(RAM_MdMarsTCntS).w,d0
 		clr.w	(RAM_MdMarsTCntS).w
-		moveq	#1,d1			; Task transfer mode
+		moveq	#1,d1
 		moveq	#1,d2
 		bra.s	sysMdMars_Transfer
 
@@ -378,7 +379,7 @@ System_MdMars_MstSendDrop:
 		lea	(RAM_MdMarsTskM),a0
 		lea	(sysmars_reg+comm14),a1
 		move.w	(RAM_MdMarsTCntM).w,d0
-		moveq	#1,d1			; Task transfer mode
+		moveq	#1,d1
 		moveq	#0,d2
 		nop
 		nop
@@ -393,7 +394,7 @@ System_MdMars_SlvSendDrop:
 		lea	(RAM_MdMarsTskS),a0
 		lea	(sysmars_reg+comm15),a1
 		move.w	(RAM_MdMarsTCntS).w,d0
-		moveq	#1,d1			; Task transfer mode
+		moveq	#1,d1
 		moveq	#1,d2
 		nop
 		nop
@@ -412,11 +413,9 @@ System_MdMars_SlvSendDrop:
 sysMdMars_instask:
 		cmp.w	#(MAX_MDTSKARG*MAX_MDTASKS)*4,(a1)
 		bge.s	.ran_out
-; 		move.w	#1,(RAM_FifoMarsWrt).w
 		adda.w	(a1),a0
-		movem.l	d0-d7,(a0)		; Set variables to RAM (d0 is label to jump)
+		movem.l	d0-d7,(a0)		; Set variables to RAM (d0 is the label to jump)
 		add.w	#MAX_MDTSKARG*4,(a1)
-; 		move.w	#0,(RAM_FifoMarsWrt).w
 .ran_out:
 		rts
 
@@ -440,14 +439,14 @@ sysMdMars_Transfer:
 		and.w	#$80,d4
 		bne.s	sysMdMars_Transfer
 		lea	(sysmars_reg),a4
-		tst.w	d2			; CMD bit for Slave?
-		bne.s	.slv_safe
-.w_z80:
-		nop
-		nop
-		move.b	comm4(a4),d4		; Z80 made it first?
-		bne.s	.w_z80
-.slv_safe:
+; 		tst.w	d2			; CMD bit for Slave?
+; 		bne.s	.slv_safe
+; .w_z80:
+; 		nop
+; 		nop
+; 		move.b	comm4(a4),d4		; Z80 made it first?
+; 		bne.s	.w_z80
+; .slv_safe:
 		move.w	sr,d5
 		move.w	#$2700,sr		; Disable interrupts
 		lea	comm8(a4),a3		; comm transfer method	
