@@ -67,17 +67,6 @@ MARS_RAMDATA_E:
 		align 4
 
 ; --------------------------------------------------------
-; SINGLE MD BANK
-; 
-; $900000 - $9FFFFF
-; --------------------------------------------------------
-
-		align 4
-		phase $900000+*				; Only one currently
-		include "data/md_bank0.asm"
-		dephase
-
-; --------------------------------------------------------
 ; DATA for DMA transfers, bank-free but
 ; Requires RV=1 to enabled
 ; --------------------------------------------------------
@@ -94,6 +83,28 @@ MARS_RAMDATA_E:
 		align 4
 		include "data/mars_rom.asm"
 		dephase
+
+; --------------------------------------------------------
+; MD DATA BANK 0 (Only the remaining bytes)
+; --------------------------------------------------------
+
+; 		org $100000
+		phase $900000+*				; Only one currently
+		include "data/md_bank0.asm"
+		dephase
+
+; ; --------------------------------------------------------
+; ; MD DATA BANK 1
+; ; 
+; ; $900000 - $9FFFFF
+; ; --------------------------------------------------------
+; 
+		org $100000-4
+		dc.b "BNK0"
+; 		phase $900000+*				; Only one currently
+; 		include "data/md_bank1.asm"
+; 		dephase
+
 
 ; ====================================================================
 ; ---------------------------------------------

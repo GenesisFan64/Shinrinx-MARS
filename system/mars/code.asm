@@ -801,9 +801,7 @@ master_loop:
 .cont_plgn:
 ; 		bsr	slv_sort_z
 ; 		nop
-		mov	#_sysreg+comm0,r1
 		mov.w	@r13,r13
-		mov.w	r13,@r1
 		cmp/pl	r13
 		bf	.skip
 		mov	r13,r0

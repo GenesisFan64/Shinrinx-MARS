@@ -70,9 +70,9 @@
 		dc.l MD_ErrorTrap
 		dc.l MD_ErrorTrap
 		dc.b "SEGA 32X        "
-		dc.b "(C)GF64 2021.???"
-		dc.b "Proyecto Chirinx                                "
-		dc.b "Project Shinrinx                                "
+		dc.b "(C)GF64 2021.JUN"
+		dc.b "Ciudad MARS demo 202X                           "
+		dc.b "MARS City tech demo 202X                        "
 		dc.b "GM HOMEBREW-00"
 		dc.w 0
 		dc.b "J6              "
@@ -244,7 +244,7 @@ MARS_Entry:
 .init:
 		move.w	#$2700,sr			; Disable interrupts
 		lea	(sysmars_reg).l,a5
-		move.l	#"68UP",comm12(a5)		; comm12: Report to every CPU we are active.
+		move.l	#"68UP",comm12(a5)		; comm12: Report to SH2 that we are active.
 .wm:		cmp.l	#"M_OK",comm0(a5)		; SH2 Master active?
 		bne.s	.wm
 .ws:		cmp.l	#"S_OK",comm4(a5)		; SH2 Slave active?

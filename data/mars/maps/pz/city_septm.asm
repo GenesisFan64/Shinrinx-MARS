@@ -1,5 +1,5 @@
 MarsMapPz_city_septm:
-		dc.w 36,2158
+		dc.w 28,2186
 		dc.l .vert,.face,.vrtx,.mtrl
 .vert:		binclude "data/mars/maps/pz/city_septm_vert.bin"
 .face:		binclude "data/mars/maps/pz/city_septm_face.bin"

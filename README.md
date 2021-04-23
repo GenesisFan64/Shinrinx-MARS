@@ -15,7 +15,7 @@ Features:
 Current issues/notes:
 - Soft-reset might freeze everything (65% chance)
 - Perspective calculation is weak, doesn't work properly outside of the camera (Darxide and even the Zyrinx tech demo has problems with perspective)
-- Solid-color polygons might loose lines
+- Removed PWM playback, had to disable it to get more CPU speed.
 - Texture points in triangles might not map correctly, not sure if it a bug in the script or a limitation of DDA.
 
 Please note that current 32X emulators ignore some hardware restrictions and bugs of the system:

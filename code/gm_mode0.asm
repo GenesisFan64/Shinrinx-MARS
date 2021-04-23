@@ -38,7 +38,8 @@ RAM_CamFrame	ds.l 1
 RAM_CamTimer	ds.l 1
 RAM_MdlCurrMd	ds.w 1
 RAM_BgCamera	ds.w 1
-RAM_BgCamCurr	ds.w 1
+RAM_BgCamCurrX	ds.w 1
+RAM_BgCamCurrY	ds.w 1
 sizeof_mdglbl	ds.l 0
 		finish
 		
@@ -120,7 +121,7 @@ MD_GmMode0:
 
 		bset	#bitDispEnbl,(RAM_VdpRegs+1).l		; Enable display
 		bsr	Video_Update
-; 		move.l	#CAMERA_INTRO,(RAM_CamData).l
+		move.l	#CAMERA_INTRO,(RAM_CamData).l
 
 ; ====================================================================
 ; ------------------------------------------------------
@@ -131,10 +132,18 @@ MD_GmMode0:
 		bsr	System_VSync
 
 		move.l	#$7C000003,(vdp_ctrl).l
-		move.w	(RAM_BgCamCurr).l,d0
+		move.w	(RAM_BgCamCurrX).l,d0
 		lsr.w	#3,d0
 		move.w	#0,(vdp_data).l
 		move.w	d0,(vdp_data).l
+		move.l	#$40000010,(vdp_ctrl).l
+		move.w	(RAM_BgCamCurrY).l,d0
+		lsr.w	#3,d0
+		move.w	#0,(vdp_data).l
+		move.w	d0,(vdp_data).l		
+		
+		
+		
 		lea	str_Status(pc),a0
 		move.l	#locate(0,1,1),d0
 		bsr	Video_Print
@@ -172,10 +181,26 @@ MD_GmMode0:
 		add.l	#var_MoveSpd,(RAM_Cam_Xrot).l
 		moveq	#1,d6
 .nob:
+
+		move.w	(Controller_1+on_hold).l,d7
+		move.w	d7,d6
+		and.w	#JoyX,d6
+		beq.s	.nox
+		add.l	#var_MoveSpd,(RAM_Cam_Yrot).l
+		moveq	#1,d6
+		
+.nox:
+		move.w	d7,d6
+		and.w	#JoyY,d6
+		beq.s	.noy
+		add.l	#-var_MoveSpd,(RAM_Cam_Yrot).l
+		moveq	#1,d6
+.noy:
+
 ; 		tst.w	d6
 ; 		beq.s	.nel
 .first_draw:
-; 		bsr	MdMdl_CamAnimate
+		bsr	MdMdl_CamAnimate
 		moveq	#0,d1
 		move.l	(RAM_Cam_Xpos),d2
 		move.l	(RAM_Cam_Ypos),d3
@@ -193,8 +218,13 @@ MD_GmMode0:
 		move.l	(RAM_Cam_Xrot),d1
 		neg.l	d1
 		lsr.l	#8,d1
-		move.w	d1,(RAM_BgCamCurr).l
+		move.w	d1,(RAM_BgCamCurrX).l
+; 		move.l	(RAM_Cam_Yrot),d1
+; 		lsr.l	#8,d1
+; 		move.w	d1,(RAM_BgCamCurrY).l
 .busy:
+
+
 		bra	.loop
 
 ; 		lea	.trklist(pc),a0
@@ -266,7 +296,7 @@ MdMdl_CamAnimate:
 		beq.s	.no_camanim
 		sub.l	#1,(RAM_CamTimer).l
 		bpl.s	.no_camanim
-		move.l	#1,(RAM_CamTimer).l		; TEMPORAL timer
+		move.l	#2,(RAM_CamTimer).l		; TEMPORAL timer
 		move.l	d0,a1
 		move.l	(a1)+,d1
 		move.l	(RAM_CamFrame).l,d0
@@ -466,7 +496,8 @@ MdMdl_CamAnimate:
 str_Status:
 		dc.b "\\w \\w \\w \\w       MD: \\l",$A
 		dc.b "\\w \\w \\w \\w",$A
-		dc.b "\\l \\l \\l \\l",0
+		dc.b "\\l \\l \\l",$A
+		dc.b "\\l \\l \\l",0
 		dc.l sysmars_reg+comm0
 		dc.l sysmars_reg+comm2
 		dc.l sysmars_reg+comm4
@@ -477,7 +508,7 @@ str_Status:
 		dc.l sysmars_reg+comm12
 		dc.l sysmars_reg+comm14
 		dc.l RAM_Cam_Xpos,RAM_Cam_Ypos,RAM_Cam_Zpos
-		dc.l RAM_Cam_Xrot;,RAM_Cam_Yrot,RAM_Cam_Zrot		
+		dc.l RAM_Cam_Xrot,RAM_Cam_Yrot,RAM_Cam_Zrot		
 		align 4
 
 MdPal_Bg:

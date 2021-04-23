@@ -171,8 +171,8 @@ drwtsk_01:
 		cmp/eq	#1,r0
 		bt	.exit
 		mov.w	@(marsGbl_PzListCntr,gbr),r0	; Any pieces to draw?
-		cmp/eq	#0,r0
-		bf	.has_pz
+		cmp/pl	r0
+		bt	.has_pz
 		mov	#0,r0				; If none, just end quickly.
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 .exit:		bra	drwtask_exit
@@ -563,14 +563,15 @@ drwsld_nextpz:
 		mov.w	@(marsGbl_PzListCntr,gbr),r0	; Decrement piece
 		add	#-1,r0
 		mov.w	r0,@(marsGbl_PzListCntr,gbr)
-; 		mov.w	@(marsGbl_PzListCntr,gbr),r0
-		cmp/eq	#0,r0
-		bt	.finish_it
+		cmp/pl	r0
+		bf	.finish_it
 		bra	drwtsk1_newpz
 		nop
 .finish_it:
+		mov	#0,r0
+		mov.w	r0,@(marsGbl_DrwTask,gbr)
 		bra	drwtask_return
-		mov	#$10,r2			; Timer for next watchdog
+		mov	#$7F,r2			; Timer for next watchdog
 
 ; --------------------------------
 ; Task $00

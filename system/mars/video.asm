@@ -1020,28 +1020,33 @@ MarsMdl_ReadModel:
 	; 
 	; r5 - Back Z point, keep affine limitations
 	; r6 - Front Z point, skip face but larger faces are affected
+	
 		cmp/pz	r5
 		bt	.go_fout
-		mov	#RAM_Mars_ObjCamera,r0
-		mov	@(cam_y_pos,r0),r7
-		shlr2	r7
-		shlr2	r7
-		shlr2	r7
-		shlr	r7
-		exts	r7,r7
-		cmp/pl	r7
-		bf	.revrscam
-		neg	r7,r7
-.revrscam:
-		mov	#MAX_ZDIST,r0
-		cmp/ge	r0,r7
-		bt	.camlimit
-		mov	r0,r7
-.camlimit:
+; 		cmp/pz	r6
+; 		bt	.go_fout
+		
+		
+; 		mov	#RAM_Mars_ObjCamera,r0
+; 		mov	@(cam_y_pos,r0),r7
+; 		shlr2	r7
+; 		shlr2	r7
+; 		shlr2	r7
+; 		shlr	r7
+; 		exts	r7,r7
+; 		cmp/pl	r7
+; 		bf	.revrscam
+; 		neg	r7,r7
+; .revrscam:
+; 		mov	#MAX_ZDIST,r0
+; 		cmp/ge	r0,r7
+; 		bt	.camlimit
+; 		mov	r0,r7
+; .camlimit:
 ; 		cmp/pl	r6
 ; 		bt	.face_out
 		mov	#MAX_ZDIST,r0		; Draw distance
-		add 	r7,r0
+; 		add 	r7,r0
 		cmp/ge	r0,r5
 		bf	.go_fout
 		mov	#-(SCREEN_WIDTH/2),r0
@@ -1275,28 +1280,10 @@ mdlrd_setpoint:
 		mov 	#_JR,r8
 		mov	#320<<16,r7
 		neg	r4,r0		; reverse Z
-		add	#-16,r0
+; 		add	#-16,r0
 		cmp/pl	r0
 		bt	.inside
 		shlr	r7
-; 		mov	#-(SCREEN_WIDTH/2)<<8,r6
-; 		cmp/ge	r6,r2
-; 		bf	.x_forz
-; 		neg	r6,r6
-; 		cmp/ge	r6,r2
-; 		bf	.x_rsd
-; .x_forz:
-; 		mov	r6,r2
-; .x_rsd:	
-; 		mov	#-(SCREEN_HEIGHT/2)<<8,r6
-; 		cmp/ge	r6,r3
-; 		bf	.y_forz
-; 		neg	r6,r6
-; 		cmp/ge	r6,r3
-; 		bf	.y_rsd
-; .y_forz:
-; 		mov	r6,r3
-; .y_rsd:
 
 		dmuls	r7,r2
 		sts	mach,r0
