@@ -10,6 +10,7 @@
 ; a0-a1,d0-d1
 ; --------------------------------------------------------
 
+		align $100
 Sound_Init:
 		move.w	#$0100,(z80_bus).l		; Stop Z80
 		move.b	#1,(z80_reset).l		; Reset
@@ -500,12 +501,12 @@ TMR		equ	44
 
 wave_Start	dw 0;TEST_WAV&0FFFFh	; START: 68k direct pointer ($00xxxxxx)
 		db 0;TEST_WAV>>16&0FFh
-wave_End	dw 0;(TEST_WAV_E-TEST_WAV)&0FFFFh
+wave_Len	dw 0;(TEST_WAV_E-TEST_WAV)&0FFFFh
 		db 0;(TEST_WAV_E-TEST_WAV)>>16
 wave_Loop	dw 0
 		db 0
 wave_Pitch	dw 100h			; 01.00h
-wav_Flags	db 100b			; WAVE playback flags (%10x: 1 loop / 0 no loop)
+wave_Flags	db 100b			; WAVE playback flags (%10x: 1 loop / 0 no loop)
 currTrkBlkHd	dw 0
 currTrkData	dw 0
 currInsData	dw 0
@@ -525,7 +526,7 @@ commZRomBlk	db 0			; 68k ROM block flag
 commZRomRd	db 0			; Z80 is reading ROM bit
 psgHatMode	db 0,0,0		; noise mode bits + linked channel
 currTblSrch	dw 0
-; reqMarsTrnf	dw 0			; Request instrument transfer to SH2
+reqSampl	db 0			; DAC play request
 
 ; --------------------------------------------------------
 ; Z80 Interrupt at 0038h
@@ -809,6 +810,13 @@ playonchip
 		ld	(currInsData),hl
 		dec	c
 		jp	nz,.nxt_track
+		
+		ld	a,(reqSampl)
+		or	a
+		ret	z
+		xor	a
+		ld	(reqSampl),a
+		call	dac_play
 		ret
 
 ; ----------------------------------------
@@ -851,8 +859,8 @@ playonchip
 		jp	z,.fm_eff
 		cp	4
 		ret	z
-		cp	5
-		jp	z,.pwm_eff
+; 		cp	5
+; 		jp	z,.pwm_eff
 		ret
 .fm_eff:
 		ld	a,(iy+chnl_EffId)	; Eff X?
@@ -875,8 +883,7 @@ playonchip
 		add	hl,de
 		ld	a,(ix+7)
 		and	00111111b
-		ld	b,a
-		ld	a,(hl)
+		ld	b,(hl)
 		or	b
 		ld	(ix+7),a
 		ret
@@ -886,34 +893,34 @@ playonchip
 		db 00000000b	; 080h
 		db 10000000b	; 0C0h
 
-.pwm_eff:
-		ld	a,(iy+chnl_EffId)	; Eff X?
-		cp	24
-		jp	z,.eff_X_pwm
-		ret
-.eff_X_pwm:
-		call	.srch_pwm
-		cp	-1
-		ret	z
-		push	hl
-		pop	ix
-		ld	a,(iy+chnl_EffArg)
-		rlca
-		rlca
-		and	00000011b
-		ld	hl,.pwmpan_list
-		ld	de,0
-		ld	e,a
-		add	hl,de
-		ld	a,(hl)
-		ld	(ix+7),a
-		ret
-	
-.pwmpan_list:
-		db 001h		; 000h
-		db 001h		; 040h
-		db 003h		; 080h
-		db 002h		; 0C0h
+; .pwm_eff:
+; 		ld	a,(iy+chnl_EffId)	; Eff X?
+; 		cp	24
+; 		jp	z,.eff_X_pwm
+; 		ret
+; .eff_X_pwm:
+; 		call	.srch_pwm
+; 		cp	-1
+; 		ret	z
+; 		push	hl
+; 		pop	ix
+; 		ld	a,(iy+chnl_EffArg)
+; 		rlca
+; 		rlca
+; 		and	00000011b
+; 		ld	hl,.pwmpan_list
+; 		ld	de,0
+; 		ld	e,a
+; 		add	hl,de
+; 		ld	a,(hl)
+; 		ld	(ix+7),a
+; 		ret
+; 	
+; .pwmpan_list:
+; 		db 001h		; 000h
+; 		db 001h		; 040h
+; 		db 003h		; 080h
+; 		db 002h		; 0C0h
 
 ; ----------------------------------------
 ; Set new instrument
@@ -932,9 +939,9 @@ playonchip
 		cp	3		; FM special
 		ret	z
 		cp	4		; DAC
-		ret	z
-		cp	5		; PWM
-		jp	z,.pwm_ins
+		jp	z,.dac_ins
+; 		cp	5		; PWM
+; 		jp	z,.pwm_ins
 		ret
 
 ; PSG instrument
@@ -1037,12 +1044,16 @@ playonchip
 		inc	d
 		inc	d
 		inc	d
-		ld	a,(ix+7)		; 0B4h
-		ld	b,(hl)
+		
+		ld	a,(hl)			; 0B4h
+		and	00111111b
+		ld	b,a
+		ld	a,(ix+7)
+		and	11000000b
 		or	b
-		call	dac_me
 		ld	(ix+7),a
 		ld	e,a
+		call	dac_me
 		call	fm_autoset
 		inc	hl			; TODO: FM3 enable bit
 		inc	hl
@@ -1050,8 +1061,39 @@ playonchip
 		ld	(ix+8),a
 		ret
 
+; Type 4
+.dac_ins:
+	; TODO: FM6/DAC LOCK
+		inc	hl
+		inc	hl
+		ld	c,(hl)
+		inc	hl
+		call	dac_me
+		ld	b,(hl)
+		inc	hl
+		ld	a,(hl)
+		or	100b
+		ld	(wave_Flags),a
+		
+		ld	h,b
+		ld	l,c
+		ld	de,wave_Start
+		ld	b,9
+.copybytes:
+		ld	a,(hl)
+		ld	(de),a
+		inc	hl
+		inc	de
+		call	dac_me
+		nop
+		nop
+		djnz	.copybytes
+		ret
+
+; 		jr	$
+
 ; Type 5
-.pwm_ins:
+; .pwm_ins:
 ; 		push	hl
 ; 		call	.srch_pwm
 ; 		cp	-1
@@ -1063,7 +1105,7 @@ playonchip
 ;  		ld	a,(iy+chnl_Ins)
 ;  		dec	a
 ;  		ld	(ix+5),a		; put ins number
-		ret
+; 		ret
 
 ; ----------------------------------------
 ; Volume request
@@ -1245,7 +1287,7 @@ playonchip
 		cp	3
 		jp	z,.note_fm3
 		cp	4
-		jp	z,.note_fm6
+		jp	z,.note_dac
 		cp	5
 		jp	z,.note_pwm
 		call	dac_me
@@ -1479,12 +1521,17 @@ playonchip
 		ld	d,0B4h
 		or	d
 		ld	d,a
+
 		ld	a,(ix+7)
+		ld	c,a
+		and	00111111b
 		ld	e,a
+		ld	a,c
 		cpl	
-		or	11000000b
+		and	11000000b
 		or	e
 		ld	e,a
+		
 		call	fm_autoset
 		call	dac_me
 		ld	a,(ix)		; Keys
@@ -1496,7 +1543,14 @@ playonchip
 		call	fm_send_1
 		ret
 .note_fm3:
-.note_fm6:
+		ret
+
+.note_dac:
+	; TODO: FM6/DAC LOCK
+		ld	hl,100h		; temporal.
+		ld	(wave_Pitch),hl
+		ld	a,1
+		ld	(reqSampl),a
 		ret
 
 ; ----------------------------------------
@@ -3002,8 +3056,8 @@ dac_play:
 		ld 	a,(wave_Start+2)
 		ld	(dDacPntr),hl
 		ld	(dDacPntr+2),a
-		ld	hl,(wave_End)
-		ld 	a,(wave_End+2)
+		ld	hl,(wave_Len)
+		ld 	a,(wave_Len+2)
 		ld	(dDacCntr),hl
 		ld	(dDacCntr+2),a
 		xor	a
@@ -3078,7 +3132,7 @@ dac_refill:
 		push	bc
 		push	de
 		push	hl
-		ld	a,(wav_Flags)
+		ld	a,(wave_Flags)
 		cp	111b
 		jp	nc,.FDF7
 
@@ -3113,7 +3167,7 @@ dac_refill:
 		jp	.FDFreturn
 .FDF4DONE:
 		ld	d,dWaveBuff>>8
-		ld	a,(wav_Flags)
+		ld	a,(wave_Flags)
 		and	01b
 		or	a
 		jp	nz,.FDF72
@@ -3150,8 +3204,8 @@ dac_refill:
 		adc	a,0
 		ld	(dDacPntr),hl
 		ld	(dDacPntr+2),a
-		ld	hl,(wave_End)
-		ld 	a,(wave_End+2)
+		ld	hl,(wave_Len)
+		ld 	a,(wave_Len+2)
 		sub	a,c
 		scf
 		ccf

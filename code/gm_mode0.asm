@@ -105,19 +105,19 @@ MD_GmMode0:
 		move.w	#16-1,d1
 		bsr	Video_LoadPal
 
-		move.l	#PWM_START,d0
-		move.l	#(PWM_END-PWM_START),d1
-		move.l	#0,d2
-		move.l	#$100,d3
-		moveq	#1,d4
-		bsr	SoundReq_SetSample
+; 		move.l	#PWM_START,d0
+; 		move.l	#(PWM_END-PWM_START),d1
+; 		move.l	#0,d2
+; 		move.l	#$100,d3
+; 		moveq	#1,d4
+; 		bsr	SoundReq_SetSample
 
-; 		move.l	#GemaTrk_Yuki_patt,d0
-; 		move.l	#GemaTrk_Yuki_blk,d1
-; 		move.l	#GemaTrk_Yuki_ins,d2
-; 		moveq	#5,d3
-; 		moveq	#0,d4
-; 		bsr	SoundReq_SetTrack
+		move.l	#GemaTrk_Demo_patt,d0
+		move.l	#GemaTrk_Demo_blk,d1
+		move.l	#GemaTrk_Demo_ins,d2
+		moveq	#4,d3
+		moveq	#0,d4
+		bsr	SoundReq_SetTrack
 
 		bset	#bitDispEnbl,(RAM_VdpRegs+1).l		; Enable display
 		bsr	Video_Update

@@ -10,7 +10,7 @@
 MAX_FACES	equ	800		; Maximum polygon faces (models,sprites) to store on buffer
 MAX_SVDP_PZ	equ	800+64		; Pieces list: both read and write, increase the value if needed
 MAX_MODELS	equ	24		; Note: First 9 models are reserved for layout map
-MAX_ZDIST	equ	-$2000		; Max drawing distance (-Z max)
+MAX_ZDIST	equ	-$2400		; Max drawing distance (-Z max)
 LAY_WIDTH	equ	$20*2		; Layout data width * 2
 
 ; ----------------------------------------
@@ -488,7 +488,7 @@ MarsLay_Draw:
 .center_val:	dc.l ($E*LAY_WIDTH)+($C*2)
 
 .list:
-		dc.l .front
+		dc.l .front_fr
 		dc.l .front_fr
 		dc.l .front_fr
 		dc.l .front_fr
@@ -505,8 +505,8 @@ MarsLay_Draw:
 		dc.l .front_fr
 		dc.l .front_fr
 		
-		dc.l .right_dw
-		dc.l .right_dw
+		dc.l .front_fr
+		dc.l .front_fr
 		dc.l .right_dw
 		dc.l .right_dw
 		dc.l .right_dw
@@ -522,8 +522,8 @@ MarsLay_Draw:
 		dc.l .right_dw
 		dc.l .right_dw
 		
-		dc.l .down
-		dc.l .down_left
+		dc.l .right_dw
+		dc.l .right_dw
 		dc.l .down_left
 		dc.l .down_left
 		dc.l .down_left
@@ -539,6 +539,8 @@ MarsLay_Draw:
 		dc.l .down_left
 		dc.l .down_left
 
+		dc.l .down_left
+		dc.l .down_left
 		dc.l .front_lf
 		dc.l .front_lf
 		dc.l .front_lf
@@ -550,10 +552,8 @@ MarsLay_Draw:
 		dc.l .front_lf
 		dc.l .front_lf
 		dc.l .front_lf
-		dc.l .front_lf
-		dc.l .front_lf
-		dc.l .front_lf
-		dc.l .front_lf
+		dc.l .front
+		dc.l .front
 		dc.l .front
 
 ; r5 - numof pieces
@@ -1078,9 +1078,9 @@ MarsMdl_ReadModel:
 		mov	r5,@r8				; Store current Z to Zlist
 		mov	r1,@(4,r8)			; And it's address
 		
-	; Sort face, SLOW.
-	; r7 - Curr Z
-	; r6 - Past Z
+; 	Sort this face, SLOW
+; 	r7 - Curr Z
+; 	r6 - Past Z
 		mov.w	@(marsGbl_MdlFacesCntr,gbr),r0
 		cmp/eq	#1,r0
 		bt	.first_face

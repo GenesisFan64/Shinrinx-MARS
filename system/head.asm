@@ -71,8 +71,8 @@
 		dc.l MD_ErrorTrap
 		dc.b "SEGA 32X        "
 		dc.b "(C)GF64 2021.JUN"
-		dc.b "Ciudad MARS demo 202X                           "
-		dc.b "MARS City tech demo 202X                        "
+		dc.b "Ciudad MARS                                     "
+		dc.b "MARS CITY tech demo 202X                        "
 		dc.b "GM HOMEBREW-00"
 		dc.w 0
 		dc.b "J6              "
