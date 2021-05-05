@@ -43,7 +43,7 @@ mdl_z_rot	ds.l 1			; Z rotation $000000.00
 mdl_animdata	ds.l 1			; Model animation data pointer, zero: no animation
 mdl_animframe	ds.l 1			; Current frame in animation
 mdl_animtimer	ds.l 1			; Animation timer
-mdl_animspd	ds.l 1			; Animation speed
+mdl_animspd	ds.l 1			; Animation USER speed setting
 sizeof_mdlobj	ds.l 0
 		finish
 		
@@ -826,14 +826,14 @@ MarsMdl_ReadModel:
 		mov	@r13+,r4
 		mov	@r13+,r5
 		mov	@r13+,r6
-		neg	r4,r4
+; 		neg	r4,r4
 		mov	r1,@(mdl_x_pos,r14)
 		mov	r2,@(mdl_y_pos,r14)
 		mov	r3,@(mdl_z_pos,r14)
 		mov	r4,@(mdl_x_rot,r14)
 		mov	r5,@(mdl_y_rot,r14)
 		mov	r6,@(mdl_z_rot,r14)
-		mov	#1,r0				; TODO: make a timer setting
+		mov	@(mdl_animspd,r14),r0		; TODO: make a timer setting
 .wait_camanim:
 		mov	r0,@(mdl_animtimer,r14)	
 .no_anim:

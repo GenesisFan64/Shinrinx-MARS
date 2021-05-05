@@ -90,9 +90,9 @@ GemaTrk_Demo_blk:
 GemaTrk_Demo_patt:
 		binclude "data/sound/tracks/demo_patt.bin"
 GemaTrk_Demo_ins:
-		gemaInsFm  0,FmIns_Guitar_Heavy
-		gemaInsDac 0,DacIns_MyTime,0
-		gemaInsDac 0,DacIns_Ai,1
-		gemaInsNull
-		gemaInsNull
+		gemaInsFm   0,FmIns_Guitar_Heavy
+		gemaInsDac  0,DacIns_MyTime,0
+		gemaInsDac  0,DacIns_Ai,1
+		gemaInsFm   0,FmIns_Ambient_dark
+		gemaInsFm -34,FmIns_DrumKick
 		gemaInsNull

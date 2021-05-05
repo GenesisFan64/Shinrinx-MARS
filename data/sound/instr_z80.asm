@@ -29,8 +29,9 @@ FmIns_Fm3_OpenHat:
 		binclude "data/sound/instr/fm/fm3_openhat.gsx",2478h,28h
 FmIns_Fm3_ClosedHat:
 		binclude "data/sound/instr/fm/fm3_closedhat.gsx",2478h,28h
-; FmIns_DrumKick:
-; 		binclude "data/sound/instr/fm/drum_kick.gsx",2478h,20h
+		
+FmIns_DrumKick:
+		binclude "data/sound/instr/fm/drum_kick.gsx",2478h,20h
 ; FmIns_DrumSnare:
 ; 		binclude "data/sound/instr/fm/drum_snare.gsx",2478h,20h
 ; FmIns_DrumCloseHat:
@@ -94,8 +95,8 @@ FmIns_Trumpet_2:
 ; 		binclude "data/sound/instr/fm/bell_glass.gsx",2478h,20h
 ; FmIns_Marimba_1:
 ; 		binclude "data/sound/instr/fm/marimba_1.gsx",2478h,20h
-; FmIns_Ambient_dark:
-; 		binclude "data/sound/instr/fm/ambient_dark.gsx",2478h,20h
+FmIns_Ambient_dark:
+		binclude "data/sound/instr/fm/ambient_dark.gsx",2478h,20h
 ; FmIns_Ambient_spook:
 ; 		binclude "data/sound/instr/fm/ambient_spook.gsx",2478h,20h
 FmIns_Ambient_3:

@@ -1239,7 +1239,9 @@ CmdTaskMd_LoadSPal:
 ;
 ; @($04,r14) - Object slot
 ; @($08,r14) - Object data
-; @($0C,r14) - Object options:
+; @($0C,r14) - Object animation data
+; @($10,r14) - Object animation speed
+; @($14,r14) - Object options:
 ;	       %????????????????????????pppppppp
 ;		p - index pixel increment value
 ; ------------------------------------------------
@@ -1257,6 +1259,10 @@ CmdTaskMd_ObjectSet:
 		mov	@r13+,r1
 		mov	r1,@(mdl_data,r12)
 		mov	@r13+,r1
+		mov	r1,@(mdl_animdata,r12)
+		mov	@r13+,r1
+		mov	r1,@(mdl_animspd,r12)
+		mov	@r13+,r1
 		mov	r1,@(mdl_option,r12)
 		mov	r0,@(mdl_x_pos,r12)
 		mov	r0,@(mdl_y_pos,r12)
@@ -1264,6 +1270,9 @@ CmdTaskMd_ObjectSet:
 		mov	r0,@(mdl_x_rot,r12)
 		mov	r0,@(mdl_y_rot,r12)
 		mov	r0,@(mdl_z_rot,r12)
+		xor	r0,r0
+		mov	r0,@(mdl_animframe,r12)
+		mov	r0,@(mdl_animtimer,r12)
 		rts
 		nop
 		align 4

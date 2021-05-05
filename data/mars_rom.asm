@@ -20,7 +20,9 @@ Textr_marscity:
 Textr_intro:
 		binclude "data/mars/objects/mtrl/intro_art.bin"
 		align 4
-
+MARSANI_INTRO_1:
+		binclude "data/mars/objects/anim/logo_1_anim.bin"
+		align 4
 
 ; PWM_STEREO:	binclude "data/sound/pwm_st.wav",$2C,$200000
 ; PWM_STEREO_e:
