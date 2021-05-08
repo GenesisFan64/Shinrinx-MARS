@@ -9,3 +9,9 @@
 MdGfx_Bg:
 		binclude "data/md/bg/bg_art.bin"
 MdGfx_Bg_e:	align 2
+
+MdGfx_BgTitle:
+		binclude "data/md/bg_title/bg_art.bin"
+MdGfx_BgTitle_e:
+		align 2
+

@@ -6,4 +6,4 @@
 ; center center: X=E,Y=10
 
 TEST_LAYOUT:
-		include "data/mars/maps/map0_data.asm"
+		include "data/mars/maps/map2_data.asm"

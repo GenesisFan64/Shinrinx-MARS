@@ -11,9 +11,11 @@
 		align 4
 CAMERA_INTRO:	binclude "data/mars/objects/anim/intro_anim.bin"
 		align 4
+CAMERA_INTNAME:	binclude "data/mars/objects/anim/projcam_anim.bin"
+		align 4
 CAMERA_CITY:	binclude "data/mars/maps/anim/camera_anim.bin"
 		align 4
-		
+
 Sampl_Ai:	binclude "data/sound/instr/smpl/ai.wav",$2C
 Sampl_Ai_End:
 Sampl_MyTime:	binclude "data/sound/instr/smpl/mytime.wav",$2C

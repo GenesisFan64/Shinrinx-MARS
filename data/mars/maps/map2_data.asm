@@ -1,5 +1,5 @@
 		dc.l .blocks
-		binclude "data/mars/maps/map0_lay.bin"
+		binclude "data/mars/maps/map2_lay.bin"
 		align 4
 .blocks:
 		dc.l MarsMapPz_city_floor,0
