@@ -5,3 +5,4 @@ MarsMapPz_city_floor:
 .face:		binclude "data/mars/maps/pz/city_floor_face.bin"
 .vrtx:		binclude "data/mars/maps/pz/city_floor_vrtx.bin"
 .mtrl:		include "data/mars/maps/pz/city_floor_mtrl.asm"
+		align 4

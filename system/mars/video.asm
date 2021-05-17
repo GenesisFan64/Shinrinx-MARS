@@ -567,27 +567,27 @@ MarsLay_Draw:
 		mov.w	@r13+,r0
 		cmp/pl 	r0
 		bf	.blank_mdl
-		mov	r0,r7
-		shlr8	r0
-		shlr2	r0
-		shlr	r0
-		and	#%11100,r0
-		mov	#.xrotlist,r8
-		mov	@(r8,r0),r8
-		mov	r7,r0
+; 		mov	r0,r7
+; 		shlr8	r0
+; 		shlr2	r0
+; 		shlr	r0
+; 		and	#%11100,r0
+; 		mov	#.xrotlist,r8
+; 		mov	@(r8,r0),r8
+; 		mov	r7,r0
 		add	#-1,r0
 		shll2	r0
-		shll	r0
-		mov	#$1FFF,r7
-		and	r7,r0
+; 		shll	r0
+; 		mov	#$1FFF,r7
+; 		and	r7,r0
 		mov	@(r12,r0),r4
-		mov	#$40000000,r0
+		mov	#$40000000,r0	; OR val: set special object mode
 		or	r0,r4
 .blank_mdl:
 		mov	r1,@(mdl_x_pos,r10)
 		mov	r2,@(mdl_y_pos,r10)
 		mov	r3,@(mdl_z_pos,r10)
-		mov	r8,@(mdl_x_rot,r10)	
+; 		mov	r8,@(mdl_x_rot,r10)	
 		mov	r4,@(mdl_data,r10)
 		add	#sizeof_mdlobj,r10
 		dt	r5
@@ -598,10 +598,10 @@ MarsLay_Draw:
 		rts
 		nop
 		align 4
-.xrotlist:	dc.l 0
-		dc.l $100000
-		dc.l $200000
-		dc.l $300000
+; .xrotlist:	dc.l 0
+; 		dc.l $100000
+; 		dc.l $200000
+; 		dc.l $300000
 
 ; o X X X o
 ; o X X X o

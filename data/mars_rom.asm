@@ -14,8 +14,11 @@
 ; --------------------------------------------------------
 
 		align 4
+		include "data/mars/maps/map_marscity.asm"
+		align 4
 		include "data/mars/objects/mdl/projname/head.asm"
 		align 4
+
 Textr_projname:
 		binclude "data/mars/objects/mtrl/projname_art.bin"
 		align 4

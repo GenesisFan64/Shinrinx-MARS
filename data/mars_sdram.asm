@@ -23,8 +23,6 @@ Palette_projname:
 ; Objects
 ; --------------------------------------------------------
 
-		include "data/mars/maps/map_marscity.asm"
-		align 4
 		include "data/mars/objects/mdl/intro_1/head.asm"
 		align 4
 		include "data/mars/objects/mdl/intro_2/head.asm"

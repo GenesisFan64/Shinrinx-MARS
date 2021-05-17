@@ -5,3 +5,4 @@ MarsMapPz_city_septm:
 .face:		binclude "data/mars/maps/pz/city_septm_face.bin"
 .vrtx:		binclude "data/mars/maps/pz/city_septm_vrtx.bin"
 .mtrl:		include "data/mars/maps/pz/city_septm_mtrl.asm"
+		align 4

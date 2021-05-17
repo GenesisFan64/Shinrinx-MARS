@@ -74,7 +74,7 @@ mappz_list    = map_file.readline().replace("\n","").split(" ")
 curr_pz=0
 num_pz = len(mappz_list)
 for curr_rdpz in range(0,num_pz):
-  #print("converting:"+mappz_list[curr_pz])
+  print("** Piece: "+mappz_list[curr_pz]+" **")
   model_file    = open(TAG_OBJECTSDIR+"/"+object_name+"/"+mappz_list[curr_pz]+".obj","r")
   material_file = open(TAG_OBJECTSDIR+"/"+object_name+"/"+mappz_list[curr_pz]+".mtl","r")	# CHECK BELOW
   out_head      = open("pz/"+mappz_list[curr_pz]+".asm","w")	# header
@@ -530,6 +530,7 @@ for curr_rdpz in range(0,num_pz):
   out_head.write('.face:\t\tbinclude "data/mars/maps/pz/'+mappz_list[curr_pz]+'_face.bin"\n')
   out_head.write('.vrtx:\t\tbinclude "data/mars/maps/pz/'+mappz_list[curr_pz]+'_vrtx.bin"\n')
   out_head.write('.mtrl:\t\tinclude "data/mars/maps/pz/'+mappz_list[curr_pz]+'_mtrl.asm"\n')
+  out_head.write("\t\talign 4\n")
   
   model_file.close()
   material_file.close()
@@ -552,7 +553,7 @@ while MAX_HEIGHT:
 	b = map_file.readline().replace("\n","").replace("-","").split(" ")
 	for i in range(0,MAX_WIDTH):
 		#print(b[i])
-		a = int(b[i])
+		a = int(b[i],16)
 		out_laydata.write(bytes([((a>>8)&0xFF),(a&0xFF)]))
 	MAX_HEIGHT -= 1
 	
@@ -563,7 +564,7 @@ out_layout.write(".blocks:\n")
 # TODO: automatic sort
 for i in range(0,len(mappz_list)):
 	a = mappz_list[i]
-	out_layout.write("\t\tdc.l MarsMapPz_"+a+",0\n")
+	out_layout.write("\t\tdc.l MarsMapPz_"+a+"\n")
 
 for i in range(0,len(mappz_list)):
 	a = mappz_list[i]

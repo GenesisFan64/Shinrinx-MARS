@@ -1264,13 +1264,13 @@ CmdTaskMd_ObjectSet:
 		mov	r1,@(mdl_animspd,r12)
 		mov	@r13+,r1
 		mov	r1,@(mdl_option,r12)
+		xor	r0,r0
 		mov	r0,@(mdl_x_pos,r12)
 		mov	r0,@(mdl_y_pos,r12)
 		mov	r0,@(mdl_z_pos,r12)
 		mov	r0,@(mdl_x_rot,r12)
 		mov	r0,@(mdl_y_rot,r12)
 		mov	r0,@(mdl_z_rot,r12)
-		xor	r0,r0
 		mov	r0,@(mdl_animframe,r12)
 		mov	r0,@(mdl_animtimer,r12)
 		rts

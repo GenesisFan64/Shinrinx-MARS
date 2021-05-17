@@ -70,9 +70,9 @@
 		dc.l MD_ErrorTrap
 		dc.l MD_ErrorTrap
 		dc.b "SEGA 32X        "
-		dc.b "(C)GF64 2021.JUN"
-		dc.b "Ciudad MARS                                     "
-		dc.b "MARS CITY tech demo 202X                        "
+		dc.b "(C)GF64 2021.SEP"
+		dc.b "Proyecto Shinrinx ",$22,"Ciudad Mars",$22,"                 "
+		dc.b "Project Shinrinx ",$22,"Mars City",$22,"                    "
 		dc.b "GM HOMEBREW-00"
 		dc.w 0
 		dc.b "J6              "

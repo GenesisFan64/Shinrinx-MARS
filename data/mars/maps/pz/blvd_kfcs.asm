@@ -5,3 +5,4 @@ MarsMapPz_blvd_kfcs:
 .face:		binclude "data/mars/maps/pz/blvd_kfcs_face.bin"
 .vrtx:		binclude "data/mars/maps/pz/blvd_kfcs_vrtx.bin"
 .mtrl:		include "data/mars/maps/pz/blvd_kfcs_mtrl.asm"
+		align 4
