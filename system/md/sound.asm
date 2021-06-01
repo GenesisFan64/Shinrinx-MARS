@@ -10,7 +10,7 @@
 ; a0-a1,d0-d1
 ; --------------------------------------------------------
 
-		align $100				; <-- GENS emulator workaround
+; 		align $100				; <-- comment or uncomment if GENS freezes
 Sound_Init:
 		move.w	#$0100,(z80_bus).l		; Stop Z80
 		move.b	#1,(z80_reset).l		; Reset
@@ -54,112 +54,6 @@ Sound_Init:
 
 Sound_Update:
 		rts
-
-; --------------------------------------------------------
-; Call this every 6 lines of 68k code to play PWM from
-; here.
-; --------------------------------------------------------
-
-; 		align $80
-; Sound_PwmStream:
-; 		movem.l	d0-d7/a0-a2,-(sp)
-; 		moveq 	#0,d5			; LEFT start
-; 		moveq 	#0,d6			; RIGHT start
-; 		lea	(RAM_Pwm_List),a2
-; 		move.w 	#MAX_PWMCHNL-1,d7
-; .loop:
-; 		move.l	(mchnsnd_enbl,a2),d0
-; 		bne.s	.on
-; .silent:
-; 		moveq	#$7F,d0
-; 		move.w	d0,d1
-; 		move.w	d0,d2
-; 		bra	.skip
-; .on:
-; 		move.l 	(mchnsnd_read,a2),a0
-; 		move.l 	(mchnsnd_end,a2),d0
-; 		cmp.l	d0,a0
-; 		bcs.s	.read
-; 		move.l 	(mchnsnd_loop,a2),d0
-; 		cmp.l	#-1,d0
-; 		bne	.loop_me
-; 		move.l 	#0,(mchnsnd_enbl,a2)
-; 		move.l 	(mchnsnd_start,a2),a0
-; 		bra	.silent
-; .loop_me:
-; 		move.l 	(mchnsnd_start,a2),a0
-; 		add	d0,a0
-; 
-; ; read wave
-; .read:
-; 		move.l	(mchnsnd_flags,a2),d0
-; 		move.l 	a0,d3
-; 		lsr.l	#8,d3
-; 		btst	#7,d0
-; 		beq	.mono_a
-; 		moveq	#-1,d1
-; 		and	d1,d3
-; .mono_a
-; 		move.l 	(mchnsnd_pitch,a2),d4
-; 		movea.l	d3,a1
-; 		move.b	(a1)+,d1
-; 		move.b	d1,d2
-; 		btst	#7,d0
-; 		beq	.mono
-; 		move.b	(a1)+,d1
-; 		add.l	d4,d4
-; .mono:
-; 		add	d4,a0
-; 		move.l	a0,(mchnsnd_read,a2)
-; 		and.w	#$FF,d1
-; 		and.w	#$FF,d2
-; 
-; ; 	; Volume is backwards.
-; ; 	; vol=0 normal
-; ; 		move	@(mchnsnd_vol,a2),r9
-; ; 		add	#1,r9
-; ; 		mulu	r9,r1
-; ; 		sts	macl,r4
-; ; 		shlr8	r4
-; ; 		sub	r4,r1
-; ; 		mulu	r9,r2
-; ; 		sts	macl,r4
-; ; 		shlr8	r4
-; ; 		sub	r4,r2
-; ; 		tst	#%00000001,r0		; TODO: temporal way to check L/R
-; ; 		bf	.no_l
-; ; 		move	#$7F,d1
-; ; .no_l:
-; ; 		tst	#%00000010,r0
-; ; 		bf	.skip	
-; ; 		move	#$7F,d2
-; .skip:
-; 		add.w	#1,d1
-; 		add.w	#1,d2
-; 		add.w	d1,d5
-; 		add.w	d2,d6
-; 		adda	#sizeof_pwm,a2
-; 		dbf	d7,.loop
-; ; 		
-; ; 	; ***This check is for emus only***
-; ; 	; It recreates what happens to the PWM
-; ; 	; in real hardware when it overflows
-; ; 		move	#$3FF,r0
-; ; 		cmp/gt	r0,r5
-; ; 		bf	.lmuch
-; ; 		move	r0,r5
-; ; .lmuch:		cmp/gt	r0,r6
-; ; 		bf	.rmuch
-; ; 		move	r0,r6
-; ; .rmuch:
-; 		lea	(sysmars_reg),a2
-;  		move.w	d5,(lchwidth,a2)
-;  		move.w	d6,(rchwidth,a2)
-; 		move.w	(monowidth,a2),d3	; Not needed on HW
-; ; 		bmi.s	.retry
-; 
-; 		movem.l	(sp)+,d0-d7/a0-a2
-; 		rts
 
 ; ====================================================================
 ; ----------------------------------------------------------------

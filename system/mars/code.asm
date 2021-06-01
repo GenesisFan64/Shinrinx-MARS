@@ -1,7 +1,7 @@
 ; ====================================================================		
 ; ----------------------------------------------------------------
 ; MARS SH2 Section
-; 
+;
 ; CODE for both CPUs
 ; RAM and some DATA go here
 ; ----------------------------------------------------------------
@@ -15,9 +15,7 @@
 
 ; ====================================================================
 ; ----------------------------------------------------------------
-; MARS Global variables (for gbr)
-; 
-; Shared for both CPUs
+; MARS "Global" variables (for gbr on each SH2)
 ; ----------------------------------------------------------------
 
 			struct 0
@@ -36,15 +34,15 @@ marsGbl_VIntFlag_M	ds.w 1		; Sets to 0 if VBlank finished on Master CPU
 marsGbl_VIntFlag_S	ds.w 1		; Same thing but for the Slave CPU
 marsGbl_DivStop_M	ds.w 1		; Flag to tell Watchdog we are in the middle of division
 marsGbl_CurrFb		ds.w 1		; Current framebuffer number
-marsGbl_PalDmaMidWr	ds.w 1		; Enable this flag if modifing RAM_Mars_Palette
 marsGbl_ZSortReq	ds.w 1		; Flag to request Zsort in Slave's watchdog
 marsGbl_PwmTrkUpd	ds.w 1		; Flag to update PWM tracks (from Z80 then PWM IRQ)
+marsGbl_PalDmaMidWr	ds.w 1		; Flag to tell we are in middle of transfering palette
 sizeof_MarsGbl		ds.l 0
 			finish
 			
 ; ====================================================================
 ; ----------------------------------------------------------------
-; Error trap
+; Noraml error trap
 ; ----------------------------------------------------------------
 
 SH2_Error:
@@ -111,7 +109,7 @@ m_irq_pwm:
 ; ------------------------------------------------
 ; Master | CMD Interrupt
 ; 
-; Recieve data from Genesis
+; Recieve data from Genesis (DREQ-less)
 ; ------------------------------------------------
 
 m_irq_cmd:
@@ -264,27 +262,28 @@ m_irq_v:
 		mov	#_sysreg+vintclr,r1
 		mov.w	r0,@r1
 
-	; TODO: DMA works but after the first
-	; pass it locks both SOURCE and DESTINATION
-	; data sections
-		mov	#_vdpreg,r1			; Wait for palette access
-.wait2:		mov.w	@(vdpsts,r1),r0
-		tst	#2,r0
-		bf	.wait2
-.wait		mov.b	@(vdpsts,r1),r0
-		tst	#$20,r0
+	; Hardware BUG:
+	; Using DMA to transfer palette
+	; to _palette works on the first pass
+
+		mov	#_vdpreg,r1		; Wait for palette access
+.wait_fb:	mov.w	@(vdpsts,r1),r0		; Read status as WORD
+		tst	#2,r0			; Framebuffer busy? (wait for FEN=1)
+		bf	.wait_fb
+.wait		mov.b	@(vdpsts,r1),r0		; Now read as a BYTE
+		tst	#$20,r0			; Palette unlocked? (wait for PEN=0)
 		bt	.wait
 		stc	sr,@-r15
 		mov	r2,@-r15
 		mov	r3,@-r15
-; 		mov	r4,@-r15
-; 		mov	r5,@-r15
-; 		mov	r6,@-r15
-		mov	#$F0,r0
+		mov	#$F0,r0			; Disable interrupts
 		ldc	r0,sr
+
+	; Copy palette manually to
+	; SVDP
 		mov	#1,r0
 		mov.w	r0,@(marsGbl_PalDmaMidWr,gbr)
-		mov	#RAM_Mars_Palette,r1		; Send palette stored on RAM		
+		mov	#RAM_Mars_Palette,r1
 		mov	#_palette,r2
  		mov	#256/16,r3		
 .copy_pal:
@@ -297,7 +296,11 @@ m_irq_v:
 		bf	.copy_pal
 		mov	#0,r0
 		mov.w	r0,@(marsGbl_PalDmaMidWr,gbr)
-		
+
+        ; OLD method: doesn't work on hardware
+; 		mov	r4,@-r15
+; 		mov	r5,@-r15
+; 		mov	r6,@-r15
 ; 		mov	#RAM_Mars_Palette,r1		; Send palette stored on RAM
 ; 		mov	#_palette,r2
 ;  		mov	#256,r3
@@ -625,11 +628,11 @@ SH2_M_Entry:
 		mov     #0,r0
 		mov.b   r0,@(3,r1)
 		mov.b   r0,@(2,r1)
-		mov.l   #$FFFFFEE2,r0			; Init special interrupt
-		mov     #$50,r1
+		mov.l   #$FFFFFEE2,r0			; Watchdog: Set interrupt priority bits (IPRA)
+		mov     #%0101<<4,r1
 		mov.w   r1,@r0
 		mov.l   #$FFFFFEE4,r0
-		mov     #$120/4,r1			; Watchdog: Set jump pointer (VBR + this/4)
+		mov     #$120/4,r1			; Watchdog: Set jump pointer (VBR + this/4) (WITV)
 		shll8   r1
 		mov.w   r1,@r0
 
@@ -655,8 +658,9 @@ SH2_M_Entry:
 ; ----------------------------------------------------------------
 ; Master main code
 ; 
-; This CPU is exclusively used for drawing polygons, to interact
-; with models use the Slave CPU instead.
+; This CPU is exclusively used for drawing polygons.
+; To interact with the models use the Slave CPU and request
+; a drawing task there
 ; ----------------------------------------------------------------
 
 SH2_M_HotStart:
@@ -671,10 +675,10 @@ SH2_M_HotStart:
 		mov	#%00011001,r0				; Cache purge / Two-way mode / Cache ON
 		mov.w	r0,@r1
 		mov	#_sysreg,r1
-		mov	#VIRQ_ON|CMDIRQ_ON,r0		; Enable these interrupts
-    		mov.b	r0,@(intmask,r1)
-		mov 	#CACHE_MASTER,r1			; Load 3D Routines on CACHE	
-		mov 	#$C0000000,r2				; Those run more faster here supposedly...
+		mov	#VIRQ_ON|CMDIRQ_ON,r0			; Enable usage of these interrupts
+    		mov.b	r0,@(intmask,r1)			; interrupts (Watchdog is external)
+		mov 	#CACHE_MASTER,r1			; Transfer fast-code to CACHE
+		mov 	#$C0000000,r2
 		mov 	#(CACHE_MASTER_E-CACHE_MASTER)/4,r3
 .copy:
 		mov 	@r1+,r0
@@ -693,7 +697,7 @@ SH2_M_HotStart:
 
 ; ------------------------------------------------
 
-		mov.l	#$20,r0			; Interrupts ON
+		mov.l	#$20,r0				; Interrupts ON
 		ldc	r0,sr
 
 ; --------------------------------------------------------
@@ -710,12 +714,12 @@ master_loop:
 	; --------------------
 	
 		mov	#_sysreg+comm14,r1
-		mov.b	@r1,r0			; Any request from Slave?
+		mov.b	@r1,r0
 		mov	r0,r2
 		and 	#$80,r0
-		cmp/eq	#0,r0
-		bf	.md_req
-		mov	r2,r0
+		cmp/eq	#0,r0			; Genesis requested tasks? (bit 7)
+		bf	.md_req			; If yes, process them first.
+		mov	r2,r0			; OR Process tasks from Slave SH2
 		and	#$7F,r0
 		shll2	r0
 		mov	#.list,r1
@@ -729,7 +733,7 @@ master_loop:
 ; ------------------------------------------------
 
 .list:
-		dc.l master_loop
+		dc.l master_loop	; Null task
 		dc.l .draw_objects
 		dc.l master_loop
 
@@ -739,7 +743,7 @@ master_loop:
 
 .md_req:
 		stc	sr,@-r15
-		mov	#$F0,r0
+		mov	#$F0,r0			; Disable interrupts
 		ldc	r0,sr
 		mov	#MAX_MDTASKS,r13
 		mov	#RAM_Mars_MdTasksFifo_M,r14
@@ -762,12 +766,14 @@ master_loop:
 		mov.b	@r1,r0
 		and	#$7F,r0
 		mov.b	r0,@r1
-		ldc 	@r15+,sr
+		ldc 	@r15+,sr		; Re-enable interrupts
 		bra	master_loop
 		nop
 
 ; --------------------------------------------------------
-; Start building and drawing polygons
+; Drawing task $01
+;
+; Polygons mode
 ; --------------------------------------------------------
 
 .draw_objects:
@@ -799,52 +805,44 @@ master_loop:
 		nop
 		nop
 .cont_plgn:
-; 		bsr	slv_sort_z
-; 		nop
-		mov.w	@r13,r13
-		cmp/pl	r13
+		mov.w	@r13,r13			; read from memory to register
+		cmp/pl	r13				; zero?
 		bf	.skip
-		mov	r13,r0
 .loop:
 		mov	r14,@-r15
 		mov	r13,@-r15
 		mov	@(4,r14),r14			; Get location of the polygon
-		cmp/pl	r14
-		bf	.invalid
-		mov 	#MarsVideo_MakePolygon,r0
+		cmp/pl	r14				; Zero?
+		bf	.invalid			; if yes, skip
+		mov 	#MarsVideo_SlicePlgn,r0
 		jsr	@r0
 		nop
 .invalid:
 		mov	@r15+,r13
 		mov	@r15+,r14
-		dt	r13
+		dt	r13				; Decrement numof_polygons
 		bf/s	.loop
-		add	#8,r14
+		add	#8,r14				; Move to next entry
 .skip:
-
-; 		mov	#_sysreg+comm2+1,r4		; DEBUG COUNTER
-; 		mov.b	@r4,r0
-; 		add	#1,r0
-; 		mov.b	r0,@r4
 		
 	; --------------------------------------
-.wait_pz: 	mov.w	@(marsGbl_PzListCntr,gbr),r0	; Any pieces remaining on interrupt?
+.wait_pz: 	mov.w	@(marsGbl_PzListCntr,gbr),r0	; Any pieces remaining on Watchdog?
 		cmp/eq	#0,r0
 		bf	.wait_pz
-.wait_task:	mov.w	@(marsGbl_DrwTask,gbr),r0	; Any draw task active?
+.wait_task:	mov.w	@(marsGbl_DrwTask,gbr),r0	; Any drawing task active?
 		cmp/eq	#0,r0
 		bf	.wait_task
 		mov.l   #$FFFFFE80,r1			; Stop watchdog
 		mov.w   #$A518,r0
 		mov.w   r0,@r1
-		mov	#_vdpreg,r1			; Framebuffer swap request
-.waitfb:	mov.w	@(vdpsts,r1),r0			; Wait until linefills are done.
+		mov	#_vdpreg,r1
+.waitfb:	mov.w	@(vdpsts,r1),r0			; Wait until any line-fill finishes.
 		tst	#%10,r0
 		bf	.waitfb
-		mov.b	@(framectl,r1),r0		; Frameswap request
-		xor	#1,r0				; Watchdog will check for it later
-		mov.b	r0,@(framectl,r1)
-		mov.b	r0,@(marsGbl_CurrFb,gbr)	; Save new bit
+		mov.b	@(framectl,r1),r0		; Frameswap request, Next Watchdog will
+		xor	#1,r0				; check for it later.
+		mov.b	r0,@(framectl,r1)		; Save new bit
+		mov.b	r0,@(marsGbl_CurrFb,gbr)	; And a copy for checking
 
 	; --------------------
 	; DEBUG counter
@@ -921,8 +919,7 @@ master_loop:
 
 		align 4
 SH2_S_Entry:
-		mov	#_sysreg,r14
-		ldc	r14,gbr
+		mov.l	#CS3|$3F000,r15			; Reset stack
 		mov	#_FRT,r1
 		mov     #0,r0
 		mov.b   r0,@(0,r1)
@@ -939,11 +936,11 @@ SH2_S_Entry:
 		mov     #0,r0
 		mov.b   r0,@(3,r1)
 		mov.b   r0,@(2,r1)
-		mov.l   #$FFFFFEE2,r0
-		mov     #$50,r1
+		mov.l   #$FFFFFEE2,r0			; Watchdog: Set interrupt priority bits (IPRA)
+		mov     #%0101<<4,r1
 		mov.w   r1,@r0
 		mov.l   #$FFFFFEE4,r0
-		mov     #$120/4,r1		; VBR + this/4
+		mov     #$120/4,r1			; Watchdog: Set jump pointer (VBR + this/4) (WITV)
 		shll8   r1
 		mov.w   r1,@r0
 		
@@ -1043,11 +1040,6 @@ slave_loop:
 		and	#$7F,r0
 		cmp/eq	#1,r0
 		bf	slave_loop
-
-	; --------------------
-	; DEBUG counter
-
-	; --------------------
 	
 ; --------------------------------------------------------
 ; Start building polygons from models

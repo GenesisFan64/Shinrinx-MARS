@@ -85,26 +85,44 @@ MARS_RAMDATA_E:
 		dephase
 
 ; --------------------------------------------------------
-; MD DATA BANK 0 (Only the remaining bytes)
+; MD DATA BANK 0
 ; --------------------------------------------------------
 
-; 		org $100000
 		phase $900000+*				; Only one currently
 		include "data/md_bank0.asm"
 		dephase
+		org $100000-4				; Add custom tag at the end.
+		dc.b "BNK0"
 
 ; ; --------------------------------------------------------
 ; ; MD DATA BANK 1
-; ; 
-; ; $900000 - $9FFFFF
 ; ; --------------------------------------------------------
 ; 
-		org $100000-4
-		dc.b "BNK0"
 ; 		phase $900000+*				; Only one currently
 ; 		include "data/md_bank1.asm"
 ; 		dephase
+; 		org $200000-4				; Add custom tag at the end.
+; 		dc.b "BNK1"
 
+; ; --------------------------------------------------------
+; ; MD DATA BANK 2
+; ; --------------------------------------------------------
+;
+; 		phase $900000+*				; Only one currently
+; 		include "data/md_bank2.asm"
+; 		dephase
+; 		org $300000-4				; Add custom tag at the end.
+; 		dc.b "BNK2"
+
+; ; --------------------------------------------------------
+; ; MD DATA BANK 3
+; ; --------------------------------------------------------
+;
+; 		phase $900000+*				; Only one currently
+; 		include "data/md_bank3.asm"
+; 		dephase
+; 		org $400000-4				; Add custom tag at the end.
+; 		dc.b "BNK3"
 
 ; ====================================================================
 ; ---------------------------------------------

@@ -617,11 +617,14 @@ drwtask_exit:
 ; ------------------------------------------------
 ; Read polygon and build pieces
 ; 
-; Type bits:
+; Input:
+; r14 - Polygon data
+;
+; polygn_type bits:
 ; %tsp----- -------- -------- --------
 ; 
-; p - Figure type: Quad (0) or Triangle (1)
-; s - Polygon type: Normal (0) or Sprite (1)
+; p - Polygon type: Quad (0) or Triangle (1)
+; s - Corrds are Normal (0) or Sprite (1) <-- Unused.
 ; t - Polygon has texture data (1):
 ;     polygn_mtrlopt: Texture width
 ;     polygn_mtrl   : Texture data address
@@ -629,109 +632,114 @@ drwtask_exit:
 ;                     each edge (3 or 4)
 ; ------------------------------------------------
 
-MarsVideo_MakePolygon:
+MarsVideo_SlicePlgn:
 		sts	pr,@-r15
-		mov	#Cach_DDA_Top,r12
-		mov	#Cach_DDA_Last,r13
+		mov	#Cach_DDA_Last,r13		; r13 - DDA last point
+		mov	#Cach_DDA_Top,r12		; r12 - DDA first point
 		mov	@(polygn_type,r14),r0
 		shlr16	r0
 		shlr8	r0
 		tst	#PLGN_TRI,r0			; PLGN_TRI set?
 		bf	.tringl
-		add	#8,r13
+		add	#8,r13				; If quad: add 8
 .tringl:
 		mov	r14,r1
 		mov	r12,r2
 		mov	#Cach_DDA_Src,r3
 		add	#polygn_points,r1
-		tst	#PLGN_SPRITE,r0			; PLGN_SPRITE set?
-		bt	.plgn_pnts
-		
-; ----------------------------------------
-; Sprite points
-; ----------------------------------------
-
-; TODO: rework or get rid of this
-.spr_pnts:
-		mov.w	@r1+,r8		; X pos
-		mov.w	@r1+,r9		; Y pos
-
-		mov.w	@r1+,r4
-		mov.w	@r1+,r6
-		mov.w	@r1+,r5
-		mov.w	@r1+,r7
-		add	#2*2,r1
-		add	r8,r4
-		add 	r8,r5
-		add	r9,r6
-		add 	r9,r7
-		mov	r5,@r2		; TR
-		add	#4,r2
-		mov	r6,@r2
-		add	#4,r2
-		mov	r4,@r2		; TL
-		add	#4,r2
-		mov	r6,@r2
-		add	#4,r2
-		mov	r4,@r2		; BL
-		add	#4,r2
-		mov	r7,@r2
-		add	#4,r2
-		mov	r5,@r2		; BR
-		add	#4,r2
-		mov	r7,@r2
-		add	#4,r2
-
-		mov.w	@r1+,r4
-		mov.w	@r1+,r6
-		mov.w	@r1+,r5
-		mov.w	@r1+,r7
-		mov	r5,@r3		; TR
-		add	#4,r3
-		mov	r6,@r3
-		add	#4,r3
-		mov	r4,@r3		; TL
-		add	#4,r3
-		mov	r6,@r3
-		add	#4,r3
-		mov	r4,@r3		; BL
-		add	#4,r3
-		mov	r7,@r3
-		add	#4,r3
-		mov	r5,@r3		; BR
-		add	#4,r3
-		mov	r7,@r3
-		add	#4,r3
-; 		mov	#4*2,r0
-; .sprsrc_pnts:
-; 		mov.w	@r1+,r0
+; 		tst	#PLGN_SPRITE,r0			; PLGN_SPRITE set?
+; 		bt	.plgn_pnts
+;
+; ; ----------------------------------------
+; ; Sprite points
+; ; ----------------------------------------
+;
+; ; TODO: rework or get rid of this
+; .spr_pnts:
+; 		mov.w	@r1+,r8		; X pos
+; 		mov.w	@r1+,r9		; Y pos
+;
 ; 		mov.w	@r1+,r4
-; 		mov	r0,@r3
-; 		mov	r4,@(4,r3)
-; 		dt	r0
-; 		bf/s	.sprsrc_pnts
-; 		add	#8,r3
-		bra	.start_math
-		nop
+; 		mov.w	@r1+,r6
+; 		mov.w	@r1+,r5
+; 		mov.w	@r1+,r7
+; 		add	#2*2,r1
+; 		add	r8,r4
+; 		add 	r8,r5
+; 		add	r9,r6
+; 		add 	r9,r7
+; 		mov	r5,@r2		; TR
+; 		add	#4,r2
+; 		mov	r6,@r2
+; 		add	#4,r2
+; 		mov	r4,@r2		; TL
+; 		add	#4,r2
+; 		mov	r6,@r2
+; 		add	#4,r2
+; 		mov	r4,@r2		; BL
+; 		add	#4,r2
+; 		mov	r7,@r2
+; 		add	#4,r2
+; 		mov	r5,@r2		; BR
+; 		add	#4,r2
+; 		mov	r7,@r2
+; 		add	#4,r2
+;
+; 		mov.w	@r1+,r4
+; 		mov.w	@r1+,r6
+; 		mov.w	@r1+,r5
+; 		mov.w	@r1+,r7
+; 		mov	r5,@r3		; TR
+; 		add	#4,r3
+; 		mov	r6,@r3
+; 		add	#4,r3
+; 		mov	r4,@r3		; TL
+; 		add	#4,r3
+; 		mov	r6,@r3
+; 		add	#4,r3
+; 		mov	r4,@r3		; BL
+; 		add	#4,r3
+; 		mov	r7,@r3
+; 		add	#4,r3
+; 		mov	r5,@r3		; BR
+; 		add	#4,r3
+; 		mov	r7,@r3
+; 		add	#4,r3
+; ; 		mov	#4*2,r0
+; ; .sprsrc_pnts:
+; ; 		mov.w	@r1+,r0
+; ; 		mov.w	@r1+,r4
+; ; 		mov	r0,@r3
+; ; 		mov	r4,@(4,r3)
+; ; 		dt	r0
+; ; 		bf/s	.sprsrc_pnts
+; ; 		add	#8,r3
+; 		bra	.start_math
+; 		nop
+;
+; ; ----------------------------------------
+; ; Polygon points
+; ; ----------------------------------------
+;
+; .plgn_pnts:
 
-; ----------------------------------------
-; Polygon points
-; ----------------------------------------
-
-.plgn_pnts:
+	; Copy polygon points Cache's DDA
 		mov	#4,r8
 		mov	#SCREEN_WIDTH/2,r6
 		mov	#SCREEN_HEIGHT/2,r7
 .setpnts:
-		mov	@r1+,r4
-		mov	@r1+,r5
-		add	r6,r4
-		add	r7,r5
+		mov	@r1+,r4			; Get X
+		mov	@r1+,r5			; Get Y
+		add	r6,r4			; X + width
+		add	r7,r5			; Y + height
 		mov	r4,@r2
 		mov	r5,@(4,r2)
 		dt	r8
 		bf/s	.setpnts
 		add	#8,r2
+
+	; Copy texture source points
+	; to Cache
 		mov	#4,r8
 .src_pnts:
 		mov.w	@r1+,r4
@@ -741,7 +749,11 @@ MarsVideo_MakePolygon:
 		dt	r8
 		bf/s	.src_pnts
 		add	#8,r3
-		
+
+	; Here we search for the lowest Y point
+	; and highest Y
+	; r10 - Top Y
+	; r11 - Bottom Y
 .start_math:
 		mov	#3,r9
 		tst	#PLGN_TRI,r0			; PLGN_TRI set?
@@ -768,24 +780,23 @@ MarsVideo_MakePolygon:
 		dt	r9
 		bf/s	.find_top
 		add	#8,r8
-		cmp/ge	r11,r10			; Already reached end?
+		cmp/ge	r11,r10			; Top larger than Bottom?
 		bt	.exit
 		cmp/pl	r11			; Bottom < 0?
 		bf	.exit
 		mov	#SCREEN_HEIGHT,r0	; Top > 224?
 		cmp/ge	r0,r10
 		bt	.exit
-		
-	; r1 - Main pointer
-	; r2 - Left pointer
-	; r3 - Right pointer
+
+	; r2 - Left DDA READ pointer
+	; r3 - Right DDA READ pointer
 	; r4 - Left X
 	; r5 - Left DX
 	; r6 - Right X
 	; r7 - Right DX
 	; r8 - Left width
 	; r9 - Right width
-	; r10 - Top Y (gets updated after calling put_piece)
+	; r10 - Top Y, gets updated after calling put_piece
 	; r11 - Bottom Y
 	; r12 - First DST point
 	; r13 - Last DST point
@@ -799,7 +810,7 @@ MarsVideo_MakePolygon:
 		mov	#SCREEN_HEIGHT,r0		; Current Y > 224?
 		cmp/gt	r0,r10
 		bt	.exit
-		cmp/ge	r11,r10				; Reached Y end?
+		cmp/ge	r11,r10				; Y top => Y bottom?
 		bt	.exit
 		mov	@(marsGbl_PlyPzList_W,gbr),r0	; r1 - Current piece to WRITE
 		mov	r0,r1
@@ -810,17 +821,14 @@ MarsVideo_MakePolygon:
 		mov	r0,r1
 		mov	r0,@(marsGbl_PlyPzList_W,gbr)
 .dontreset:
-; 		stc	sr,@-r15			; Stop interrupts (including Watchdog)
-; 		stc	sr,r0
-; 		or	#$F0,r0
 		mov	#1,r0
-		mov.w	r0,@(marsGbl_DrwPause,gbr)
+		mov.w	r0,@(marsGbl_DrwPause,gbr)	; Tell watchdog we are mid-write
 		bsr	put_piece
 		nop
 		mov	#0,r0
-		mov.w	r0,@(marsGbl_DrwPause,gbr)
-; 		ldc	r0,sr
-; 		ldc	@r15+,sr			; Restore interrupts
+		mov.w	r0,@(marsGbl_DrwPause,gbr)	; Unlock.
+
+	; X direction update
 		cmp/gt	r9,r8				; Left width > Right width?
 		bf	.lefth2
 		bsr	set_right
@@ -878,9 +886,9 @@ set_left:
 		shll8	r4
 		shll8	r5
 		sts	mach,r8
-		mov	#1,r0				; Stopsign for HW Division
-		mov.w	r0,@(marsGbl_DivStop_M,gbr)
-		mov	#_JR,r0				; HW DIV
+		mov	#1,r0				; Tell WD we are using
+		mov.w	r0,@(marsGbl_DivStop_M,gbr)	; HW Division
+		mov	#_JR,r0
 		mov	r8,@r0
 		mov	r5,@(4,r0)
 		nop
@@ -901,12 +909,12 @@ set_left:
 		mov 	r1,r4
 		shll8	r5
 		shll16	r4
-		mov	#_JR,r0				; HW DIV
+		mov	#_JR,r0
 		mov	r8,@r0
 		mov	r5,@(4,r0)
 		nop
 		mov	@(4,r0),r5
-		mov	#0,r0				; Resume HW Division
+		mov	#0,r0				; Unlock HW division
 		mov.w	r0,@(marsGbl_DivStop_M,gbr)
 		shll8	r5
 .lft_skip:
@@ -953,9 +961,9 @@ set_right:
 		shll8	r6
 		shll8	r7
 		sts	mach,r9
-		mov	#1,r0				; Resume HW Division
-		mov.w	r0,@(marsGbl_DivStop_M,gbr)
-		mov	#_JR,r0				; HW DIV
+		mov	#1,r0				; Tell WD we are using
+		mov.w	r0,@(marsGbl_DivStop_M,gbr)	; HW Division
+		mov	#_JR,r0
 		mov	r9,@r0
 		mov	r7,@(4,r0)
 		nop
@@ -976,12 +984,12 @@ set_right:
 		mov 	r1,r6
 		shll16	r6
 		shll8	r7
-		mov	#_JR,r0				; HW DIV
+		mov	#_JR,r0
 		mov	r9,@r0
 		mov	r7,@(4,r0)
 		nop
 		mov	@(4,r0),r7
-		mov	#0,r0				; Resume HW Division
+		mov	#0,r0				; Unlock HW division
 		mov.w	r0,@(marsGbl_DivStop_M,gbr)
 		shll8	r7
 .rgt_skip:
