@@ -54,10 +54,6 @@ MD_GmMode0:
 		move.w	#$2700,sr
 		bsr	Mode_Init
 		bsr	Video_PrintInit
-; 		lea	str_Title(pc),a0
-; 		move.l	#locate(0,1,1),d0
-; 		bsr	Video_Print
-
 		move.w	#0,(RAM_MdlCurrMd).w
 		move.l	#GemaTrk_Demo_patt,d0
 		move.l	#GemaTrk_Demo_blk,d1
@@ -65,10 +61,8 @@ MD_GmMode0:
 		moveq	#4,d3
 		moveq	#0,d4
 		bsr	SoundReq_SetTrack
-	
 		bset	#bitDispEnbl,(RAM_VdpRegs+1).l		; Enable display
 		bsr	Video_Update
-
 ; 		move.w	#2,(RAM_MdlCurrMd).w
 		
 ; ====================================================================
@@ -78,11 +72,11 @@ MD_GmMode0:
 
 .loop:
 		bsr	System_VSync
-; 		move.l	#$7C000003,(vdp_ctrl).l
-; 		move.w	(RAM_BgCamCurr).l,d0
-; 		lsr.w	#3,d0
-; 		move.w	#0,(vdp_data).l
-; 		move.w	d0,(vdp_data).l
+		move.l	#$7C000003,(vdp_ctrl).l
+		move.w	(RAM_BgCamCurr).l,d0
+		lsr.w	#3,d0
+		move.w	#0,(vdp_data).l
+		move.w	d0,(vdp_data).l
 ; 		lea	str_Status(pc),a0
 ; 		move.l	#locate(0,1,1),d0
 ; 		bsr	Video_Print
@@ -110,32 +104,26 @@ MD_GmMode0:
 .mode0:
 		tst.w	(RAM_MdlCurrMd).w
 		bmi	.mode0_loop
-		bclr	#bitDispEnbl,(RAM_VdpRegs+1).l		; Disable MD display
-		bsr	Video_Update
 		or.w	#$8000,(RAM_MdlCurrMd).w
-		clr.l	(RAM_Cam_Xpos).l
-		clr.l	(RAM_Cam_Ypos).l
-		clr.l	(RAM_Cam_Zpos).l
-		clr.l	(RAM_Cam_Xrot).l
-		clr.l	(RAM_Cam_Yrot).l
-		clr.l	(RAM_Cam_Zrot).l
-
-		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
-		bsr	System_MdMars_SlvAddTask
 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
 		moveq	#0,d1
 		bsr	System_MdMars_MstTask		; Wait until it finishes.
-		move.l	#Palette_Intro,d1
-		moveq	#0,d2
-		move.l	#16,d3
-		move.l	#$8000,d4
-		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
-		bsr	System_MdMars_MstAddTask
+		bclr	#bitDispEnbl,(RAM_VdpRegs+1).l	; Disable MD display
+		bsr	Video_Update
+
+		move.l	#CAMERA_INTRO,d0
+		moveq	#1,d1
+		bsr	MdMdl_SetNewCamera
+		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
+		bsr	System_MdMars_SlvTask
 		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
 		bsr	System_MdMars_SlvAddTask
 		bsr	System_MdMars_SlvSendAll	; both SH2
 
 	; Load objects
+		move.l	#0,d1
+		move.l	#CmdTaskMd_MakeMap,d0
+		bsr	System_MdMars_SlvTask		; Load map
 		moveq	#0,d5				; No ex-settings
 		moveq	#0,d1				; Slot 0
 		move.l	#MARSOBJ_INTRO_1,d2
@@ -159,23 +147,164 @@ MD_GmMode0:
 		bsr	System_MdMars_SlvAddTask	; Reposition 20XX
 		bsr	System_MdMars_SlvSendAll
 
+		move.l	#Palette_Intro,d1		; Load palette
+		moveq	#0,d2
+		move.l	#16,d3
+		move.l	#$8000,d4
+		move.l	#CmdTaskMd_LoadSPal,d0
+		bsr	System_MdMars_MstTask
 		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
 		moveq	#1,d1
-		bsr	System_MdMars_MstAddTask
-		bsr	System_MdMars_MstSendAll	; Send requests to
-		moveq	#0,d0
-		move.l	d0,(RAM_CamFrame).l
-		move.l	d0,(RAM_CamTimer).l
-		move.l	#1,(RAM_CamSpeed).l
-		move.l	#CAMERA_INTRO,(RAM_CamData).l
-		bset	#bitDispEnbl,(RAM_VdpRegs+1).l		; Enable display
+		bsr	System_MdMars_MstTask
+		bset	#bitDispEnbl,(RAM_VdpRegs+1).l	; Enable MD display
 		bsr	Video_Update
 
+; Mode 0 mainloop
 .mode0_loop:
+		moveq	#1,d7
+		bra	MdMdl_RunAnimation
+
+; --------------------------------------------------
+; Mode 1
+; --------------------------------------------------
+
+.mode1:
+		tst.w	(RAM_MdlCurrMd).w
+		bmi	.mode1_loop
+		or.w	#$8000,(RAM_MdlCurrMd).w
+
+		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
+		moveq	#0,d1
+		bsr	System_MdMars_MstTask		; Wait until it finishes.
+		bclr	#bitDispEnbl,(RAM_VdpRegs+1).l	; Disable MD display
+		bsr	Video_Update
+
+		move.l	#CAMERA_INTNAME,d0
+		moveq	#1,d1
+		bsr	MdMdl_SetNewCamera
+		lea	MdPal_BgTitle(pc),a0
+		move.w	#0,d0
+		move.w	#16-1,d1
+		bsr	Video_LoadPal
+		lea	(MdMap_BgTitle),a0
+		move.l	#locate(1,0,0),d0
+		move.l	#mapsize(512,224),d1
+		move.w	#1,d2
+		bsr	Video_LoadMap
+		move.l	#MdGfx_BgTitle,d0
+		move.w	#(MdGfx_BgTitle_e-MdGfx_BgTitle),d1
+		move.w	#1,d2
+		bsr	Video_LoadArt
+
+	; Load object
+		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
+		bsr	System_MdMars_SlvTask
+		moveq	#0,d5				; No ex-settings
+		moveq	#0,d1				; Slot 0
+		move.l	#MarsObj_projname,d2
+		move.l	#0,d3
+		moveq	#1,d4
+		move.l	#CmdTaskMd_ObjectSet,d0
+		bsr	System_MdMars_SlvTask
+
+		move.l	#Palette_projname,d1
+		moveq	#0,d2
+		move.l	#14,d3
+		move.l	#$8000,d4
+		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
+		bsr	System_MdMars_MstTask
+		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
+		moveq	#1,d1
+		bsr	System_MdMars_MstTask
+		bset	#bitDispEnbl,(RAM_VdpRegs+1).l	; Enable MD display
+		bsr	Video_Update
+
+; Mode 1 mainloop
+.mode1_loop:
+		moveq	#2,d7
+		bra	MdMdl_RunAnimation
+
+; --------------------------------------------------
+; Mode 2
+; --------------------------------------------------
+
+.mode2:
+		tst.w	(RAM_MdlCurrMd).w
+		bmi	.mode2_loop
+		or.w	#$8000,(RAM_MdlCurrMd).w
+
+		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
+		moveq	#0,d1
+		bsr	System_MdMars_MstTask		; Wait until it finishes.
+		bclr	#bitDispEnbl,(RAM_VdpRegs+1).l	; Disable MD display
+		bsr	Video_Update
+
+		move.l	#CAMERA_CITY,d0
+		moveq	#2,d1
+		bsr	MdMdl_SetNewCamera
+		lea	MdPal_Bg(pc),a0
+		move.w	#0,d0
+		move.w	#16-1,d1
+		bsr	Video_LoadPal
+		lea	(MdMap_Bg),a0
+		move.l	#locate(1,0,0),d0
+		move.l	#mapsize(512,256),d1
+		move.w	#1,d2
+		bsr	Video_LoadMap
+		move.l	#MdGfx_Bg,d0
+		move.w	#(MdGfx_Bg_e-MdGfx_Bg),d1
+		move.w	#1,d2
+		bsr	Video_LoadArt
+
+		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
+		bsr	System_MdMars_SlvTask
+		move.l	#TEST_LAYOUT,d1
+		move.l	#CmdTaskMd_MakeMap,d0
+		bsr	System_MdMars_SlvTask		; Load map
+
+	; Process one frame.
+		move.l	#Palette_Map,d1
+		moveq	#0,d2
+		move.l	#256,d3
+		move.l	#$8000,d4
+		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
+		bsr	System_MdMars_MstTask
+		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
+		moveq	#1,d1
+		bsr	System_MdMars_MstTask		; Send requests to
+		bset	#bitDispEnbl,(RAM_VdpRegs+1).l	; Enable MD display
+		bsr	Video_Update
+
+.mode2_loop:
+		moveq	#0,d7
+		bra	MdMdl_RunAnimation
+
+; ====================================================================
+; ------------------------------------------------------
+; Subroutines
+; ------------------------------------------------------
+
+MdMdl_SetNewCamera:
+		clr.l	(RAM_Cam_Xpos).l
+		clr.l	(RAM_Cam_Ypos).l
+		clr.l	(RAM_Cam_Zpos).l
+		clr.l	(RAM_Cam_Xrot).l
+		clr.l	(RAM_Cam_Yrot).l
+		clr.l	(RAM_Cam_Zrot).l
+		moveq	#0,d4
+		move.l	d4,(RAM_CamFrame).l
+		move.l	d4,(RAM_CamTimer).l
+		move.l	d1,(RAM_CamSpeed).l
+		move.l	d0,(RAM_CamData).l
+		rts
+
+; d7 - Move to this mode after
+;      animation ends.
+MdMdl_RunAnimation:
 		bsr	MdMdl_CamAnimate
 		bpl.s	.stay
-		move.w	#1,(RAM_MdlCurrMd).w
-		rts
+		move.w	d7,(RAM_MdlCurrMd).w
+		rts					; exit mode
 .stay:
 		moveq	#0,d1
 		move.l	(RAM_Cam_Xpos),d2
@@ -190,237 +319,6 @@ MD_GmMode0:
 		bsr	System_MdMars_SlvAddTask
 		bsr	System_MdMars_SlvSendDrop
 .nel2:
-		bne.s	.busy2
-		move.l	(RAM_Cam_Xrot),d1
-		neg.l	d1
-		lsr.l	#8,d1
-		move.w	d1,(RAM_BgCamCurr).l
-.busy2:
-		rts
-
-; --------------------------------------------------
-; Mode 1
-; --------------------------------------------------
-
-.mode1:
-		tst.w	(RAM_MdlCurrMd).w
-		bmi	.mode1_loop
-		bclr	#bitDispEnbl,(RAM_VdpRegs+1).l		; Disable MD display
-		bsr	Video_Update
-		or.w	#$8000,(RAM_MdlCurrMd).w
-		clr.l	(RAM_Cam_Xpos).l
-		clr.l	(RAM_Cam_Ypos).l
-		clr.l	(RAM_Cam_Zpos).l
-		clr.l	(RAM_Cam_Xrot).l
-		clr.l	(RAM_Cam_Yrot).l
-		clr.l	(RAM_Cam_Zrot).l
-
-		lea	MdPal_BgTitle(pc),a0
-		move.w	#0,d0
-		move.w	#16-1,d1
-		bsr	Video_LoadPal
-		lea	(MdMap_BgTitle),a0
-		move.l	#locate(1,0,0),d0
-		move.l	#mapsize(512,224),d1
-		move.w	#1,d2
-		bsr	Video_LoadMap
-		move.l	#MdGfx_BgTitle,d0
-		move.w	#(MdGfx_BgTitle_e-MdGfx_BgTitle),d1
-		move.w	#1,d2
-		bsr	Video_LoadArt
-		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
-		bsr	System_MdMars_SlvAddTask
-
-		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
-		moveq	#0,d1
-		bsr	System_MdMars_MstTask		; Wait until it finishes.
-		move.l	#Palette_projname,d1
-		moveq	#0,d2
-		move.l	#14,d3
-		move.l	#$8000,d4
-		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
-		bsr	System_MdMars_MstAddTask
-		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
-		bsr	System_MdMars_SlvAddTask
-		bsr	System_MdMars_SlvSendAll	; both SH2
-
-	; Load object
-		moveq	#0,d5				; No ex-settings
-		moveq	#0,d1				; Slot 0
-		move.l	#MarsObj_projname,d2
-		move.l	#0,d3
-		moveq	#1,d4
-		move.l	#CmdTaskMd_ObjectSet,d0
-		bsr	System_MdMars_SlvAddTask
-		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
-		moveq	#1,d1
-		bsr	System_MdMars_MstAddTask
-		bsr	System_MdMars_MstSendAll	; Send requests to
-		bsr	System_MdMars_SlvSendAll	; both SH2
-
-		moveq	#0,d0
-		move.l	d0,(RAM_CamFrame).l
-		move.l	d0,(RAM_CamTimer).l
-		move.l	#1,(RAM_CamSpeed).l
-		move.l	#CAMERA_INTNAME,(RAM_CamData).l
-		bset	#bitDispEnbl,(RAM_VdpRegs+1).l		; Enable display
-		bsr	Video_Update
-
-.mode1_loop:
-		move.l	#$7C000003,(vdp_ctrl).l
-		move.w	(RAM_BgCamCurr).l,d0
-		lsr.w	#3,d0
-		move.w	#0,(vdp_data).l
-		move.w	d0,(vdp_data).l
-		bsr	MdMdl_CamAnimate
-		bpl.s	.stay2
-		move.w	#2,(RAM_MdlCurrMd).w
-		rts
-.stay2:
-		moveq	#0,d1
-		move.l	(RAM_Cam_Xpos),d2
-		move.l	(RAM_Cam_Ypos),d3
-		move.l	(RAM_Cam_Zpos),d4
-		move.l	(RAM_Cam_Xrot),d5
-		move.l	(RAM_Cam_Yrot),d6
-		move.l	(RAM_Cam_Zrot),d7
-		move.l	#CmdTaskMd_CameraPos,d0		; Load map
-		bsr	System_MdMars_SlvAddTask
-		move.l	#CmdTaskMd_UpdModels,d0
-		bsr	System_MdMars_SlvAddTask
-		bsr	System_MdMars_SlvSendDrop
-.nel3:
-		bne.s	.busy3
-		move.l	(RAM_Cam_Xrot),d1
-		neg.l	d1
-		lsr.l	#8,d1
-		move.w	d1,(RAM_BgCamCurr).l
-.busy3:
-		rts
-
-; --------------------------------------------------
-; Mode 2
-; --------------------------------------------------
-
-.mode2:
-		tst.w	(RAM_MdlCurrMd).w
-		bmi	.mode2_loop
-		or.w	#$8000,(RAM_MdlCurrMd).w
-
-		bclr	#bitDispEnbl,(RAM_VdpRegs+1).l		; Disable MD display
-		bsr	Video_Update
-		clr.l	(RAM_Cam_Xpos).l
-		clr.l	(RAM_Cam_Ypos).l
-		clr.l	(RAM_Cam_Zpos).l
-		clr.l	(RAM_Cam_Xrot).l
-		clr.l	(RAM_Cam_Yrot).l
-		clr.l	(RAM_Cam_Zrot).l
-; 		move.l	#-$10000,(RAM_Cam_Ypos).l
-
-		lea	MdPal_Bg(pc),a0
-		move.w	#0,d0
-		move.w	#16-1,d1
-		bsr	Video_LoadPal
-		lea	(MdMap_Bg),a0
-		move.l	#locate(1,0,0),d0
-		move.l	#mapsize(512,256),d1
-		move.w	#1,d2
-		bsr	Video_LoadMap
-		move.l	#MdGfx_Bg,d0
-		move.w	#(MdGfx_Bg_e-MdGfx_Bg),d1
-		move.w	#1,d2
-		bsr	Video_LoadArt
-		
-		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
-		bsr	System_MdMars_SlvAddTask
-		bsr	System_MdMars_SlvSendAll	; both SH2
-
-		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
-		moveq	#0,d1
-		bsr	System_MdMars_MstTask		; Wait until it finishes.
-		move.l	#Palette_Map,d1
-		moveq	#0,d2
-		move.l	#256,d3
-		move.l	#$8000,d4
-		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
-		bsr	System_MdMars_MstAddTask
-		move.l	#TEST_LAYOUT,d1
-		move.l	#CmdTaskMd_MakeMap,d0
-		bsr	System_MdMars_MstAddTask	; Load map
-		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
-		moveq	#1,d1
-		bsr	System_MdMars_MstAddTask
-		bsr	System_MdMars_MstSendAll	; Send requests to
-; 		bsr	.first_draw
-
-		moveq	#0,d0
-		move.l	d0,(RAM_CamFrame).l
-; 		move.l	d0,(RAM_CamTimer).l
-		move.l	#2,(RAM_CamSpeed).l
-		move.l	#CAMERA_CITY,(RAM_CamData).l
-		bset	#bitDispEnbl,(RAM_VdpRegs+1).l		; Enable display
-		bsr	Video_Update
-
-.mode2_loop:
-		bsr	MdMdl_CamAnimate
-		move.l	#$7C000003,(vdp_ctrl).l
-		move.w	(RAM_BgCamCurr).l,d0
-		lsr.w	#3,d0
-		move.w	#0,(vdp_data).l
-		move.w	d0,(vdp_data).l
-; 		lea	str_Status(pc),a0
-; 		move.l	#locate(0,1,1),d0
-; 		bsr	Video_Print
-
-	; temporal camera
-		moveq	#0,d6
-		move.w	(Controller_1+on_hold).l,d7
-		btst	#bitJoyUp,d7
-		beq.s	.nou
-		add.l	#var_MoveSpd,(RAM_Cam_Zpos).l
-		moveq	#1,d6
-.nou:
-		btst	#bitJoyDown,d7
-		beq.s	.nod
-		add.l	#-var_MoveSpd,(RAM_Cam_Zpos).l
-		moveq	#1,d6
-.nod:
-		btst	#bitJoyLeft,d7
-		beq.s	.nol
-		add.l	#-var_MoveSpd,(RAM_Cam_Xpos).l
-		moveq	#1,d6
-.nol:
-		btst	#bitJoyRight,d7
-		beq.s	.nor
-		add.l	#var_MoveSpd,(RAM_Cam_Xpos).l
-		moveq	#1,d6
-.nor:
-		btst	#bitJoyA,d7
-		beq.s	.noa
-		add.l	#-var_MoveSpd,(RAM_Cam_Xrot).l
-		moveq	#1,d6
-.noa:
-		btst	#bitJoyB,d7
-		beq.s	.nob
-		add.l	#var_MoveSpd,(RAM_Cam_Xrot).l
-		moveq	#1,d6
-.nob:
-; 		tst.w	d6
-; 		beq.s	.nel
-.first_draw:
-		moveq	#0,d1
-		move.l	(RAM_Cam_Xpos),d2
-		move.l	(RAM_Cam_Ypos),d3
-		move.l	(RAM_Cam_Zpos),d4
-		move.l	(RAM_Cam_Xrot),d5
-		move.l	(RAM_Cam_Yrot),d6
-		move.l	(RAM_Cam_Zrot),d7
-		move.l	#CmdTaskMd_CameraPos,d0		; Load map
-		bsr	System_MdMars_SlvAddTask
-		move.l	#CmdTaskMd_UpdModels,d0
-		bsr	System_MdMars_SlvAddTask
-		bsr	System_MdMars_SlvSendDrop
-.nel:
 		bne.s	.busy
 		move.l	(RAM_Cam_Xrot),d1
 		neg.l	d1
@@ -428,70 +326,6 @@ MD_GmMode0:
 		move.w	d1,(RAM_BgCamCurr).l
 .busy:
 		rts
-
-; 		lea	.trklist(pc),a0
-; 		lea	(RAM_SndPitch),a1
-; 		move.w	(RAM_CurY),d5
-; 		move.w	d5,d4
-; 		add.w	d5,d5
-; 		move.w	(a1,d5.w),d0
-; 		lsl.w	#4,d0
-; 		adda	d0,a0
-; 		move.l	(a0)+,d0
-; 		move.l	(a0)+,d1
-; 		move.l	(a0)+,d2
-; 		move.w	(a0)+,d3
-; 		bra	SoundReq_SetTrack
-; .trklist:
-; 		dc.l GemaTrk_Yuki_patt
-; 		dc.l GemaTrk_Yuki_blk
-; 		dc.l GemaTrk_Yuki_ins
-; 		dc.w 2,0
-; 		dc.l TEST_PATTERN
-; 		dc.l TEST_BLOCKS
-; 		dc.l TEST_INSTR
-; 		dc.w 3,0
-; 		dc.l TEST_PATTERN_2
-; 		dc.l TEST_BLOCKS_2
-; 		dc.l TEST_INSTR_2
-; 		dc.w 4,0
-
-; ====================================================================
-; ------------------------------------------------------
-; Subroutines
-; ------------------------------------------------------
-
-; MdMdl_Update:
-; 		cmp.w	#3,(RAM_CurY).w
-; 		bge.s	.pwm_upd
-; 		cmp.w	#2,(RAM_CurY).w
-; 		bne.s	.upd_cont
-; 		move.w	#$22,d0
-; 		move.w	(RAM_SndPitch+4).w,d1
-; 		bsr	Sound_Request
-; 		bra.s	.upd_cont
-; .pwm_upd:
-; 		lea	(RAM_SndPitch+6),a0
-; 		move.w	(a0)+,d1
-; 		move.w	(a0)+,d2
-; 		move.w	(a0)+,d3
-; 		move.w	(a0)+,d4
-; 		move.w	(a0)+,d5
-; 		move.w	(a0)+,d6
-; 		move.w	(a0)+,d7
-; 		move.l	#CmdTaskMd_PWM_MultPitch,d0
-; 		bsr	System_MdMars_MstTask
-; 		
-; .upd_cont:
-; 		lea	str_StatusPtch(pc),a0
-; 		move.l	#locate(0,10,3),d0
-; 		bsr	Video_Print
-; 		
-; 		lea	str_LazCursor(pc),a0
-; 		move.l	#locate(0,1,2),d0
-; 		move.w	(RAM_CurY).w,d1
-; 		add.b	d1,d0
-; 		bra	Video_Print
 
 MdMdl_CamAnimate:
 		move.l	(RAM_CamData).l,d0			; If 0 == No animation
@@ -625,6 +459,43 @@ MdMdl_CamAnimate:
 ; 		move.l	cam2_z_rot(a0),d7
 ; 		bsr	System_MdMars_SlvAddTask
 
+; 	; temporal camera
+; 		moveq	#0,d6
+; 		move.w	(Controller_1+on_hold).l,d7
+; 		btst	#bitJoyUp,d7
+; 		beq.s	.nou
+; 		add.l	#var_MoveSpd,(RAM_Cam_Zpos).l
+; 		moveq	#1,d6
+; .nou:
+; 		btst	#bitJoyDown,d7
+; 		beq.s	.nod
+; 		add.l	#-var_MoveSpd,(RAM_Cam_Zpos).l
+; 		moveq	#1,d6
+; .nod:
+; 		btst	#bitJoyLeft,d7
+; 		beq.s	.nol
+; 		add.l	#-var_MoveSpd,(RAM_Cam_Xpos).l
+; 		moveq	#1,d6
+; .nol:
+; 		btst	#bitJoyRight,d7
+; 		beq.s	.nor
+; 		add.l	#var_MoveSpd,(RAM_Cam_Xpos).l
+; 		moveq	#1,d6
+; .nor:
+; 		btst	#bitJoyA,d7
+; 		beq.s	.noa
+; 		add.l	#-var_MoveSpd,(RAM_Cam_Xrot).l
+; 		moveq	#1,d6
+; .noa:
+; 		btst	#bitJoyB,d7
+; 		beq.s	.nob
+; 		add.l	#var_MoveSpd,(RAM_Cam_Xrot).l
+; 		moveq	#1,d6
+; .nob:
+; ; 		tst.w	d6
+; ; 		beq.s	.nel
+; .first_draw:
+
 ; ====================================================================
 ; ------------------------------------------------------
 ; Interrupts
@@ -642,84 +513,16 @@ MdMdl_CamAnimate:
 ; ------------------------------------------------------
 ; DATA
 ; 
-; short stuff goes here
+; Small stuff goes here
 ; ------------------------------------------------------
 
-; str_LazCursor:	dc.b " ",$A,">",$A," ",0
-; 		align 2
-; str_Title:	dc.b "GEMA Sound tester",$A,$A
-; 		dc.b " Track 1 ????",$A
-; 		dc.b " Track 2 ????",$A
-; 		dc.b "     DAC ????",$A
-; 		dc.b "  PWM 01 ????",$A
-; 		dc.b "      02 ????",$A
-; 		dc.b "      03 ????",$A
-; 		dc.b "      04 ????",$A
-; 		dc.b "      05 ????",$A
-; 		dc.b "      06 ????",$A
-; 		dc.b "      07 ????",0
-; 		dc.b "                             ",0
-; 		align 2
-; str_StatusPtch:	dc.b "\\w",$A
-; 		dc.b "\\w",$A
-; 		dc.b "\\w",$A
-; 		dc.b "\\w",$A
-; 		dc.b "\\w",$A
-; 		dc.b "\\w",$A
-; 		dc.b "\\w",$A
-; 		dc.b "\\w",$A
-; 		dc.b "\\w",$A
-; ; 		dc.b "\\w",$A
-; ; 		dc.b "\\w",$A
-; ; 		dc.b "\\w",$A
-; ; 		dc.b "\\w",$A
-; ; 		dc.b "\\w",$A
-; ; 		dc.b "\\w",$A
-; ; 		dc.b "\\w",$A
-; 		dc.b "\\w",0
-; 		dc.l RAM_SndPitch
-; 		dc.l RAM_SndPitch+2
-; 		dc.l RAM_SndPitch+4
-; 		dc.l RAM_SndPitch+6
-; 		dc.l RAM_SndPitch+8
-; 		dc.l RAM_SndPitch+10
-; 		dc.l RAM_SndPitch+12
-; 		dc.l RAM_SndPitch+14
-; 		dc.l RAM_SndPitch+16
-; 		dc.l RAM_SndPitch+18
-; ; 		dc.l RAM_SndPitch+20
-; ; 		dc.l RAM_SndPitch+22
-; ; 		dc.l RAM_SndPitch+24
-; ; 		dc.l RAM_SndPitch+26
-; ; 		dc.l RAM_SndPitch+28
-; ; 		dc.l RAM_SndPitch+30
-; ; 		dc.l RAM_SndPitch+32
-; 		align 2
 str_Status:
 		dc.b "\\l \\l \\l    \\l",$A
 		dc.b "\\l \\l \\l",0
 		dc.l RAM_Cam_Xpos,RAM_Cam_Ypos,RAM_Cam_Zpos
 		dc.l RAM_FrameCount
 		dc.l RAM_Cam_Xrot,RAM_Cam_Yrot,RAM_Cam_Zrot
-		align 4
-		
-; 		dc.b "\\w \\w \\w \\w           \\l",$A
-; 		dc.b "\\w \\w \\w \\w",$A
-; 		dc.b "\\l \\l \\l",$A
-; 		dc.b "\\l \\l \\l",0
-; 		dc.l sysmars_reg+comm0
-; 		dc.l sysmars_reg+comm2
-; 		dc.l sysmars_reg+comm4
-; 		dc.l sysmars_reg+comm6
-; 		dc.l RAM_FrameCount
-; 		dc.l sysmars_reg+comm8
-; 		dc.l sysmars_reg+comm10
-; 		dc.l sysmars_reg+comm12
-; 		dc.l sysmars_reg+comm14
-; 		dc.l RAM_Cam_Xpos,RAM_Cam_Ypos,RAM_Cam_Zpos
-; 		dc.l RAM_Cam_Xrot,RAM_Cam_Yrot,RAM_Cam_Zrot		
-; 		align 4
-
+		align 2
 MdPal_Bg:
 		binclude "data/md/bg/bg_pal.bin"
 		align 2		

@@ -157,40 +157,40 @@ MarsVideo_Init:
 		
 ; ------------------------------------
 ; MarsVideo_ClearFrame
-; 
+;
 ; Clear the current framebuffer
 ; ------------------------------------
 
-; MarsVideo_ClearFrame:
-; 		mov	#_vdpreg,r1
-; .wait2		mov.w	@(10,r1),r0		; Wait for FEN to clear
-; 		and	#%10,r0
-; 		cmp/eq	#2,r0
-; 		bt	.wait2
-; 
-; 		mov	#255,r2			; r2 - lenght: 256 words per pass
-; 		mov	#$200/2,r3		; r3 - Start address / 2
-; 		mov	#0,r4			; r4 - data (zero)
-; 		mov	#256,r5			; Increment address by 256
-; 		mov	#((512*240)/256)/2,r6	; 140 passes
-; .loop
-; 		mov	r2,r0
-; 		mov.w	r0,@(4,r1)		; Set length
-; 		mov	r3,r0
-; 		mov.w	r0,@(6,r1)		; Set address
-; 		mov	r4,r0
-; 		mov.w	r0,@(8,r1)		; Set data
-; 		add	r5,r3
-; 		
-; .wait		mov.w	@(10,r1),r0		; Wait for FEN to clear
-; 		and	#%10,r0
-; 		cmp/eq	#2,r0
-; 		bt	.wait
-; 		dt	r6
-; 		bf	.loop
-; 		rts
-; 		nop
-; 		align 4
+MarsVideo_ClearFrame:
+		mov	#_vdpreg,r1
+.wait2		mov.w	@(10,r1),r0		; Wait for FEN to clear
+		and	#%10,r0
+		cmp/eq	#2,r0
+		bt	.wait2
+
+		mov	#255,r2			; r2 - lenght: 256 words per pass
+		mov	#$200/2,r3		; r3 - Start address / 2
+		mov	#0,r4			; r4 - data (zero)
+		mov	#256,r5			; Increment address by 256
+		mov	#((512*240)/256)/2,r6	; 140 passes
+.loop
+		mov	r2,r0
+		mov.w	r0,@(4,r1)		; Set length
+		mov	r3,r0
+		mov.w	r0,@(6,r1)		; Set address
+		mov	r4,r0
+		mov.w	r0,@(8,r1)		; Set data
+		add	r5,r3
+
+.wait		mov.w	@(10,r1),r0		; Wait for FEN to clear
+		and	#%10,r0
+		cmp/eq	#2,r0
+		bt	.wait
+		dt	r6
+		bf	.loop
+		rts
+		nop
+		align 4
 
 ; ------------------------------------
 ; MarsVideo_FrameSwap
@@ -431,6 +431,10 @@ MarsLay_Make:
 		mov	r0,@(mdllay_x,r14)
 		mov	r0,@(mdllay_y,r14)
 		mov	r0,@(mdllay_z,r14)
+		rts
+		nop
+		align 4
+
 MarsLay_Draw:
 		mov	#RAM_Mars_Objects,r10
 		mov	r10,r2

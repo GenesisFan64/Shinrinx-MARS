@@ -1324,11 +1324,13 @@ CmdTaskMd_ObjectClrAll:
 ; ------------------------------------------------
 ; Set new map data
 ; 
-; @($04,r14) - layout data
+; @($04,r14) - layout data (set to 0 to clear)
 ; ------------------------------------------------
 
 CmdTaskMd_MakeMap:
 		sts	pr,@-r15
+; 		bsr	MarsVideo_ClearFrame
+; 		nop
 		mov	@(4,r14),r1
 		mov	#MarsLay_Make,r0
 		jsr	@r0
