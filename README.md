@@ -13,6 +13,7 @@ Features:
 - Map layout support: to make big maps using separate model pieces
 
 Current issues/notes:
+- Framebuffer's linetable might break, not sure what's going on.
 - Soft-reset might freeze everything (65% chance)
 - Perspective calculation is weak, doesn't work properly outside of the camera (Darxide and even the Zyrinx tech demo has problems with perspective)
 - Removed PWM playback, had to disable it to get more CPU speed.

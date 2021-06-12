@@ -1,4 +1,4 @@
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 1 - 6/2/2021 18:48:13
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 1 - 6/12/2021 16:22:42
 
 
        1/       0 :                     ; ===========================================================================
@@ -12322,7 +12322,7 @@
      133/  100000 :                     ; 		rompad (ROM_END&$FF0000)+$40000
      134/  100000 :                     		align $8000
      135/  100000 :                     
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 2 - 6/2/2021 18:48:13
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 2 - 6/12/2021 16:22:42
 
 
   symbol table (* = unused):
@@ -12396,7 +12396,7 @@
  DAC_REFILL :                   E9C C |  DAC_REFILL.FDF4DONE :          EEC C |
  DAC_REFILL.FDF7 :              F5E C |  DAC_REFILL.FDF72 :             F17 C |
  DAC_REFILL.FDFRETURN :         F61 C | *DAC_REFILL.KEEPCNTR :          EC5 C |
-*DATE :                    6/2/2021 - |  DDACCNTR :                      25 C |
+*DATE :                   6/12/2021 - |  DDACCNTR :                      25 C |
  DDACFIFOMID :                   28 C |  DDACPNTR :                      22 C |
 *DISPENBL :                      40 - |  DKY :                            C - |
 *DMAENBL :                       10 - | *DOTTEDSTRUCTS :                  0 - |
@@ -13013,7 +13013,7 @@
 *TEXTR_INTRO :              2039B7C C |  TEXTR_MARSCITY :           2030FFC C |
  TEXTR_PROJNAME :           202D7BC C |  TH :                      20000000 - |
  TICKCNT :                       1C C |  TICKFLAG :                      1A C |
-*TIME :                    18:48:13 - | *TIMERCTL :                      30 - |
+*TIME :                    16:22:42 - | *TIMERCTL :                      30 - |
 *TMR :                           2C - |  TRANSFERROM :                  BE9 C |
  TRANSFERROM.DOUBLE :           C0A C |  TRANSFERROM.TRANSFER :         C33 C |
  TRANSFERROM.X68KLAST :         C76 C |  TRANSFERROM.X68KLOOP :         C62 C |
@@ -13115,7 +13115,7 @@
    1362 symbols
     232 unused symbols
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 3 - 6/2/2021 18:48:13
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 3 - 6/12/2021 16:22:42
 
 
   defined macros:
@@ -13129,7 +13129,7 @@ STRUCT                                | ZSMPL
 
      10 macros
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 4 - 6/2/2021 18:48:13
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 4 - 6/12/2021 16:22:42
 
 
   defined functions:
@@ -13138,7 +13138,7 @@ STRUCT                                | ZSMPL
 NOTZ80                                | LOCATE                               
 MAPSIZE                               |
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 5 - 6/2/2021 18:48:13
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 5 - 6/12/2021 16:22:42
 
 
   codepages:
