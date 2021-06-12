@@ -23,8 +23,10 @@ MdMap_BgTitle:
 		binclude "data/md/bg_title/bg_map.bin"
 		align 2
 
-Sampl_Ai:	binclude "data/sound/instr/smpl/ai.wav",$2C
-Sampl_Ai_End:
+Sampl_Magic1:	binclude "data/sound/instr/smpl/magic_1.wav",$2C
+Sampl_Magic1_End:
+Sampl_Magic2:	binclude "data/sound/instr/smpl/magic_2.wav",$2C
+Sampl_Magic2_End:
 Sampl_MyTime:	binclude "data/sound/instr/smpl/mytime.wav",$2C
 Sampl_MyTime_End:
 

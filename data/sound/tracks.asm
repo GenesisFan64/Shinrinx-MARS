@@ -36,7 +36,7 @@ gemaInsFm3	macro pitch,fmins,freq1,freq2,freq3
 gemaInsDac	macro pitch,dacins,flags
 		dc.b 4,pitch
 		dc.b dacins&$FF,((dacins>>8)&$FF)
-		dc.b flags,0
+		dc.b flags,0		; flags: 0-dont loop, 1-loop
 		dc.b 0,0
 		endm
 
@@ -90,9 +90,9 @@ GemaTrk_Demo_blk:
 GemaTrk_Demo_patt:
 		binclude "data/sound/tracks/demo_patt.bin"
 GemaTrk_Demo_ins:
-		gemaInsFm   0,FmIns_Guitar_Heavy
 		gemaInsDac  0,DacIns_MyTime,0
-		gemaInsDac  0,DacIns_Ai,1
-		gemaInsFm   0,FmIns_Ambient_dark
-		gemaInsFm -34,FmIns_DrumKick
+		gemaInsDac  0,DacIns_Magic1,0
+		gemaInsDac  0,DacIns_Magic2,0
+		gemaInsNull
+		gemaInsFm   0,FmIns_Bass_Calm
 		gemaInsNull

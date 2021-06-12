@@ -17,14 +17,14 @@ LAY_WIDTH	equ	$20*2		; Layout data width * 2
 ; Variables
 ; ----------------------------------------
 
-; 3D drawing size, affects 3D positions too.
+; 3D drawing area, affects 3D positions too.
 SCREEN_WIDTH	equ	320
 SCREEN_HEIGHT	equ	224
 
 ; MSB
 PLGN_TEXURE	equ	%10000000
 PLGN_TRI	equ	%01000000
-PLGN_SPRITE	equ	%00100000	; TODO: get this working for 2D games...
+PLGN_SPRITE	equ	%00100000	; TODO: leftover.
 
 ; ----------------------------------------
 ; Structs
@@ -276,10 +276,6 @@ MarsVideo_LoadPal:
 ; ------------------------------------------------
 
 MarsVideo_SetWatchdog:
-; 		stc	sr,@-r15
-; 		stc	sr,r0
-; 		or	#$F0,r0				; Disable interrupts first
-; 		ldc	r0,sr
 		mov	#RAM_Mars_VdpDrwList,r0		; Reset the piece-drawing pointer
 		mov	r0,@(marsGbl_PlyPzList_R,gbr)	; on both READ and WRITE pointers
 		mov	r0,@(marsGbl_PlyPzList_W,gbr)
@@ -290,18 +286,29 @@ MarsVideo_SetWatchdog:
 		mov	r0,@r1
 		mov	#8,r0				; Set starting watchdog task to $08 (Clear framebuffer)
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
+
+	; critical part
 		mov	#_vdpreg,r1
+		mov.b	@(marsGbl_CurrFb,gbr),r0
+		mov	r0,r2
+		stc	sr,@-r15			; Save interrupts
+		mov	#$F0,r0
+		ldc	r0,sr
+.wait_frmswp:	mov.b	@(framectl,r1),r0
+		cmp/eq	r0,r2
+		bf	.wait_frmswp
 .wait_fb:	mov.w	@($A,r1),r0			; Wait until framebuffer is unlocked
 		tst	#2,r0
 		bf	.wait_fb
 		mov.w	#$A1,r0				; Pre-start SVDP fill line at address $A1
 		mov.w	r0,@(6,r1)			; $5F gets added on watchdog: $A1+$5F=$100
+		ldc	@r15+,sr			; Restore interrupts
+
 		mov	#$FFFFFE80,r1
 		mov.w	#$5AFF,r0			; Watchdog timer
 		mov.w	r0,@r1
 		mov.w	#$A538,r0			; Enable this watchdog
 		mov.w	r0,@r1
-; 		ldc	@r15+,sr			; Restore interrupts
 		rts
 		nop
 		align 4
@@ -786,13 +793,20 @@ MarsLay_Draw:
 
 MarsMdl_Init:
 		mov	#RAM_Mars_Objects,r1
-		mov	#(sizeof_mdlobj*MAX_MODELS)/4,r2
+		mov	#MAX_MODELS,r2
 		mov	#0,r0
 .clnup:
-		mov	r0,@r1
+		mov	r0,@(mdl_data,r1)
+		mov	r0,@(mdl_animdata,r1)
+		mov	r0,@(mdl_x_pos,r1)
+		mov	r0,@(mdl_x_rot,r1)
+		mov	r0,@(mdl_y_pos,r1)
+		mov	r0,@(mdl_y_rot,r1)
+		mov	r0,@(mdl_y_pos,r1)
+		mov	r0,@(mdl_y_rot,r1)
 		dt	r2
 		bf/s	.clnup
-		add	#4,r1
+		add	#sizeof_mdlobj,r1
 		rts
 		nop
 		align 4

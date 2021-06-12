@@ -13,7 +13,8 @@ zSmpl 		macro start,end,loop,flags
 		db 0
 		endm
 
-DacIns_Ai:	zSmpl Sampl_Ai,Sampl_Ai_End,0
+DacIns_Magic1:	zSmpl Sampl_Magic1,Sampl_Magic1_End,0
+DacIns_Magic2:	zSmpl Sampl_Magic2,Sampl_Magic2_End,0
 DacIns_MyTime:	zSmpl Sampl_MyTime,Sampl_MyTime_End,0
 
 PsgIns_00:	db 00h,0FFh,40h,00h, 80h
@@ -41,8 +42,8 @@ FmIns_DrumKick:
 
 ; FmIns_Bass_gum:
 ; 		binclude "data/sound/instr/fm/bass_gum.gsx",2478h,20h
-; FmIns_Bass_calm:
-; 		binclude "data/sound/instr/fm/bass_calm.gsx",2478h,20h
+FmIns_Bass_calm:
+		binclude "data/sound/instr/fm/bass_calm.gsx",2478h,20h
 ; FmIns_Bass_heavy:
 ; 		binclude "data/sound/instr/fm/bass_heavy.gsx",2478h,20h
 ; FmIns_Bass_ambient:

@@ -1,14 +1,14 @@
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; CACHE code for Master CPU
-; 
+;
 ; LIMIT: $800 bytes
 ; ----------------------------------------------------------------
 
 		align 4
 CACHE_MASTER:
 		phase $C0000000
-; 
+;
 ; Mstr_MkAllPz:
 ; 		sts	pr,@-r15
 ; 		mov.w	@r13,r13
@@ -38,7 +38,7 @@ CACHE_MASTER:
 ; 		nop
 ; 		align 4
 ; 		ltorg
-		
+
 ; ------------------------------------------------
 ; MASTER Background tasks
 ; ------------------------------------------------
@@ -60,12 +60,7 @@ m_irq_custom:
 ; .task_08:
 		mov	r2,@-r15
 		mov	#_vdpreg,r1
-		mov.b	@(marsGbl_CurrFb,gbr),r0
-		mov	r0,r2
-.wait_frmswp:	mov.b	@(framectl,r1),r0
-		cmp/eq	r0,r2
-		bf	.on_clr
-.wait_fb:	mov.w   @($A,r1), r0		; Framebuffer free?
+.wait_fb:	mov.w   @($A,r1),r0		; Framebuffer free?
 		tst     #2,r0
 		bf      .wait_fb
 		mov.w   @(6,r1),r0		; SVDP-fill address
@@ -238,7 +233,7 @@ drwtsk1_vld_y:
 
 ; ------------------------------------
 ; Texture mode
-; 
+;
 ; r1  - XL
 ; r2  - XL DX
 ; r3  - XR
@@ -273,7 +268,7 @@ drwsld_nxtline_tex:
 		mov	r2,@-r15
 		mov	r4,@-r15
 		mov	r5,@-r15
-		mov	r6,@-r15		
+		mov	r6,@-r15
 		mov	r7,@-r15
 		mov	r8,@-r15
 		mov	r10,@-r15
@@ -364,7 +359,7 @@ drwsld_nxtline_tex:
 		shlr16	r4
 		and	r2,r4
 		and	r0,r13
-		
+
 	; TODO: implement duffs device
 .tex_xloop:
 		mov	r7,r2
@@ -397,7 +392,7 @@ drwsld_updline_tex:
 		mov	@(plypz_src_xl_dx,r14),r0	; Update DX postions
 		add	r0,r5
 		mov	@(plypz_src_xr_dx,r14),r0
-		add	r0,r6	
+		add	r0,r6
 		mov	@(plypz_src_yl_dx,r14),r0
 		add	r0,r7
 		mov	@(plypz_src_yr_dx,r14),r0
@@ -428,7 +423,7 @@ tag_yhght:	dc.l	SCREEN_HEIGHT
 
 ; ------------------------------------
 ; Solid Color
-; 
+;
 ; r1  - XL
 ; r2  - XL DX
 ; r3  - XR
@@ -516,7 +511,7 @@ drwsld_nxtline:
 ; .wait:		mov.w	@(10,r13),r0
 ; 		tst	#2,r0
 ; 		bf	.wait
-		
+
 ; 	If the line is too large, leave it to VDP
 ; 	and exit interrupt, we will come back
 ; 	with more lines to draw
@@ -549,8 +544,8 @@ drwsld_updline:
 		bf/s	drwsld_nxtline
 		add	#1,r9
 
-; ------------------------------------		
-		
+; ------------------------------------
+
 drwsld_nextpz:
 		add	#sizeof_plypz,r14		; And set new point
 		mov	r14,r0
@@ -616,13 +611,13 @@ drwtask_exit:
 
 ; ------------------------------------------------
 ; Read polygon and build pieces
-; 
+;
 ; Input:
 ; r14 - Polygon data
 ;
 ; polygn_type bits:
 ; %tsp----- -------- -------- --------
-; 
+;
 ; p - Polygon type: Quad (0) or Triangle (1)
 ; s - Corrds are Normal (0) or Sprite (1) <-- Unused.
 ; t - Polygon has texture data (1):
@@ -839,7 +834,7 @@ MarsVideo_SlicePlgn:
 		bsr	set_left
 		nop
 		bra	.next_pz
-		nop		
+		nop
 .exit:
 		lds	@r15+,pr
 		rts
@@ -1129,7 +1124,7 @@ CACHE_MASTER_E:
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; CACHE code for Slave CPU
-; 
+;
 ; LIMIT: $800 bytes
 ; ----------------------------------------------------------------
 
@@ -1139,7 +1134,7 @@ CACHE_SLAVE:
 ; ------------------------------------------------
 
 	; code goes here...
-	
+
 ; ------------------------------------------------
 		align 4
 Cach_CurrPlygn	ds.b sizeof_polygn	; Current polygon in modelread

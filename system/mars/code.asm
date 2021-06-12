@@ -285,7 +285,7 @@ m_irq_v:
 		mov.w	r0,@(marsGbl_PalDmaMidWr,gbr)
 		mov	#RAM_Mars_Palette,r1
 		mov	#_palette,r2
- 		mov	#256/16,r3		
+ 		mov	#256/16,r3
 .copy_pal:
 	rept 16
 		mov.w	@r1+,r0
@@ -1314,8 +1314,7 @@ CmdTaskMd_ObjectClrAll:
 		sts	pr,@-r15
 		mov	#MarsMdl_Init,r0
 		jsr	@r0
-		mov	r14,@-r15
-		mov	@r15+,r14
+		nop
 		lds	@r15+,pr
 		rts
 		nop
@@ -1621,7 +1620,6 @@ RAM_Mars_Objects	ds.b sizeof_mdlobj*MAX_MODELS	; Objects list
 RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
 RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
 RAM_Mars_VdpDrwList	ds.b sizeof_plypz*MAX_SVDP_PZ	; Pieces list
-; RAM_Mars_DepthBits	ds.b (64)*224
 RAM_Mars_VdpDrwList_e	ds.l 0				; (end-of-list label)
 RAM_Mars_Plgn_ZList_0	ds.l MAX_FACES*2		; Z value / foward faces
 RAM_Mars_Plgn_ZList_1	ds.l MAX_FACES*2		; Z value / foward faces

@@ -742,6 +742,7 @@ Video_LoadArt:
 		cmp.b	#$FF,d4
 		beq.s	.from_ram
 
+; 		bsr	Sound_DMA_Pause
 	; TODO: interrupt both CPUS with a wait flag
 		move.w	(sysmars_reg+dreqctl).l,d4	; Set RV=1
 		or.w	#1,d4				; 68k ROM map moves to $000000, $880000/$900000=trash
@@ -756,6 +757,7 @@ Video_LoadArt:
 		move.b	(RAM_VdpRegs+1),d4
 		move.w	d4,(a4)
 		move.w	d6,sr
+; 		bsr	Sound_DMA_Resume
 		rts
 .from_ram:
  		move.w	d5,-(sp)

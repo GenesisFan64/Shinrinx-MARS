@@ -127,12 +127,12 @@ Sound_DMA_Pause:
 .wait:
 		btst	#0,(z80_bus).l			; Wait for it
 		bne.s	.wait
-		move.b	(z80_cpu+commZRomRd),d0		; Get mid-read bit
+		move.b	(z80_cpu+commZRomRd),d7		; Get mid-read bit
 		move.w	#0,(z80_bus).l			; Resume Z80
-		tst.b	d0
+		tst.b	d7
 		beq.s	.safe
-		moveq	#68,d0
-		dbf	d0,*
+		moveq	#68,d7
+		dbf	d7,*
 		bra.s	.retry
 .safe:
 		move.b	#1,(z80_cpu+commZRomBlk)	; Block flag for Z80
@@ -340,7 +340,7 @@ trk_status	equ 19			; %ERSx xxxx | E-enabled / R-Init or Restart track
 					;	       S-sfx mode
 trk_tickTmr	equ 20			; Ticks timer
 trk_tickSet	equ 21			; Ticks set for this track
-		
+
 ; chnBuff
 ; 8 bytes
 chnl_Chip	equ 0			; Channel chip: etti iiii | e-enable t-type i-chip channel
