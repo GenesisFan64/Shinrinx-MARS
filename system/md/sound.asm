@@ -909,6 +909,13 @@ playonchip
 		ld	(ix+3),l
 		ld	(ix+4),h
 		call	dac_me
+
+		ld	a,(ix)		; Keys off
+		and	0111b
+		ld	e,a
+		ld	d,28h
+		call	fm_send_1
+
 		ld	a,(ix)		; Prepare first FM reg
 		and	11b
 		or	30h
@@ -1356,15 +1363,12 @@ playonchip
 		and	10000111b
 		or	00100000b	; Mark as FM
 		ld	(iy+chnl_Chip),a
-		and	111b
-		ld	e,a
-		ld	d,28h
-		call	fm_send_1
+
 		ld	a,(iy+chnl_Note)
 		cp	-1		; Key off.
-		ret	z
+		jp	z,.keyoff
 		cp	-2		; TODO: Total level force off
-		ret	z
+		jp	z,.keyoff
 		ld	b,(ix+5)
 		add	a,b
 		ld	b,0
@@ -1438,6 +1442,13 @@ playonchip
 		ret
 .note_fm3:
 		ret
+
+.keyoff:
+		ld	a,(ix)		; Keys off
+		and	111b
+		ld	e,a
+		ld	d,28h
+		jp	fm_send_1
 
 .note_dac:
 	; TODO: FM6/DAC LOCK

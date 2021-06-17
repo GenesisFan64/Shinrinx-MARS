@@ -153,7 +153,7 @@ drwtsk_02:
 		bra	drwsld_updline
 		nop
 .exit:		bra	drwtask_exit
-		mov	#$7F,r2
+		mov	#$10,r2
 		align 4
 
 ; --------------------------------
@@ -171,7 +171,7 @@ drwtsk_01:
 		mov	#0,r0				; If none, just end quickly.
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 .exit:		bra	drwtask_exit
-		mov	#$7F,r2
+		mov	#$10,r2
 .has_pz:
 		mov	r3,@-r15			; Save all these regs
 		mov	r4,@-r15
@@ -508,13 +508,13 @@ drwsld_nxtline:
 		shll8	r0
 		or	r6,r0
 		mov.w	r0,@(8,r13)	; Set data
-; .wait:		mov.w	@(10,r13),r0
+; .wait:	mov.w	@(10,r13),r0
 ; 		tst	#2,r0
 ; 		bf	.wait
 
 ; 	If the line is too large, leave it to VDP
-; 	and exit interrupt, we will come back
-; 	with more lines to draw
+; 	and exit watchdog, we will come back on
+; 	next trigger.
 		mov	#$28,r0
 		cmp/gt	r0,r12
 		bf	drwsld_updline
@@ -566,7 +566,7 @@ drwsld_nextpz:
 		mov	#0,r0
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 		bra	drwtask_return
-		mov	#$7F,r2			; Timer for next watchdog
+		mov	#$10,r2			; Timer for next watchdog
 
 ; --------------------------------
 ; Task $00
@@ -577,7 +577,7 @@ drwtsk_00:
 		mov	#0,r0
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 		bra	drwtask_exit
-		mov	#$7F,r2
+		mov	#$10,r2
 
 drwtask_return:
 		lds	@r15+,mach

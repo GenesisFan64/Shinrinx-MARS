@@ -18,7 +18,7 @@ Palette_Map:	binclude "data/mars/maps/mtrl/marscity_pal.bin"
 Palette_projname:
 		binclude "data/mars/objects/mtrl/projname_pal.bin"
 		align 4
-		
+
 ; --------------------------------------------------------
 ; Objects
 ; --------------------------------------------------------
@@ -44,7 +44,7 @@ Palette_projname:
 ; 						; %S0000000 S-stereo sample
 ; 						; 
 
-		align 4		
+; 		align 4
 ; PwmIns_SPHEAVY1:
 ; 		dc.l PwmInsWav_SPHEAVY1
 ; 		dc.l PwmInsWav_SPHEAVY1_e
@@ -65,13 +65,13 @@ Palette_projname:
 ; 		dc.l PwmInsWav_TECHNOBASSD_e
 ; 		dc.l -1
 ; 		dc.l 0
-PwmIns_String:
-		dc.l PwmInsWav_String
-		dc.l PwmInsWav_String_e
-		dc.l 0
-		dc.l 0
-PwmIns_Piano:
-		dc.l PwmInsWav_Piano
-		dc.l PwmInsWav_Piano_e
-		dc.l -1
-		dc.l 0
+; PwmIns_String:
+; 		dc.l PwmInsWav_String
+; 		dc.l PwmInsWav_String_e
+; 		dc.l 0
+; 		dc.l 0
+; PwmIns_Piano:
+; 		dc.l PwmInsWav_Piano
+; 		dc.l PwmInsWav_Piano_e
+; 		dc.l -1
+; 		dc.l 0

@@ -98,8 +98,8 @@ FmIns_Trumpet_2:
 ; 		binclude "data/sound/instr/fm/marimba_1.gsx",2478h,20h
 FmIns_Ambient_dark:
 		binclude "data/sound/instr/fm/ambient_dark.gsx",2478h,20h
-; FmIns_Ambient_spook:
-; 		binclude "data/sound/instr/fm/ambient_spook.gsx",2478h,20h
+FmIns_Ambient_spook:
+		binclude "data/sound/instr/fm/ambient_spook.gsx",2478h,20h
 FmIns_Ambient_3:
 		binclude "data/sound/instr/fm/ambient_3.gsx",2478h,20h
 ; FmIns_Ding_toy:

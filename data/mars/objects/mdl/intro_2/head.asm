@@ -1,5 +1,5 @@
 MarsObj_intro_2:
-		dc.w 218,339
+		dc.w 199,215
 		dc.l .vert,.face,.vrtx,.mtrl
 .vert:		binclude "data/mars/objects/mdl/intro_2/vert.bin"
 .face:		binclude "data/mars/objects/mdl/intro_2/face.bin"

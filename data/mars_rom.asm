@@ -19,16 +19,16 @@
 		include "data/mars/objects/mdl/projname/head.asm"
 		align 4
 
-Textr_projname:
-		binclude "data/mars/objects/mtrl/projname_art.bin"
-		align 4
-		
 Textr_marscity:
 		binclude "data/mars/maps/mtrl/marscity_art.bin"
+		align 4
+Textr_projname:
+		binclude "data/mars/objects/mtrl/projname_art.bin"
 		align 4
 Textr_intro:
 		binclude "data/mars/objects/mtrl/intro_art.bin"
 		align 4
+
 ; MARSANI_INTRO_1:
 ; 		binclude "data/mars/objects/anim/logo_1_anim.bin"
 ; 		align 4

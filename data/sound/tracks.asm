@@ -93,6 +93,6 @@ GemaTrk_Demo_ins:
 		gemaInsDac  0,DacIns_MyTime,0
 		gemaInsDac  0,DacIns_Magic1,0
 		gemaInsDac  0,DacIns_Magic2,0
-		gemaInsNull
+		gemaInsNull;Fm   0,FmIns_Ambient_dark
 		gemaInsFm   0,FmIns_Bass_Calm
 		gemaInsNull
