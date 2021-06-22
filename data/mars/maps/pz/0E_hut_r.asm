@@ -1,5 +1,5 @@
 MarsMapPz_0E_hut_r:
-		dc.w 20,2931
+		dc.w 20,2942
 		dc.l .vert,.face,.vrtx,.mtrl
 .vert:		binclude "data/mars/maps/pz/0E_hut_r_vert.bin"
 .face:		binclude "data/mars/maps/pz/0E_hut_r_face.bin"

@@ -1,4 +1,4 @@
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 1 - 6/17/2021 18:21:34
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 1 - 6/22/2021 3:42:48
 
 
        1/       0 :                     ; ===========================================================================
@@ -6066,7 +6066,7 @@
 (1)   64/  FF38D0 : 08F9 0006 FFFF 91C7 		bset	#bitDispEnbl,(RAM_VdpRegs+1).l		; Enable display
 (1)   65/  FF38D8 : 6100 E6B8           		bsr	Video_Update
 (1)   66/  FF38DC :                     
-(1)   67/  FF38DC : 31FC 0002 8C28      		move.w	#2,(RAM_MdlCurrMd).w
+(1)   67/  FF38DC : 31FC 0001 8C28      		move.w	#1,(RAM_MdlCurrMd).w
 (1)   68/  FF38E2 :                     		
 (1)   69/  FF38E2 :                     ; ====================================================================
 (1)   70/  FF38E2 :                     ; ------------------------------------------------------
@@ -6202,7 +6202,7 @@
 (1)  199/  FF3A74 : 6100 FCD6           		bsr	System_MdMars_SlvTask
 (1)  200/  FF3A78 : 7A00                		moveq	#0,d5				; No ex-settings
 (1)  201/  FF3A7A : 7200                		moveq	#0,d1				; Slot 0
-(1)  202/  FF3A7C : 243C 0202 E160      		move.l	#MarsObj_projname,d2
+(1)  202/  FF3A7C : 243C 0202 E2C4      		move.l	#MarsObj_projname,d2
 (1)  203/  FF3A82 : 263C 0000 0000      		move.l	#0,d3
 (1)  204/  FF3A88 : 7801                		moveq	#1,d4
 (1)  205/  FF3A8A : 203C 0600 12D8      		move.l	#CmdTaskMd_ObjectSet,d0
@@ -6279,7 +6279,7 @@
 (1)  276/  FF3B8E :                     .mode2_loop:
 (1)  277/  FF3B8E : 7E00                		moveq	#0,d7
 (1)  278/  FF3B90 : 6040                		bra	MdMdl_RunAnimation
-(1)  279/  FF3B92 :                     ; ; 		bra	MdMdl1_Usercontrol
+(1)  279/  FF3B92 :                     ; 		bra	MdMdl1_Usercontrol
 (1)  280/  FF3B92 :                     
 (1)  281/  FF3B92 :                     ; ====================================================================
 (1)  282/  FF3B92 :                     ; ------------------------------------------------------
@@ -7993,7 +7993,7 @@
 (2)  499/ 600086C : 0000 0398           .center_val:	dc.l ($E*LAY_WIDTH)+($C*2)
 (2)  500/ 6000870 :                     
 (2)  501/ 6000870 :                     .list:
-(2)  502/ 6000870 : 0600 09C8           		dc.l .front_fr
+(2)  502/ 6000870 : 0600 09A0           		dc.l .front
 (2)  503/ 6000874 : 0600 09C8           		dc.l .front_fr
 (2)  504/ 6000878 : 0600 09C8           		dc.l .front_fr
 (2)  505/ 600087C : 0600 09C8           		dc.l .front_fr
@@ -11948,11 +11948,11 @@
 (3)   12/ 201C7E0 : 0202 A908           		dc.l MarsMapPz_08_kfcn
 (3)   13/ 201C7E4 : 0202 BD68           		dc.l MarsMapPz_09_kfcs
 (3)   14/ 201C7E8 : 0202 C098           		dc.l MarsMapPz_0A_carls_n
-(3)   15/ 201C7EC : 0202 D364           		dc.l MarsMapPz_0B_carls_s
-(3)   16/ 201C7F0 : 0202 D6AC           		dc.l MarsMapPz_0C_carls_p
-(3)   17/ 201C7F4 : 0202 D8FC           		dc.l MarsMapPz_0D_hut_l
-(3)   18/ 201C7F8 : 0202 DBC8           		dc.l MarsMapPz_0E_hut_r
-(3)   19/ 201C7FC : 0202 DE94           		dc.l MarsMapPz_0F_sept_lrd
+(3)   15/ 201C7EC : 0202 D4C8           		dc.l MarsMapPz_0B_carls_s
+(3)   16/ 201C7F0 : 0202 D810           		dc.l MarsMapPz_0C_carls_p
+(3)   17/ 201C7F4 : 0202 DA60           		dc.l MarsMapPz_0D_hut_l
+(3)   18/ 201C7F8 : 0202 DD2C           		dc.l MarsMapPz_0E_hut_r
+(3)   19/ 201C7FC : 0202 DFF8           		dc.l MarsMapPz_0F_sept_lrd
 (3)   20/ 201C800 :                     		include "data/mars/maps/pz/01_floor.asm"
 (4)    1/ 201C800 :                     MarsMapPz_01_floor:
 (4)    2/ 201C800 : 0010 0019           		dc.w 16,25
@@ -11974,7 +11974,7 @@
 (4)    5/ 201D868 :                     .face:		binclude "data/mars/maps/pz/02_main_face.bin"
 (4)    6/ 201E178 :                     .vrtx:		binclude "data/mars/maps/pz/02_main_vrtx.bin"
 (4)    7/ 201E738 :                     .mtrl:		include "data/mars/maps/pz/02_main_mtrl.asm"
-(5)    1/ 201E738 : 0203 0CC0           	 dc.l Textr_marscity
+(5)    1/ 201E738 : 0203 0E24           	 dc.l Textr_marscity
 (5)    2/ 201E73C : 0200                	 dc.w 512
 (5)    3/ 201E73E : 0000                	 dc.w 0
 (5)    4/ 201E740 :                     
@@ -11989,7 +11989,7 @@
 (4)    5/ 2020BD8 :                     .face:		binclude "data/mars/maps/pz/03_prekfc_face.bin"
 (4)    6/ 2022028 :                     .vrtx:		binclude "data/mars/maps/pz/03_prekfc_vrtx.bin"
 (4)    7/ 2022FA8 :                     .mtrl:		include "data/mars/maps/pz/03_prekfc_mtrl.asm"
-(5)    1/ 2022FA8 : 0203 0CC0           	 dc.l Textr_marscity
+(5)    1/ 2022FA8 : 0203 0E24           	 dc.l Textr_marscity
 (5)    2/ 2022FAC : 0200                	 dc.w 512
 (5)    3/ 2022FAE : 0000                	 dc.w 0
 (5)    4/ 2022FB0 :                     
@@ -12016,7 +12016,7 @@
 (4)    5/ 2026B30 :                     .face:		binclude "data/mars/maps/pz/05_bridge_face.bin"
 (4)    6/ 20289C0 :                     .vrtx:		binclude "data/mars/maps/pz/05_bridge_vrtx.bin"
 (4)    7/ 202A150 :                     .mtrl:		include "data/mars/maps/pz/05_bridge_mtrl.asm"
-(5)    1/ 202A150 : 0203 0CC0           	 dc.l Textr_marscity
+(5)    1/ 202A150 : 0203 0E24           	 dc.l Textr_marscity
 (5)    2/ 202A154 : 0200                	 dc.w 512
 (5)    3/ 202A156 : 0000                	 dc.w 0
 (5)    4/ 202A158 :                     
@@ -12055,7 +12055,7 @@
 (4)    5/ 202B120 :                     .face:		binclude "data/mars/maps/pz/08_kfcn_face.bin"
 (4)    6/ 202B8C0 :                     .vrtx:		binclude "data/mars/maps/pz/08_kfcn_vrtx.bin"
 (4)    7/ 202BD60 :                     .mtrl:		include "data/mars/maps/pz/08_kfcn_mtrl.asm"
-(5)    1/ 202BD60 : 0203 0CC0           	 dc.l Textr_marscity
+(5)    1/ 202BD60 : 0203 0E24           	 dc.l Textr_marscity
 (5)    2/ 202BD64 : 0200                	 dc.w 512
 (5)    3/ 202BD66 : 0000                	 dc.w 0
 (5)    4/ 202BD68 :                     
@@ -12075,161 +12075,161 @@
 (4)    9/ 202C098 :                     
 (3)   29/ 202C098 :                     		include "data/mars/maps/pz/0A_carls_n.asm"
 (4)    1/ 202C098 :                     MarsMapPz_0A_carls_n:
-(4)    2/ 202C098 : 0086 0AFB           		dc.w 134,2811
-(4)    3/ 202C09C : 0202 C0AC 0202 C91C 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 CEEC 0202 D35C 
+(4)    2/ 202C098 : 008F 0B06           		dc.w 143,2822
+(4)    3/ 202C09C : 0202 C0AC 0202 C9A0 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 CFF0 0202 D4C0 
 (4)    4/ 202C0AC :                     .vert:		binclude "data/mars/maps/pz/0A_carls_n_vert.bin"
-(4)    5/ 202C91C :                     .face:		binclude "data/mars/maps/pz/0A_carls_n_face.bin"
-(4)    6/ 202CEEC :                     .vrtx:		binclude "data/mars/maps/pz/0A_carls_n_vrtx.bin"
-(4)    7/ 202D35C :                     .mtrl:		include "data/mars/maps/pz/0A_carls_n_mtrl.asm"
-(5)    1/ 202D35C : 0203 0CC0           	 dc.l Textr_marscity
-(5)    2/ 202D360 : 0200                	 dc.w 512
-(5)    3/ 202D362 : 0000                	 dc.w 0
-(5)    4/ 202D364 :                     
-(4)    8/ 202D364 :                     		align 4
-(4)    9/ 202D364 :                     
-(3)   30/ 202D364 :                     		include "data/mars/maps/pz/0B_carls_s.asm"
-(4)    1/ 202D364 :                     MarsMapPz_0B_carls_s:
-(4)    2/ 202D364 : 0019 0B1E           		dc.w 25,2846
-(4)    3/ 202D368 : 0202 D378 0202 D51C 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 D60C 0202 D6AC 
-(4)    4/ 202D378 :                     .vert:		binclude "data/mars/maps/pz/0B_carls_s_vert.bin"
-(4)    5/ 202D51C :                     .face:		binclude "data/mars/maps/pz/0B_carls_s_face.bin"
-(4)    6/ 202D60C :                     .vrtx:		binclude "data/mars/maps/pz/0B_carls_s_vrtx.bin"
-(4)    7/ 202D6AC :                     .mtrl:		include "data/mars/maps/pz/0B_carls_s_mtrl.asm"
-(5)    1/ 202D6AC :                     
-(4)    8/ 202D6AC :                     		align 4
-(4)    9/ 202D6AC :                     
-(3)   31/ 202D6AC :                     		include "data/mars/maps/pz/0C_carls_p.asm"
-(4)    1/ 202D6AC :                     MarsMapPz_0C_carls_p:
-(4)    2/ 202D6AC : 0010 0B37           		dc.w 16,2871
-(4)    3/ 202D6B0 : 0202 D6C0 0202 D7EC 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 D88C 0202 D8FC 
-(4)    4/ 202D6C0 :                     .vert:		binclude "data/mars/maps/pz/0C_carls_p_vert.bin"
-(4)    5/ 202D7EC :                     .face:		binclude "data/mars/maps/pz/0C_carls_p_face.bin"
-(4)    6/ 202D88C :                     .vrtx:		binclude "data/mars/maps/pz/0C_carls_p_vrtx.bin"
-(4)    7/ 202D8FC :                     .mtrl:		include "data/mars/maps/pz/0C_carls_p_mtrl.asm"
-(5)    1/ 202D8FC :                     
-(4)    8/ 202D8FC :                     		align 4
-(4)    9/ 202D8FC :                     
-(3)   32/ 202D8FC :                     		include "data/mars/maps/pz/0D_hut_l.asm"
-(4)    1/ 202D8FC :                     MarsMapPz_0D_hut_l:
-(4)    2/ 202D8FC : 0014 0B55           		dc.w 20,2901
-(4)    3/ 202D900 : 0202 D910 0202 DA78 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 DB48 0202 DBC8 
-(4)    4/ 202D910 :                     .vert:		binclude "data/mars/maps/pz/0D_hut_l_vert.bin"
-(4)    5/ 202DA78 :                     .face:		binclude "data/mars/maps/pz/0D_hut_l_face.bin"
-(4)    6/ 202DB48 :                     .vrtx:		binclude "data/mars/maps/pz/0D_hut_l_vrtx.bin"
-(4)    7/ 202DBC8 :                     .mtrl:		include "data/mars/maps/pz/0D_hut_l_mtrl.asm"
-(5)    1/ 202DBC8 :                     
-(4)    8/ 202DBC8 :                     		align 4
-(4)    9/ 202DBC8 :                     
-(3)   33/ 202DBC8 :                     		include "data/mars/maps/pz/0E_hut_r.asm"
-(4)    1/ 202DBC8 :                     MarsMapPz_0E_hut_r:
-(4)    2/ 202DBC8 : 0014 0B73           		dc.w 20,2931
-(4)    3/ 202DBCC : 0202 DBDC 0202 DD44 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 DE14 0202 DE94 
-(4)    4/ 202DBDC :                     .vert:		binclude "data/mars/maps/pz/0E_hut_r_vert.bin"
-(4)    5/ 202DD44 :                     .face:		binclude "data/mars/maps/pz/0E_hut_r_face.bin"
-(4)    6/ 202DE14 :                     .vrtx:		binclude "data/mars/maps/pz/0E_hut_r_vrtx.bin"
-(4)    7/ 202DE94 :                     .mtrl:		include "data/mars/maps/pz/0E_hut_r_mtrl.asm"
-(5)    1/ 202DE94 :                     
-(4)    8/ 202DE94 :                     		align 4
-(4)    9/ 202DE94 :                     
-(3)   34/ 202DE94 :                     		include "data/mars/maps/pz/0F_sept_lrd.asm"
-(4)    1/ 202DE94 :                     MarsMapPz_0F_sept_lrd:
-(4)    2/ 202DE94 : 0014 0B91           		dc.w 20,2961
-(4)    3/ 202DE98 : 0202 DEA8 0202 E010 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 E0E0 0202 E160 
-(4)    4/ 202DEA8 :                     .vert:		binclude "data/mars/maps/pz/0F_sept_lrd_vert.bin"
-(4)    5/ 202E010 :                     .face:		binclude "data/mars/maps/pz/0F_sept_lrd_face.bin"
-(4)    6/ 202E0E0 :                     .vrtx:		binclude "data/mars/maps/pz/0F_sept_lrd_vrtx.bin"
-(4)    7/ 202E160 :                     .mtrl:		include "data/mars/maps/pz/0F_sept_lrd_mtrl.asm"
-(5)    1/ 202E160 :                     
-(4)    8/ 202E160 :                     		align 4
-(4)    9/ 202E160 :                     		align 4
-(3)   35/ 202E160 :                     
-(2)   10/ 202E160 :                     
-(1)   18/ 202E160 :                     		align 4
-(1)   19/ 202E160 :                     		include "data/mars/objects/mdl/projname/head.asm"
-(2)    1/ 202E160 :                     MarsObj_projname:
-(2)    2/ 202E160 : 018F 01BB           		dc.w 399,443
-(2)    3/ 202E164 : 0202 E174 0202 F638 		dc.l .vert,.face,.vrtx,.mtrl
-                    0203 05C8 0203 0CB8 
-(2)    4/ 202E174 :                     .vert:		binclude "data/mars/objects/mdl/projname/vert.bin"
-(2)    5/ 202F638 :                     .face:		binclude "data/mars/objects/mdl/projname/face.bin"
-(2)    6/ 20305C8 :                     .vrtx:		binclude "data/mars/objects/mdl/projname/vrtx.bin"
-(2)    7/ 2030CB8 :                     .mtrl:		include "data/mars/objects/mdl/projname/mtrl.asm"
-(3)    1/ 2030CB8 : 0207 0CC0           	 dc.l Textr_projname
-(3)    2/ 2030CBC : 0168                	 dc.w 360
-(3)    3/ 2030CBE : 0000                	 dc.w 0
-(3)    4/ 2030CC0 :                     
-(2)    8/ 2030CC0 :                     		align 4
-(1)   20/ 2030CC0 :                     		align 4
-(1)   21/ 2030CC0 :                     
-(1)   22/ 2030CC0 :                     Textr_marscity:
-(1)   23/ 2030CC0 :                     		binclude "data/mars/maps/mtrl/marscity_art.bin"
-(1)   24/ 2070CC0 :                     		align 4
-(1)   25/ 2070CC0 :                     Textr_projname:
-(1)   26/ 2070CC0 :                     		binclude "data/mars/objects/mtrl/projname_art.bin"
-(1)   27/ 2074500 :                     		align 4
-(1)   28/ 2074500 :                     Textr_intro:
-(1)   29/ 2074500 :                     		binclude "data/mars/objects/mtrl/intro_art.bin"
-(1)   30/ 20787CC :                     		align 4
-(1)   31/ 20787CC :                     
-(1)   32/ 20787CC :                     ; MARSANI_INTRO_1:
-(1)   33/ 20787CC :                     ; 		binclude "data/mars/objects/anim/logo_1_anim.bin"
-(1)   34/ 20787CC :                     ; 		align 4
-(1)   35/ 20787CC :                     
-(1)   36/ 20787CC :                     ; PWM_STEREO:	binclude "data/sound/pwm_st.wav",$2C,$200000
-(1)   37/ 20787CC :                     ; PWM_STEREO_e:
-(1)   38/ 20787CC :                     ; 		align 4
-(1)   39/ 20787CC :                     ; PwmInsWav_SPHEAVY1:
-(1)   40/ 20787CC :                     ; 		binclude "data/sound/instr/smpl/SPHEAVY1.wav",$2C
-(1)   41/ 20787CC :                     ; PwmInsWav_SPHEAVY1_e:
-(1)   42/ 20787CC :                     ; 		align 4
-(1)   43/ 20787CC :                     ; PwmInsWav_MCLSTRNG:
-(1)   44/ 20787CC :                     ; 		binclude "data/sound/instr/smpl/MCLSTRNG.wav",$2C
-(1)   45/ 20787CC :                     ; PwmInsWav_MCLSTRNG_e:
-(1)   46/ 20787CC :                     ; 		align 4
-(1)   47/ 20787CC :                     ; PwmInsWav_WHODSNARE:
-(1)   48/ 20787CC :                     ; 		binclude "data/sound/instr/smpl/ST-79_whodini-snare.wav",$2C
-(1)   49/ 20787CC :                     ; PwmInsWav_WHODSNARE_e:
-(1)   50/ 20787CC :                     ; 		align 4
-(1)   51/ 20787CC :                     ; PwmInsWav_TECHNOBASSD:
-(1)   52/ 20787CC :                     ; 		binclude "data/sound/instr/smpl/ST-72_techno-bassd3.wav",$2C
-(1)   53/ 20787CC :                     ; PwmInsWav_TECHNOBASSD_e:
-(1)   54/ 20787CC :                     ; 		align 4
-(1)   55/ 20787CC :                     ; PwmInsWav_Synth:
-(1)   56/ 20787CC :                     ; 		binclude "data/sound/instr/smpl/amiga_synth.wav",$2C
-(1)   57/ 20787CC :                     ; PwmInsWav_Synth_e:
-(1)   58/ 20787CC :                     ; 		align 4
-(1)   59/ 20787CC :                     PwmInsWav_Piano:
-(1)   60/ 20787CC :                     		binclude "data/sound/instr/smpl/piano_1.wav",$2C
-(1)   61/ 207E9C2 :                     PwmInsWav_Piano_e:
-(1)   62/ 207E9C2 :                     		align 4
-(1)   63/ 207E9C4 :                     PwmInsWav_String:
-(1)   64/ 207E9C4 :                     		binclude "data/sound/instr/smpl/string_1.wav",$2C
-(1)   65/ 208321A :                     PwmInsWav_String_e:
-(1)   66/ 208321A :                     		align 4
-(1)   67/ 208321C :                     
-      85/   8321C :                     		dephase
-      86/   8321C :                     
-      87/   8321C :                     ; --------------------------------------------------------
-      88/   8321C :                     ; MD DATA BANK 0
-      89/   8321C :                     ; --------------------------------------------------------
-      90/   8321C :                     
-      91/  98321C :                     		phase $900000+*				; Only one currently
-      92/  98321C :                     		include "data/md_bank0.asm"
-(1)    1/  98321C :                     ; ====================================================================
-(1)    2/  98321C :                     ; ----------------------------------------------------------------
-(1)    3/  98321C :                     ; Single 68k DATA BANK for MD ($900000-$9FFFFF)
-(1)    4/  98321C :                     ; for stuff other than MD's DMA data
-(1)    5/  98321C :                     ; 
-(1)    6/  98321C :                     ; Maximum size: $0FFFFF bytes per bank
-(1)    7/  98321C :                     ; ----------------------------------------------------------------
-(1)    8/  98321C :                     
-(1)    9/  98321C :                     		align $8000
+(4)    5/ 202C9A0 :                     .face:		binclude "data/mars/maps/pz/0A_carls_n_face.bin"
+(4)    6/ 202CFF0 :                     .vrtx:		binclude "data/mars/maps/pz/0A_carls_n_vrtx.bin"
+(4)    7/ 202D4C0 :                     .mtrl:		include "data/mars/maps/pz/0A_carls_n_mtrl.asm"
+(5)    1/ 202D4C0 : 0203 0E24           	 dc.l Textr_marscity
+(5)    2/ 202D4C4 : 0200                	 dc.w 512
+(5)    3/ 202D4C6 : 0000                	 dc.w 0
+(5)    4/ 202D4C8 :                     
+(4)    8/ 202D4C8 :                     		align 4
+(4)    9/ 202D4C8 :                     
+(3)   30/ 202D4C8 :                     		include "data/mars/maps/pz/0B_carls_s.asm"
+(4)    1/ 202D4C8 :                     MarsMapPz_0B_carls_s:
+(4)    2/ 202D4C8 : 0019 0B29           		dc.w 25,2857
+(4)    3/ 202D4CC : 0202 D4DC 0202 D680 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 D770 0202 D810 
+(4)    4/ 202D4DC :                     .vert:		binclude "data/mars/maps/pz/0B_carls_s_vert.bin"
+(4)    5/ 202D680 :                     .face:		binclude "data/mars/maps/pz/0B_carls_s_face.bin"
+(4)    6/ 202D770 :                     .vrtx:		binclude "data/mars/maps/pz/0B_carls_s_vrtx.bin"
+(4)    7/ 202D810 :                     .mtrl:		include "data/mars/maps/pz/0B_carls_s_mtrl.asm"
+(5)    1/ 202D810 :                     
+(4)    8/ 202D810 :                     		align 4
+(4)    9/ 202D810 :                     
+(3)   31/ 202D810 :                     		include "data/mars/maps/pz/0C_carls_p.asm"
+(4)    1/ 202D810 :                     MarsMapPz_0C_carls_p:
+(4)    2/ 202D810 : 0010 0B42           		dc.w 16,2882
+(4)    3/ 202D814 : 0202 D824 0202 D950 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 D9F0 0202 DA60 
+(4)    4/ 202D824 :                     .vert:		binclude "data/mars/maps/pz/0C_carls_p_vert.bin"
+(4)    5/ 202D950 :                     .face:		binclude "data/mars/maps/pz/0C_carls_p_face.bin"
+(4)    6/ 202D9F0 :                     .vrtx:		binclude "data/mars/maps/pz/0C_carls_p_vrtx.bin"
+(4)    7/ 202DA60 :                     .mtrl:		include "data/mars/maps/pz/0C_carls_p_mtrl.asm"
+(5)    1/ 202DA60 :                     
+(4)    8/ 202DA60 :                     		align 4
+(4)    9/ 202DA60 :                     
+(3)   32/ 202DA60 :                     		include "data/mars/maps/pz/0D_hut_l.asm"
+(4)    1/ 202DA60 :                     MarsMapPz_0D_hut_l:
+(4)    2/ 202DA60 : 0014 0B60           		dc.w 20,2912
+(4)    3/ 202DA64 : 0202 DA74 0202 DBDC 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 DCAC 0202 DD2C 
+(4)    4/ 202DA74 :                     .vert:		binclude "data/mars/maps/pz/0D_hut_l_vert.bin"
+(4)    5/ 202DBDC :                     .face:		binclude "data/mars/maps/pz/0D_hut_l_face.bin"
+(4)    6/ 202DCAC :                     .vrtx:		binclude "data/mars/maps/pz/0D_hut_l_vrtx.bin"
+(4)    7/ 202DD2C :                     .mtrl:		include "data/mars/maps/pz/0D_hut_l_mtrl.asm"
+(5)    1/ 202DD2C :                     
+(4)    8/ 202DD2C :                     		align 4
+(4)    9/ 202DD2C :                     
+(3)   33/ 202DD2C :                     		include "data/mars/maps/pz/0E_hut_r.asm"
+(4)    1/ 202DD2C :                     MarsMapPz_0E_hut_r:
+(4)    2/ 202DD2C : 0014 0B7E           		dc.w 20,2942
+(4)    3/ 202DD30 : 0202 DD40 0202 DEA8 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 DF78 0202 DFF8 
+(4)    4/ 202DD40 :                     .vert:		binclude "data/mars/maps/pz/0E_hut_r_vert.bin"
+(4)    5/ 202DEA8 :                     .face:		binclude "data/mars/maps/pz/0E_hut_r_face.bin"
+(4)    6/ 202DF78 :                     .vrtx:		binclude "data/mars/maps/pz/0E_hut_r_vrtx.bin"
+(4)    7/ 202DFF8 :                     .mtrl:		include "data/mars/maps/pz/0E_hut_r_mtrl.asm"
+(5)    1/ 202DFF8 :                     
+(4)    8/ 202DFF8 :                     		align 4
+(4)    9/ 202DFF8 :                     
+(3)   34/ 202DFF8 :                     		include "data/mars/maps/pz/0F_sept_lrd.asm"
+(4)    1/ 202DFF8 :                     MarsMapPz_0F_sept_lrd:
+(4)    2/ 202DFF8 : 0014 0B9C           		dc.w 20,2972
+(4)    3/ 202DFFC : 0202 E00C 0202 E174 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 E244 0202 E2C4 
+(4)    4/ 202E00C :                     .vert:		binclude "data/mars/maps/pz/0F_sept_lrd_vert.bin"
+(4)    5/ 202E174 :                     .face:		binclude "data/mars/maps/pz/0F_sept_lrd_face.bin"
+(4)    6/ 202E244 :                     .vrtx:		binclude "data/mars/maps/pz/0F_sept_lrd_vrtx.bin"
+(4)    7/ 202E2C4 :                     .mtrl:		include "data/mars/maps/pz/0F_sept_lrd_mtrl.asm"
+(5)    1/ 202E2C4 :                     
+(4)    8/ 202E2C4 :                     		align 4
+(4)    9/ 202E2C4 :                     		align 4
+(3)   35/ 202E2C4 :                     
+(2)   10/ 202E2C4 :                     
+(1)   18/ 202E2C4 :                     		align 4
+(1)   19/ 202E2C4 :                     		include "data/mars/objects/mdl/projname/head.asm"
+(2)    1/ 202E2C4 :                     MarsObj_projname:
+(2)    2/ 202E2C4 : 018F 01BB           		dc.w 399,443
+(2)    3/ 202E2C8 : 0202 E2D8 0202 F79C 		dc.l .vert,.face,.vrtx,.mtrl
+                    0203 072C 0203 0E1C 
+(2)    4/ 202E2D8 :                     .vert:		binclude "data/mars/objects/mdl/projname/vert.bin"
+(2)    5/ 202F79C :                     .face:		binclude "data/mars/objects/mdl/projname/face.bin"
+(2)    6/ 203072C :                     .vrtx:		binclude "data/mars/objects/mdl/projname/vrtx.bin"
+(2)    7/ 2030E1C :                     .mtrl:		include "data/mars/objects/mdl/projname/mtrl.asm"
+(3)    1/ 2030E1C : 0207 0E24           	 dc.l Textr_projname
+(3)    2/ 2030E20 : 0168                	 dc.w 360
+(3)    3/ 2030E22 : 0000                	 dc.w 0
+(3)    4/ 2030E24 :                     
+(2)    8/ 2030E24 :                     		align 4
+(1)   20/ 2030E24 :                     		align 4
+(1)   21/ 2030E24 :                     
+(1)   22/ 2030E24 :                     Textr_marscity:
+(1)   23/ 2030E24 :                     		binclude "data/mars/maps/mtrl/marscity_art.bin"
+(1)   24/ 2070E24 :                     		align 4
+(1)   25/ 2070E24 :                     Textr_projname:
+(1)   26/ 2070E24 :                     		binclude "data/mars/objects/mtrl/projname_art.bin"
+(1)   27/ 2074664 :                     		align 4
+(1)   28/ 2074664 :                     Textr_intro:
+(1)   29/ 2074664 :                     		binclude "data/mars/objects/mtrl/intro_art.bin"
+(1)   30/ 2078930 :                     		align 4
+(1)   31/ 2078930 :                     
+(1)   32/ 2078930 :                     ; MARSANI_INTRO_1:
+(1)   33/ 2078930 :                     ; 		binclude "data/mars/objects/anim/logo_1_anim.bin"
+(1)   34/ 2078930 :                     ; 		align 4
+(1)   35/ 2078930 :                     
+(1)   36/ 2078930 :                     ; PWM_STEREO:	binclude "data/sound/pwm_st.wav",$2C,$200000
+(1)   37/ 2078930 :                     ; PWM_STEREO_e:
+(1)   38/ 2078930 :                     ; 		align 4
+(1)   39/ 2078930 :                     ; PwmInsWav_SPHEAVY1:
+(1)   40/ 2078930 :                     ; 		binclude "data/sound/instr/smpl/SPHEAVY1.wav",$2C
+(1)   41/ 2078930 :                     ; PwmInsWav_SPHEAVY1_e:
+(1)   42/ 2078930 :                     ; 		align 4
+(1)   43/ 2078930 :                     ; PwmInsWav_MCLSTRNG:
+(1)   44/ 2078930 :                     ; 		binclude "data/sound/instr/smpl/MCLSTRNG.wav",$2C
+(1)   45/ 2078930 :                     ; PwmInsWav_MCLSTRNG_e:
+(1)   46/ 2078930 :                     ; 		align 4
+(1)   47/ 2078930 :                     ; PwmInsWav_WHODSNARE:
+(1)   48/ 2078930 :                     ; 		binclude "data/sound/instr/smpl/ST-79_whodini-snare.wav",$2C
+(1)   49/ 2078930 :                     ; PwmInsWav_WHODSNARE_e:
+(1)   50/ 2078930 :                     ; 		align 4
+(1)   51/ 2078930 :                     ; PwmInsWav_TECHNOBASSD:
+(1)   52/ 2078930 :                     ; 		binclude "data/sound/instr/smpl/ST-72_techno-bassd3.wav",$2C
+(1)   53/ 2078930 :                     ; PwmInsWav_TECHNOBASSD_e:
+(1)   54/ 2078930 :                     ; 		align 4
+(1)   55/ 2078930 :                     ; PwmInsWav_Synth:
+(1)   56/ 2078930 :                     ; 		binclude "data/sound/instr/smpl/amiga_synth.wav",$2C
+(1)   57/ 2078930 :                     ; PwmInsWav_Synth_e:
+(1)   58/ 2078930 :                     ; 		align 4
+(1)   59/ 2078930 :                     PwmInsWav_Piano:
+(1)   60/ 2078930 :                     		binclude "data/sound/instr/smpl/piano_1.wav",$2C
+(1)   61/ 207EB26 :                     PwmInsWav_Piano_e:
+(1)   62/ 207EB26 :                     		align 4
+(1)   63/ 207EB28 :                     PwmInsWav_String:
+(1)   64/ 207EB28 :                     		binclude "data/sound/instr/smpl/string_1.wav",$2C
+(1)   65/ 208337E :                     PwmInsWav_String_e:
+(1)   66/ 208337E :                     		align 4
+(1)   67/ 2083380 :                     
+      85/   83380 :                     		dephase
+      86/   83380 :                     
+      87/   83380 :                     ; --------------------------------------------------------
+      88/   83380 :                     ; MD DATA BANK 0
+      89/   83380 :                     ; --------------------------------------------------------
+      90/   83380 :                     
+      91/  983380 :                     		phase $900000+*				; Only one currently
+      92/  983380 :                     		include "data/md_bank0.asm"
+(1)    1/  983380 :                     ; ====================================================================
+(1)    2/  983380 :                     ; ----------------------------------------------------------------
+(1)    3/  983380 :                     ; Single 68k DATA BANK for MD ($900000-$9FFFFF)
+(1)    4/  983380 :                     ; for stuff other than MD's DMA data
+(1)    5/  983380 :                     ; 
+(1)    6/  983380 :                     ; Maximum size: $0FFFFF bytes per bank
+(1)    7/  983380 :                     ; ----------------------------------------------------------------
+(1)    8/  983380 :                     
+(1)    9/  983380 :                     		align $8000
 (1)   10/  988000 :                     		include "data/sound/tracks.asm"
 (2)    1/  988000 :                     ; ================================================================
 (2)    2/  988000 :                     ; ------------------------------------------------------------
@@ -12424,7 +12424,7 @@
      133/  100000 :                     ; 		rompad (ROM_END&$FF0000)+$40000
      134/  100000 :                     		align $8000
      135/  100000 :                     
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 2 - 6/17/2021 18:21:34
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 2 - 6/22/2021 3:42:48
 
 
   symbol table (* = unused):
@@ -12498,7 +12498,7 @@
  DAC_PLAY :                     E54 C |  DAC_REFILL :                   EAE C |
  DAC_REFILL.FDF4DONE :          EFE C |  DAC_REFILL.FDF7 :              F70 C |
  DAC_REFILL.FDF72 :             F29 C |  DAC_REFILL.FDFRETURN :         F73 C |
-*DAC_REFILL.KEEPCNTR :          ED7 C | *DATE :                   6/17/2021 - |
+*DAC_REFILL.KEEPCNTR :          ED7 C | *DATE :                   6/22/2021 - |
  DDACCNTR :                      25 C |  DDACFIFOMID :                   28 C |
  DDACPNTR :                      22 C | *DISPENBL :                      40 - |
  DKY :                            C - | *DMAENBL :                       10 - |
@@ -12761,30 +12761,30 @@
  MARSMAPPZ_09_KFCS :        202BD68 C |  MARSMAPPZ_09_KFCS.FACE :   202BF08 C |
  MARSMAPPZ_09_KFCS.MTRL :   202C098 C |  MARSMAPPZ_09_KFCS.VERT :   202BD7C C |
  MARSMAPPZ_09_KFCS.VRTX :   202BFF8 C |  MARSMAPPZ_0A_CARLS_N :     202C098 C |
- MARSMAPPZ_0A_CARLS_N.FACE :                                        202C91C C |
- MARSMAPPZ_0A_CARLS_N.MTRL :                                        202D35C C |
+ MARSMAPPZ_0A_CARLS_N.FACE :                                        202C9A0 C |
+ MARSMAPPZ_0A_CARLS_N.MTRL :                                        202D4C0 C |
  MARSMAPPZ_0A_CARLS_N.VERT :                                        202C0AC C |
- MARSMAPPZ_0A_CARLS_N.VRTX :                                        202CEEC C |
- MARSMAPPZ_0B_CARLS_S :     202D364 C |
- MARSMAPPZ_0B_CARLS_S.FACE :                                        202D51C C |
- MARSMAPPZ_0B_CARLS_S.MTRL :                                        202D6AC C |
- MARSMAPPZ_0B_CARLS_S.VERT :                                        202D378 C |
- MARSMAPPZ_0B_CARLS_S.VRTX :                                        202D60C C |
- MARSMAPPZ_0C_CARLS_P :     202D6AC C |
- MARSMAPPZ_0C_CARLS_P.FACE :                                        202D7EC C |
- MARSMAPPZ_0C_CARLS_P.MTRL :                                        202D8FC C |
- MARSMAPPZ_0C_CARLS_P.VERT :                                        202D6C0 C |
- MARSMAPPZ_0C_CARLS_P.VRTX :                                        202D88C C |
- MARSMAPPZ_0D_HUT_L :       202D8FC C |  MARSMAPPZ_0D_HUT_L.FACE :  202DA78 C |
- MARSMAPPZ_0D_HUT_L.MTRL :  202DBC8 C |  MARSMAPPZ_0D_HUT_L.VERT :  202D910 C |
- MARSMAPPZ_0D_HUT_L.VRTX :  202DB48 C |  MARSMAPPZ_0E_HUT_R :       202DBC8 C |
- MARSMAPPZ_0E_HUT_R.FACE :  202DD44 C |  MARSMAPPZ_0E_HUT_R.MTRL :  202DE94 C |
- MARSMAPPZ_0E_HUT_R.VERT :  202DBDC C |  MARSMAPPZ_0E_HUT_R.VRTX :  202DE14 C |
- MARSMAPPZ_0F_SEPT_LRD :    202DE94 C |
- MARSMAPPZ_0F_SEPT_LRD.FACE :                                       202E010 C |
- MARSMAPPZ_0F_SEPT_LRD.MTRL :                                       202E160 C |
- MARSMAPPZ_0F_SEPT_LRD.VERT :                                       202DEA8 C |
- MARSMAPPZ_0F_SEPT_LRD.VRTX :                                       202E0E0 C |
+ MARSMAPPZ_0A_CARLS_N.VRTX :                                        202CFF0 C |
+ MARSMAPPZ_0B_CARLS_S :     202D4C8 C |
+ MARSMAPPZ_0B_CARLS_S.FACE :                                        202D680 C |
+ MARSMAPPZ_0B_CARLS_S.MTRL :                                        202D810 C |
+ MARSMAPPZ_0B_CARLS_S.VERT :                                        202D4DC C |
+ MARSMAPPZ_0B_CARLS_S.VRTX :                                        202D770 C |
+ MARSMAPPZ_0C_CARLS_P :     202D810 C |
+ MARSMAPPZ_0C_CARLS_P.FACE :                                        202D950 C |
+ MARSMAPPZ_0C_CARLS_P.MTRL :                                        202DA60 C |
+ MARSMAPPZ_0C_CARLS_P.VERT :                                        202D824 C |
+ MARSMAPPZ_0C_CARLS_P.VRTX :                                        202D9F0 C |
+ MARSMAPPZ_0D_HUT_L :       202DA60 C |  MARSMAPPZ_0D_HUT_L.FACE :  202DBDC C |
+ MARSMAPPZ_0D_HUT_L.MTRL :  202DD2C C |  MARSMAPPZ_0D_HUT_L.VERT :  202DA74 C |
+ MARSMAPPZ_0D_HUT_L.VRTX :  202DCAC C |  MARSMAPPZ_0E_HUT_R :       202DD2C C |
+ MARSMAPPZ_0E_HUT_R.FACE :  202DEA8 C |  MARSMAPPZ_0E_HUT_R.MTRL :  202DFF8 C |
+ MARSMAPPZ_0E_HUT_R.VERT :  202DD40 C |  MARSMAPPZ_0E_HUT_R.VRTX :  202DF78 C |
+ MARSMAPPZ_0F_SEPT_LRD :    202DFF8 C |
+ MARSMAPPZ_0F_SEPT_LRD.FACE :                                       202E174 C |
+ MARSMAPPZ_0F_SEPT_LRD.MTRL :                                       202E2C4 C |
+ MARSMAPPZ_0F_SEPT_LRD.VERT :                                       202E00C C |
+ MARSMAPPZ_0F_SEPT_LRD.VRTX :                                       202E244 C |
  MARSMDL_INIT :             6000AB0 C |  MARSMDL_INIT.CLNUP :       6000AB6 C |
  MARSMDL_READMODEL :        6000AD4 C |
  MARSMDL_READMODEL.ALLDONE :                                        6000C7C C |
@@ -12813,9 +12813,9 @@
  MARSOBJ_INTRO_1.VRTX :     6005500 C |  MARSOBJ_INTRO_2 :          6005810 C |
  MARSOBJ_INTRO_2.FACE :     6006238 C |  MARSOBJ_INTRO_2.MTRL :     6006BE8 C |
  MARSOBJ_INTRO_2.VERT :     6005824 C |  MARSOBJ_INTRO_2.VRTX :     6006888 C |
- MARSOBJ_PROJNAME :         202E160 C |  MARSOBJ_PROJNAME.FACE :    202F638 C |
- MARSOBJ_PROJNAME.MTRL :    2030CB8 C |  MARSOBJ_PROJNAME.VERT :    202E174 C |
- MARSOBJ_PROJNAME.VRTX :    20305C8 C |  MARSRAM_SOUND :            6034EC0 C |
+ MARSOBJ_PROJNAME :         202E2C4 C |  MARSOBJ_PROJNAME.FACE :    202F79C C |
+ MARSOBJ_PROJNAME.MTRL :    2030E1C C |  MARSOBJ_PROJNAME.VERT :    202E2D8 C |
+ MARSOBJ_PROJNAME.VRTX :    203072C C |  MARSRAM_SOUND :            6034EC0 C |
  MARSRAM_SYSTEM :           6006BF4 C |  MARSRAM_VIDEO :            6006C4C C |
 *MARSSND_PWMPLYDATA :       6034EC0 C | *MARSVIDEO_CLEARFRAME :     6000694 C |
  MARSVIDEO_CLEARFRAME.LOOP :                                        60006A8 C |
@@ -12992,9 +12992,9 @@
  PUT_PIECE.DONTRESET_PZ :                                  FFFFFFFFC000066A C |
  PUT_PIECE.LEFTH : FFFFFFFFC00005D2 C |
  PUT_PIECE.TOP_NEG :                                       FFFFFFFFC0000654 C |
-*PWMCTL :                        31 - | *PWMINSWAV_PIANO :          20787CC C |
-*PWMINSWAV_PIANO_E :        207E9C2 C | *PWMINSWAV_STRING :         207E9C4 C |
-*PWMINSWAV_STRING_E :       208321A C |  PWMINTCLR :                     1C - |
+*PWMCTL :                        31 - | *PWMINSWAV_PIANO :          2078930 C |
+*PWMINSWAV_PIANO_E :        207EB26 C | *PWMINSWAV_STRING :         207EB28 C |
+*PWMINSWAV_STRING_E :       208337E C |  PWMINTCLR :                     1C - |
 *PWMIRQ_ON :                      1 - |  PWMVTBL :                     11FF C |
  RAM_BGCAMCURR :   FFFFFFFFFFFF8C2C C |  RAM_BGCAMERA :    FFFFFFFFFFFF8C2A C |
  RAM_CAMDATA :     FFFFFFFFFFFF8C18 C |  RAM_CAMFRAME :    FFFFFFFFFFFF8C1C C |
@@ -13114,10 +13114,10 @@
  S_IRQ_VRES.SH_WAIT :       60005EC C |  S_IRQ_VRES.VRESLOOP :      600061A C |
  TAG_WIDTH :       FFFFFFFFC0000260 C |  TAG_YHGHT :       FFFFFFFFC0000264 C |
  TEST_LAYOUT :              201BFC0 C |  TEST_LAYOUT.BLOCKS :       201C7C4 C |
-*TEXTR_INTRO :              2074500 C |  TEXTR_MARSCITY :           2030CC0 C |
- TEXTR_PROJNAME :           2070CC0 C |  TH :                      20000000 - |
+*TEXTR_INTRO :              2074664 C |  TEXTR_MARSCITY :           2030E24 C |
+ TEXTR_PROJNAME :           2070E24 C |  TH :                      20000000 - |
  TICKCNT :                       1C C |  TICKFLAG :                      1A C |
-*TIME :                    18:21:34 - | *TIMERCTL :                      30 - |
+*TIME :                     3:42:47 - | *TIMERCTL :                      30 - |
 *TMR :                           2C - |  TRANSFERROM :                  BFB C |
  TRANSFERROM.DOUBLE :           C1C C |  TRANSFERROM.TRANSFER :         C45 C |
  TRANSFERROM.X68KLAST :         C88 C |  TRANSFERROM.X68KLOOP :         C74 C |
@@ -13219,7 +13219,7 @@
    1397 symbols
     229 unused symbols
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 3 - 6/17/2021 18:21:34
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 3 - 6/22/2021 3:42:48
 
 
   defined macros:
@@ -13233,7 +13233,7 @@ STRUCT                                | ZSMPL
 
      10 macros
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 4 - 6/17/2021 18:21:34
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 4 - 6/22/2021 3:42:48
 
 
   defined functions:
@@ -13242,7 +13242,7 @@ STRUCT                                | ZSMPL
 NOTZ80                                | LOCATE                               
 MAPSIZE                               |
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 5 - 6/17/2021 18:21:34
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 5 - 6/22/2021 3:42:48
 
 
   codepages:
@@ -13251,7 +13251,7 @@ MAPSIZE                               |
 STANDARD (0 changed characters)
 
 
-0.26 seconds assembly time
+0.23 seconds assembly time
 
   11885 lines source file
   12344 lines incl. macro expansions

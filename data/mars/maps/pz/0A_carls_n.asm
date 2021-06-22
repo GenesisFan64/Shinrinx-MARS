@@ -1,5 +1,5 @@
 MarsMapPz_0A_carls_n:
-		dc.w 134,2811
+		dc.w 143,2822
 		dc.l .vert,.face,.vrtx,.mtrl
 .vert:		binclude "data/mars/maps/pz/0A_carls_n_vert.bin"
 .face:		binclude "data/mars/maps/pz/0A_carls_n_face.bin"

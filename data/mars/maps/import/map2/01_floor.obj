@@ -1,4 +1,4 @@
-# Blender v2.92.0 OBJ File: 'marscity.blend'
+# Blender v2.93.0 OBJ File: 'marscity.blend'
 # www.blender.org
 mtllib 01_floor.mtl
 o 01_floor_Plane.009
@@ -53,7 +53,7 @@ vt 1.000000 1.000000
 vt 0.000000 0.250000
 vt 0.000000 0.000000
 vn 0.0000 1.0000 0.0000
-usemtl MARSINDX_1
+usemtl MARSINDX_17
 s off
 f 25/1/1 17/2/1 6/3/1 11/4/1
 f 24/5/1 13/6/1 2/7/1 18/8/1

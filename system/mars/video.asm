@@ -499,7 +499,7 @@ MarsLay_Draw:
 .center_val:	dc.l ($E*LAY_WIDTH)+($C*2)
 
 .list:
-		dc.l .front_fr
+		dc.l .front
 		dc.l .front_fr
 		dc.l .front_fr
 		dc.l .front_fr
