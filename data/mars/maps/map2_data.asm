@@ -14,9 +14,11 @@
 		dc.l MarsMapPz_0A_carls_n
 		dc.l MarsMapPz_0B_carls_s
 		dc.l MarsMapPz_0C_carls_p
-		dc.l MarsMapPz_0D_hut_l
-		dc.l MarsMapPz_0E_hut_r
-		dc.l MarsMapPz_0F_sept_lrd
+		dc.l MarsMapPz_0D_midcarls
+		dc.l MarsMapPz_0E_hut_l
+		dc.l MarsMapPz_0F_hut_r
+		dc.l MarsMapPz_10_sep_l
+		dc.l MarsMapPz_11_sep_r
 		include "data/mars/maps/pz/01_floor.asm"
 		include "data/mars/maps/pz/02_main.asm"
 		include "data/mars/maps/pz/03_prekfc.asm"
@@ -29,6 +31,8 @@
 		include "data/mars/maps/pz/0A_carls_n.asm"
 		include "data/mars/maps/pz/0B_carls_s.asm"
 		include "data/mars/maps/pz/0C_carls_p.asm"
-		include "data/mars/maps/pz/0D_hut_l.asm"
-		include "data/mars/maps/pz/0E_hut_r.asm"
-		include "data/mars/maps/pz/0F_sept_lrd.asm"
+		include "data/mars/maps/pz/0D_midcarls.asm"
+		include "data/mars/maps/pz/0E_hut_l.asm"
+		include "data/mars/maps/pz/0F_hut_r.asm"
+		include "data/mars/maps/pz/10_sep_l.asm"
+		include "data/mars/maps/pz/11_sep_r.asm"

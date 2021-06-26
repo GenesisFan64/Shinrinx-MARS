@@ -1,4 +1,4 @@
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 1 - 6/22/2021 3:42:48
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 1 - 6/25/2021 21:27:38
 
 
        1/       0 :                     ; ===========================================================================
@@ -674,9 +674,9 @@
 (1)  164/     3C0 : 4D41 5253 2043 4845 		dc.b "MARS CHECK MODE "			; Module name
                     434B 204D 4F44 4520 
 (1)  165/     3D0 : 0000 0000           		dc.l 0					; Version (always 0)
-(1)  166/     3D4 : 0000 472C           		dc.l MARS_RAMDATA			; Set to 0 if SH2 code points to ROM
+(1)  166/     3D4 : 0000 4730           		dc.l MARS_RAMDATA			; Set to 0 if SH2 code points to ROM
 (1)  167/     3D8 : 0000 0000           		dc.l 0					; Zero.
-(1)  168/     3DC : 0000 6BF4           		dc.l MARS_RAMDATA_e-MARS_RAMDATA	; Set to 4 if SH2 code points to ROM
+(1)  168/     3DC : 0000 6BF0           		dc.l MARS_RAMDATA_e-MARS_RAMDATA	; Set to 4 if SH2 code points to ROM
 (1)  169/     3E0 : 0600 0F54           		dc.l SH2_M_Entry			; Master SH2 PC (SH2 map area)
 (1)  170/     3E4 : 0600 1100           		dc.l SH2_S_Entry			; Slave SH2 PC (SH2 map area)
 (1)  171/     3E8 : 0600 0000           		dc.l SH2_Master				; Master SH2 default vector table (vbr)
@@ -789,7 +789,7 @@
 (1)  274/     8F6 : 4CF9 7FFF 00FF 0000 		movem.l	($FF0000),d0-a6			; Clear registers (using zeros from RAM)
 (1)  275/     8FE : 41FA 0032           		lea	Engine_Code(pc),a0		; Now copy ALL our 68k code to RAM, to prevent
 (1)  276/     902 : 43F9 00FF 0000      		lea	($FF0000),a1			; BUS-fighthing the ROM area (speed-up purposes)
-(1)  277/     908 : 303C 3DF9           		move.w	#((Engine_Code_end-Engine_Code))-1,d0
+(1)  277/     908 : 303C 3DFD           		move.w	#((Engine_Code_end-Engine_Code))-1,d0
 (1)  278/     90C :                     .copyme:
 (1)  279/     90C : 12D8                		move.b	(a0)+,(a1)+
 (1)  280/     90E : 51C8 FFFC           		dbf	d0,.copyme
@@ -6066,521 +6066,523 @@
 (1)   64/  FF38D0 : 08F9 0006 FFFF 91C7 		bset	#bitDispEnbl,(RAM_VdpRegs+1).l		; Enable display
 (1)   65/  FF38D8 : 6100 E6B8           		bsr	Video_Update
 (1)   66/  FF38DC :                     
-(1)   67/  FF38DC : 31FC 0001 8C28      		move.w	#1,(RAM_MdlCurrMd).w
-(1)   68/  FF38E2 :                     		
-(1)   69/  FF38E2 :                     ; ====================================================================
-(1)   70/  FF38E2 :                     ; ------------------------------------------------------
-(1)   71/  FF38E2 :                     ; Loop
-(1)   72/  FF38E2 :                     ; ------------------------------------------------------
-(1)   73/  FF38E2 :                     
-(1)   74/  FF38E2 :                     .loop:
-(1)   75/  FF38E2 : 6100 FE0A           		bsr	System_VSync
-(1)   76/  FF38E6 : 23FC 7C00 0003 00C0 		move.l	#$7C000003,(vdp_ctrl).l
+(1)   67/  FF38DC :                     ; 		move.w	#2,(RAM_MdlCurrMd).w
+(1)   68/  FF38DC :                     		
+(1)   69/  FF38DC :                     ; ====================================================================
+(1)   70/  FF38DC :                     ; ------------------------------------------------------
+(1)   71/  FF38DC :                     ; Loop
+(1)   72/  FF38DC :                     ; ------------------------------------------------------
+(1)   73/  FF38DC :                     
+(1)   74/  FF38DC :                     .loop:
+(1)   75/  FF38DC : 6100 FE10           		bsr	System_VSync
+(1)   76/  FF38E0 : 23FC 7C00 0003 00C0 		move.l	#$7C000003,(vdp_ctrl).l
                     0004                
-(1)   77/  FF38F0 : 3039 FFFF 8C2C      		move.w	(RAM_BgCamCurr).l,d0
-(1)   78/  FF38F6 : E648                		lsr.w	#3,d0
-(1)   79/  FF38F8 : 33FC 0000 00C0 0000 		move.w	#0,(vdp_data).l
-(1)   80/  FF3900 : 33C0 00C0 0000      		move.w	d0,(vdp_data).l
-(1)   81/  FF3906 :                     ; 		lea	str_Status(pc),a0
-(1)   82/  FF3906 :                     ; 		move.l	#locate(0,1,1),d0
-(1)   83/  FF3906 :                     ; 		bsr	Video_Print
-(1)   84/  FF3906 : 3038 8C28           		move.w	(RAM_MdlCurrMd).w,d0
-(1)   85/  FF390A : C07C 001F           		and.w	#%11111,d0
-(1)   86/  FF390E : D040                		add.w	d0,d0
-(1)   87/  FF3910 : D040                		add.w	d0,d0
-(1)   88/  FF3912 : 4EBB 0004           		jsr	.list(pc,d0.w)
-(1)   89/  FF3916 : 60CA                		bra	.loop
-(1)   90/  FF3918 :                     
-(1)   91/  FF3918 :                     ; ====================================================================
-(1)   92/  FF3918 :                     ; ------------------------------------------------------
-(1)   93/  FF3918 :                     ; Mode sections
-(1)   94/  FF3918 :                     ; ------------------------------------------------------
-(1)   95/  FF3918 :                     
-(1)   96/  FF3918 :                     .list:
-(1)   97/  FF3918 : 6000 000A           		bra.w	.mode0
-(1)   98/  FF391C : 6000 00E2           		bra.w	.mode1
-(1)   99/  FF3920 : 6000 01AE           		bra.w	.mode2
-(1)  100/  FF3924 :                     		
-(1)  101/  FF3924 :                     ; --------------------------------------------------
-(1)  102/  FF3924 :                     ; Mode 0
-(1)  103/  FF3924 :                     ; --------------------------------------------------
-(1)  104/  FF3924 :                     
-(1)  105/  FF3924 :                     .mode0:
-(1)  106/  FF3924 : 4A78 8C28           		tst.w	(RAM_MdlCurrMd).w
-(1)  107/  FF3928 : 6B00 00D0           		bmi	.mode0_loop
-(1)  108/  FF392C : 0078 8000 8C28      		or.w	#$8000,(RAM_MdlCurrMd).w
-(1)  109/  FF3932 : 203C 0600 12B4      		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
-(1)  110/  FF3938 : 7200                		moveq	#0,d1
-(1)  111/  FF393A : 6100 FDF6           		bsr	System_MdMars_MstTask		; Wait until it finishes.
-(1)  112/  FF393E : 08B9 0006 FFFF 91C7 		bclr	#bitDispEnbl,(RAM_VdpRegs+1).l	; Disable MD display
-(1)  113/  FF3946 : 6100 E64A           		bsr	Video_Update
-(1)  114/  FF394A :                     
-(1)  115/  FF394A : 203C 0098 82A4      		move.l	#CAMERA_INTRO,d0
-(1)  116/  FF3950 : 7201                		moveq	#1,d1
-(1)  117/  FF3952 : 6100 023E           		bsr	MdMdl_SetNewCamera
-(1)  118/  FF3956 : 203C 0600 133C      		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
-(1)  119/  FF395C : 6100 FDEE           		bsr	System_MdMars_SlvTask
-(1)  120/  FF3960 :                     
-(1)  121/  FF3960 :                     	; Load objects
-(1)  122/  FF3960 : 223C 0000 0000      		move.l	#0,d1
-(1)  123/  FF3966 : 203C 0600 134C      		move.l	#CmdTaskMd_MakeMap,d0
-(1)  124/  FF396C : 6100 FDDE           		bsr	System_MdMars_SlvTask		; Load map
-(1)  125/  FF3970 : 7A00                		moveq	#0,d5				; No ex-settings
-(1)  126/  FF3972 : 7200                		moveq	#0,d1				; Slot 0
-(1)  127/  FF3974 : 243C 0600 45EC      		move.l	#MARSOBJ_INTRO_1,d2
-(1)  128/  FF397A : 263C 0000 0000      		move.l	#0,d3
-(1)  129/  FF3980 : 7801                		moveq	#1,d4
-(1)  130/  FF3982 : 203C 0600 12D8      		move.l	#CmdTaskMd_ObjectSet,d0
-(1)  131/  FF3988 : 6100 FD9C           		bsr	System_MdMars_SlvAddTask
-(1)  132/  FF398C : 7201                		moveq	#1,d1				; Slot 1
-(1)  133/  FF398E : 243C 0600 5810      		move.l	#MARSOBJ_INTRO_2,d2
-(1)  134/  FF3994 : 263C 0000 0000      		move.l	#0,d3
-(1)  135/  FF399A : 203C 0600 12D8      		move.l	#CmdTaskMd_ObjectSet,d0
-(1)  136/  FF39A0 : 6100 FD84           		bsr	System_MdMars_SlvAddTask	; Load object
-(1)  137/  FF39A4 : 7201                		moveq	#1,d1
-(1)  138/  FF39A6 : 7400                		moveq	#0,d2
-(1)  139/  FF39A8 : 2602                		move.l	d2,d3
-(1)  140/  FF39AA : 283C FFE0 0000      		move.l	#-$200000,d4
-(1)  141/  FF39B0 : 2A02                		move.l	d2,d5
-(1)  142/  FF39B2 : 2C02                		move.l	d2,d6
-(1)  143/  FF39B4 : 2E02                		move.l	d2,d7
-(1)  144/  FF39B6 : 203C 0600 1310      		move.l	#CmdTaskMd_ObjectPos,d0
-(1)  145/  FF39BC : 6100 FD68           		bsr	System_MdMars_SlvAddTask	; Reposition 20XX
-(1)  146/  FF39C0 : 6100 FDBC           		bsr	System_MdMars_SlvSendAll
-(1)  147/  FF39C4 :                     
-(1)  148/  FF39C4 : 223C 0600 43B0      		move.l	#Palette_Intro,d1		; Load palette
-(1)  149/  FF39CA : 7400                		moveq	#0,d2
-(1)  150/  FF39CC : 263C 0000 0010      		move.l	#16,d3
-(1)  151/  FF39D2 : 283C 0000 8000      		move.l	#$8000,d4
-(1)  152/  FF39D8 : 203C 0600 12C4      		move.l	#CmdTaskMd_LoadSPal,d0
-(1)  153/  FF39DE : 6100 FD52           		bsr	System_MdMars_MstTask
-(1)  154/  FF39E2 : 203C 0600 12B4      		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
-(1)  155/  FF39E8 : 7201                		moveq	#1,d1
-(1)  156/  FF39EA : 6100 FD46           		bsr	System_MdMars_MstTask
-(1)  157/  FF39EE : 08F9 0006 FFFF 91C7 		bset	#bitDispEnbl,(RAM_VdpRegs+1).l	; Enable MD display
-(1)  158/  FF39F6 : 6100 E59A           		bsr	Video_Update
-(1)  159/  FF39FA :                     
-(1)  160/  FF39FA :                     ; Mode 0 mainloop
-(1)  161/  FF39FA :                     .mode0_loop:
-(1)  162/  FF39FA : 7E01                		moveq	#1,d7
-(1)  163/  FF39FC : 6000 01D4           		bra	MdMdl_RunAnimation
-(1)  164/  FF3A00 :                     
-(1)  165/  FF3A00 :                     ; --------------------------------------------------
-(1)  166/  FF3A00 :                     ; Mode 1
-(1)  167/  FF3A00 :                     ; --------------------------------------------------
-(1)  168/  FF3A00 :                     
-(1)  169/  FF3A00 :                     .mode1:
-(1)  170/  FF3A00 : 4A78 8C28           		tst.w	(RAM_MdlCurrMd).w
-(1)  171/  FF3A04 : 6B00 00C4           		bmi	.mode1_loop
-(1)  172/  FF3A08 : 0078 8000 8C28      		or.w	#$8000,(RAM_MdlCurrMd).w
-(1)  173/  FF3A0E :                     
-(1)  174/  FF3A0E : 203C 0600 12B4      		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
-(1)  175/  FF3A14 : 7200                		moveq	#0,d1
-(1)  176/  FF3A16 : 6100 FD1A           		bsr	System_MdMars_MstTask		; Wait until it finishes.
-(1)  177/  FF3A1A : 08B9 0006 FFFF 91C7 		bclr	#bitDispEnbl,(RAM_VdpRegs+1).l	; Disable MD display
-(1)  178/  FF3A22 : 6100 E56E           		bsr	Video_Update
-(1)  179/  FF3A26 :                     
-(1)  180/  FF3A26 : 203C 0098 A558      		move.l	#CAMERA_INTNAME,d0
-(1)  181/  FF3A2C : 7201                		moveq	#1,d1
-(1)  182/  FF3A2E : 6100 0162           		bsr	MdMdl_SetNewCamera
-(1)  183/  FF3A32 : 41FA 03BC           		lea	MdPal_BgTitle(pc),a0
-(1)  184/  FF3A36 : 303C 0000           		move.w	#0,d0
-(1)  185/  FF3A3A : 323C 000F           		move.w	#16-1,d1
-(1)  186/  FF3A3E : 6100 E572           		bsr	Video_LoadPal
-(1)  187/  FF3A42 : 41F9 0099 0D80      		lea	(MdMap_BgTitle),a0
-(1)  188/  FF3A48 : 203C 0001 0000      		move.l	#locate(1,0,0),d0
-(1)  189/  FF3A4E : 223C 003F 001B      		move.l	#mapsize(512,224),d1
-(1)  190/  FF3A54 : 343C 0001           		move.w	#1,d2
-(1)  191/  FF3A58 : 6100 E582           		bsr	Video_LoadMap
-(1)  192/  FF3A5C : 203C 0001 BE20      		move.l	#MdGfx_BgTitle,d0
-(1)  193/  FF3A62 : 323C 01A0           		move.w	#(MdGfx_BgTitle_e-MdGfx_BgTitle),d1
-(1)  194/  FF3A66 : 343C 0001           		move.w	#1,d2
-(1)  195/  FF3A6A : 6100 E96C           		bsr	Video_LoadArt
-(1)  196/  FF3A6E :                     
-(1)  197/  FF3A6E :                     	; Load object
-(1)  198/  FF3A6E : 203C 0600 133C      		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
-(1)  199/  FF3A74 : 6100 FCD6           		bsr	System_MdMars_SlvTask
-(1)  200/  FF3A78 : 7A00                		moveq	#0,d5				; No ex-settings
-(1)  201/  FF3A7A : 7200                		moveq	#0,d1				; Slot 0
-(1)  202/  FF3A7C : 243C 0202 E2C4      		move.l	#MarsObj_projname,d2
-(1)  203/  FF3A82 : 263C 0000 0000      		move.l	#0,d3
-(1)  204/  FF3A88 : 7801                		moveq	#1,d4
-(1)  205/  FF3A8A : 203C 0600 12D8      		move.l	#CmdTaskMd_ObjectSet,d0
-(1)  206/  FF3A90 : 6100 FCBA           		bsr	System_MdMars_SlvTask
-(1)  207/  FF3A94 :                     
-(1)  208/  FF3A94 : 223C 0600 45D0      		move.l	#Palette_projname,d1
-(1)  209/  FF3A9A : 7400                		moveq	#0,d2
-(1)  210/  FF3A9C : 263C 0000 000E      		move.l	#14,d3
-(1)  211/  FF3AA2 : 283C 0000 8000      		move.l	#$8000,d4
-(1)  212/  FF3AA8 : 203C 0600 12C4      		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
-(1)  213/  FF3AAE : 6100 FC82           		bsr	System_MdMars_MstTask
-(1)  214/  FF3AB2 : 203C 0600 12B4      		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
-(1)  215/  FF3AB8 : 7201                		moveq	#1,d1
-(1)  216/  FF3ABA : 6100 FC76           		bsr	System_MdMars_MstTask
-(1)  217/  FF3ABE : 08F9 0006 FFFF 91C7 		bset	#bitDispEnbl,(RAM_VdpRegs+1).l	; Enable MD display
-(1)  218/  FF3AC6 : 6100 E4CA           		bsr	Video_Update
-(1)  219/  FF3ACA :                     
-(1)  220/  FF3ACA :                     ; Mode 1 mainloop
-(1)  221/  FF3ACA :                     .mode1_loop:
-(1)  222/  FF3ACA : 7E02                		moveq	#2,d7
-(1)  223/  FF3ACC : 6000 0104           		bra	MdMdl_RunAnimation
-(1)  224/  FF3AD0 :                     
-(1)  225/  FF3AD0 :                     ; --------------------------------------------------
-(1)  226/  FF3AD0 :                     ; Mode 2
-(1)  227/  FF3AD0 :                     ; --------------------------------------------------
-(1)  228/  FF3AD0 :                     
-(1)  229/  FF3AD0 :                     .mode2:
-(1)  230/  FF3AD0 : 4A78 8C28           		tst.w	(RAM_MdlCurrMd).w
-(1)  231/  FF3AD4 : 6B00 00B8           		bmi	.mode2_loop
-(1)  232/  FF3AD8 : 0078 8000 8C28      		or.w	#$8000,(RAM_MdlCurrMd).w
-(1)  233/  FF3ADE :                     
-(1)  234/  FF3ADE : 203C 0600 12B4      		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
-(1)  235/  FF3AE4 : 7200                		moveq	#0,d1
-(1)  236/  FF3AE6 : 6100 FC4A           		bsr	System_MdMars_MstTask		; Wait until it finishes.
-(1)  237/  FF3AEA : 08B9 0006 FFFF 91C7 		bclr	#bitDispEnbl,(RAM_VdpRegs+1).l	; Disable MD display
-(1)  238/  FF3AF2 : 6100 E49E           		bsr	Video_Update
-(1)  239/  FF3AF6 :                     
-(1)  240/  FF3AF6 : 203C 0098 BBDC      		move.l	#CAMERA_CITY,d0
-(1)  241/  FF3AFC : 7202                		moveq	#2,d1
-(1)  242/  FF3AFE : 6100 0092           		bsr	MdMdl_SetNewCamera
-(1)  243/  FF3B02 : 41FA 02D6           		lea	MdPal_Bg(pc),a0
-(1)  244/  FF3B06 : 303C 0000           		move.w	#0,d0
-(1)  245/  FF3B0A : 323C 000F           		move.w	#16-1,d1
-(1)  246/  FF3B0E : 6100 E4A2           		bsr	Video_LoadPal
-(1)  247/  FF3B12 : 41F9 0098 FD80      		lea	(MdMap_Bg),a0
-(1)  248/  FF3B18 : 203C 0001 0000      		move.l	#locate(1,0,0),d0
-(1)  249/  FF3B1E : 223C 003F 001F      		move.l	#mapsize(512,256),d1
-(1)  250/  FF3B24 : 343C 0001           		move.w	#1,d2
-(1)  251/  FF3B28 : 6100 E4B2           		bsr	Video_LoadMap
-(1)  252/  FF3B2C : 203C 0001 0000      		move.l	#MdGfx_Bg,d0
-(1)  253/  FF3B32 : 323C BE20           		move.w	#(MdGfx_Bg_e-MdGfx_Bg),d1
-(1)  254/  FF3B36 : 343C 0001           		move.w	#1,d2
-(1)  255/  FF3B3A : 6100 E89C           		bsr	Video_LoadArt
-(1)  256/  FF3B3E :                     
-(1)  257/  FF3B3E : 203C 0600 133C      		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
-(1)  258/  FF3B44 : 6100 FC06           		bsr	System_MdMars_SlvTask
-(1)  259/  FF3B48 : 223C 0201 BFC0      		move.l	#TEST_LAYOUT,d1
-(1)  260/  FF3B4E : 203C 0600 134C      		move.l	#CmdTaskMd_MakeMap,d0
-(1)  261/  FF3B54 : 6100 FBF6           		bsr	System_MdMars_SlvTask		; Load map
-(1)  262/  FF3B58 :                     
-(1)  263/  FF3B58 :                     	; Process one frame.
-(1)  264/  FF3B58 : 223C 0600 43D0      		move.l	#Palette_Map,d1
-(1)  265/  FF3B5E : 7400                		moveq	#0,d2
-(1)  266/  FF3B60 : 263C 0000 0100      		move.l	#256,d3
-(1)  267/  FF3B66 : 283C 0000 8000      		move.l	#$8000,d4
-(1)  268/  FF3B6C : 203C 0600 12C4      		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
-(1)  269/  FF3B72 : 6100 FBBE           		bsr	System_MdMars_MstTask
-(1)  270/  FF3B76 : 203C 0600 12B4      		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
-(1)  271/  FF3B7C : 7201                		moveq	#1,d1
-(1)  272/  FF3B7E : 6100 FBB2           		bsr	System_MdMars_MstTask		; Send requests to
-(1)  273/  FF3B82 : 08F9 0006 FFFF 91C7 		bset	#bitDispEnbl,(RAM_VdpRegs+1).l	; Enable MD display
-(1)  274/  FF3B8A : 6100 E406           		bsr	Video_Update
-(1)  275/  FF3B8E :                     
-(1)  276/  FF3B8E :                     .mode2_loop:
-(1)  277/  FF3B8E : 7E00                		moveq	#0,d7
-(1)  278/  FF3B90 : 6040                		bra	MdMdl_RunAnimation
-(1)  279/  FF3B92 :                     ; 		bra	MdMdl1_Usercontrol
-(1)  280/  FF3B92 :                     
-(1)  281/  FF3B92 :                     ; ====================================================================
-(1)  282/  FF3B92 :                     ; ------------------------------------------------------
-(1)  283/  FF3B92 :                     ; Subroutines
-(1)  284/  FF3B92 :                     ; ------------------------------------------------------
-(1)  285/  FF3B92 :                     
-(1)  286/  FF3B92 :                     MdMdl_SetNewCamera:
-(1)  287/  FF3B92 : 42B9 FFFF 8C00      		clr.l	(RAM_Cam_Xpos).l
-(1)  288/  FF3B98 : 42B9 FFFF 8C04      		clr.l	(RAM_Cam_Ypos).l
-(1)  289/  FF3B9E : 42B9 FFFF 8C08      		clr.l	(RAM_Cam_Zpos).l
-(1)  290/  FF3BA4 : 42B9 FFFF 8C0C      		clr.l	(RAM_Cam_Xrot).l
-(1)  291/  FF3BAA : 42B9 FFFF 8C10      		clr.l	(RAM_Cam_Yrot).l
-(1)  292/  FF3BB0 : 42B9 FFFF 8C14      		clr.l	(RAM_Cam_Zrot).l
-(1)  293/  FF3BB6 : 7800                		moveq	#0,d4
-(1)  294/  FF3BB8 : 23C4 FFFF 8C1C      		move.l	d4,(RAM_CamFrame).l
-(1)  295/  FF3BBE : 23C4 FFFF 8C20      		move.l	d4,(RAM_CamTimer).l
-(1)  296/  FF3BC4 : 23C1 FFFF 8C24      		move.l	d1,(RAM_CamSpeed).l
-(1)  297/  FF3BCA : 23C0 FFFF 8C18      		move.l	d0,(RAM_CamData).l
-(1)  298/  FF3BD0 : 4E75                		rts
-(1)  299/  FF3BD2 :                     
-(1)  300/  FF3BD2 :                     ; d7 - Move to this mode after
-(1)  301/  FF3BD2 :                     ;      animation ends.
-(1)  302/  FF3BD2 :                     MdMdl_RunAnimation:
-(1)  303/  FF3BD2 : 614C                		bsr	MdMdl_CamAnimate
-(1)  304/  FF3BD4 : 6A06                		bpl.s	.stay
-(1)  305/  FF3BD6 : 31C7 8C28           		move.w	d7,(RAM_MdlCurrMd).w
-(1)  306/  FF3BDA : 4E75                		rts					; exit mode
-(1)  307/  FF3BDC :                     .stay:
-(1)  308/  FF3BDC : 7200                		moveq	#0,d1
-(1)  309/  FF3BDE : 2438 8C00           		move.l	(RAM_Cam_Xpos),d2
-(1)  310/  FF3BE2 : 2638 8C04           		move.l	(RAM_Cam_Ypos),d3
-(1)  311/  FF3BE6 : 2838 8C08           		move.l	(RAM_Cam_Zpos),d4
-(1)  312/  FF3BEA : 2A38 8C0C           		move.l	(RAM_Cam_Xrot),d5
-(1)  313/  FF3BEE : 2C38 8C10           		move.l	(RAM_Cam_Yrot),d6
-(1)  314/  FF3BF2 : 2E38 8C14           		move.l	(RAM_Cam_Zrot),d7
-(1)  315/  FF3BF6 : 203C 0600 1360      		move.l	#CmdTaskMd_CameraPos,d0		; Load map
-(1)  316/  FF3BFC : 6100 FB28           		bsr	System_MdMars_SlvAddTask
-(1)  317/  FF3C00 : 203C 0600 1384      		move.l	#CmdTaskMd_UpdModels,d0
-(1)  318/  FF3C06 : 6100 FB1E           		bsr	System_MdMars_SlvAddTask
-(1)  319/  FF3C0A : 6100 FBB0           		bsr	System_MdMars_SlvSendDrop
-(1)  320/  FF3C0E :                     .nel2:
-(1)  321/  FF3C0E : 660E                		bne.s	.busy
-(1)  322/  FF3C10 : 2238 8C0C           		move.l	(RAM_Cam_Xrot),d1
-(1)  323/  FF3C14 : 4481                		neg.l	d1
-(1)  324/  FF3C16 : E089                		lsr.l	#8,d1
-(1)  325/  FF3C18 : 33C1 FFFF 8C2C      		move.w	d1,(RAM_BgCamCurr).l
-(1)  326/  FF3C1E :                     .busy:
-(1)  327/  FF3C1E : 4E75                		rts
-(1)  328/  FF3C20 :                     
-(1)  329/  FF3C20 :                     MdMdl_CamAnimate:
-(1)  330/  FF3C20 : 2039 FFFF 8C18      		move.l	(RAM_CamData).l,d0			; If 0 == No animation
-(1)  331/  FF3C26 : 6766                		beq.s	.no_camanim
-(1)  332/  FF3C28 : 04B9 0000 0001 FFFF 		sub.l	#1,(RAM_CamTimer).l
+(1)   77/  FF38EA : 3039 FFFF 8C2C      		move.w	(RAM_BgCamCurr).l,d0
+(1)   78/  FF38F0 : E648                		lsr.w	#3,d0
+(1)   79/  FF38F2 : 33FC 0000 00C0 0000 		move.w	#0,(vdp_data).l
+(1)   80/  FF38FA : 33C0 00C0 0000      		move.w	d0,(vdp_data).l
+(1)   81/  FF3900 :                     ; 		lea	str_Status(pc),a0
+(1)   82/  FF3900 :                     ; 		move.l	#locate(0,1,1),d0
+(1)   83/  FF3900 :                     ; 		bsr	Video_Print
+(1)   84/  FF3900 : 3038 8C28           		move.w	(RAM_MdlCurrMd).w,d0
+(1)   85/  FF3904 : C07C 001F           		and.w	#%11111,d0
+(1)   86/  FF3908 : D040                		add.w	d0,d0
+(1)   87/  FF390A : D040                		add.w	d0,d0
+(1)   88/  FF390C : 4EBB 0004           		jsr	.list(pc,d0.w)
+(1)   89/  FF3910 : 60CA                		bra	.loop
+(1)   90/  FF3912 :                     
+(1)   91/  FF3912 :                     ; ====================================================================
+(1)   92/  FF3912 :                     ; ------------------------------------------------------
+(1)   93/  FF3912 :                     ; Mode sections
+(1)   94/  FF3912 :                     ; ------------------------------------------------------
+(1)   95/  FF3912 :                     
+(1)   96/  FF3912 :                     .list:
+(1)   97/  FF3912 : 6000 000A           		bra.w	.mode0
+(1)   98/  FF3916 : 6000 00E2           		bra.w	.mode1
+(1)   99/  FF391A : 6000 01AE           		bra.w	.mode2
+(1)  100/  FF391E :                     		
+(1)  101/  FF391E :                     ; --------------------------------------------------
+(1)  102/  FF391E :                     ; Mode 0
+(1)  103/  FF391E :                     ; --------------------------------------------------
+(1)  104/  FF391E :                     
+(1)  105/  FF391E :                     .mode0:
+(1)  106/  FF391E : 4A78 8C28           		tst.w	(RAM_MdlCurrMd).w
+(1)  107/  FF3922 : 6B00 00D0           		bmi	.mode0_loop
+(1)  108/  FF3926 : 0078 8000 8C28      		or.w	#$8000,(RAM_MdlCurrMd).w
+(1)  109/  FF392C : 203C 0600 12B4      		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
+(1)  110/  FF3932 : 7200                		moveq	#0,d1
+(1)  111/  FF3934 : 6100 FDFC           		bsr	System_MdMars_MstTask		; Wait until it finishes.
+(1)  112/  FF3938 : 08B9 0006 FFFF 91C7 		bclr	#bitDispEnbl,(RAM_VdpRegs+1).l	; Disable MD display
+(1)  113/  FF3940 : 6100 E650           		bsr	Video_Update
+(1)  114/  FF3944 :                     
+(1)  115/  FF3944 : 203C 0098 82A4      		move.l	#CAMERA_INTRO,d0
+(1)  116/  FF394A : 7201                		moveq	#1,d1
+(1)  117/  FF394C : 6100 0248           		bsr	MdMdl_SetNewCamera
+(1)  118/  FF3950 : 203C 0600 133C      		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
+(1)  119/  FF3956 : 6100 FDF4           		bsr	System_MdMars_SlvTask
+(1)  120/  FF395A :                     
+(1)  121/  FF395A :                     	; Load objects
+(1)  122/  FF395A : 223C 0000 0000      		move.l	#0,d1
+(1)  123/  FF3960 : 203C 0600 134C      		move.l	#CmdTaskMd_MakeMap,d0
+(1)  124/  FF3966 : 6100 FDE4           		bsr	System_MdMars_SlvTask		; Load map
+(1)  125/  FF396A : 7A00                		moveq	#0,d5				; No ex-settings
+(1)  126/  FF396C : 7200                		moveq	#0,d1				; Slot 0
+(1)  127/  FF396E : 243C 0600 45EC      		move.l	#MARSOBJ_INTRO_1,d2
+(1)  128/  FF3974 : 263C 0000 0000      		move.l	#0,d3
+(1)  129/  FF397A : 7801                		moveq	#1,d4
+(1)  130/  FF397C : 203C 0600 12D8      		move.l	#CmdTaskMd_ObjectSet,d0
+(1)  131/  FF3982 : 6100 FDA2           		bsr	System_MdMars_SlvAddTask
+(1)  132/  FF3986 : 7201                		moveq	#1,d1				; Slot 1
+(1)  133/  FF3988 : 243C 0600 5810      		move.l	#MARSOBJ_INTRO_2,d2
+(1)  134/  FF398E : 263C 0000 0000      		move.l	#0,d3
+(1)  135/  FF3994 : 203C 0600 12D8      		move.l	#CmdTaskMd_ObjectSet,d0
+(1)  136/  FF399A : 6100 FD8A           		bsr	System_MdMars_SlvAddTask	; Load object
+(1)  137/  FF399E : 7201                		moveq	#1,d1
+(1)  138/  FF39A0 : 7400                		moveq	#0,d2
+(1)  139/  FF39A2 : 2602                		move.l	d2,d3
+(1)  140/  FF39A4 : 283C FFE0 0000      		move.l	#-$200000,d4
+(1)  141/  FF39AA : 2A02                		move.l	d2,d5
+(1)  142/  FF39AC : 2C02                		move.l	d2,d6
+(1)  143/  FF39AE : 2E02                		move.l	d2,d7
+(1)  144/  FF39B0 : 203C 0600 1310      		move.l	#CmdTaskMd_ObjectPos,d0
+(1)  145/  FF39B6 : 6100 FD6E           		bsr	System_MdMars_SlvAddTask	; Reposition 20XX
+(1)  146/  FF39BA : 6100 FDC2           		bsr	System_MdMars_SlvSendAll
+(1)  147/  FF39BE :                     
+(1)  148/  FF39BE : 223C 0600 43B0      		move.l	#Palette_Intro,d1		; Load palette
+(1)  149/  FF39C4 : 7400                		moveq	#0,d2
+(1)  150/  FF39C6 : 263C 0000 0010      		move.l	#16,d3
+(1)  151/  FF39CC : 283C 0000 8000      		move.l	#$8000,d4
+(1)  152/  FF39D2 : 203C 0600 12C4      		move.l	#CmdTaskMd_LoadSPal,d0
+(1)  153/  FF39D8 : 6100 FD58           		bsr	System_MdMars_MstTask
+(1)  154/  FF39DC : 203C 0600 12B4      		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
+(1)  155/  FF39E2 : 7201                		moveq	#1,d1
+(1)  156/  FF39E4 : 6100 FD4C           		bsr	System_MdMars_MstTask
+(1)  157/  FF39E8 : 08F9 0006 FFFF 91C7 		bset	#bitDispEnbl,(RAM_VdpRegs+1).l	; Enable MD display
+(1)  158/  FF39F0 : 6100 E5A0           		bsr	Video_Update
+(1)  159/  FF39F4 :                     
+(1)  160/  FF39F4 :                     ; Mode 0 mainloop
+(1)  161/  FF39F4 :                     .mode0_loop:
+(1)  162/  FF39F4 : 7E01                		moveq	#1,d7
+(1)  163/  FF39F6 : 6000 01DE           		bra	MdMdl_RunAnimation
+(1)  164/  FF39FA :                     
+(1)  165/  FF39FA :                     ; --------------------------------------------------
+(1)  166/  FF39FA :                     ; Mode 1
+(1)  167/  FF39FA :                     ; --------------------------------------------------
+(1)  168/  FF39FA :                     
+(1)  169/  FF39FA :                     .mode1:
+(1)  170/  FF39FA : 4A78 8C28           		tst.w	(RAM_MdlCurrMd).w
+(1)  171/  FF39FE : 6B00 00C4           		bmi	.mode1_loop
+(1)  172/  FF3A02 : 0078 8000 8C28      		or.w	#$8000,(RAM_MdlCurrMd).w
+(1)  173/  FF3A08 :                     
+(1)  174/  FF3A08 : 203C 0600 12B4      		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
+(1)  175/  FF3A0E : 7200                		moveq	#0,d1
+(1)  176/  FF3A10 : 6100 FD20           		bsr	System_MdMars_MstTask		; Wait until it finishes.
+(1)  177/  FF3A14 : 08B9 0006 FFFF 91C7 		bclr	#bitDispEnbl,(RAM_VdpRegs+1).l	; Disable MD display
+(1)  178/  FF3A1C : 6100 E574           		bsr	Video_Update
+(1)  179/  FF3A20 :                     
+(1)  180/  FF3A20 : 203C 0098 A558      		move.l	#CAMERA_INTNAME,d0
+(1)  181/  FF3A26 : 7201                		moveq	#1,d1
+(1)  182/  FF3A28 : 6100 016C           		bsr	MdMdl_SetNewCamera
+(1)  183/  FF3A2C : 41FA 03C6           		lea	MdPal_BgTitle(pc),a0
+(1)  184/  FF3A30 : 303C 0000           		move.w	#0,d0
+(1)  185/  FF3A34 : 323C 000F           		move.w	#16-1,d1
+(1)  186/  FF3A38 : 6100 E578           		bsr	Video_LoadPal
+(1)  187/  FF3A3C : 41F9 0099 0D80      		lea	(MdMap_BgTitle),a0
+(1)  188/  FF3A42 : 203C 0001 0000      		move.l	#locate(1,0,0),d0
+(1)  189/  FF3A48 : 223C 003F 001B      		move.l	#mapsize(512,224),d1
+(1)  190/  FF3A4E : 343C 0001           		move.w	#1,d2
+(1)  191/  FF3A52 : 6100 E588           		bsr	Video_LoadMap
+(1)  192/  FF3A56 : 203C 0001 BE20      		move.l	#MdGfx_BgTitle,d0
+(1)  193/  FF3A5C : 323C 01A0           		move.w	#(MdGfx_BgTitle_e-MdGfx_BgTitle),d1
+(1)  194/  FF3A60 : 343C 0001           		move.w	#1,d2
+(1)  195/  FF3A64 : 6100 E972           		bsr	Video_LoadArt
+(1)  196/  FF3A68 :                     
+(1)  197/  FF3A68 :                     	; Load object
+(1)  198/  FF3A68 : 203C 0600 133C      		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
+(1)  199/  FF3A6E : 6100 FCDC           		bsr	System_MdMars_SlvTask
+(1)  200/  FF3A72 : 7A00                		moveq	#0,d5				; No ex-settings
+(1)  201/  FF3A74 : 7200                		moveq	#0,d1				; Slot 0
+(1)  202/  FF3A76 : 243C 0202 FC78      		move.l	#MarsObj_projname,d2
+(1)  203/  FF3A7C : 263C 0000 0000      		move.l	#0,d3
+(1)  204/  FF3A82 : 7801                		moveq	#1,d4
+(1)  205/  FF3A84 : 203C 0600 12D8      		move.l	#CmdTaskMd_ObjectSet,d0
+(1)  206/  FF3A8A : 6100 FCC0           		bsr	System_MdMars_SlvTask
+(1)  207/  FF3A8E :                     
+(1)  208/  FF3A8E : 223C 0600 45D0      		move.l	#Palette_projname,d1
+(1)  209/  FF3A94 : 7400                		moveq	#0,d2
+(1)  210/  FF3A96 : 263C 0000 000E      		move.l	#14,d3
+(1)  211/  FF3A9C : 283C 0000 8000      		move.l	#$8000,d4
+(1)  212/  FF3AA2 : 203C 0600 12C4      		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
+(1)  213/  FF3AA8 : 6100 FC88           		bsr	System_MdMars_MstTask
+(1)  214/  FF3AAC : 203C 0600 12B4      		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
+(1)  215/  FF3AB2 : 7201                		moveq	#1,d1
+(1)  216/  FF3AB4 : 6100 FC7C           		bsr	System_MdMars_MstTask
+(1)  217/  FF3AB8 : 08F9 0006 FFFF 91C7 		bset	#bitDispEnbl,(RAM_VdpRegs+1).l	; Enable MD display
+(1)  218/  FF3AC0 : 6100 E4D0           		bsr	Video_Update
+(1)  219/  FF3AC4 :                     
+(1)  220/  FF3AC4 :                     ; Mode 1 mainloop
+(1)  221/  FF3AC4 :                     .mode1_loop:
+(1)  222/  FF3AC4 : 7E02                		moveq	#2,d7
+(1)  223/  FF3AC6 : 6000 010E           		bra	MdMdl_RunAnimation
+(1)  224/  FF3ACA :                     
+(1)  225/  FF3ACA :                     ; --------------------------------------------------
+(1)  226/  FF3ACA :                     ; Mode 2
+(1)  227/  FF3ACA :                     ; --------------------------------------------------
+(1)  228/  FF3ACA :                     
+(1)  229/  FF3ACA :                     .mode2:
+(1)  230/  FF3ACA : 4A78 8C28           		tst.w	(RAM_MdlCurrMd).w
+(1)  231/  FF3ACE : 6B00 00C2           		bmi	.mode2_loop
+(1)  232/  FF3AD2 : 0078 8000 8C28      		or.w	#$8000,(RAM_MdlCurrMd).w
+(1)  233/  FF3AD8 :                     
+(1)  234/  FF3AD8 : 203C 0600 12B4      		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display OFF
+(1)  235/  FF3ADE : 7200                		moveq	#0,d1
+(1)  236/  FF3AE0 : 6100 FC50           		bsr	System_MdMars_MstTask		; Wait until it finishes.
+(1)  237/  FF3AE4 : 08B9 0006 FFFF 91C7 		bclr	#bitDispEnbl,(RAM_VdpRegs+1).l	; Disable MD display
+(1)  238/  FF3AEC : 6100 E4A4           		bsr	Video_Update
+(1)  239/  FF3AF0 :                     
+(1)  240/  FF3AF0 : 203C 0098 BBDC      		move.l	#CAMERA_CITY,d0
+(1)  241/  FF3AF6 : 7202                		moveq	#2,d1
+(1)  242/  FF3AF8 : 6100 009C           		bsr	MdMdl_SetNewCamera
+(1)  243/  FF3AFC : 41FA 02E0           		lea	MdPal_Bg(pc),a0
+(1)  244/  FF3B00 : 303C 0000           		move.w	#0,d0
+(1)  245/  FF3B04 : 323C 000F           		move.w	#16-1,d1
+(1)  246/  FF3B08 : 6100 E4A8           		bsr	Video_LoadPal
+(1)  247/  FF3B0C : 41F9 0098 FD80      		lea	(MdMap_Bg),a0
+(1)  248/  FF3B12 : 203C 0001 0000      		move.l	#locate(1,0,0),d0
+(1)  249/  FF3B18 : 223C 003F 001F      		move.l	#mapsize(512,256),d1
+(1)  250/  FF3B1E : 343C 0001           		move.w	#1,d2
+(1)  251/  FF3B22 : 6100 E4B8           		bsr	Video_LoadMap
+(1)  252/  FF3B26 : 203C 0001 0000      		move.l	#MdGfx_Bg,d0
+(1)  253/  FF3B2C : 323C BE20           		move.w	#(MdGfx_Bg_e-MdGfx_Bg),d1
+(1)  254/  FF3B30 : 343C 0001           		move.w	#1,d2
+(1)  255/  FF3B34 : 6100 E8A2           		bsr	Video_LoadArt
+(1)  256/  FF3B38 :                     
+(1)  257/  FF3B38 : 203C 0600 133C      		move.l	#CmdTaskMd_ObjectClrAll,d0	; Clear ALL objects
+(1)  258/  FF3B3E : 6100 FC0C           		bsr	System_MdMars_SlvTask
+(1)  259/  FF3B42 : 223C 0201 BFC0      		move.l	#TEST_LAYOUT,d1
+(1)  260/  FF3B48 : 203C 0600 134C      		move.l	#CmdTaskMd_MakeMap,d0
+(1)  261/  FF3B4E : 6100 FBFC           		bsr	System_MdMars_SlvTask		; Load map
+(1)  262/  FF3B52 :                     
+(1)  263/  FF3B52 :                     	; Process one frame.
+(1)  264/  FF3B52 : 223C 0600 43D0      		move.l	#Palette_Map,d1
+(1)  265/  FF3B58 : 7400                		moveq	#0,d2
+(1)  266/  FF3B5A : 263C 0000 0100      		move.l	#256,d3
+(1)  267/  FF3B60 : 283C 0000 8000      		move.l	#$8000,d4
+(1)  268/  FF3B66 : 203C 0600 12C4      		move.l	#CmdTaskMd_LoadSPal,d0		; Load palette
+(1)  269/  FF3B6C : 6100 FBC4           		bsr	System_MdMars_MstTask
+(1)  270/  FF3B70 : 203C 0600 12B4      		move.l	#CmdTaskMd_SetBitmap,d0		; 32X display ON
+(1)  271/  FF3B76 : 7201                		moveq	#1,d1
+(1)  272/  FF3B78 : 6100 FBB8           		bsr	System_MdMars_MstTask		; Send requests to
+(1)  273/  FF3B7C : 08F9 0006 FFFF 91C7 		bset	#bitDispEnbl,(RAM_VdpRegs+1).l	; Enable MD display
+(1)  274/  FF3B84 : 6100 E40C           		bsr	Video_Update
+(1)  275/  FF3B88 :                     
+(1)  276/  FF3B88 : 23FC FFFE E000 FFFF 		move.l	#-$12000,(RAM_Cam_Ypos).l
+                    8C04                
+(1)  277/  FF3B92 :                     .mode2_loop:
+(1)  278/  FF3B92 : 7E00                		moveq	#0,d7
+(1)  279/  FF3B94 : 6040                		bra	MdMdl_RunAnimation
+(1)  280/  FF3B96 :                     ; 		bra	MdMdl1_Usercontrol
+(1)  281/  FF3B96 :                     
+(1)  282/  FF3B96 :                     ; ====================================================================
+(1)  283/  FF3B96 :                     ; ------------------------------------------------------
+(1)  284/  FF3B96 :                     ; Subroutines
+(1)  285/  FF3B96 :                     ; ------------------------------------------------------
+(1)  286/  FF3B96 :                     
+(1)  287/  FF3B96 :                     MdMdl_SetNewCamera:
+(1)  288/  FF3B96 : 42B9 FFFF 8C00      		clr.l	(RAM_Cam_Xpos).l
+(1)  289/  FF3B9C : 42B9 FFFF 8C04      		clr.l	(RAM_Cam_Ypos).l
+(1)  290/  FF3BA2 : 42B9 FFFF 8C08      		clr.l	(RAM_Cam_Zpos).l
+(1)  291/  FF3BA8 : 42B9 FFFF 8C0C      		clr.l	(RAM_Cam_Xrot).l
+(1)  292/  FF3BAE : 42B9 FFFF 8C10      		clr.l	(RAM_Cam_Yrot).l
+(1)  293/  FF3BB4 : 42B9 FFFF 8C14      		clr.l	(RAM_Cam_Zrot).l
+(1)  294/  FF3BBA : 7800                		moveq	#0,d4
+(1)  295/  FF3BBC : 23C4 FFFF 8C1C      		move.l	d4,(RAM_CamFrame).l
+(1)  296/  FF3BC2 : 23C4 FFFF 8C20      		move.l	d4,(RAM_CamTimer).l
+(1)  297/  FF3BC8 : 23C1 FFFF 8C24      		move.l	d1,(RAM_CamSpeed).l
+(1)  298/  FF3BCE : 23C0 FFFF 8C18      		move.l	d0,(RAM_CamData).l
+(1)  299/  FF3BD4 : 4E75                		rts
+(1)  300/  FF3BD6 :                     
+(1)  301/  FF3BD6 :                     ; d7 - Move to this mode after
+(1)  302/  FF3BD6 :                     ;      animation ends.
+(1)  303/  FF3BD6 :                     MdMdl_RunAnimation:
+(1)  304/  FF3BD6 : 614C                		bsr	MdMdl_CamAnimate
+(1)  305/  FF3BD8 : 6A06                		bpl.s	.stay
+(1)  306/  FF3BDA : 31C7 8C28           		move.w	d7,(RAM_MdlCurrMd).w
+(1)  307/  FF3BDE : 4E75                		rts					; exit mode
+(1)  308/  FF3BE0 :                     .stay:
+(1)  309/  FF3BE0 : 7200                		moveq	#0,d1
+(1)  310/  FF3BE2 : 2438 8C00           		move.l	(RAM_Cam_Xpos),d2
+(1)  311/  FF3BE6 : 2638 8C04           		move.l	(RAM_Cam_Ypos),d3
+(1)  312/  FF3BEA : 2838 8C08           		move.l	(RAM_Cam_Zpos),d4
+(1)  313/  FF3BEE : 2A38 8C0C           		move.l	(RAM_Cam_Xrot),d5
+(1)  314/  FF3BF2 : 2C38 8C10           		move.l	(RAM_Cam_Yrot),d6
+(1)  315/  FF3BF6 : 2E38 8C14           		move.l	(RAM_Cam_Zrot),d7
+(1)  316/  FF3BFA : 203C 0600 1360      		move.l	#CmdTaskMd_CameraPos,d0		; Load map
+(1)  317/  FF3C00 : 6100 FB24           		bsr	System_MdMars_SlvAddTask
+(1)  318/  FF3C04 : 203C 0600 1384      		move.l	#CmdTaskMd_UpdModels,d0
+(1)  319/  FF3C0A : 6100 FB1A           		bsr	System_MdMars_SlvAddTask
+(1)  320/  FF3C0E : 6100 FBAC           		bsr	System_MdMars_SlvSendDrop
+(1)  321/  FF3C12 :                     .nel2:
+(1)  322/  FF3C12 : 660E                		bne.s	.busy
+(1)  323/  FF3C14 : 2238 8C0C           		move.l	(RAM_Cam_Xrot),d1
+(1)  324/  FF3C18 : 4481                		neg.l	d1
+(1)  325/  FF3C1A : E089                		lsr.l	#8,d1
+(1)  326/  FF3C1C : 33C1 FFFF 8C2C      		move.w	d1,(RAM_BgCamCurr).l
+(1)  327/  FF3C22 :                     .busy:
+(1)  328/  FF3C22 : 4E75                		rts
+(1)  329/  FF3C24 :                     
+(1)  330/  FF3C24 :                     MdMdl_CamAnimate:
+(1)  331/  FF3C24 : 2039 FFFF 8C18      		move.l	(RAM_CamData).l,d0			; If 0 == No animation
+(1)  332/  FF3C2A : 6766                		beq.s	.no_camanim
+(1)  333/  FF3C2C : 04B9 0000 0001 FFFF 		sub.l	#1,(RAM_CamTimer).l
                     8C20                
-(1)  333/  FF3C32 : 6A5A                		bpl.s	.no_camanim
-(1)  334/  FF3C34 : 23F9 FFFF 8C24 FFFF 		move.l	(RAM_CamSpeed).l,(RAM_CamTimer).l	; TEMPORAL timer
+(1)  334/  FF3C36 : 6A5A                		bpl.s	.no_camanim
+(1)  335/  FF3C38 : 23F9 FFFF 8C24 FFFF 		move.l	(RAM_CamSpeed).l,(RAM_CamTimer).l	; TEMPORAL timer
                     8C20                
-(1)  335/  FF3C3E : 2240                		move.l	d0,a1
-(1)  336/  FF3C40 : 2219                		move.l	(a1)+,d1
-(1)  337/  FF3C42 : 2039 FFFF 8C1C      		move.l	(RAM_CamFrame).l,d0
-(1)  338/  FF3C48 : D0BC 0000 0001      		add.l	#1,d0
-(1)  339/  FF3C4E : B081                		cmp.l	d1,d0
-(1)  340/  FF3C50 : 6604                		bne.s	.on_frames
-(1)  341/  FF3C52 : 70FF                		moveq	#-1,d0
-(1)  342/  FF3C54 : 4E75                		rts
-(1)  343/  FF3C56 :                     .on_frames:
-(1)  344/  FF3C56 : 23C0 FFFF 8C1C      		move.l	d0,(RAM_CamFrame).l
-(1)  345/  FF3C5C : C0FC 0018           		mulu.w	#$18,d0
-(1)  346/  FF3C60 : D2C0                		adda	d0,a1
-(1)  347/  FF3C62 : 23D9 FFFF 8C00      		move.l	(a1)+,(RAM_Cam_Xpos).l
-(1)  348/  FF3C68 : 23D9 FFFF 8C04      		move.l	(a1)+,(RAM_Cam_Ypos).l
-(1)  349/  FF3C6E : 23D9 FFFF 8C08      		move.l	(a1)+,(RAM_Cam_Zpos).l
-(1)  350/  FF3C74 : 23D9 FFFF 8C0C      		move.l	(a1)+,(RAM_Cam_Xrot).l
-(1)  351/  FF3C7A : 23D9 FFFF 8C10      		move.l	(a1)+,(RAM_Cam_Yrot).l
-(1)  352/  FF3C80 : 23D9 FFFF 8C14      		move.l	(a1)+,(RAM_Cam_Zrot).l
-(1)  353/  FF3C86 : EE89                		lsr.l	#7,d1
-(1)  354/  FF3C88 : 33C1 FFFF 8C2A      		move.w	d1,(RAM_BgCamera).l
-(1)  355/  FF3C8E :                     .no_camanim:
-(1)  356/  FF3C8E : 7000                		moveq	#0,d0
-(1)  357/  FF3C90 : 4E75                		rts
-(1)  358/  FF3C92 :                     
-(1)  359/  FF3C92 :                     MdMdl1_Usercontrol:
-(1)  360/  FF3C92 : 2A3C 0000 4000      		move.l	#var_MoveSpd,d5
-(1)  361/  FF3C98 : 2C3C FFFF C000      		move.l	#-var_MoveSpd,d6
-(1)  362/  FF3C9E : 3E38 91E0           		move.w	(Controller_1+on_hold),d7
-(1)  363/  FF3CA2 : 0807 0000           		btst	#bitJoyUp,d7
-(1)  364/  FF3CA6 : 670E                		beq.s	.no_up
-(1)  365/  FF3CA8 :                     ; 		lea	(RAM_MdCamera),a0
-(1)  366/  FF3CA8 : 2039 FFFF 8C08      		move.l	(RAM_Cam_Zpos).l,d0
-(1)  367/  FF3CAE : D085                		add.l	d5,d0
-(1)  368/  FF3CB0 : 23C0 FFFF 8C08      		move.l	d0,(RAM_Cam_Zpos).l
-(1)  369/  FF3CB6 :                     .no_up:
-(1)  370/  FF3CB6 : 0807 0001           		btst	#bitJoyDown,d7
-(1)  371/  FF3CBA : 670E                		beq.s	.no_dw
-(1)  372/  FF3CBC :                     ; 		lea	(RAM_MdCamera),a0
-(1)  373/  FF3CBC : 2039 FFFF 8C08      		move.l	(RAM_Cam_Zpos).l,d0
-(1)  374/  FF3CC2 : D086                		add.l	d6,d0
-(1)  375/  FF3CC4 : 23C0 FFFF 8C08      		move.l	d0,(RAM_Cam_Zpos).l
-(1)  376/  FF3CCA :                     .no_dw:
-(1)  377/  FF3CCA : 0807 0002           		btst	#bitJoyLeft,d7
-(1)  378/  FF3CCE : 670E                		beq.s	.no_lf
-(1)  379/  FF3CD0 :                     ; 		lea	(RAM_MdCamera),a0
-(1)  380/  FF3CD0 : 2039 FFFF 8C00      		move.l	(RAM_Cam_Xpos).l,d0
-(1)  381/  FF3CD6 : D086                		add.l	d6,d0
-(1)  382/  FF3CD8 : 23C0 FFFF 8C00      		move.l	d0,(RAM_Cam_Xpos).l
-(1)  383/  FF3CDE :                     .no_lf:
-(1)  384/  FF3CDE : 0807 0003           		btst	#bitJoyRight,d7
-(1)  385/  FF3CE2 : 670E                		beq.s	.no_rg
-(1)  386/  FF3CE4 :                     ; 		lea	(RAM_MdCamera),a0
-(1)  387/  FF3CE4 : 2039 FFFF 8C00      		move.l	(RAM_Cam_Xpos).l,d0
-(1)  388/  FF3CEA : D085                		add.l	d5,d0
-(1)  389/  FF3CEC : 23C0 FFFF 8C00      		move.l	d0,(RAM_Cam_Xpos).l
-(1)  390/  FF3CF2 :                     .no_rg:
-(1)  391/  FF3CF2 :                     
-(1)  392/  FF3CF2 : 0807 0004           		btst	#bitJoyB,d7
-(1)  393/  FF3CF6 : 671A                		beq.s	.no_a
-(1)  394/  FF3CF8 :                     ; 		lea	(RAM_MdCamera),a0
-(1)  395/  FF3CF8 : 2039 FFFF 8C0C      		move.l	(RAM_Cam_Xrot).l,d0
-(1)  396/  FF3CFE : 2206                		move.l	d6,d1
-(1)  397/  FF3D00 : D081                		add.l	d1,d0
-(1)  398/  FF3D02 : 23C0 FFFF 8C0C      		move.l	d0,(RAM_Cam_Xrot).l
-(1)  399/  FF3D08 : EE88                		lsr.l	#7,d0
-(1)  400/  FF3D0A : 4480                		neg.l	d0
-(1)  401/  FF3D0C : 33C0 FFFF 8C2A      		move.w	d0,(RAM_BgCamera).l
-(1)  402/  FF3D12 :                     .no_a:
-(1)  403/  FF3D12 : 0807 0005           		btst	#bitJoyC,d7
-(1)  404/  FF3D16 : 671A                		beq.s	.no_b
-(1)  405/  FF3D18 :                     ; 		lea	(RAM_MdCamera),a0
-(1)  406/  FF3D18 : 2039 FFFF 8C0C      		move.l	(RAM_Cam_Xrot).l,d0
-(1)  407/  FF3D1E : 2205                		move.l	d5,d1
-(1)  408/  FF3D20 : D081                		add.l	d1,d0
-(1)  409/  FF3D22 : 23C0 FFFF 8C0C      		move.l	d0,(RAM_Cam_Xrot).l
-(1)  410/  FF3D28 : EE88                		lsr.l	#7,d0
-(1)  411/  FF3D2A : 4480                		neg.l	d0
-(1)  412/  FF3D2C : 33C0 FFFF 8C2A      		move.w	d0,(RAM_BgCamera).l
-(1)  413/  FF3D32 :                     .no_b:
-(1)  414/  FF3D32 :                     	; Reset all
-(1)  415/  FF3D32 :                     ; 		btst	#bitJoyC,d7
-(1)  416/  FF3D32 :                     ; 		beq.s	.no_c
-(1)  417/  FF3D32 :                     ; 		;move.w	#1,(RAM_MdMdlsUpd).l
-(1)  418/  FF3D32 :                     ; 		lea	(RAM_MdCamera),a0
-(1)  419/  FF3D32 :                     ; 		moveq	#0,d0
-(1)  420/  FF3D32 :                     ; 		move.l	d0,(RAM_Cam_Xpos).l
-(1)  421/  FF3D32 :                     ; 		move.l	d0,(RAM_Cam_Ypos).l
-(1)  422/  FF3D32 :                     ; 		move.l	d0,(RAM_Cam_Zpos).l
-(1)  423/  FF3D32 :                     ; 		move.l	d0,(RAM_Cam_Xrot).l
-(1)  424/  FF3D32 :                     ; 		move.l	d0,(RAM_Cam_Yrot).l
-(1)  425/  FF3D32 :                     ; 		move.l	d0,(RAM_Cam_Zrot).l
-(1)  426/  FF3D32 :                     ; .no_c:
-(1)  427/  FF3D32 :                     
-(1)  428/  FF3D32 :                     
-(1)  429/  FF3D32 :                     	; Up/Down
-(1)  430/  FF3D32 : 3E38 91E0           		move.w	(Controller_1+on_hold),d7
-(1)  431/  FF3D36 : 3807                		move.w	d7,d4
-(1)  432/  FF3D38 : C87C 0200           		and.w	#JoyY,d4
-(1)  433/  FF3D3C : 670E                		beq.s	.no_x
-(1)  434/  FF3D3E :                     		;move.w	#1,(RAM_MdMdlsUpd).l
-(1)  435/  FF3D3E :                     ; 		lea	(RAM_MdCamera),a0
-(1)  436/  FF3D3E : 2039 FFFF 8C04      		move.l	(RAM_Cam_Ypos).l,d0
-(1)  437/  FF3D44 : D085                		add.l	d5,d0
-(1)  438/  FF3D46 : 23C0 FFFF 8C04      		move.l	d0,(RAM_Cam_Ypos).l
-(1)  439/  FF3D4C :                     .no_x:
-(1)  440/  FF3D4C : 3807                		move.w	d7,d4
-(1)  441/  FF3D4E : C87C 0100           		and.w	#JoyZ,d4
-(1)  442/  FF3D52 : 670E                		beq.s	.no_y
-(1)  443/  FF3D54 :                     		;move.w	#1,(RAM_MdMdlsUpd).l
-(1)  444/  FF3D54 :                     ; 		lea	(RAM_MdCamera),a0
-(1)  445/  FF3D54 : 2039 FFFF 8C04      		move.l	(RAM_Cam_Ypos).l,d0
-(1)  446/  FF3D5A : D086                		add.l	d6,d0
-(1)  447/  FF3D5C : 23C0 FFFF 8C04      		move.l	d0,(RAM_Cam_Ypos).l
-(1)  448/  FF3D62 :                     .no_y:
-(1)  449/  FF3D62 :                     
-(1)  450/  FF3D62 : 7200                		moveq	#0,d1
-(1)  451/  FF3D64 : 2438 8C00           		move.l	(RAM_Cam_Xpos),d2
-(1)  452/  FF3D68 : 2638 8C04           		move.l	(RAM_Cam_Ypos),d3
-(1)  453/  FF3D6C : 2838 8C08           		move.l	(RAM_Cam_Zpos),d4
-(1)  454/  FF3D70 : 2A38 8C0C           		move.l	(RAM_Cam_Xrot),d5
-(1)  455/  FF3D74 : 2C38 8C10           		move.l	(RAM_Cam_Yrot),d6
-(1)  456/  FF3D78 : 2E38 8C14           		move.l	(RAM_Cam_Zrot),d7
-(1)  457/  FF3D7C : 203C 0600 1360      		move.l	#CmdTaskMd_CameraPos,d0		; Load map
-(1)  458/  FF3D82 : 6100 F9A2           		bsr	System_MdMars_SlvAddTask
-(1)  459/  FF3D86 : 203C 0600 1384      		move.l	#CmdTaskMd_UpdModels,d0
-(1)  460/  FF3D8C : 6100 F998           		bsr	System_MdMars_SlvAddTask
-(1)  461/  FF3D90 : 6100 FA2A           		bsr	System_MdMars_SlvSendDrop
-(1)  462/  FF3D94 :                     .nel2:
-(1)  463/  FF3D94 : 660E                		bne.s	.busy
-(1)  464/  FF3D96 : 2238 8C0C           		move.l	(RAM_Cam_Xrot),d1
-(1)  465/  FF3D9A : 4481                		neg.l	d1
-(1)  466/  FF3D9C : E089                		lsr.l	#8,d1
-(1)  467/  FF3D9E : 33C1 FFFF 8C2C      		move.w	d1,(RAM_BgCamCurr).l
-(1)  468/  FF3DA4 :                     .busy:
-(1)  469/  FF3DA4 : 4E75                		rts
-(1)  470/  FF3DA6 :                     
-(1)  471/  FF3DA6 :                     ; 		lea	(RAM_MdCamera),a0
-(1)  472/  FF3DA6 :                     ; 		move.l	#CmdTaskMd_CameraPos,d0		; Cmnd $0D: Set camera positions
-(1)  473/  FF3DA6 :                     ; 		moveq	#0,d1
-(1)  474/  FF3DA6 :                     ; 		move.l	(RAM_Cam_Xpos).l,d2
-(1)  475/  FF3DA6 :                     ; 		move.l	(RAM_Cam_Ypos).l,d3
-(1)  476/  FF3DA6 :                     ; 		move.l	(RAM_Cam_Zpos).l,d4
-(1)  477/  FF3DA6 :                     ; 		move.l	(RAM_Cam_Xrot).l,d5
-(1)  478/  FF3DA6 :                     ; 		move.l	(RAM_Cam_Yrot).l,d6
-(1)  479/  FF3DA6 :                     ; 		move.l	(RAM_Cam_Zrot).l,d7
-(1)  480/  FF3DA6 :                     ; 		bsr	System_MdMars_SlvAddTask
-(1)  481/  FF3DA6 :                     
-(1)  482/  FF3DA6 :                     ; 	; temporal camera
-(1)  483/  FF3DA6 :                     ; 		moveq	#0,d6
-(1)  484/  FF3DA6 :                     ; 		move.w	(Controller_1+on_hold).l,d7
-(1)  485/  FF3DA6 :                     ; 		btst	#bitJoyUp,d7
-(1)  486/  FF3DA6 :                     ; 		beq.s	.nou
-(1)  487/  FF3DA6 :                     ; 		add.l	#var_MoveSpd,(RAM_Cam_Zpos).l
-(1)  488/  FF3DA6 :                     ; 		moveq	#1,d6
-(1)  489/  FF3DA6 :                     ; .nou:
-(1)  490/  FF3DA6 :                     ; 		btst	#bitJoyDown,d7
-(1)  491/  FF3DA6 :                     ; 		beq.s	.nod
-(1)  492/  FF3DA6 :                     ; 		add.l	#-var_MoveSpd,(RAM_Cam_Zpos).l
-(1)  493/  FF3DA6 :                     ; 		moveq	#1,d6
-(1)  494/  FF3DA6 :                     ; .nod:
-(1)  495/  FF3DA6 :                     ; 		btst	#bitJoyLeft,d7
-(1)  496/  FF3DA6 :                     ; 		beq.s	.nol
-(1)  497/  FF3DA6 :                     ; 		add.l	#-var_MoveSpd,(RAM_Cam_Xpos).l
-(1)  498/  FF3DA6 :                     ; 		moveq	#1,d6
-(1)  499/  FF3DA6 :                     ; .nol:
-(1)  500/  FF3DA6 :                     ; 		btst	#bitJoyRight,d7
-(1)  501/  FF3DA6 :                     ; 		beq.s	.nor
-(1)  502/  FF3DA6 :                     ; 		add.l	#var_MoveSpd,(RAM_Cam_Xpos).l
-(1)  503/  FF3DA6 :                     ; 		moveq	#1,d6
-(1)  504/  FF3DA6 :                     ; .nor:
-(1)  505/  FF3DA6 :                     ; 		btst	#bitJoyA,d7
-(1)  506/  FF3DA6 :                     ; 		beq.s	.noa
-(1)  507/  FF3DA6 :                     ; 		add.l	#-var_MoveSpd,(RAM_Cam_Xrot).l
-(1)  508/  FF3DA6 :                     ; 		moveq	#1,d6
-(1)  509/  FF3DA6 :                     ; .noa:
-(1)  510/  FF3DA6 :                     ; 		btst	#bitJoyB,d7
-(1)  511/  FF3DA6 :                     ; 		beq.s	.nob
-(1)  512/  FF3DA6 :                     ; 		add.l	#var_MoveSpd,(RAM_Cam_Xrot).l
-(1)  513/  FF3DA6 :                     ; 		moveq	#1,d6
-(1)  514/  FF3DA6 :                     ; .nob:
-(1)  515/  FF3DA6 :                     ; ; 		tst.w	d6
-(1)  516/  FF3DA6 :                     ; ; 		beq.s	.nel
-(1)  517/  FF3DA6 :                     ; .first_draw:
-(1)  518/  FF3DA6 :                     
-(1)  519/  FF3DA6 :                     ; ====================================================================
-(1)  520/  FF3DA6 :                     ; ------------------------------------------------------
-(1)  521/  FF3DA6 :                     ; Interrupts
-(1)  522/  FF3DA6 :                     ; ------------------------------------------------------
-(1)  523/  FF3DA6 :                     
-(1)  524/  FF3DA6 :                     ; --------------------------------------------------
-(1)  525/  FF3DA6 :                     ; Custom VBlank
-(1)  526/  FF3DA6 :                     ; --------------------------------------------------
-(1)  527/  FF3DA6 :                     
-(1)  528/  FF3DA6 :                     ; --------------------------------------------------
-(1)  529/  FF3DA6 :                     ; Custom HBlank
-(1)  530/  FF3DA6 :                     ; --------------------------------------------------
-(1)  531/  FF3DA6 :                     
-(1)  532/  FF3DA6 :                     ; ====================================================================
-(1)  533/  FF3DA6 :                     ; ------------------------------------------------------
-(1)  534/  FF3DA6 :                     ; DATA
-(1)  535/  FF3DA6 :                     ; 
-(1)  536/  FF3DA6 :                     ; Small stuff goes here
-(1)  537/  FF3DA6 :                     ; ------------------------------------------------------
-(1)  538/  FF3DA6 :                     
-(1)  539/  FF3DA6 :                     str_Status:
-(1)  540/  FF3DA6 : 5C6C 205C 6C20 5C6C 		dc.b "\\l \\l \\l    \\l",$A
+(1)  336/  FF3C42 : 2240                		move.l	d0,a1
+(1)  337/  FF3C44 : 2219                		move.l	(a1)+,d1
+(1)  338/  FF3C46 : 2039 FFFF 8C1C      		move.l	(RAM_CamFrame).l,d0
+(1)  339/  FF3C4C : D0BC 0000 0001      		add.l	#1,d0
+(1)  340/  FF3C52 : B081                		cmp.l	d1,d0
+(1)  341/  FF3C54 : 6604                		bne.s	.on_frames
+(1)  342/  FF3C56 : 70FF                		moveq	#-1,d0
+(1)  343/  FF3C58 : 4E75                		rts
+(1)  344/  FF3C5A :                     .on_frames:
+(1)  345/  FF3C5A : 23C0 FFFF 8C1C      		move.l	d0,(RAM_CamFrame).l
+(1)  346/  FF3C60 : C0FC 0018           		mulu.w	#$18,d0
+(1)  347/  FF3C64 : D2C0                		adda	d0,a1
+(1)  348/  FF3C66 : 23D9 FFFF 8C00      		move.l	(a1)+,(RAM_Cam_Xpos).l
+(1)  349/  FF3C6C : 23D9 FFFF 8C04      		move.l	(a1)+,(RAM_Cam_Ypos).l
+(1)  350/  FF3C72 : 23D9 FFFF 8C08      		move.l	(a1)+,(RAM_Cam_Zpos).l
+(1)  351/  FF3C78 : 23D9 FFFF 8C0C      		move.l	(a1)+,(RAM_Cam_Xrot).l
+(1)  352/  FF3C7E : 23D9 FFFF 8C10      		move.l	(a1)+,(RAM_Cam_Yrot).l
+(1)  353/  FF3C84 : 23D9 FFFF 8C14      		move.l	(a1)+,(RAM_Cam_Zrot).l
+(1)  354/  FF3C8A : EE89                		lsr.l	#7,d1
+(1)  355/  FF3C8C : 33C1 FFFF 8C2A      		move.w	d1,(RAM_BgCamera).l
+(1)  356/  FF3C92 :                     .no_camanim:
+(1)  357/  FF3C92 : 7000                		moveq	#0,d0
+(1)  358/  FF3C94 : 4E75                		rts
+(1)  359/  FF3C96 :                     
+(1)  360/  FF3C96 :                     MdMdl1_Usercontrol:
+(1)  361/  FF3C96 : 2A3C 0000 4000      		move.l	#var_MoveSpd,d5
+(1)  362/  FF3C9C : 2C3C FFFF C000      		move.l	#-var_MoveSpd,d6
+(1)  363/  FF3CA2 : 3E38 91E0           		move.w	(Controller_1+on_hold),d7
+(1)  364/  FF3CA6 : 0807 0000           		btst	#bitJoyUp,d7
+(1)  365/  FF3CAA : 670E                		beq.s	.no_up
+(1)  366/  FF3CAC :                     ; 		lea	(RAM_MdCamera),a0
+(1)  367/  FF3CAC : 2039 FFFF 8C08      		move.l	(RAM_Cam_Zpos).l,d0
+(1)  368/  FF3CB2 : D085                		add.l	d5,d0
+(1)  369/  FF3CB4 : 23C0 FFFF 8C08      		move.l	d0,(RAM_Cam_Zpos).l
+(1)  370/  FF3CBA :                     .no_up:
+(1)  371/  FF3CBA : 0807 0001           		btst	#bitJoyDown,d7
+(1)  372/  FF3CBE : 670E                		beq.s	.no_dw
+(1)  373/  FF3CC0 :                     ; 		lea	(RAM_MdCamera),a0
+(1)  374/  FF3CC0 : 2039 FFFF 8C08      		move.l	(RAM_Cam_Zpos).l,d0
+(1)  375/  FF3CC6 : D086                		add.l	d6,d0
+(1)  376/  FF3CC8 : 23C0 FFFF 8C08      		move.l	d0,(RAM_Cam_Zpos).l
+(1)  377/  FF3CCE :                     .no_dw:
+(1)  378/  FF3CCE : 0807 0002           		btst	#bitJoyLeft,d7
+(1)  379/  FF3CD2 : 670E                		beq.s	.no_lf
+(1)  380/  FF3CD4 :                     ; 		lea	(RAM_MdCamera),a0
+(1)  381/  FF3CD4 : 2039 FFFF 8C00      		move.l	(RAM_Cam_Xpos).l,d0
+(1)  382/  FF3CDA : D086                		add.l	d6,d0
+(1)  383/  FF3CDC : 23C0 FFFF 8C00      		move.l	d0,(RAM_Cam_Xpos).l
+(1)  384/  FF3CE2 :                     .no_lf:
+(1)  385/  FF3CE2 : 0807 0003           		btst	#bitJoyRight,d7
+(1)  386/  FF3CE6 : 670E                		beq.s	.no_rg
+(1)  387/  FF3CE8 :                     ; 		lea	(RAM_MdCamera),a0
+(1)  388/  FF3CE8 : 2039 FFFF 8C00      		move.l	(RAM_Cam_Xpos).l,d0
+(1)  389/  FF3CEE : D085                		add.l	d5,d0
+(1)  390/  FF3CF0 : 23C0 FFFF 8C00      		move.l	d0,(RAM_Cam_Xpos).l
+(1)  391/  FF3CF6 :                     .no_rg:
+(1)  392/  FF3CF6 :                     
+(1)  393/  FF3CF6 : 0807 0004           		btst	#bitJoyB,d7
+(1)  394/  FF3CFA : 671A                		beq.s	.no_a
+(1)  395/  FF3CFC :                     ; 		lea	(RAM_MdCamera),a0
+(1)  396/  FF3CFC : 2039 FFFF 8C0C      		move.l	(RAM_Cam_Xrot).l,d0
+(1)  397/  FF3D02 : 2206                		move.l	d6,d1
+(1)  398/  FF3D04 : D081                		add.l	d1,d0
+(1)  399/  FF3D06 : 23C0 FFFF 8C0C      		move.l	d0,(RAM_Cam_Xrot).l
+(1)  400/  FF3D0C : EE88                		lsr.l	#7,d0
+(1)  401/  FF3D0E : 4480                		neg.l	d0
+(1)  402/  FF3D10 : 33C0 FFFF 8C2A      		move.w	d0,(RAM_BgCamera).l
+(1)  403/  FF3D16 :                     .no_a:
+(1)  404/  FF3D16 : 0807 0005           		btst	#bitJoyC,d7
+(1)  405/  FF3D1A : 671A                		beq.s	.no_b
+(1)  406/  FF3D1C :                     ; 		lea	(RAM_MdCamera),a0
+(1)  407/  FF3D1C : 2039 FFFF 8C0C      		move.l	(RAM_Cam_Xrot).l,d0
+(1)  408/  FF3D22 : 2205                		move.l	d5,d1
+(1)  409/  FF3D24 : D081                		add.l	d1,d0
+(1)  410/  FF3D26 : 23C0 FFFF 8C0C      		move.l	d0,(RAM_Cam_Xrot).l
+(1)  411/  FF3D2C : EE88                		lsr.l	#7,d0
+(1)  412/  FF3D2E : 4480                		neg.l	d0
+(1)  413/  FF3D30 : 33C0 FFFF 8C2A      		move.w	d0,(RAM_BgCamera).l
+(1)  414/  FF3D36 :                     .no_b:
+(1)  415/  FF3D36 :                     	; Reset all
+(1)  416/  FF3D36 :                     ; 		btst	#bitJoyC,d7
+(1)  417/  FF3D36 :                     ; 		beq.s	.no_c
+(1)  418/  FF3D36 :                     ; 		;move.w	#1,(RAM_MdMdlsUpd).l
+(1)  419/  FF3D36 :                     ; 		lea	(RAM_MdCamera),a0
+(1)  420/  FF3D36 :                     ; 		moveq	#0,d0
+(1)  421/  FF3D36 :                     ; 		move.l	d0,(RAM_Cam_Xpos).l
+(1)  422/  FF3D36 :                     ; 		move.l	d0,(RAM_Cam_Ypos).l
+(1)  423/  FF3D36 :                     ; 		move.l	d0,(RAM_Cam_Zpos).l
+(1)  424/  FF3D36 :                     ; 		move.l	d0,(RAM_Cam_Xrot).l
+(1)  425/  FF3D36 :                     ; 		move.l	d0,(RAM_Cam_Yrot).l
+(1)  426/  FF3D36 :                     ; 		move.l	d0,(RAM_Cam_Zrot).l
+(1)  427/  FF3D36 :                     ; .no_c:
+(1)  428/  FF3D36 :                     
+(1)  429/  FF3D36 :                     
+(1)  430/  FF3D36 :                     	; Up/Down
+(1)  431/  FF3D36 : 3E38 91E0           		move.w	(Controller_1+on_hold),d7
+(1)  432/  FF3D3A : 3807                		move.w	d7,d4
+(1)  433/  FF3D3C : C87C 0100           		and.w	#JoyZ,d4
+(1)  434/  FF3D40 : 670E                		beq.s	.no_x
+(1)  435/  FF3D42 :                     		;move.w	#1,(RAM_MdMdlsUpd).l
+(1)  436/  FF3D42 :                     ; 		lea	(RAM_MdCamera),a0
+(1)  437/  FF3D42 : 2039 FFFF 8C04      		move.l	(RAM_Cam_Ypos).l,d0
+(1)  438/  FF3D48 : D085                		add.l	d5,d0
+(1)  439/  FF3D4A : 23C0 FFFF 8C04      		move.l	d0,(RAM_Cam_Ypos).l
+(1)  440/  FF3D50 :                     .no_x:
+(1)  441/  FF3D50 : 3807                		move.w	d7,d4
+(1)  442/  FF3D52 : C87C 0200           		and.w	#JoyY,d4
+(1)  443/  FF3D56 : 670E                		beq.s	.no_y
+(1)  444/  FF3D58 :                     		;move.w	#1,(RAM_MdMdlsUpd).l
+(1)  445/  FF3D58 :                     ; 		lea	(RAM_MdCamera),a0
+(1)  446/  FF3D58 : 2039 FFFF 8C04      		move.l	(RAM_Cam_Ypos).l,d0
+(1)  447/  FF3D5E : D086                		add.l	d6,d0
+(1)  448/  FF3D60 : 23C0 FFFF 8C04      		move.l	d0,(RAM_Cam_Ypos).l
+(1)  449/  FF3D66 :                     .no_y:
+(1)  450/  FF3D66 :                     
+(1)  451/  FF3D66 : 7200                		moveq	#0,d1
+(1)  452/  FF3D68 : 2438 8C00           		move.l	(RAM_Cam_Xpos),d2
+(1)  453/  FF3D6C : 2638 8C04           		move.l	(RAM_Cam_Ypos),d3
+(1)  454/  FF3D70 : 2838 8C08           		move.l	(RAM_Cam_Zpos),d4
+(1)  455/  FF3D74 : 2A38 8C0C           		move.l	(RAM_Cam_Xrot),d5
+(1)  456/  FF3D78 : 2C38 8C10           		move.l	(RAM_Cam_Yrot),d6
+(1)  457/  FF3D7C : 2E38 8C14           		move.l	(RAM_Cam_Zrot),d7
+(1)  458/  FF3D80 : 203C 0600 1360      		move.l	#CmdTaskMd_CameraPos,d0		; Load map
+(1)  459/  FF3D86 : 6100 F99E           		bsr	System_MdMars_SlvAddTask
+(1)  460/  FF3D8A : 203C 0600 1384      		move.l	#CmdTaskMd_UpdModels,d0
+(1)  461/  FF3D90 : 6100 F994           		bsr	System_MdMars_SlvAddTask
+(1)  462/  FF3D94 : 6100 FA26           		bsr	System_MdMars_SlvSendDrop
+(1)  463/  FF3D98 :                     .nel2:
+(1)  464/  FF3D98 : 660E                		bne.s	.busy
+(1)  465/  FF3D9A : 2238 8C0C           		move.l	(RAM_Cam_Xrot),d1
+(1)  466/  FF3D9E : 4481                		neg.l	d1
+(1)  467/  FF3DA0 : E089                		lsr.l	#8,d1
+(1)  468/  FF3DA2 : 33C1 FFFF 8C2C      		move.w	d1,(RAM_BgCamCurr).l
+(1)  469/  FF3DA8 :                     .busy:
+(1)  470/  FF3DA8 : 4E75                		rts
+(1)  471/  FF3DAA :                     
+(1)  472/  FF3DAA :                     ; 		lea	(RAM_MdCamera),a0
+(1)  473/  FF3DAA :                     ; 		move.l	#CmdTaskMd_CameraPos,d0		; Cmnd $0D: Set camera positions
+(1)  474/  FF3DAA :                     ; 		moveq	#0,d1
+(1)  475/  FF3DAA :                     ; 		move.l	(RAM_Cam_Xpos).l,d2
+(1)  476/  FF3DAA :                     ; 		move.l	(RAM_Cam_Ypos).l,d3
+(1)  477/  FF3DAA :                     ; 		move.l	(RAM_Cam_Zpos).l,d4
+(1)  478/  FF3DAA :                     ; 		move.l	(RAM_Cam_Xrot).l,d5
+(1)  479/  FF3DAA :                     ; 		move.l	(RAM_Cam_Yrot).l,d6
+(1)  480/  FF3DAA :                     ; 		move.l	(RAM_Cam_Zrot).l,d7
+(1)  481/  FF3DAA :                     ; 		bsr	System_MdMars_SlvAddTask
+(1)  482/  FF3DAA :                     
+(1)  483/  FF3DAA :                     ; 	; temporal camera
+(1)  484/  FF3DAA :                     ; 		moveq	#0,d6
+(1)  485/  FF3DAA :                     ; 		move.w	(Controller_1+on_hold).l,d7
+(1)  486/  FF3DAA :                     ; 		btst	#bitJoyUp,d7
+(1)  487/  FF3DAA :                     ; 		beq.s	.nou
+(1)  488/  FF3DAA :                     ; 		add.l	#var_MoveSpd,(RAM_Cam_Zpos).l
+(1)  489/  FF3DAA :                     ; 		moveq	#1,d6
+(1)  490/  FF3DAA :                     ; .nou:
+(1)  491/  FF3DAA :                     ; 		btst	#bitJoyDown,d7
+(1)  492/  FF3DAA :                     ; 		beq.s	.nod
+(1)  493/  FF3DAA :                     ; 		add.l	#-var_MoveSpd,(RAM_Cam_Zpos).l
+(1)  494/  FF3DAA :                     ; 		moveq	#1,d6
+(1)  495/  FF3DAA :                     ; .nod:
+(1)  496/  FF3DAA :                     ; 		btst	#bitJoyLeft,d7
+(1)  497/  FF3DAA :                     ; 		beq.s	.nol
+(1)  498/  FF3DAA :                     ; 		add.l	#-var_MoveSpd,(RAM_Cam_Xpos).l
+(1)  499/  FF3DAA :                     ; 		moveq	#1,d6
+(1)  500/  FF3DAA :                     ; .nol:
+(1)  501/  FF3DAA :                     ; 		btst	#bitJoyRight,d7
+(1)  502/  FF3DAA :                     ; 		beq.s	.nor
+(1)  503/  FF3DAA :                     ; 		add.l	#var_MoveSpd,(RAM_Cam_Xpos).l
+(1)  504/  FF3DAA :                     ; 		moveq	#1,d6
+(1)  505/  FF3DAA :                     ; .nor:
+(1)  506/  FF3DAA :                     ; 		btst	#bitJoyA,d7
+(1)  507/  FF3DAA :                     ; 		beq.s	.noa
+(1)  508/  FF3DAA :                     ; 		add.l	#-var_MoveSpd,(RAM_Cam_Xrot).l
+(1)  509/  FF3DAA :                     ; 		moveq	#1,d6
+(1)  510/  FF3DAA :                     ; .noa:
+(1)  511/  FF3DAA :                     ; 		btst	#bitJoyB,d7
+(1)  512/  FF3DAA :                     ; 		beq.s	.nob
+(1)  513/  FF3DAA :                     ; 		add.l	#var_MoveSpd,(RAM_Cam_Xrot).l
+(1)  514/  FF3DAA :                     ; 		moveq	#1,d6
+(1)  515/  FF3DAA :                     ; .nob:
+(1)  516/  FF3DAA :                     ; ; 		tst.w	d6
+(1)  517/  FF3DAA :                     ; ; 		beq.s	.nel
+(1)  518/  FF3DAA :                     ; .first_draw:
+(1)  519/  FF3DAA :                     
+(1)  520/  FF3DAA :                     ; ====================================================================
+(1)  521/  FF3DAA :                     ; ------------------------------------------------------
+(1)  522/  FF3DAA :                     ; Interrupts
+(1)  523/  FF3DAA :                     ; ------------------------------------------------------
+(1)  524/  FF3DAA :                     
+(1)  525/  FF3DAA :                     ; --------------------------------------------------
+(1)  526/  FF3DAA :                     ; Custom VBlank
+(1)  527/  FF3DAA :                     ; --------------------------------------------------
+(1)  528/  FF3DAA :                     
+(1)  529/  FF3DAA :                     ; --------------------------------------------------
+(1)  530/  FF3DAA :                     ; Custom HBlank
+(1)  531/  FF3DAA :                     ; --------------------------------------------------
+(1)  532/  FF3DAA :                     
+(1)  533/  FF3DAA :                     ; ====================================================================
+(1)  534/  FF3DAA :                     ; ------------------------------------------------------
+(1)  535/  FF3DAA :                     ; DATA
+(1)  536/  FF3DAA :                     ; 
+(1)  537/  FF3DAA :                     ; Small stuff goes here
+(1)  538/  FF3DAA :                     ; ------------------------------------------------------
+(1)  539/  FF3DAA :                     
+(1)  540/  FF3DAA :                     str_Status:
+(1)  541/  FF3DAA : 5C6C 205C 6C20 5C6C 		dc.b "\\l \\l \\l    \\l",$A
                     2020 2020 5C6C 0A   
-(1)  541/  FF3DB5 : 5C6C 205C 6C20 5C6C 		dc.b "\\l \\l \\l",0
+(1)  542/  FF3DB9 : 5C6C 205C 6C20 5C6C 		dc.b "\\l \\l \\l",0
                     00                  
-(1)  542/  FF3DBE : FFFF 8C00 FFFF 8C04 		dc.l RAM_Cam_Xpos,RAM_Cam_Ypos,RAM_Cam_Zpos
+(1)  543/  FF3DC2 : FFFF 8C00 FFFF 8C04 		dc.l RAM_Cam_Xpos,RAM_Cam_Ypos,RAM_Cam_Zpos
                     FFFF 8C08           
-(1)  543/  FF3DCA : FFFF 9816           		dc.l RAM_FrameCount
-(1)  544/  FF3DCE : FFFF 8C0C FFFF 8C10 		dc.l RAM_Cam_Xrot,RAM_Cam_Yrot,RAM_Cam_Zrot
+(1)  544/  FF3DCE : FFFF 9816           		dc.l RAM_FrameCount
+(1)  545/  FF3DD2 : FFFF 8C0C FFFF 8C10 		dc.l RAM_Cam_Xrot,RAM_Cam_Yrot,RAM_Cam_Zrot
                     FFFF 8C14           
-(1)  545/  FF3DDA :                     		align 2
-(1)  546/  FF3DDA :                     MdPal_Bg:
-(1)  547/  FF3DDA :                     		binclude "data/md/bg/bg_pal.bin"
-(1)  548/  FF3DF0 :                     		align 2		
-(1)  549/  FF3DF0 :                     MdPal_BgTitle:
-(1)  550/  FF3DF0 :                     		binclude "data/md/bg_title/bg_pal.bin"
-(1)  551/  FF3DFA :                     		align 2
-(1)  552/  FF3DFA :                     
-(1)  553/  FF3DFA :                     		
-(1)  554/  FF3DFA :                     
-      47/    472C :                     		dephase
-      48/    472C :                     Engine_Code_end:
-      49/    472C :                     		align 2
-      53/    472C :                     	
-      54/    472C :                     ; ====================================================================
-      55/    472C :                     ; ----------------------------------------------------------------
-      56/    472C :                     ; SH2 CODE for 32X
-      57/    472C :                     ; ----------------------------------------------------------------
-      58/    472C :                     
-      59/    472C :                     		align 4
-      60/    472C :                     MARS_RAMDATA:
-      61/    472C :                     		include "system/mars/code.asm"
-(1)    1/    472C :                     ; ====================================================================		
-(1)    2/    472C :                     ; ----------------------------------------------------------------
-(1)    3/    472C :                     ; MARS SH2 Section
-(1)    4/    472C :                     ;
-(1)    5/    472C :                     ; CODE for both CPUs
-(1)    6/    472C :                     ; RAM and some DATA go here
-(1)    7/    472C :                     ; ----------------------------------------------------------------
-(1)    8/    472C :                     
+(1)  546/  FF3DDE :                     		align 2
+(1)  547/  FF3DDE :                     MdPal_Bg:
+(1)  548/  FF3DDE :                     		binclude "data/md/bg/bg_pal.bin"
+(1)  549/  FF3DF4 :                     		align 2		
+(1)  550/  FF3DF4 :                     MdPal_BgTitle:
+(1)  551/  FF3DF4 :                     		binclude "data/md/bg_title/bg_pal.bin"
+(1)  552/  FF3DFE :                     		align 2
+(1)  553/  FF3DFE :                     
+(1)  554/  FF3DFE :                     		
+(1)  555/  FF3DFE :                     
+      47/    4730 :                     		dephase
+      48/    4730 :                     Engine_Code_end:
+      49/    4730 :                     		align 2
+      53/    4730 :                     	
+      54/    4730 :                     ; ====================================================================
+      55/    4730 :                     ; ----------------------------------------------------------------
+      56/    4730 :                     ; SH2 CODE for 32X
+      57/    4730 :                     ; ----------------------------------------------------------------
+      58/    4730 :                     
+      59/    4730 :                     		align 4
+      60/    4730 :                     MARS_RAMDATA:
+      61/    4730 :                     		include "system/mars/code.asm"
+(1)    1/    4730 :                     ; ====================================================================		
+(1)    2/    4730 :                     ; ----------------------------------------------------------------
+(1)    3/    4730 :                     ; MARS SH2 Section
+(1)    4/    4730 :                     ;
+(1)    5/    4730 :                     ; CODE for both CPUs
+(1)    6/    4730 :                     ; RAM and some DATA go here
+(1)    7/    4730 :                     ; ----------------------------------------------------------------
+(1)    8/    4730 :                     
 (1)    9/ 6000000 :                     		phase CS3		; now we are at SDRAM
 (1)   10/ 6000000 :                     		cpu SH7600		; should be SH7095 but this works too.
 (1)   11/ 6000000 :                     
@@ -6799,8 +6801,8 @@
 (1)   20/ 600030C :                     
 (1)   21/ 600030C : (MACRO)             			struct 0
 (1)   21/ 600030C : =$600030C           GLBL_LASTPC     set *
-(1)   21/    4A38 :                                     dephase
-(1)   21/    4A38 : =$4A38              GLBL_LASTORG    set *
+(1)   21/    4A3C :                                     dephase
+(1)   21/    4A3C : =$4A3C              GLBL_LASTORG    set *
 (1)   21/       0 :                                     phase 0
 (1)   22/       0 :                     marsGbl_PlyPzList_R	ds.l 1		; Current graphic piece to draw
 (1)   23/       4 :                     marsGbl_PlyPzList_W	ds.l 1		; Current graphic piece to write
@@ -7013,7 +7015,7 @@
 (1)  228/ 6000390 :                     		align 4
 (1)  229/ 6000390 : 0600 02CC 2000 401C 		ltorg
                     2000 401A 2000 4028 
-                    0603 48BC 2000 402E 
+                    0603 48B8 2000 402E 
                     FE10 00F0           
 (1)  230/ 60003AC :                     		
 (1)  231/ 60003AC :                     ; =================================================================
@@ -7231,7 +7233,7 @@
 (1)  395/ 60004C8 : 0009                		nop
 (1)  396/ 60004CA :                     		align 4
 (1)  397/ 60004CC : 2000 4018 2000 4016 		ltorg				; Save MASTER IRQ literals here
-                    2000 4100 0603 4CBC 
+                    2000 4100 0603 4CB8 
                     2000 4200 2000 4000 
                     3638 5550 535F 4F4B 
                     4D5F 4F4B 0603 FFF8 
@@ -7342,7 +7344,7 @@
 (1)  500/ 600057E : 0009                		nop
 (1)  501/ 6000580 :                     		align 4
 (1)  502/ 6000580 : 2000 401C 2000 401A 		ltorg
-                    2000 4028 0603 4ABC 
+                    2000 4028 0603 4AB8 
                     2000 402F FE10 00F0 
 (1)  503/ 6000598 :                     		
 (1)  504/ 6000598 :                     ; =================================================================
@@ -7484,8 +7486,8 @@
 (2)   33/ 6000646 :                     ; model objects
 (2)   34/ 6000646 : (MACRO)             		struct 0
 (2)   34/ 6000646 : =$6000646           GLBL_LASTPC     set *
-(2)   34/    4D72 :                                     dephase
-(2)   34/    4D72 : =$4D72              GLBL_LASTORG    set *
+(2)   34/    4D76 :                                     dephase
+(2)   34/    4D76 : =$4D76              GLBL_LASTORG    set *
 (2)   34/       0 :                                     phase 0
 (2)   35/       0 :                     mdl_data	ds.l 1			; Model data pointer, if zero: no model
 (2)   36/       4 :                     mdl_option	ds.l 1			; Model options: pixelvalue add
@@ -7507,8 +7509,8 @@
 (2)   50/ 6000646 :                     ; field view camera
 (2)   51/ 6000646 : (MACRO)             		struct 0
 (2)   51/ 6000646 : =$6000646           GLBL_LASTPC     set *
-(2)   51/    4D72 :                                     dephase
-(2)   51/    4D72 : =$4D72              GLBL_LASTORG    set *
+(2)   51/    4D76 :                                     dephase
+(2)   51/    4D76 : =$4D76              GLBL_LASTORG    set *
 (2)   51/       0 :                                     phase 0
 (2)   52/       0 :                     cam_x_pos	ds.l 1			; X position $000000.00
 (2)   53/       4 :                     cam_y_pos	ds.l 1			; Y position $000000.00
@@ -7527,8 +7529,8 @@
 (2)   64/ 6000646 :                     		
 (2)   65/ 6000646 : (MACRO)             		struct 0
 (2)   65/ 6000646 : =$6000646           GLBL_LASTPC     set *
-(2)   65/    4D72 :                                     dephase
-(2)   65/    4D72 : =$4D72              GLBL_LASTORG    set *
+(2)   65/    4D76 :                                     dephase
+(2)   65/    4D76 : =$4D76              GLBL_LASTORG    set *
 (2)   65/       0 :                                     phase 0
 (2)   66/       0 :                     mdllay_data	ds.l 1			; Model layout data, zero: Don't use layout
 (2)   67/       4 :                     mdllay_x	ds.l 1			; X position
@@ -7545,8 +7547,8 @@
 (2)   76/ 6000646 :                     
 (2)   77/ 6000646 : (MACRO)             		struct 0
 (2)   77/ 6000646 : =$6000646           GLBL_LASTPC     set *
-(2)   77/    4D72 :                                     dephase
-(2)   77/    4D72 : =$4D72              GLBL_LASTORG    set *
+(2)   77/    4D76 :                                     dephase
+(2)   77/    4D76 : =$4D76              GLBL_LASTORG    set *
 (2)   77/       0 :                                     phase 0
 (2)   78/       0 :                     plypz_ypos	ds.l 1			; Ytop | Ybottom
 (2)   79/       4 :                     plypz_xl	ds.l 1
@@ -7570,8 +7572,8 @@
 (2)   95/ 6000646 :                     
 (2)   96/ 6000646 : (MACRO)             		struct 0
 (2)   96/ 6000646 : =$6000646           GLBL_LASTPC     set *
-(2)   96/    4D72 :                                     dephase
-(2)   96/    4D72 : =$4D72              GLBL_LASTORG    set *
+(2)   96/    4D76 :                                     dephase
+(2)   96/    4D76 : =$4D76              GLBL_LASTORG    set *
 (2)   96/       0 :                                     phase 0
 (2)   97/       0 :                     polygn_type	ds.l 1		; %MSTw wwww xxxx aaaa | Type bits and Material option (Width or PalIncr)
 (2)   98/       4 :                     polygn_mtrl	ds.l 1		; Material Type: Color (0-255) or Texture data address
@@ -7748,8 +7750,8 @@
 (2)  267/ 60006FA : 0009                		nop
 (2)  268/ 60006FC :                     		align 4
 (2)  269/ 60006FC : 2000 4000 2000 4100 		ltorg
-                    2400 0000 0603 4CBC 
-                    0603 4CBC 0080 0100 
+                    2400 0000 0603 4CB8 
+                    0603 4CB8 0080 0100 
                     00F0 00FF 7FFF      
 (2)  270/ 600071A :                     
 (2)  271/ 600071A :                     ; ------------------------------------------------
@@ -7796,7 +7798,7 @@
 (2)  312/ 6000756 : 000B                		rts
 (2)  313/ 6000758 : 0009                		nop
 (2)  314/ 600075A :                     		align 4
-(2)  315/ 600075C : 0602 10B4 C000 0734 		ltorg
+(2)  315/ 600075C : 0602 10B0 C000 0734 		ltorg
                     2000 4100 00E0 00F0 
                     00A1 FE80 5AFF A538 
 (2)  316/ 6000774 :                     
@@ -7910,8 +7912,8 @@
 (2)  424/ 60007E0 : 000B                		rts
 (2)  425/ 60007E2 : 0009                		nop
 (2)  426/ 60007E4 :                     		align 4
-(2)  427/ 60007E4 : 0600 6C74 0600 6C4C 		ltorg
-                    0600 6C94 FFF0 0000 
+(2)  427/ 60007E4 : 0600 6C70 0600 6C48 		ltorg
+                    0600 6C90 FFF0 0000 
                     8000                
 (2)  428/ 60007F6 :                     
 (2)  429/ 60007F6 :                     ; r1 - layout data pointer
@@ -8277,8 +8279,8 @@
 (2)  783/ 6000A8A : 000B                		rts
 (2)  784/ 6000A8C : 0009                		nop
 (2)  785/ 6000A8E :                     		align 4
-(2)  786/ 6000A90 : 0600 6C74 0600 6C4C 		ltorg
-                    0600 6C94 0600 0870 
+(2)  786/ 6000A90 : 0600 6C70 0600 6C48 		ltorg
+                    0600 6C90 0600 0870 
                     0010 0000 4000 0000 
                     FFF0 0000 FFE0 0000 
 (2)  787/ 6000AB0 :                     
@@ -8307,7 +8309,7 @@
 (2)  810/ 6000ACC : 000B                		rts
 (2)  811/ 6000ACE : 0009                		nop
 (2)  812/ 6000AD0 :                     		align 4
-(2)  813/ 6000AD0 : 0600 6C94           		ltorg
+(2)  813/ 6000AD0 : 0600 6C90           		ltorg
 (2)  814/ 6000AD4 :                     
 (2)  815/ 6000AD4 :                     ; ------------------------------------------------
 (2)  816/ 6000AD4 :                     ; Read model
@@ -8817,7 +8819,7 @@
 (2) 1167/ 6000DC8 :                     		align 4
 (2) 1168/ 6000DC8 : 3FFF FFFF C000 0000 		ltorg
                     0000 E000 7FFF FFFF 
-                    0603 0D5C 0603 2B0C 
+                    0603 0D58 0603 2B08 
                     DC00 FF60           
 (2) 1169/ 6000DE4 :                     
 (2) 1170/ 6000DE4 :                     ; ----------------------------------------	
@@ -9020,7 +9022,7 @@
 (2) 1367/ 6000F06 : 000B                		rts
 (2) 1368/ 6000F08 : 0009                		nop
 (2) 1369/ 6000F0A :                     		align 4
-(2) 1370/ 6000F0C : 0600 6C4C 000F FFFF 		ltorg
+(2) 1370/ 6000F0C : 0600 6C48 000F FFFF 		ltorg
                     0140 0000 FF00      
 (2) 1371/ 6000F1A :                     
 (2) 1372/ 6000F1A :                     ; ------------------------------
@@ -9786,13 +9788,13 @@
 (1)  861/ 600109A :                     		align 4
 (1)  862/ 600109C : 0600 1BB0 0600 23B0 		ltorg
                     0604 0000 2000 4020 
-                    534C 4156 0600 6BF4 
+                    534C 4156 0600 6BF0 
                     2000 4000 0600 143C 
                     C000 0000 0600 0646 
                     2000 402E 0600 0FE8 
-                    0603 48BC 0600 071A 
-                    0603 0D5C 0603 4EBC 
-                    0603 2B0C 0603 4EBE 
+                    0603 48B8 0600 071A 
+                    0603 0D58 0603 4EB8 
+                    0603 2B08 0603 4EBA 
                     C000 03B4 2000 4100 
                     07FF FE10 FEE2 FEE4 
                     00F0 FE92 01CE FE80 
@@ -10086,15 +10088,15 @@
 (1) 1149/ 6001246 : 0009                		nop
 (1) 1150/ 6001248 :                     		align 4
 (1) 1151/ 6001248 : 0603 F000 2000 4020 		ltorg
-                    534C 4156 0600 6BF4 
+                    534C 4156 0600 6BF0 
                     2000 4000 0600 1B74 
                     C000 0000 0600 0AB0 
-                    2000 402F 0603 4ABC 
-                    0600 7114 0603 0D5C 
-                    0601 40E4 0603 2B0C 
-                    0600 0774 0600 6C94 
-                    0600 0AD4 0603 4EBC 
-                    0603 4EBE 2000 4022 
+                    2000 402F 0603 4AB8 
+                    0600 7110 0603 0D58 
+                    0601 40E0 0603 2B08 
+                    0600 0774 0600 6C90 
+                    0600 0AD4 0603 4EB8 
+                    0603 4EBA 2000 4022 
                     2000 402E FE10 FEE2 
                     FEE4 00F0 FE92 000F 
                     FE80 5A7F A538 03B6 
@@ -10424,9 +10426,9 @@
 (1) 1474/ 6001394 :                     ; ----------------------------------------
 (1) 1475/ 6001394 :                     
 (1) 1476/ 6001394 : 2000 4100 0600 06C8 		ltorg
-                    0600 6E44 0600 6E44 
+                    0600 6E40 0600 6E40 
                     0600 0AB0 0600 07F6 
-                    0600 6C4C 2000 402F 
+                    0600 6C48 2000 402F 
 (1) 1477/ 60013B4 :                     
 (1) 1478/ 60013B4 :                     ; =================================================================
 (1) 1479/ 60013B4 :                     ; ------------------------------------------------
@@ -10504,7 +10506,7 @@
 (1) 1551/ 6001426 : 000B                		rts
 (1) 1552/ 6001428 : 0009                		nop
 (1) 1553/ 600142A :                     		align 4
-(1) 1554/ 600142C : 0603 0D5C 0603 2B0C 		ltorg
+(1) 1554/ 600142C : 0603 0D58 0603 2B08 		ltorg
                     FE10 FE80 A518 5A00 
 (1) 1555/ 600143C :                     
 (1) 1556/ 600143C :                     ; ====================================================================
@@ -11125,10 +11127,10 @@
 (2)  607/FFFFFFFFC0000384 : 000B                		rts
 (2)  608/FFFFFFFFC0000386 : 0009                		nop
 (2)  609/FFFFFFFFC0000388 :                     		align 4
-(2)  610/FFFFFFFFC0000388 : 2402 0200 0603 0D5C 		ltorg
-                    0602 10B4 2000 4100 
-                    C000 06D4 0603 0D5C 
-                    0602 10B4 FF00 1FFF 
+(2)  610/FFFFFFFFC0000388 : 2402 0200 0603 0D58 		ltorg
+                    0602 10B0 2000 4100 
+                    C000 06D4 0603 0D58 
+                    0602 10B0 FF00 1FFF 
                     00FF 00E0 013E FE80 
                     A518 5A00           
 (2)  611/FFFFFFFFC00003B4 :                     
@@ -11365,7 +11367,7 @@
 (2)  842/FFFFFFFFC000047A :                     		align 4
 (2)  843/FFFFFFFFC000047C : C000 06E4 C000 06D4 		ltorg
                     C000 06F4 7FFF FFFF 
-                    0603 0D5C 0602 10B4 
+                    0603 0D58 0602 10B0 
                     00A0 00E0           
 (2)  844/FFFFFFFFC0000498 :                     
 (2)  845/FFFFFFFFC0000498 :                     ; --------------------------------
@@ -11630,7 +11632,7 @@
 (2) 1101/FFFFFFFFC0000682 :                     		align 4
 (2) 1102/FFFFFFFFC0000684 : C000 0714 C000 0714 		ltorg
                     C000 0724 C000 0724 
-                    0603 0D5C 0602 10B4 
+                    0603 0D58 0602 10B0 
 (2) 1103/FFFFFFFFC000069C :                     
 (2) 1104/FFFFFFFFC000069C :                     ; ------------------------------------------------
 (2) 1105/FFFFFFFFC000069C :                     
@@ -11699,7 +11701,7 @@
 (2)   14/ 60043B0 :                     Palette_Intro:	binclude "data/mars/objects/mtrl/intro_pal.bin"
 (2)   15/ 60043D0 :                     		align 4
 (2)   16/ 60043D0 :                     Palette_Map:	binclude "data/mars/maps/mtrl/marscity_pal.bin"
-(2)   17/ 60045CE :                     		align 4
+(2)   17/ 60045D0 :                     		align 4
 (2)   18/ 60045D0 :                     Palette_projname:
 (2)   19/ 60045D0 :                     		binclude "data/mars/objects/mtrl/projname_pal.bin"
 (2)   20/ 60045EC :                     		align 4
@@ -11788,88 +11790,88 @@
 (1) 1576/ 6006BE8 :                     ; ----------------------------------------------------------------
 (1) 1577/ 6006BE8 :                     
 (1) 1578/ 6006BE8 :                     		align $10
-(1) 1579/ 6006BF4 :                     SH2_RAM:
-(1) 1580/ 6006BF4 : (MACRO)             		struct SH2_RAM
-(1) 1580/ 6006BF4 : =$6006BF4           GLBL_LASTPC     set *
+(1) 1579/ 6006BF0 :                     SH2_RAM:
+(1) 1580/ 6006BF0 : (MACRO)             		struct SH2_RAM
+(1) 1580/ 6006BF0 : =$6006BF0           GLBL_LASTPC     set *
 (1) 1580/    B320 :                                     dephase
 (1) 1580/    B320 : =$B320              GLBL_LASTORG    set *
-(1) 1580/ 6006BF4 :                                     phase SH2_RAM
-(1) 1587/ 6006BF4 :                     MarsRam_System	ds.b (sizeof_marssys-MarsRam_System)
-(1) 1588/ 6006C4C :                     MarsRam_Video	ds.b (sizeof_marsvid-MarsRam_Video)
-(1) 1589/ 6034EC0 :                     MarsRam_Sound	ds.b (sizeof_marssnd-MarsRam_Sound)
-(1) 1590/ 6034EDC :                     sizeof_marsram	ds.l 0
-(1) 1592/ 6034EDC :                     
-(1) 1593/ 6034EDC :                     .here:
-(1) 1597/ 6034EDC : (MACRO)             		finish
-(1) 1597/ 6006BF4 :                                     !org GLBL_LASTORG
-(1) 1597/ 6006BF4 :                                     phase GLBL_LASTPC
-(1) 1598/ 6006BF4 :                     		
-(1) 1599/ 6006BF4 :                     ; ====================================================================
-(1) 1600/ 6006BF4 :                     ; ----------------------------------------------------------------
-(1) 1601/ 6006BF4 :                     ; MARS Sound RAM
-(1) 1602/ 6006BF4 :                     ; ----------------------------------------------------------------
-(1) 1603/ 6006BF4 :                     
-(1) 1604/ 6006BF4 : (MACRO)             			struct MarsRam_Sound
-(1) 1604/ 6006BF4 : =$6006BF4           GLBL_LASTPC     set *
+(1) 1580/ 6006BF0 :                                     phase SH2_RAM
+(1) 1587/ 6006BF0 :                     MarsRam_System	ds.b (sizeof_marssys-MarsRam_System)
+(1) 1588/ 6006C48 :                     MarsRam_Video	ds.b (sizeof_marsvid-MarsRam_Video)
+(1) 1589/ 6034EBC :                     MarsRam_Sound	ds.b (sizeof_marssnd-MarsRam_Sound)
+(1) 1590/ 6034ED8 :                     sizeof_marsram	ds.l 0
+(1) 1592/ 6034ED8 :                     
+(1) 1593/ 6034ED8 :                     .here:
+(1) 1597/ 6034ED8 : (MACRO)             		finish
+(1) 1597/ 6006BF0 :                                     !org GLBL_LASTORG
+(1) 1597/ 6006BF0 :                                     phase GLBL_LASTPC
+(1) 1598/ 6006BF0 :                     		
+(1) 1599/ 6006BF0 :                     ; ====================================================================
+(1) 1600/ 6006BF0 :                     ; ----------------------------------------------------------------
+(1) 1601/ 6006BF0 :                     ; MARS Sound RAM
+(1) 1602/ 6006BF0 :                     ; ----------------------------------------------------------------
+(1) 1603/ 6006BF0 :                     
+(1) 1604/ 6006BF0 : (MACRO)             			struct MarsRam_Sound
+(1) 1604/ 6006BF0 : =$6006BF0           GLBL_LASTPC     set *
 (1) 1604/    B320 :                                     dephase
 (1) 1604/    B320 : =$B320              GLBL_LASTORG    set *
-(1) 1604/ 6034EC0 :                                     phase MARSRAM_SOUND
-(1) 1605/ 6034EC0 :                     ; MarsSnd_PwmChnls	ds.b sizeof_sndchn*MAX_PWMCHNL
-(1) 1606/ 6034EC0 :                     ; MarsSnd_PwmTrkData	ds.b $80*2
-(1) 1607/ 6034EC0 :                     MarsSnd_PwmPlyData	ds.l 7
-(1) 1608/ 6034EDC :                     sizeof_marssnd		ds.l 0
-(1) 1609/ 6034EDC : (MACRO)             			finish
-(1) 1609/ 6034EC0 :                                     !org GLBL_LASTORG
-(1) 1609/ 6006BF4 :                                     phase GLBL_LASTPC
-(1) 1610/ 6006BF4 :                     
-(1) 1611/ 6006BF4 :                     ; ====================================================================
-(1) 1612/ 6006BF4 :                     ; ----------------------------------------------------------------
-(1) 1613/ 6006BF4 :                     ; MARS Video RAM
-(1) 1614/ 6006BF4 :                     ; ----------------------------------------------------------------
-(1) 1615/ 6006BF4 :                     
-(1) 1616/ 6006BF4 : (MACRO)             			struct MarsRam_Video
-(1) 1616/ 6006BF4 : =$6006BF4           GLBL_LASTPC     set *
+(1) 1604/ 6034EBC :                                     phase MARSRAM_SOUND
+(1) 1605/ 6034EBC :                     ; MarsSnd_PwmChnls	ds.b sizeof_sndchn*MAX_PWMCHNL
+(1) 1606/ 6034EBC :                     ; MarsSnd_PwmTrkData	ds.b $80*2
+(1) 1607/ 6034EBC :                     MarsSnd_PwmPlyData	ds.l 7
+(1) 1608/ 6034ED8 :                     sizeof_marssnd		ds.l 0
+(1) 1609/ 6034ED8 : (MACRO)             			finish
+(1) 1609/ 6034EBC :                                     !org GLBL_LASTORG
+(1) 1609/ 6006BF0 :                                     phase GLBL_LASTPC
+(1) 1610/ 6006BF0 :                     
+(1) 1611/ 6006BF0 :                     ; ====================================================================
+(1) 1612/ 6006BF0 :                     ; ----------------------------------------------------------------
+(1) 1613/ 6006BF0 :                     ; MARS Video RAM
+(1) 1614/ 6006BF0 :                     ; ----------------------------------------------------------------
+(1) 1615/ 6006BF0 :                     
+(1) 1616/ 6006BF0 : (MACRO)             			struct MarsRam_Video
+(1) 1616/ 6006BF0 : =$6006BF0           GLBL_LASTPC     set *
 (1) 1616/    B320 :                                     dephase
 (1) 1616/    B320 : =$B320              GLBL_LASTORG    set *
-(1) 1616/ 6006C4C :                                     phase MARSRAM_VIDEO
-(1) 1617/ 6006C4C :                     RAM_Mars_ObjCamera	ds.b sizeof_camera		; Camera buffer
-(1) 1618/ 6006C74 :                     RAM_Mars_ObjLayout	ds.b sizeof_layout		; Layout buffer
-(1) 1619/ 6006C94 :                     RAM_Mars_Objects	ds.b sizeof_mdlobj*MAX_MODELS	; Objects list
-(1) 1620/ 6007114 :                     RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
-(1) 1621/ 60140E4 :                     RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
-(1) 1622/ 60210B4 :                     RAM_Mars_VdpDrwList	ds.b sizeof_plypz*MAX_SVDP_PZ	; Pieces list
-(1) 1623/ 6030D5C :                     RAM_Mars_VdpDrwList_e	ds.l 0				; (end-of-list label)
-(1) 1624/ 6030D5C :                     RAM_Mars_Plgn_ZList_0	ds.l MAX_FACES*2		; Z value / foward faces
-(1) 1625/ 6032B0C :                     RAM_Mars_Plgn_ZList_1	ds.l MAX_FACES*2		; Z value / foward faces
-(1) 1626/ 60348BC :                     RAM_Mars_MdTasksFifo_M	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Request list for Master: SVDP and PWM interaction exclusive
-(1) 1627/ 6034ABC :                     RAM_Mars_MdTasksFifo_S	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Request list for Slave: Controlling objects and camera
-(1) 1628/ 6034CBC :                     RAM_Mars_Palette	ds.w 256			; Indexed palette
-(1) 1629/ 6034EBC :                     RAM_Mars_PlgnNum_0	ds.w 1				; Number of polygons to read, both buffers
-(1) 1630/ 6034EBE :                     RAM_Mars_PlgnNum_1	ds.w 1				;
-(1) 1631/ 6034EC0 :                     sizeof_marsvid		ds.l 0
-(1) 1632/ 6034EC0 : (MACRO)             			finish
-(1) 1632/ 6006C4C :                                     !org GLBL_LASTORG
-(1) 1632/ 6006BF4 :                                     phase GLBL_LASTPC
-(1) 1633/ 6006BF4 :                     			
-(1) 1634/ 6006BF4 :                     ; ====================================================================
-(1) 1635/ 6006BF4 :                     ; ----------------------------------------------------------------
-(1) 1636/ 6006BF4 :                     ; MARS System RAM
-(1) 1637/ 6006BF4 :                     ; ----------------------------------------------------------------
-(1) 1638/ 6006BF4 :                     
-(1) 1639/ 6006BF4 : (MACRO)             			struct MarsRam_System
-(1) 1639/ 6006BF4 : =$6006BF4           GLBL_LASTPC     set *
+(1) 1616/ 6006C48 :                                     phase MARSRAM_VIDEO
+(1) 1617/ 6006C48 :                     RAM_Mars_ObjCamera	ds.b sizeof_camera		; Camera buffer
+(1) 1618/ 6006C70 :                     RAM_Mars_ObjLayout	ds.b sizeof_layout		; Layout buffer
+(1) 1619/ 6006C90 :                     RAM_Mars_Objects	ds.b sizeof_mdlobj*MAX_MODELS	; Objects list
+(1) 1620/ 6007110 :                     RAM_Mars_Polygons_0	ds.b sizeof_polygn*MAX_FACES	; Polygon list 0
+(1) 1621/ 60140E0 :                     RAM_Mars_Polygons_1	ds.b sizeof_polygn*MAX_FACES	; Polygon list 1
+(1) 1622/ 60210B0 :                     RAM_Mars_VdpDrwList	ds.b sizeof_plypz*MAX_SVDP_PZ	; Pieces list
+(1) 1623/ 6030D58 :                     RAM_Mars_VdpDrwList_e	ds.l 0				; (end-of-list label)
+(1) 1624/ 6030D58 :                     RAM_Mars_Plgn_ZList_0	ds.l MAX_FACES*2		; Z value / foward faces
+(1) 1625/ 6032B08 :                     RAM_Mars_Plgn_ZList_1	ds.l MAX_FACES*2		; Z value / foward faces
+(1) 1626/ 60348B8 :                     RAM_Mars_MdTasksFifo_M	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Request list for Master: SVDP and PWM interaction exclusive
+(1) 1627/ 6034AB8 :                     RAM_Mars_MdTasksFifo_S	ds.l MAX_MDTSKARG*MAX_MDTASKS	; Request list for Slave: Controlling objects and camera
+(1) 1628/ 6034CB8 :                     RAM_Mars_Palette	ds.w 256			; Indexed palette
+(1) 1629/ 6034EB8 :                     RAM_Mars_PlgnNum_0	ds.w 1				; Number of polygons to read, both buffers
+(1) 1630/ 6034EBA :                     RAM_Mars_PlgnNum_1	ds.w 1				;
+(1) 1631/ 6034EBC :                     sizeof_marsvid		ds.l 0
+(1) 1632/ 6034EBC : (MACRO)             			finish
+(1) 1632/ 6006C48 :                                     !org GLBL_LASTORG
+(1) 1632/ 6006BF0 :                                     phase GLBL_LASTPC
+(1) 1633/ 6006BF0 :                     			
+(1) 1634/ 6006BF0 :                     ; ====================================================================
+(1) 1635/ 6006BF0 :                     ; ----------------------------------------------------------------
+(1) 1636/ 6006BF0 :                     ; MARS System RAM
+(1) 1637/ 6006BF0 :                     ; ----------------------------------------------------------------
+(1) 1638/ 6006BF0 :                     
+(1) 1639/ 6006BF0 : (MACRO)             			struct MarsRam_System
+(1) 1639/ 6006BF0 : =$6006BF0           GLBL_LASTPC     set *
 (1) 1639/    B320 :                                     dephase
 (1) 1639/    B320 : =$B320              GLBL_LASTORG    set *
-(1) 1639/ 6006BF4 :                                     phase MARSRAM_SYSTEM
-(1) 1640/ 6006BF4 :                     RAM_Mars_Global		ds.w sizeof_MarsGbl		; keep it as a word
-(1) 1641/ 6006C4C :                     sizeof_marssys		ds.l 0
-(1) 1642/ 6006C4C : (MACRO)             			finish
-(1) 1642/ 6006BF4 :                                     !org GLBL_LASTORG
-(1) 1642/ 6006BF4 :                                     phase GLBL_LASTPC
-(1) 1643/ 6006BF4 :                     
-      62/ 6006BF4 :                     		ltorg
-      63/ 6006BF4 :                     		cpu 68000
-      64/ 6006BF4 :                     		padding off
+(1) 1639/ 6006BF0 :                                     phase MARSRAM_SYSTEM
+(1) 1640/ 6006BF0 :                     RAM_Mars_Global		ds.w sizeof_MarsGbl		; keep it as a word
+(1) 1641/ 6006C48 :                     sizeof_marssys		ds.l 0
+(1) 1642/ 6006C48 : (MACRO)             			finish
+(1) 1642/ 6006BF0 :                                     !org GLBL_LASTORG
+(1) 1642/ 6006BF0 :                                     phase GLBL_LASTPC
+(1) 1643/ 6006BF0 :                     
+      62/ 6006BF0 :                     		ltorg
+      63/ 6006BF0 :                     		cpu 68000
+      64/ 6006BF0 :                     		padding off
       65/    B320 :                     		dephase
       66/    B320 :                     MARS_RAMDATA_E:
       67/    B320 :                     		align 4
@@ -11938,298 +11940,333 @@
 (3)    2/ 201BFC4 :                     		binclude "data/mars/maps/map2_lay.bin"
 (3)    3/ 201C7C4 :                     		align 4
 (3)    4/ 201C7C4 :                     .blocks:
-(3)    5/ 201C7C4 : 0201 C800           		dc.l MarsMapPz_01_floor
-(3)    6/ 201C7C8 : 0201 CA50           		dc.l MarsMapPz_02_main
-(3)    7/ 201C7CC : 0201 E740           		dc.l MarsMapPz_03_prekfc
-(3)    8/ 201C7D0 : 0202 2FB0           		dc.l MarsMapPz_04_inters
-(3)    9/ 201C7D4 : 0202 3210           		dc.l MarsMapPz_05_bridge
-(3)   10/ 201C7D8 : 0202 A158           		dc.l MarsMapPz_06_septm
-(3)   11/ 201C7DC : 0202 A510           		dc.l MarsMapPz_07_multi
-(3)   12/ 201C7E0 : 0202 A908           		dc.l MarsMapPz_08_kfcn
-(3)   13/ 201C7E4 : 0202 BD68           		dc.l MarsMapPz_09_kfcs
-(3)   14/ 201C7E8 : 0202 C098           		dc.l MarsMapPz_0A_carls_n
-(3)   15/ 201C7EC : 0202 D4C8           		dc.l MarsMapPz_0B_carls_s
-(3)   16/ 201C7F0 : 0202 D810           		dc.l MarsMapPz_0C_carls_p
-(3)   17/ 201C7F4 : 0202 DA60           		dc.l MarsMapPz_0D_hut_l
-(3)   18/ 201C7F8 : 0202 DD2C           		dc.l MarsMapPz_0E_hut_r
-(3)   19/ 201C7FC : 0202 DFF8           		dc.l MarsMapPz_0F_sept_lrd
-(3)   20/ 201C800 :                     		include "data/mars/maps/pz/01_floor.asm"
-(4)    1/ 201C800 :                     MarsMapPz_01_floor:
-(4)    2/ 201C800 : 0010 0019           		dc.w 16,25
-(4)    3/ 201C804 : 0201 C814 0201 C940 		dc.l .vert,.face,.vrtx,.mtrl
-                    0201 C9E0 0201 CA50 
-(4)    4/ 201C814 :                     .vert:		binclude "data/mars/maps/pz/01_floor_vert.bin"
-(4)    5/ 201C940 :                     .face:		binclude "data/mars/maps/pz/01_floor_face.bin"
-(4)    6/ 201C9E0 :                     .vrtx:		binclude "data/mars/maps/pz/01_floor_vrtx.bin"
-(4)    7/ 201CA50 :                     .mtrl:		include "data/mars/maps/pz/01_floor_mtrl.asm"
-(5)    1/ 201CA50 :                     
-(4)    8/ 201CA50 :                     		align 4
-(4)    9/ 201CA50 :                     
-(3)   21/ 201CA50 :                     		include "data/mars/maps/pz/02_main.asm"
-(4)    1/ 201CA50 :                     MarsMapPz_02_main:
-(4)    2/ 201CA50 : 00CE 0144           		dc.w 206,324
-(4)    3/ 201CA54 : 0201 CA64 0201 D868 		dc.l .vert,.face,.vrtx,.mtrl
-                    0201 E178 0201 E738 
-(4)    4/ 201CA64 :                     .vert:		binclude "data/mars/maps/pz/02_main_vert.bin"
-(4)    5/ 201D868 :                     .face:		binclude "data/mars/maps/pz/02_main_face.bin"
-(4)    6/ 201E178 :                     .vrtx:		binclude "data/mars/maps/pz/02_main_vrtx.bin"
-(4)    7/ 201E738 :                     .mtrl:		include "data/mars/maps/pz/02_main_mtrl.asm"
-(5)    1/ 201E738 : 0203 0E24           	 dc.l Textr_marscity
-(5)    2/ 201E73C : 0200                	 dc.w 512
-(5)    3/ 201E73E : 0000                	 dc.w 0
-(5)    4/ 201E740 :                     
-(4)    8/ 201E740 :                     		align 4
-(4)    9/ 201E740 :                     
-(3)   22/ 201E740 :                     		include "data/mars/maps/pz/03_prekfc.asm"
-(4)    1/ 201E740 :                     MarsMapPz_03_prekfc:
-(4)    2/ 201E740 : 01EF 044F           		dc.w 495,1103
-(4)    3/ 201E744 : 0201 E754 0202 0BD8 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 2028 0202 2FA8 
-(4)    4/ 201E754 :                     .vert:		binclude "data/mars/maps/pz/03_prekfc_vert.bin"
-(4)    5/ 2020BD8 :                     .face:		binclude "data/mars/maps/pz/03_prekfc_face.bin"
-(4)    6/ 2022028 :                     .vrtx:		binclude "data/mars/maps/pz/03_prekfc_vrtx.bin"
-(4)    7/ 2022FA8 :                     .mtrl:		include "data/mars/maps/pz/03_prekfc_mtrl.asm"
-(5)    1/ 2022FA8 : 0203 0E24           	 dc.l Textr_marscity
-(5)    2/ 2022FAC : 0200                	 dc.w 512
-(5)    3/ 2022FAE : 0000                	 dc.w 0
-(5)    4/ 2022FB0 :                     
-(4)    8/ 2022FB0 :                     		align 4
-(4)    9/ 2022FB0 :                     
-(3)   23/ 2022FB0 :                     		include "data/mars/maps/pz/04_inters.asm"
-(4)    1/ 2022FB0 :                     MarsMapPz_04_inters:
-(4)    2/ 2022FB0 : 0010 0468           		dc.w 16,1128
-(4)    3/ 2022FB4 : 0202 2FC4 0202 30F0 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 3190 0202 3210 
-(4)    4/ 2022FC4 :                     .vert:		binclude "data/mars/maps/pz/04_inters_vert.bin"
-(4)    5/ 20230F0 :                     .face:		binclude "data/mars/maps/pz/04_inters_face.bin"
-(4)    6/ 2023190 :                     .vrtx:		binclude "data/mars/maps/pz/04_inters_vrtx.bin"
-(4)    7/ 2023210 :                     .mtrl:		include "data/mars/maps/pz/04_inters_mtrl.asm"
-(5)    1/ 2023210 :                     
-(4)    8/ 2023210 :                     		align 4
-(4)    9/ 2023210 :                     
-(3)   24/ 2023210 :                     		include "data/mars/maps/pz/05_bridge.asm"
-(4)    1/ 2023210 :                     MarsMapPz_05_bridge:
-(4)    2/ 2023210 : 02D5 0929           		dc.w 725,2345
-(4)    3/ 2023214 : 0202 3224 0202 6B30 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 89C0 0202 A150 
-(4)    4/ 2023224 :                     .vert:		binclude "data/mars/maps/pz/05_bridge_vert.bin"
-(4)    5/ 2026B30 :                     .face:		binclude "data/mars/maps/pz/05_bridge_face.bin"
-(4)    6/ 20289C0 :                     .vrtx:		binclude "data/mars/maps/pz/05_bridge_vrtx.bin"
-(4)    7/ 202A150 :                     .mtrl:		include "data/mars/maps/pz/05_bridge_mtrl.asm"
-(5)    1/ 202A150 : 0203 0E24           	 dc.l Textr_marscity
-(5)    2/ 202A154 : 0200                	 dc.w 512
-(5)    3/ 202A156 : 0000                	 dc.w 0
-(5)    4/ 202A158 :                     
-(4)    8/ 202A158 :                     		align 4
-(4)    9/ 202A158 :                     
-(3)   25/ 202A158 :                     		include "data/mars/maps/pz/06_septm.asm"
-(4)    1/ 202A158 :                     MarsMapPz_06_septm:
-(4)    2/ 202A158 : 001C 0950           		dc.w 28,2384
-(4)    3/ 202A15C : 0202 A16C 0202 A340 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 A460 0202 A510 
-(4)    4/ 202A16C :                     .vert:		binclude "data/mars/maps/pz/06_septm_vert.bin"
-(4)    5/ 202A340 :                     .face:		binclude "data/mars/maps/pz/06_septm_face.bin"
-(4)    6/ 202A460 :                     .vrtx:		binclude "data/mars/maps/pz/06_septm_vrtx.bin"
-(4)    7/ 202A510 :                     .mtrl:		include "data/mars/maps/pz/06_septm_mtrl.asm"
-(5)    1/ 202A510 :                     
-(4)    8/ 202A510 :                     		align 4
-(4)    9/ 202A510 :                     
-(3)   26/ 202A510 :                     		include "data/mars/maps/pz/07_multi.asm"
-(4)    1/ 202A510 :                     MarsMapPz_07_multi:
-(4)    2/ 202A510 : 001E 097B           		dc.w 30,2427
-(4)    3/ 202A514 : 0202 A524 0202 A728 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 A858 0202 A908 
-(4)    4/ 202A524 :                     .vert:		binclude "data/mars/maps/pz/07_multi_vert.bin"
-(4)    5/ 202A728 :                     .face:		binclude "data/mars/maps/pz/07_multi_face.bin"
-(4)    6/ 202A858 :                     .vrtx:		binclude "data/mars/maps/pz/07_multi_vrtx.bin"
-(4)    7/ 202A908 :                     .mtrl:		include "data/mars/maps/pz/07_multi_mtrl.asm"
-(5)    1/ 202A908 :                     
-(4)    8/ 202A908 :                     		align 4
-(4)    9/ 202A908 :                     
-(3)   27/ 202A908 :                     		include "data/mars/maps/pz/08_kfcn.asm"
-(4)    1/ 202A908 :                     MarsMapPz_08_kfcn:
-(4)    2/ 202A908 : 00AD 0A26           		dc.w 173,2598
-(4)    3/ 202A90C : 0202 A91C 0202 B120 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 B8C0 0202 BD60 
-(4)    4/ 202A91C :                     .vert:		binclude "data/mars/maps/pz/08_kfcn_vert.bin"
-(4)    5/ 202B120 :                     .face:		binclude "data/mars/maps/pz/08_kfcn_face.bin"
-(4)    6/ 202B8C0 :                     .vrtx:		binclude "data/mars/maps/pz/08_kfcn_vrtx.bin"
-(4)    7/ 202BD60 :                     .mtrl:		include "data/mars/maps/pz/08_kfcn_mtrl.asm"
-(5)    1/ 202BD60 : 0203 0E24           	 dc.l Textr_marscity
-(5)    2/ 202BD64 : 0200                	 dc.w 512
-(5)    3/ 202BD66 : 0000                	 dc.w 0
-(5)    4/ 202BD68 :                     
-(4)    8/ 202BD68 :                     		align 4
-(4)    9/ 202BD68 :                     
-(3)   28/ 202BD68 :                     		include "data/mars/maps/pz/09_kfcs.asm"
-(4)    1/ 202BD68 :                     MarsMapPz_09_kfcs:
-(4)    2/ 202BD68 : 0018 0A47           		dc.w 24,2631
-(4)    3/ 202BD6C : 0202 BD7C 0202 BF08 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 BFF8 0202 C098 
-(4)    4/ 202BD7C :                     .vert:		binclude "data/mars/maps/pz/09_kfcs_vert.bin"
-(4)    5/ 202BF08 :                     .face:		binclude "data/mars/maps/pz/09_kfcs_face.bin"
-(4)    6/ 202BFF8 :                     .vrtx:		binclude "data/mars/maps/pz/09_kfcs_vrtx.bin"
-(4)    7/ 202C098 :                     .mtrl:		include "data/mars/maps/pz/09_kfcs_mtrl.asm"
-(5)    1/ 202C098 :                     
-(4)    8/ 202C098 :                     		align 4
-(4)    9/ 202C098 :                     
-(3)   29/ 202C098 :                     		include "data/mars/maps/pz/0A_carls_n.asm"
-(4)    1/ 202C098 :                     MarsMapPz_0A_carls_n:
-(4)    2/ 202C098 : 008F 0B06           		dc.w 143,2822
-(4)    3/ 202C09C : 0202 C0AC 0202 C9A0 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 CFF0 0202 D4C0 
-(4)    4/ 202C0AC :                     .vert:		binclude "data/mars/maps/pz/0A_carls_n_vert.bin"
-(4)    5/ 202C9A0 :                     .face:		binclude "data/mars/maps/pz/0A_carls_n_face.bin"
-(4)    6/ 202CFF0 :                     .vrtx:		binclude "data/mars/maps/pz/0A_carls_n_vrtx.bin"
-(4)    7/ 202D4C0 :                     .mtrl:		include "data/mars/maps/pz/0A_carls_n_mtrl.asm"
-(5)    1/ 202D4C0 : 0203 0E24           	 dc.l Textr_marscity
-(5)    2/ 202D4C4 : 0200                	 dc.w 512
-(5)    3/ 202D4C6 : 0000                	 dc.w 0
-(5)    4/ 202D4C8 :                     
-(4)    8/ 202D4C8 :                     		align 4
-(4)    9/ 202D4C8 :                     
-(3)   30/ 202D4C8 :                     		include "data/mars/maps/pz/0B_carls_s.asm"
-(4)    1/ 202D4C8 :                     MarsMapPz_0B_carls_s:
-(4)    2/ 202D4C8 : 0019 0B29           		dc.w 25,2857
-(4)    3/ 202D4CC : 0202 D4DC 0202 D680 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 D770 0202 D810 
-(4)    4/ 202D4DC :                     .vert:		binclude "data/mars/maps/pz/0B_carls_s_vert.bin"
-(4)    5/ 202D680 :                     .face:		binclude "data/mars/maps/pz/0B_carls_s_face.bin"
-(4)    6/ 202D770 :                     .vrtx:		binclude "data/mars/maps/pz/0B_carls_s_vrtx.bin"
-(4)    7/ 202D810 :                     .mtrl:		include "data/mars/maps/pz/0B_carls_s_mtrl.asm"
-(5)    1/ 202D810 :                     
-(4)    8/ 202D810 :                     		align 4
-(4)    9/ 202D810 :                     
-(3)   31/ 202D810 :                     		include "data/mars/maps/pz/0C_carls_p.asm"
-(4)    1/ 202D810 :                     MarsMapPz_0C_carls_p:
-(4)    2/ 202D810 : 0010 0B42           		dc.w 16,2882
-(4)    3/ 202D814 : 0202 D824 0202 D950 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 D9F0 0202 DA60 
-(4)    4/ 202D824 :                     .vert:		binclude "data/mars/maps/pz/0C_carls_p_vert.bin"
-(4)    5/ 202D950 :                     .face:		binclude "data/mars/maps/pz/0C_carls_p_face.bin"
-(4)    6/ 202D9F0 :                     .vrtx:		binclude "data/mars/maps/pz/0C_carls_p_vrtx.bin"
-(4)    7/ 202DA60 :                     .mtrl:		include "data/mars/maps/pz/0C_carls_p_mtrl.asm"
-(5)    1/ 202DA60 :                     
-(4)    8/ 202DA60 :                     		align 4
-(4)    9/ 202DA60 :                     
-(3)   32/ 202DA60 :                     		include "data/mars/maps/pz/0D_hut_l.asm"
-(4)    1/ 202DA60 :                     MarsMapPz_0D_hut_l:
-(4)    2/ 202DA60 : 0014 0B60           		dc.w 20,2912
-(4)    3/ 202DA64 : 0202 DA74 0202 DBDC 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 DCAC 0202 DD2C 
-(4)    4/ 202DA74 :                     .vert:		binclude "data/mars/maps/pz/0D_hut_l_vert.bin"
-(4)    5/ 202DBDC :                     .face:		binclude "data/mars/maps/pz/0D_hut_l_face.bin"
-(4)    6/ 202DCAC :                     .vrtx:		binclude "data/mars/maps/pz/0D_hut_l_vrtx.bin"
-(4)    7/ 202DD2C :                     .mtrl:		include "data/mars/maps/pz/0D_hut_l_mtrl.asm"
-(5)    1/ 202DD2C :                     
-(4)    8/ 202DD2C :                     		align 4
-(4)    9/ 202DD2C :                     
-(3)   33/ 202DD2C :                     		include "data/mars/maps/pz/0E_hut_r.asm"
-(4)    1/ 202DD2C :                     MarsMapPz_0E_hut_r:
-(4)    2/ 202DD2C : 0014 0B7E           		dc.w 20,2942
-(4)    3/ 202DD30 : 0202 DD40 0202 DEA8 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 DF78 0202 DFF8 
-(4)    4/ 202DD40 :                     .vert:		binclude "data/mars/maps/pz/0E_hut_r_vert.bin"
-(4)    5/ 202DEA8 :                     .face:		binclude "data/mars/maps/pz/0E_hut_r_face.bin"
-(4)    6/ 202DF78 :                     .vrtx:		binclude "data/mars/maps/pz/0E_hut_r_vrtx.bin"
-(4)    7/ 202DFF8 :                     .mtrl:		include "data/mars/maps/pz/0E_hut_r_mtrl.asm"
-(5)    1/ 202DFF8 :                     
-(4)    8/ 202DFF8 :                     		align 4
-(4)    9/ 202DFF8 :                     
-(3)   34/ 202DFF8 :                     		include "data/mars/maps/pz/0F_sept_lrd.asm"
-(4)    1/ 202DFF8 :                     MarsMapPz_0F_sept_lrd:
-(4)    2/ 202DFF8 : 0014 0B9C           		dc.w 20,2972
-(4)    3/ 202DFFC : 0202 E00C 0202 E174 		dc.l .vert,.face,.vrtx,.mtrl
-                    0202 E244 0202 E2C4 
-(4)    4/ 202E00C :                     .vert:		binclude "data/mars/maps/pz/0F_sept_lrd_vert.bin"
-(4)    5/ 202E174 :                     .face:		binclude "data/mars/maps/pz/0F_sept_lrd_face.bin"
-(4)    6/ 202E244 :                     .vrtx:		binclude "data/mars/maps/pz/0F_sept_lrd_vrtx.bin"
-(4)    7/ 202E2C4 :                     .mtrl:		include "data/mars/maps/pz/0F_sept_lrd_mtrl.asm"
-(5)    1/ 202E2C4 :                     
-(4)    8/ 202E2C4 :                     		align 4
-(4)    9/ 202E2C4 :                     		align 4
-(3)   35/ 202E2C4 :                     
-(2)   10/ 202E2C4 :                     
-(1)   18/ 202E2C4 :                     		align 4
-(1)   19/ 202E2C4 :                     		include "data/mars/objects/mdl/projname/head.asm"
-(2)    1/ 202E2C4 :                     MarsObj_projname:
-(2)    2/ 202E2C4 : 018F 01BB           		dc.w 399,443
-(2)    3/ 202E2C8 : 0202 E2D8 0202 F79C 		dc.l .vert,.face,.vrtx,.mtrl
-                    0203 072C 0203 0E1C 
-(2)    4/ 202E2D8 :                     .vert:		binclude "data/mars/objects/mdl/projname/vert.bin"
-(2)    5/ 202F79C :                     .face:		binclude "data/mars/objects/mdl/projname/face.bin"
-(2)    6/ 203072C :                     .vrtx:		binclude "data/mars/objects/mdl/projname/vrtx.bin"
-(2)    7/ 2030E1C :                     .mtrl:		include "data/mars/objects/mdl/projname/mtrl.asm"
-(3)    1/ 2030E1C : 0207 0E24           	 dc.l Textr_projname
-(3)    2/ 2030E20 : 0168                	 dc.w 360
-(3)    3/ 2030E22 : 0000                	 dc.w 0
-(3)    4/ 2030E24 :                     
-(2)    8/ 2030E24 :                     		align 4
-(1)   20/ 2030E24 :                     		align 4
-(1)   21/ 2030E24 :                     
-(1)   22/ 2030E24 :                     Textr_marscity:
-(1)   23/ 2030E24 :                     		binclude "data/mars/maps/mtrl/marscity_art.bin"
-(1)   24/ 2070E24 :                     		align 4
-(1)   25/ 2070E24 :                     Textr_projname:
-(1)   26/ 2070E24 :                     		binclude "data/mars/objects/mtrl/projname_art.bin"
-(1)   27/ 2074664 :                     		align 4
-(1)   28/ 2074664 :                     Textr_intro:
-(1)   29/ 2074664 :                     		binclude "data/mars/objects/mtrl/intro_art.bin"
-(1)   30/ 2078930 :                     		align 4
-(1)   31/ 2078930 :                     
-(1)   32/ 2078930 :                     ; MARSANI_INTRO_1:
-(1)   33/ 2078930 :                     ; 		binclude "data/mars/objects/anim/logo_1_anim.bin"
-(1)   34/ 2078930 :                     ; 		align 4
-(1)   35/ 2078930 :                     
-(1)   36/ 2078930 :                     ; PWM_STEREO:	binclude "data/sound/pwm_st.wav",$2C,$200000
-(1)   37/ 2078930 :                     ; PWM_STEREO_e:
-(1)   38/ 2078930 :                     ; 		align 4
-(1)   39/ 2078930 :                     ; PwmInsWav_SPHEAVY1:
-(1)   40/ 2078930 :                     ; 		binclude "data/sound/instr/smpl/SPHEAVY1.wav",$2C
-(1)   41/ 2078930 :                     ; PwmInsWav_SPHEAVY1_e:
-(1)   42/ 2078930 :                     ; 		align 4
-(1)   43/ 2078930 :                     ; PwmInsWav_MCLSTRNG:
-(1)   44/ 2078930 :                     ; 		binclude "data/sound/instr/smpl/MCLSTRNG.wav",$2C
-(1)   45/ 2078930 :                     ; PwmInsWav_MCLSTRNG_e:
-(1)   46/ 2078930 :                     ; 		align 4
-(1)   47/ 2078930 :                     ; PwmInsWav_WHODSNARE:
-(1)   48/ 2078930 :                     ; 		binclude "data/sound/instr/smpl/ST-79_whodini-snare.wav",$2C
-(1)   49/ 2078930 :                     ; PwmInsWav_WHODSNARE_e:
-(1)   50/ 2078930 :                     ; 		align 4
-(1)   51/ 2078930 :                     ; PwmInsWav_TECHNOBASSD:
-(1)   52/ 2078930 :                     ; 		binclude "data/sound/instr/smpl/ST-72_techno-bassd3.wav",$2C
-(1)   53/ 2078930 :                     ; PwmInsWav_TECHNOBASSD_e:
-(1)   54/ 2078930 :                     ; 		align 4
-(1)   55/ 2078930 :                     ; PwmInsWav_Synth:
-(1)   56/ 2078930 :                     ; 		binclude "data/sound/instr/smpl/amiga_synth.wav",$2C
-(1)   57/ 2078930 :                     ; PwmInsWav_Synth_e:
-(1)   58/ 2078930 :                     ; 		align 4
-(1)   59/ 2078930 :                     PwmInsWav_Piano:
-(1)   60/ 2078930 :                     		binclude "data/sound/instr/smpl/piano_1.wav",$2C
-(1)   61/ 207EB26 :                     PwmInsWav_Piano_e:
-(1)   62/ 207EB26 :                     		align 4
-(1)   63/ 207EB28 :                     PwmInsWav_String:
-(1)   64/ 207EB28 :                     		binclude "data/sound/instr/smpl/string_1.wav",$2C
-(1)   65/ 208337E :                     PwmInsWav_String_e:
-(1)   66/ 208337E :                     		align 4
-(1)   67/ 2083380 :                     
-      85/   83380 :                     		dephase
-      86/   83380 :                     
-      87/   83380 :                     ; --------------------------------------------------------
-      88/   83380 :                     ; MD DATA BANK 0
-      89/   83380 :                     ; --------------------------------------------------------
-      90/   83380 :                     
-      91/  983380 :                     		phase $900000+*				; Only one currently
-      92/  983380 :                     		include "data/md_bank0.asm"
-(1)    1/  983380 :                     ; ====================================================================
-(1)    2/  983380 :                     ; ----------------------------------------------------------------
-(1)    3/  983380 :                     ; Single 68k DATA BANK for MD ($900000-$9FFFFF)
-(1)    4/  983380 :                     ; for stuff other than MD's DMA data
-(1)    5/  983380 :                     ; 
-(1)    6/  983380 :                     ; Maximum size: $0FFFFF bytes per bank
-(1)    7/  983380 :                     ; ----------------------------------------------------------------
-(1)    8/  983380 :                     
-(1)    9/  983380 :                     		align $8000
+(3)    5/ 201C7C4 : 0201 C808           		dc.l MarsMapPz_01_floor
+(3)    6/ 201C7C8 : 0201 CA58           		dc.l MarsMapPz_02_main
+(3)    7/ 201C7CC : 0201 E808           		dc.l MarsMapPz_03_prekfc
+(3)    8/ 201C7D0 : 0202 3128           		dc.l MarsMapPz_04_inters
+(3)    9/ 201C7D4 : 0202 3388           		dc.l MarsMapPz_05_bridge
+(3)   10/ 201C7D8 : 0202 A390           		dc.l MarsMapPz_06_septm
+(3)   11/ 201C7DC : 0202 A748           		dc.l MarsMapPz_07_multi
+(3)   12/ 201C7E0 : 0202 AB40           		dc.l MarsMapPz_08_kfcn
+(3)   13/ 201C7E4 : 0202 BFA0           		dc.l MarsMapPz_09_kfcs
+(3)   14/ 201C7E8 : 0202 C2D0           		dc.l MarsMapPz_0A_carls_n
+(3)   15/ 201C7EC : 0202 D700           		dc.l MarsMapPz_0B_carls_s
+(3)   16/ 201C7F0 : 0202 DA48           		dc.l MarsMapPz_0C_carls_p
+(3)   17/ 201C7F4 : 0202 DC98           		dc.l MarsMapPz_0D_midcarls
+(3)   18/ 201C7F8 : 0202 E560           		dc.l MarsMapPz_0E_hut_l
+(3)   19/ 201C7FC : 0202 E944           		dc.l MarsMapPz_0F_hut_r
+(3)   20/ 201C800 : 0202 F6E0           		dc.l MarsMapPz_10_sep_l
+(3)   21/ 201C804 : 0202 F9AC           		dc.l MarsMapPz_11_sep_r
+(3)   22/ 201C808 :                     		include "data/mars/maps/pz/01_floor.asm"
+(4)    1/ 201C808 :                     MarsMapPz_01_floor:
+(4)    2/ 201C808 : 0010 0019           		dc.w 16,25
+(4)    3/ 201C80C : 0201 C81C 0201 C948 		dc.l .vert,.face,.vrtx,.mtrl
+                    0201 C9E8 0201 CA58 
+(4)    4/ 201C81C :                     .vert:		binclude "data/mars/maps/pz/01_floor_vert.bin"
+(4)    5/ 201C948 :                     .face:		binclude "data/mars/maps/pz/01_floor_face.bin"
+(4)    6/ 201C9E8 :                     .vrtx:		binclude "data/mars/maps/pz/01_floor_vrtx.bin"
+(4)    7/ 201CA58 :                     .mtrl:		include "data/mars/maps/pz/01_floor_mtrl.asm"
+(5)    1/ 201CA58 :                     
+(4)    8/ 201CA58 :                     		align 4
+(4)    9/ 201CA58 :                     
+(3)   23/ 201CA58 :                     		include "data/mars/maps/pz/02_main.asm"
+(4)    1/ 201CA58 :                     MarsMapPz_02_main:
+(4)    2/ 201CA58 : 00CE 0144           		dc.w 206,324
+(4)    3/ 201CA5C : 0201 CA6C 0201 D870 		dc.l .vert,.face,.vrtx,.mtrl
+                    0201 E1E0 0201 E800 
+(4)    4/ 201CA6C :                     .vert:		binclude "data/mars/maps/pz/02_main_vert.bin"
+(4)    5/ 201D870 :                     .face:		binclude "data/mars/maps/pz/02_main_face.bin"
+(4)    6/ 201E1E0 :                     .vrtx:		binclude "data/mars/maps/pz/02_main_vrtx.bin"
+(4)    7/ 201E800 :                     .mtrl:		include "data/mars/maps/pz/02_main_mtrl.asm"
+(5)    1/ 201E800 : 0203 27D8           	 dc.l Textr_marscity
+(5)    2/ 201E804 : 0200                	 dc.w 512
+(5)    3/ 201E806 : 0000                	 dc.w 0
+(5)    4/ 201E808 :                     
+(4)    8/ 201E808 :                     		align 4
+(4)    9/ 201E808 :                     
+(3)   24/ 201E808 :                     		include "data/mars/maps/pz/03_prekfc.asm"
+(4)    1/ 201E808 :                     MarsMapPz_03_prekfc:
+(4)    2/ 201E808 : 01EF 044F           		dc.w 495,1103
+(4)    3/ 201E80C : 0201 E81C 0202 0CA0 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 2150 0202 3120 
+(4)    4/ 201E81C :                     .vert:		binclude "data/mars/maps/pz/03_prekfc_vert.bin"
+(4)    5/ 2020CA0 :                     .face:		binclude "data/mars/maps/pz/03_prekfc_face.bin"
+(4)    6/ 2022150 :                     .vrtx:		binclude "data/mars/maps/pz/03_prekfc_vrtx.bin"
+(4)    7/ 2023120 :                     .mtrl:		include "data/mars/maps/pz/03_prekfc_mtrl.asm"
+(5)    1/ 2023120 : 0203 27D8           	 dc.l Textr_marscity
+(5)    2/ 2023124 : 0200                	 dc.w 512
+(5)    3/ 2023126 : 0000                	 dc.w 0
+(5)    4/ 2023128 :                     
+(4)    8/ 2023128 :                     		align 4
+(4)    9/ 2023128 :                     
+(3)   25/ 2023128 :                     		include "data/mars/maps/pz/04_inters.asm"
+(4)    1/ 2023128 :                     MarsMapPz_04_inters:
+(4)    2/ 2023128 : 0010 0468           		dc.w 16,1128
+(4)    3/ 202312C : 0202 313C 0202 3268 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 3308 0202 3388 
+(4)    4/ 202313C :                     .vert:		binclude "data/mars/maps/pz/04_inters_vert.bin"
+(4)    5/ 2023268 :                     .face:		binclude "data/mars/maps/pz/04_inters_face.bin"
+(4)    6/ 2023308 :                     .vrtx:		binclude "data/mars/maps/pz/04_inters_vrtx.bin"
+(4)    7/ 2023388 :                     .mtrl:		include "data/mars/maps/pz/04_inters_mtrl.asm"
+(5)    1/ 2023388 :                     
+(4)    8/ 2023388 :                     		align 4
+(4)    9/ 2023388 :                     
+(3)   26/ 2023388 :                     		include "data/mars/maps/pz/05_bridge.asm"
+(4)    1/ 2023388 :                     MarsMapPz_05_bridge:
+(4)    2/ 2023388 : 02D5 0929           		dc.w 725,2345
+(4)    3/ 202338C : 0202 339C 0202 6CA8 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 8B98 0202 A388 
+(4)    4/ 202339C :                     .vert:		binclude "data/mars/maps/pz/05_bridge_vert.bin"
+(4)    5/ 2026CA8 :                     .face:		binclude "data/mars/maps/pz/05_bridge_face.bin"
+(4)    6/ 2028B98 :                     .vrtx:		binclude "data/mars/maps/pz/05_bridge_vrtx.bin"
+(4)    7/ 202A388 :                     .mtrl:		include "data/mars/maps/pz/05_bridge_mtrl.asm"
+(5)    1/ 202A388 : 0203 27D8           	 dc.l Textr_marscity
+(5)    2/ 202A38C : 0200                	 dc.w 512
+(5)    3/ 202A38E : 0000                	 dc.w 0
+(5)    4/ 202A390 :                     
+(4)    8/ 202A390 :                     		align 4
+(4)    9/ 202A390 :                     
+(3)   27/ 202A390 :                     		include "data/mars/maps/pz/06_septm.asm"
+(4)    1/ 202A390 :                     MarsMapPz_06_septm:
+(4)    2/ 202A390 : 001C 0950           		dc.w 28,2384
+(4)    3/ 202A394 : 0202 A3A4 0202 A578 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 A698 0202 A748 
+(4)    4/ 202A3A4 :                     .vert:		binclude "data/mars/maps/pz/06_septm_vert.bin"
+(4)    5/ 202A578 :                     .face:		binclude "data/mars/maps/pz/06_septm_face.bin"
+(4)    6/ 202A698 :                     .vrtx:		binclude "data/mars/maps/pz/06_septm_vrtx.bin"
+(4)    7/ 202A748 :                     .mtrl:		include "data/mars/maps/pz/06_septm_mtrl.asm"
+(5)    1/ 202A748 :                     
+(4)    8/ 202A748 :                     		align 4
+(4)    9/ 202A748 :                     
+(3)   28/ 202A748 :                     		include "data/mars/maps/pz/07_multi.asm"
+(4)    1/ 202A748 :                     MarsMapPz_07_multi:
+(4)    2/ 202A748 : 001E 097B           		dc.w 30,2427
+(4)    3/ 202A74C : 0202 A75C 0202 A960 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 AA90 0202 AB40 
+(4)    4/ 202A75C :                     .vert:		binclude "data/mars/maps/pz/07_multi_vert.bin"
+(4)    5/ 202A960 :                     .face:		binclude "data/mars/maps/pz/07_multi_face.bin"
+(4)    6/ 202AA90 :                     .vrtx:		binclude "data/mars/maps/pz/07_multi_vrtx.bin"
+(4)    7/ 202AB40 :                     .mtrl:		include "data/mars/maps/pz/07_multi_mtrl.asm"
+(5)    1/ 202AB40 :                     
+(4)    8/ 202AB40 :                     		align 4
+(4)    9/ 202AB40 :                     
+(3)   29/ 202AB40 :                     		include "data/mars/maps/pz/08_kfcn.asm"
+(4)    1/ 202AB40 :                     MarsMapPz_08_kfcn:
+(4)    2/ 202AB40 : 00AD 0A26           		dc.w 173,2598
+(4)    3/ 202AB44 : 0202 AB54 0202 B358 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 BAF8 0202 BF98 
+(4)    4/ 202AB54 :                     .vert:		binclude "data/mars/maps/pz/08_kfcn_vert.bin"
+(4)    5/ 202B358 :                     .face:		binclude "data/mars/maps/pz/08_kfcn_face.bin"
+(4)    6/ 202BAF8 :                     .vrtx:		binclude "data/mars/maps/pz/08_kfcn_vrtx.bin"
+(4)    7/ 202BF98 :                     .mtrl:		include "data/mars/maps/pz/08_kfcn_mtrl.asm"
+(5)    1/ 202BF98 : 0203 27D8           	 dc.l Textr_marscity
+(5)    2/ 202BF9C : 0200                	 dc.w 512
+(5)    3/ 202BF9E : 0000                	 dc.w 0
+(5)    4/ 202BFA0 :                     
+(4)    8/ 202BFA0 :                     		align 4
+(4)    9/ 202BFA0 :                     
+(3)   30/ 202BFA0 :                     		include "data/mars/maps/pz/09_kfcs.asm"
+(4)    1/ 202BFA0 :                     MarsMapPz_09_kfcs:
+(4)    2/ 202BFA0 : 0018 0A47           		dc.w 24,2631
+(4)    3/ 202BFA4 : 0202 BFB4 0202 C140 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 C230 0202 C2D0 
+(4)    4/ 202BFB4 :                     .vert:		binclude "data/mars/maps/pz/09_kfcs_vert.bin"
+(4)    5/ 202C140 :                     .face:		binclude "data/mars/maps/pz/09_kfcs_face.bin"
+(4)    6/ 202C230 :                     .vrtx:		binclude "data/mars/maps/pz/09_kfcs_vrtx.bin"
+(4)    7/ 202C2D0 :                     .mtrl:		include "data/mars/maps/pz/09_kfcs_mtrl.asm"
+(5)    1/ 202C2D0 :                     
+(4)    8/ 202C2D0 :                     		align 4
+(4)    9/ 202C2D0 :                     
+(3)   31/ 202C2D0 :                     		include "data/mars/maps/pz/0A_carls_n.asm"
+(4)    1/ 202C2D0 :                     MarsMapPz_0A_carls_n:
+(4)    2/ 202C2D0 : 008F 0B06           		dc.w 143,2822
+(4)    3/ 202C2D4 : 0202 C2E4 0202 CBD8 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 D228 0202 D6F8 
+(4)    4/ 202C2E4 :                     .vert:		binclude "data/mars/maps/pz/0A_carls_n_vert.bin"
+(4)    5/ 202CBD8 :                     .face:		binclude "data/mars/maps/pz/0A_carls_n_face.bin"
+(4)    6/ 202D228 :                     .vrtx:		binclude "data/mars/maps/pz/0A_carls_n_vrtx.bin"
+(4)    7/ 202D6F8 :                     .mtrl:		include "data/mars/maps/pz/0A_carls_n_mtrl.asm"
+(5)    1/ 202D6F8 : 0203 27D8           	 dc.l Textr_marscity
+(5)    2/ 202D6FC : 0200                	 dc.w 512
+(5)    3/ 202D6FE : 0000                	 dc.w 0
+(5)    4/ 202D700 :                     
+(4)    8/ 202D700 :                     		align 4
+(4)    9/ 202D700 :                     
+(3)   32/ 202D700 :                     		include "data/mars/maps/pz/0B_carls_s.asm"
+(4)    1/ 202D700 :                     MarsMapPz_0B_carls_s:
+(4)    2/ 202D700 : 0019 0B29           		dc.w 25,2857
+(4)    3/ 202D704 : 0202 D714 0202 D8B8 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 D9A8 0202 DA48 
+(4)    4/ 202D714 :                     .vert:		binclude "data/mars/maps/pz/0B_carls_s_vert.bin"
+(4)    5/ 202D8B8 :                     .face:		binclude "data/mars/maps/pz/0B_carls_s_face.bin"
+(4)    6/ 202D9A8 :                     .vrtx:		binclude "data/mars/maps/pz/0B_carls_s_vrtx.bin"
+(4)    7/ 202DA48 :                     .mtrl:		include "data/mars/maps/pz/0B_carls_s_mtrl.asm"
+(5)    1/ 202DA48 :                     
+(4)    8/ 202DA48 :                     		align 4
+(4)    9/ 202DA48 :                     
+(3)   33/ 202DA48 :                     		include "data/mars/maps/pz/0C_carls_p.asm"
+(4)    1/ 202DA48 :                     MarsMapPz_0C_carls_p:
+(4)    2/ 202DA48 : 0010 0B42           		dc.w 16,2882
+(4)    3/ 202DA4C : 0202 DA5C 0202 DB88 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 DC28 0202 DC98 
+(4)    4/ 202DA5C :                     .vert:		binclude "data/mars/maps/pz/0C_carls_p_vert.bin"
+(4)    5/ 202DB88 :                     .face:		binclude "data/mars/maps/pz/0C_carls_p_face.bin"
+(4)    6/ 202DC28 :                     .vrtx:		binclude "data/mars/maps/pz/0C_carls_p_vrtx.bin"
+(4)    7/ 202DC98 :                     .mtrl:		include "data/mars/maps/pz/0C_carls_p_mtrl.asm"
+(5)    1/ 202DC98 :                     
+(4)    8/ 202DC98 :                     		align 4
+(4)    9/ 202DC98 :                     
+(3)   34/ 202DC98 :                     		include "data/mars/maps/pz/0D_midcarls.asm"
+(4)    1/ 202DC98 :                     MarsMapPz_0D_midcarls:
+(4)    2/ 202DC98 : 0040 0B8B           		dc.w 64,2955
+(4)    3/ 202DC9C : 0202 DCAC 0202 E018 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 E408 0202 E558 
+(4)    4/ 202DCAC :                     .vert:		binclude "data/mars/maps/pz/0D_midcarls_vert.bin"
+(4)    5/ 202E018 :                     .face:		binclude "data/mars/maps/pz/0D_midcarls_face.bin"
+(4)    6/ 202E408 :                     .vrtx:		binclude "data/mars/maps/pz/0D_midcarls_vrtx.bin"
+(4)    7/ 202E558 :                     .mtrl:		include "data/mars/maps/pz/0D_midcarls_mtrl.asm"
+(5)    1/ 202E558 : 0203 27D8           	 dc.l Textr_marscity
+(5)    2/ 202E55C : 0200                	 dc.w 512
+(5)    3/ 202E55E : 0000                	 dc.w 0
+(5)    4/ 202E560 :                     
+(4)    8/ 202E560 :                     		align 4
+(4)    9/ 202E560 :                     
+(3)   35/ 202E560 :                     		include "data/mars/maps/pz/0E_hut_l.asm"
+(4)    1/ 202E560 :                     MarsMapPz_0E_hut_l:
+(4)    2/ 202E560 : 001D 0BB1           		dc.w 29,2993
+(4)    3/ 202E564 : 0202 E574 0202 E73C 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 E88C 0202 E93C 
+(4)    4/ 202E574 :                     .vert:		binclude "data/mars/maps/pz/0E_hut_l_vert.bin"
+(4)    5/ 202E73C :                     .face:		binclude "data/mars/maps/pz/0E_hut_l_face.bin"
+(4)    6/ 202E88C :                     .vrtx:		binclude "data/mars/maps/pz/0E_hut_l_vrtx.bin"
+(4)    7/ 202E93C :                     .mtrl:		include "data/mars/maps/pz/0E_hut_l_mtrl.asm"
+(5)    1/ 202E93C : 0203 27D8           	 dc.l Textr_marscity
+(5)    2/ 202E940 : 0200                	 dc.w 512
+(5)    3/ 202E942 : 0000                	 dc.w 0
+(5)    4/ 202E944 :                     
+(4)    8/ 202E944 :                     		align 4
+(4)    9/ 202E944 :                     
+(3)   36/ 202E944 :                     		include "data/mars/maps/pz/0F_hut_r.asm"
+(4)    1/ 202E944 :                     MarsMapPz_0F_hut_r:
+(4)    2/ 202E944 : 0063 0C21           		dc.w 99,3105
+(4)    3/ 202E948 : 0202 E958 0202 EE98 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 F388 0202 F6D8 
+(4)    4/ 202E958 :                     .vert:		binclude "data/mars/maps/pz/0F_hut_r_vert.bin"
+(4)    5/ 202EE98 :                     .face:		binclude "data/mars/maps/pz/0F_hut_r_face.bin"
+(4)    6/ 202F388 :                     .vrtx:		binclude "data/mars/maps/pz/0F_hut_r_vrtx.bin"
+(4)    7/ 202F6D8 :                     .mtrl:		include "data/mars/maps/pz/0F_hut_r_mtrl.asm"
+(5)    1/ 202F6D8 : 0203 27D8           	 dc.l Textr_marscity
+(5)    2/ 202F6DC : 0200                	 dc.w 512
+(5)    3/ 202F6DE : 0000                	 dc.w 0
+(5)    4/ 202F6E0 :                     
+(4)    8/ 202F6E0 :                     		align 4
+(4)    9/ 202F6E0 :                     
+(3)   37/ 202F6E0 :                     		include "data/mars/maps/pz/10_sep_l.asm"
+(4)    1/ 202F6E0 :                     MarsMapPz_10_sep_l:
+(4)    2/ 202F6E0 : 0014 0C3F           		dc.w 20,3135
+(4)    3/ 202F6E4 : 0202 F6F4 0202 F85C 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 F92C 0202 F9AC 
+(4)    4/ 202F6F4 :                     .vert:		binclude "data/mars/maps/pz/10_sep_l_vert.bin"
+(4)    5/ 202F85C :                     .face:		binclude "data/mars/maps/pz/10_sep_l_face.bin"
+(4)    6/ 202F92C :                     .vrtx:		binclude "data/mars/maps/pz/10_sep_l_vrtx.bin"
+(4)    7/ 202F9AC :                     .mtrl:		include "data/mars/maps/pz/10_sep_l_mtrl.asm"
+(5)    1/ 202F9AC :                     
+(4)    8/ 202F9AC :                     		align 4
+(4)    9/ 202F9AC :                     
+(3)   38/ 202F9AC :                     		include "data/mars/maps/pz/11_sep_r.asm"
+(4)    1/ 202F9AC :                     MarsMapPz_11_sep_r:
+(4)    2/ 202F9AC : 0014 0C5D           		dc.w 20,3165
+(4)    3/ 202F9B0 : 0202 F9C0 0202 FB28 		dc.l .vert,.face,.vrtx,.mtrl
+                    0202 FBF8 0202 FC78 
+(4)    4/ 202F9C0 :                     .vert:		binclude "data/mars/maps/pz/11_sep_r_vert.bin"
+(4)    5/ 202FB28 :                     .face:		binclude "data/mars/maps/pz/11_sep_r_face.bin"
+(4)    6/ 202FBF8 :                     .vrtx:		binclude "data/mars/maps/pz/11_sep_r_vrtx.bin"
+(4)    7/ 202FC78 :                     .mtrl:		include "data/mars/maps/pz/11_sep_r_mtrl.asm"
+(5)    1/ 202FC78 :                     
+(4)    8/ 202FC78 :                     		align 4
+(4)    9/ 202FC78 :                     		align 4
+(3)   39/ 202FC78 :                     
+(2)   10/ 202FC78 :                     
+(1)   18/ 202FC78 :                     		align 4
+(1)   19/ 202FC78 :                     		include "data/mars/objects/mdl/projname/head.asm"
+(2)    1/ 202FC78 :                     MarsObj_projname:
+(2)    2/ 202FC78 : 018F 01BB           		dc.w 399,443
+(2)    3/ 202FC7C : 0202 FC8C 0203 1150 		dc.l .vert,.face,.vrtx,.mtrl
+                    0203 20E0 0203 27D0 
+(2)    4/ 202FC8C :                     .vert:		binclude "data/mars/objects/mdl/projname/vert.bin"
+(2)    5/ 2031150 :                     .face:		binclude "data/mars/objects/mdl/projname/face.bin"
+(2)    6/ 20320E0 :                     .vrtx:		binclude "data/mars/objects/mdl/projname/vrtx.bin"
+(2)    7/ 20327D0 :                     .mtrl:		include "data/mars/objects/mdl/projname/mtrl.asm"
+(3)    1/ 20327D0 : 0207 27D8           	 dc.l Textr_projname
+(3)    2/ 20327D4 : 0168                	 dc.w 360
+(3)    3/ 20327D6 : 0000                	 dc.w 0
+(3)    4/ 20327D8 :                     
+(2)    8/ 20327D8 :                     		align 4
+(1)   20/ 20327D8 :                     		align 4
+(1)   21/ 20327D8 :                     
+(1)   22/ 20327D8 :                     Textr_marscity:
+(1)   23/ 20327D8 :                     		binclude "data/mars/maps/mtrl/marscity_art.bin"
+(1)   24/ 20727D8 :                     		align 4
+(1)   25/ 20727D8 :                     Textr_projname:
+(1)   26/ 20727D8 :                     		binclude "data/mars/objects/mtrl/projname_art.bin"
+(1)   27/ 2076018 :                     		align 4
+(1)   28/ 2076018 :                     Textr_intro:
+(1)   29/ 2076018 :                     		binclude "data/mars/objects/mtrl/intro_art.bin"
+(1)   30/ 207A2E4 :                     		align 4
+(1)   31/ 207A2E4 :                     
+(1)   32/ 207A2E4 :                     ; MARSANI_INTRO_1:
+(1)   33/ 207A2E4 :                     ; 		binclude "data/mars/objects/anim/logo_1_anim.bin"
+(1)   34/ 207A2E4 :                     ; 		align 4
+(1)   35/ 207A2E4 :                     
+(1)   36/ 207A2E4 :                     ; PWM_STEREO:	binclude "data/sound/pwm_st.wav",$2C,$200000
+(1)   37/ 207A2E4 :                     ; PWM_STEREO_e:
+(1)   38/ 207A2E4 :                     ; 		align 4
+(1)   39/ 207A2E4 :                     ; PwmInsWav_SPHEAVY1:
+(1)   40/ 207A2E4 :                     ; 		binclude "data/sound/instr/smpl/SPHEAVY1.wav",$2C
+(1)   41/ 207A2E4 :                     ; PwmInsWav_SPHEAVY1_e:
+(1)   42/ 207A2E4 :                     ; 		align 4
+(1)   43/ 207A2E4 :                     ; PwmInsWav_MCLSTRNG:
+(1)   44/ 207A2E4 :                     ; 		binclude "data/sound/instr/smpl/MCLSTRNG.wav",$2C
+(1)   45/ 207A2E4 :                     ; PwmInsWav_MCLSTRNG_e:
+(1)   46/ 207A2E4 :                     ; 		align 4
+(1)   47/ 207A2E4 :                     ; PwmInsWav_WHODSNARE:
+(1)   48/ 207A2E4 :                     ; 		binclude "data/sound/instr/smpl/ST-79_whodini-snare.wav",$2C
+(1)   49/ 207A2E4 :                     ; PwmInsWav_WHODSNARE_e:
+(1)   50/ 207A2E4 :                     ; 		align 4
+(1)   51/ 207A2E4 :                     ; PwmInsWav_TECHNOBASSD:
+(1)   52/ 207A2E4 :                     ; 		binclude "data/sound/instr/smpl/ST-72_techno-bassd3.wav",$2C
+(1)   53/ 207A2E4 :                     ; PwmInsWav_TECHNOBASSD_e:
+(1)   54/ 207A2E4 :                     ; 		align 4
+(1)   55/ 207A2E4 :                     ; PwmInsWav_Synth:
+(1)   56/ 207A2E4 :                     ; 		binclude "data/sound/instr/smpl/amiga_synth.wav",$2C
+(1)   57/ 207A2E4 :                     ; PwmInsWav_Synth_e:
+(1)   58/ 207A2E4 :                     ; 		align 4
+(1)   59/ 207A2E4 :                     PwmInsWav_Piano:
+(1)   60/ 207A2E4 :                     		binclude "data/sound/instr/smpl/piano_1.wav",$2C
+(1)   61/ 20804DA :                     PwmInsWav_Piano_e:
+(1)   62/ 20804DA :                     		align 4
+(1)   63/ 20804DC :                     PwmInsWav_String:
+(1)   64/ 20804DC :                     		binclude "data/sound/instr/smpl/string_1.wav",$2C
+(1)   65/ 2084D32 :                     PwmInsWav_String_e:
+(1)   66/ 2084D32 :                     		align 4
+(1)   67/ 2084D34 :                     
+      85/   84D34 :                     		dephase
+      86/   84D34 :                     
+      87/   84D34 :                     ; --------------------------------------------------------
+      88/   84D34 :                     ; MD DATA BANK 0
+      89/   84D34 :                     ; --------------------------------------------------------
+      90/   84D34 :                     
+      91/  984D34 :                     		phase $900000+*				; Only one currently
+      92/  984D34 :                     		include "data/md_bank0.asm"
+(1)    1/  984D34 :                     ; ====================================================================
+(1)    2/  984D34 :                     ; ----------------------------------------------------------------
+(1)    3/  984D34 :                     ; Single 68k DATA BANK for MD ($900000-$9FFFFF)
+(1)    4/  984D34 :                     ; for stuff other than MD's DMA data
+(1)    5/  984D34 :                     ; 
+(1)    6/  984D34 :                     ; Maximum size: $0FFFFF bytes per bank
+(1)    7/  984D34 :                     ; ----------------------------------------------------------------
+(1)    8/  984D34 :                     
+(1)    9/  984D34 :                     		align $8000
 (1)   10/  988000 :                     		include "data/sound/tracks.asm"
 (2)    1/  988000 :                     ; ================================================================
 (2)    2/  988000 :                     ; ------------------------------------------------------------
@@ -12424,7 +12461,7 @@
      133/  100000 :                     ; 		rompad (ROM_END&$FF0000)+$40000
      134/  100000 :                     		align $8000
      135/  100000 :                     
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 2 - 6/22/2021 3:42:48
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 2 - 6/25/2021 21:27:38
 
 
   symbol table (* = unused):
@@ -12498,7 +12535,7 @@
  DAC_PLAY :                     E54 C |  DAC_REFILL :                   EAE C |
  DAC_REFILL.FDF4DONE :          EFE C |  DAC_REFILL.FDF7 :              F70 C |
  DAC_REFILL.FDF72 :             F29 C |  DAC_REFILL.FDFRETURN :         F73 C |
-*DAC_REFILL.KEEPCNTR :          ED7 C | *DATE :                   6/22/2021 - |
+*DAC_REFILL.KEEPCNTR :          ED7 C | *DATE :                   6/25/2021 - |
  DDACCNTR :                      25 C |  DDACFIFOMID :                   28 C |
  DDACPNTR :                      22 C | *DISPENBL :                      40 - |
  DKY :                            C - | *DMAENBL :                       10 - |
@@ -12543,7 +12580,7 @@
  DRWTSK_TEXMODE.TEXVALID :                                 FFFFFFFFC000014C C |
  DTH :                           20 - |  DTL :                           1C - |
  DWAVEBUFF :                   1500 C |  ENGINE_CODE :                  932 C |
- ENGINE_CODE_END :             472C C | *FALSE :                          0 - |
+ ENGINE_CODE_END :             4730 C | *FALSE :                          0 - |
 *FEN :                            2 - | *FILLDATA :                       8 - |
 *FILLLENGTH :                     5 - | *FILLSTART :                      6 - |
  FLG :                           28 - |  FM :                            80 - |
@@ -12561,7 +12598,7 @@
  GEMATRK_DEMO_BLK :          988000 C |  GEMATRK_DEMO_INS :          988271 C |
  GEMATRK_DEMO_PATT :         988005 C |  GEMA_INIT :                    B31 C |
  GET_CMDBYTE :                  B86 C |  GET_CMDBYTE.GETCBYTEL :        B89 C |
- GLBL_LASTORG :                B320 - |  GLBL_LASTPC :              6006BF4 - |
+ GLBL_LASTORG :                B320 - |  GLBL_LASTPC :              6006BF0 - |
 *HAS64 :                          1 - | *HASDSP :                         0 - |
 *HASFPU :                         0 - | *HASPMMU :                        0 - |
 *HBLK :                          40 - | *HCOUNT :                         5 - |
@@ -12738,53 +12775,58 @@
  MARSLAY_READ :             6000774 C |  MARSLAY_READ.NO_LAY :      60007DE C |
  MARSLAY_READ.NO_XR_UPD :   60007D6 C |  MARSLAY_READ.NO_X_UPD :    60007C4 C |
  MARSLAY_READ.NO_Y_UPD :    60007B2 C |  MARSLAY_READ.NO_Z_UPD :    60007A0 C |
- MARSMAPPZ_01_FLOOR :       201C800 C |  MARSMAPPZ_01_FLOOR.FACE :  201C940 C |
- MARSMAPPZ_01_FLOOR.MTRL :  201CA50 C |  MARSMAPPZ_01_FLOOR.VERT :  201C814 C |
- MARSMAPPZ_01_FLOOR.VRTX :  201C9E0 C |  MARSMAPPZ_02_MAIN :        201CA50 C |
- MARSMAPPZ_02_MAIN.FACE :   201D868 C |  MARSMAPPZ_02_MAIN.MTRL :   201E738 C |
- MARSMAPPZ_02_MAIN.VERT :   201CA64 C |  MARSMAPPZ_02_MAIN.VRTX :   201E178 C |
- MARSMAPPZ_03_PREKFC :      201E740 C |  MARSMAPPZ_03_PREKFC.FACE : 2020BD8 C |
- MARSMAPPZ_03_PREKFC.MTRL : 2022FA8 C |  MARSMAPPZ_03_PREKFC.VERT : 201E754 C |
- MARSMAPPZ_03_PREKFC.VRTX : 2022028 C |  MARSMAPPZ_04_INTERS :      2022FB0 C |
- MARSMAPPZ_04_INTERS.FACE : 20230F0 C |  MARSMAPPZ_04_INTERS.MTRL : 2023210 C |
- MARSMAPPZ_04_INTERS.VERT : 2022FC4 C |  MARSMAPPZ_04_INTERS.VRTX : 2023190 C |
- MARSMAPPZ_05_BRIDGE :      2023210 C |  MARSMAPPZ_05_BRIDGE.FACE : 2026B30 C |
- MARSMAPPZ_05_BRIDGE.MTRL : 202A150 C |  MARSMAPPZ_05_BRIDGE.VERT : 2023224 C |
- MARSMAPPZ_05_BRIDGE.VRTX : 20289C0 C |  MARSMAPPZ_06_SEPTM :       202A158 C |
- MARSMAPPZ_06_SEPTM.FACE :  202A340 C |  MARSMAPPZ_06_SEPTM.MTRL :  202A510 C |
- MARSMAPPZ_06_SEPTM.VERT :  202A16C C |  MARSMAPPZ_06_SEPTM.VRTX :  202A460 C |
- MARSMAPPZ_07_MULTI :       202A510 C |  MARSMAPPZ_07_MULTI.FACE :  202A728 C |
- MARSMAPPZ_07_MULTI.MTRL :  202A908 C |  MARSMAPPZ_07_MULTI.VERT :  202A524 C |
- MARSMAPPZ_07_MULTI.VRTX :  202A858 C |  MARSMAPPZ_08_KFCN :        202A908 C |
- MARSMAPPZ_08_KFCN.FACE :   202B120 C |  MARSMAPPZ_08_KFCN.MTRL :   202BD60 C |
- MARSMAPPZ_08_KFCN.VERT :   202A91C C |  MARSMAPPZ_08_KFCN.VRTX :   202B8C0 C |
- MARSMAPPZ_09_KFCS :        202BD68 C |  MARSMAPPZ_09_KFCS.FACE :   202BF08 C |
- MARSMAPPZ_09_KFCS.MTRL :   202C098 C |  MARSMAPPZ_09_KFCS.VERT :   202BD7C C |
- MARSMAPPZ_09_KFCS.VRTX :   202BFF8 C |  MARSMAPPZ_0A_CARLS_N :     202C098 C |
- MARSMAPPZ_0A_CARLS_N.FACE :                                        202C9A0 C |
- MARSMAPPZ_0A_CARLS_N.MTRL :                                        202D4C0 C |
- MARSMAPPZ_0A_CARLS_N.VERT :                                        202C0AC C |
- MARSMAPPZ_0A_CARLS_N.VRTX :                                        202CFF0 C |
- MARSMAPPZ_0B_CARLS_S :     202D4C8 C |
- MARSMAPPZ_0B_CARLS_S.FACE :                                        202D680 C |
- MARSMAPPZ_0B_CARLS_S.MTRL :                                        202D810 C |
- MARSMAPPZ_0B_CARLS_S.VERT :                                        202D4DC C |
- MARSMAPPZ_0B_CARLS_S.VRTX :                                        202D770 C |
- MARSMAPPZ_0C_CARLS_P :     202D810 C |
- MARSMAPPZ_0C_CARLS_P.FACE :                                        202D950 C |
- MARSMAPPZ_0C_CARLS_P.MTRL :                                        202DA60 C |
- MARSMAPPZ_0C_CARLS_P.VERT :                                        202D824 C |
- MARSMAPPZ_0C_CARLS_P.VRTX :                                        202D9F0 C |
- MARSMAPPZ_0D_HUT_L :       202DA60 C |  MARSMAPPZ_0D_HUT_L.FACE :  202DBDC C |
- MARSMAPPZ_0D_HUT_L.MTRL :  202DD2C C |  MARSMAPPZ_0D_HUT_L.VERT :  202DA74 C |
- MARSMAPPZ_0D_HUT_L.VRTX :  202DCAC C |  MARSMAPPZ_0E_HUT_R :       202DD2C C |
- MARSMAPPZ_0E_HUT_R.FACE :  202DEA8 C |  MARSMAPPZ_0E_HUT_R.MTRL :  202DFF8 C |
- MARSMAPPZ_0E_HUT_R.VERT :  202DD40 C |  MARSMAPPZ_0E_HUT_R.VRTX :  202DF78 C |
- MARSMAPPZ_0F_SEPT_LRD :    202DFF8 C |
- MARSMAPPZ_0F_SEPT_LRD.FACE :                                       202E174 C |
- MARSMAPPZ_0F_SEPT_LRD.MTRL :                                       202E2C4 C |
- MARSMAPPZ_0F_SEPT_LRD.VERT :                                       202E00C C |
- MARSMAPPZ_0F_SEPT_LRD.VRTX :                                       202E244 C |
+ MARSMAPPZ_01_FLOOR :       201C808 C |  MARSMAPPZ_01_FLOOR.FACE :  201C948 C |
+ MARSMAPPZ_01_FLOOR.MTRL :  201CA58 C |  MARSMAPPZ_01_FLOOR.VERT :  201C81C C |
+ MARSMAPPZ_01_FLOOR.VRTX :  201C9E8 C |  MARSMAPPZ_02_MAIN :        201CA58 C |
+ MARSMAPPZ_02_MAIN.FACE :   201D870 C |  MARSMAPPZ_02_MAIN.MTRL :   201E800 C |
+ MARSMAPPZ_02_MAIN.VERT :   201CA6C C |  MARSMAPPZ_02_MAIN.VRTX :   201E1E0 C |
+ MARSMAPPZ_03_PREKFC :      201E808 C |  MARSMAPPZ_03_PREKFC.FACE : 2020CA0 C |
+ MARSMAPPZ_03_PREKFC.MTRL : 2023120 C |  MARSMAPPZ_03_PREKFC.VERT : 201E81C C |
+ MARSMAPPZ_03_PREKFC.VRTX : 2022150 C |  MARSMAPPZ_04_INTERS :      2023128 C |
+ MARSMAPPZ_04_INTERS.FACE : 2023268 C |  MARSMAPPZ_04_INTERS.MTRL : 2023388 C |
+ MARSMAPPZ_04_INTERS.VERT : 202313C C |  MARSMAPPZ_04_INTERS.VRTX : 2023308 C |
+ MARSMAPPZ_05_BRIDGE :      2023388 C |  MARSMAPPZ_05_BRIDGE.FACE : 2026CA8 C |
+ MARSMAPPZ_05_BRIDGE.MTRL : 202A388 C |  MARSMAPPZ_05_BRIDGE.VERT : 202339C C |
+ MARSMAPPZ_05_BRIDGE.VRTX : 2028B98 C |  MARSMAPPZ_06_SEPTM :       202A390 C |
+ MARSMAPPZ_06_SEPTM.FACE :  202A578 C |  MARSMAPPZ_06_SEPTM.MTRL :  202A748 C |
+ MARSMAPPZ_06_SEPTM.VERT :  202A3A4 C |  MARSMAPPZ_06_SEPTM.VRTX :  202A698 C |
+ MARSMAPPZ_07_MULTI :       202A748 C |  MARSMAPPZ_07_MULTI.FACE :  202A960 C |
+ MARSMAPPZ_07_MULTI.MTRL :  202AB40 C |  MARSMAPPZ_07_MULTI.VERT :  202A75C C |
+ MARSMAPPZ_07_MULTI.VRTX :  202AA90 C |  MARSMAPPZ_08_KFCN :        202AB40 C |
+ MARSMAPPZ_08_KFCN.FACE :   202B358 C |  MARSMAPPZ_08_KFCN.MTRL :   202BF98 C |
+ MARSMAPPZ_08_KFCN.VERT :   202AB54 C |  MARSMAPPZ_08_KFCN.VRTX :   202BAF8 C |
+ MARSMAPPZ_09_KFCS :        202BFA0 C |  MARSMAPPZ_09_KFCS.FACE :   202C140 C |
+ MARSMAPPZ_09_KFCS.MTRL :   202C2D0 C |  MARSMAPPZ_09_KFCS.VERT :   202BFB4 C |
+ MARSMAPPZ_09_KFCS.VRTX :   202C230 C |  MARSMAPPZ_0A_CARLS_N :     202C2D0 C |
+ MARSMAPPZ_0A_CARLS_N.FACE :                                        202CBD8 C |
+ MARSMAPPZ_0A_CARLS_N.MTRL :                                        202D6F8 C |
+ MARSMAPPZ_0A_CARLS_N.VERT :                                        202C2E4 C |
+ MARSMAPPZ_0A_CARLS_N.VRTX :                                        202D228 C |
+ MARSMAPPZ_0B_CARLS_S :     202D700 C |
+ MARSMAPPZ_0B_CARLS_S.FACE :                                        202D8B8 C |
+ MARSMAPPZ_0B_CARLS_S.MTRL :                                        202DA48 C |
+ MARSMAPPZ_0B_CARLS_S.VERT :                                        202D714 C |
+ MARSMAPPZ_0B_CARLS_S.VRTX :                                        202D9A8 C |
+ MARSMAPPZ_0C_CARLS_P :     202DA48 C |
+ MARSMAPPZ_0C_CARLS_P.FACE :                                        202DB88 C |
+ MARSMAPPZ_0C_CARLS_P.MTRL :                                        202DC98 C |
+ MARSMAPPZ_0C_CARLS_P.VERT :                                        202DA5C C |
+ MARSMAPPZ_0C_CARLS_P.VRTX :                                        202DC28 C |
+ MARSMAPPZ_0D_MIDCARLS :    202DC98 C |
+ MARSMAPPZ_0D_MIDCARLS.FACE :                                       202E018 C |
+ MARSMAPPZ_0D_MIDCARLS.MTRL :                                       202E558 C |
+ MARSMAPPZ_0D_MIDCARLS.VERT :                                       202DCAC C |
+ MARSMAPPZ_0D_MIDCARLS.VRTX :                                       202E408 C |
+ MARSMAPPZ_0E_HUT_L :       202E560 C |  MARSMAPPZ_0E_HUT_L.FACE :  202E73C C |
+ MARSMAPPZ_0E_HUT_L.MTRL :  202E93C C |  MARSMAPPZ_0E_HUT_L.VERT :  202E574 C |
+ MARSMAPPZ_0E_HUT_L.VRTX :  202E88C C |  MARSMAPPZ_0F_HUT_R :       202E944 C |
+ MARSMAPPZ_0F_HUT_R.FACE :  202EE98 C |  MARSMAPPZ_0F_HUT_R.MTRL :  202F6D8 C |
+ MARSMAPPZ_0F_HUT_R.VERT :  202E958 C |  MARSMAPPZ_0F_HUT_R.VRTX :  202F388 C |
+ MARSMAPPZ_10_SEP_L :       202F6E0 C |  MARSMAPPZ_10_SEP_L.FACE :  202F85C C |
+ MARSMAPPZ_10_SEP_L.MTRL :  202F9AC C |  MARSMAPPZ_10_SEP_L.VERT :  202F6F4 C |
+ MARSMAPPZ_10_SEP_L.VRTX :  202F92C C |  MARSMAPPZ_11_SEP_R :       202F9AC C |
+ MARSMAPPZ_11_SEP_R.FACE :  202FB28 C |  MARSMAPPZ_11_SEP_R.MTRL :  202FC78 C |
+ MARSMAPPZ_11_SEP_R.VERT :  202F9C0 C |  MARSMAPPZ_11_SEP_R.VRTX :  202FBF8 C |
  MARSMDL_INIT :             6000AB0 C |  MARSMDL_INIT.CLNUP :       6000AB6 C |
  MARSMDL_READMODEL :        6000AD4 C |
  MARSMDL_READMODEL.ALLDONE :                                        6000C7C C |
@@ -12813,11 +12855,11 @@
  MARSOBJ_INTRO_1.VRTX :     6005500 C |  MARSOBJ_INTRO_2 :          6005810 C |
  MARSOBJ_INTRO_2.FACE :     6006238 C |  MARSOBJ_INTRO_2.MTRL :     6006BE8 C |
  MARSOBJ_INTRO_2.VERT :     6005824 C |  MARSOBJ_INTRO_2.VRTX :     6006888 C |
- MARSOBJ_PROJNAME :         202E2C4 C |  MARSOBJ_PROJNAME.FACE :    202F79C C |
- MARSOBJ_PROJNAME.MTRL :    2030E1C C |  MARSOBJ_PROJNAME.VERT :    202E2D8 C |
- MARSOBJ_PROJNAME.VRTX :    203072C C |  MARSRAM_SOUND :            6034EC0 C |
- MARSRAM_SYSTEM :           6006BF4 C |  MARSRAM_VIDEO :            6006C4C C |
-*MARSSND_PWMPLYDATA :       6034EC0 C | *MARSVIDEO_CLEARFRAME :     6000694 C |
+ MARSOBJ_PROJNAME :         202FC78 C |  MARSOBJ_PROJNAME.FACE :    2031150 C |
+ MARSOBJ_PROJNAME.MTRL :    20327D0 C |  MARSOBJ_PROJNAME.VERT :    202FC8C C |
+ MARSOBJ_PROJNAME.VRTX :    20320E0 C |  MARSRAM_SOUND :            6034EBC C |
+ MARSRAM_SYSTEM :           6006BF0 C |  MARSRAM_VIDEO :            6006C48 C |
+*MARSSND_PWMPLYDATA :       6034EBC C | *MARSVIDEO_CLEARFRAME :     6000694 C |
  MARSVIDEO_CLEARFRAME.LOOP :                                        60006A8 C |
  MARSVIDEO_CLEARFRAME.WAIT :                                        60006B6 C |
  MARSVIDEO_CLEARFRAME.WAIT2 :                                       6000696 C |
@@ -12847,7 +12889,7 @@
  MARS_ENTRY.NO_MARS :           918 C |  MARS_ENTRY.RAMCODE :           84A C |
  MARS_ENTRY.RESTARTICD :        85A C |  MARS_ENTRY.WAITFRAME :         8D0 C |
  MARS_ENTRY.WM :                892 C |  MARS_ENTRY.WS :                89C C |
- MARS_RAMDATA :                472C C |  MARS_RAMDATA_E :              B320 C |
+ MARS_RAMDATA :                4730 C |  MARS_RAMDATA_E :              B320 C |
  MASTER_IRQ :               6000248 C |  MASTER_LOOP :              6000FCE C |
  MASTER_LOOP.CONT_PLGN :    600104C C |  MASTER_LOOP.DRAW_OBJECTS : 6001026 C |
  MASTER_LOOP.INVALID :      6001062 C |  MASTER_LOOP.LIST :         6000FE8 C |
@@ -12884,28 +12926,28 @@
  MDL_Y_POS :                      C C |  MDL_Y_ROT :                     18 C |
  MDL_Z_POS :                     10 C |  MDL_Z_ROT :                     1C C |
  MDMAP_BG :                  98FD80 C |  MDMAP_BGTITLE :             990D80 C |
-*MDMDL1_USERCONTROL :        FF3C92 C |  MDMDL1_USERCONTROL.BUSY :   FF3DA4 C |
-*MDMDL1_USERCONTROL.NEL2 :   FF3D94 C |  MDMDL1_USERCONTROL.NO_A :   FF3D12 C |
- MDMDL1_USERCONTROL.NO_B :   FF3D32 C |  MDMDL1_USERCONTROL.NO_DW :  FF3CCA C |
- MDMDL1_USERCONTROL.NO_LF :  FF3CDE C |  MDMDL1_USERCONTROL.NO_RG :  FF3CF2 C |
- MDMDL1_USERCONTROL.NO_UP :  FF3CB6 C |  MDMDL1_USERCONTROL.NO_X :   FF3D4C C |
- MDMDL1_USERCONTROL.NO_Y :   FF3D62 C |  MDMDL_CAMANIMATE :          FF3C20 C |
- MDMDL_CAMANIMATE.NO_CAMANIM :                                       FF3C8E C |
- MDMDL_CAMANIMATE.ON_FRAMES :                                        FF3C56 C |
- MDMDL_RUNANIMATION :        FF3BD2 C |  MDMDL_RUNANIMATION.BUSY :   FF3C1E C |
-*MDMDL_RUNANIMATION.NEL2 :   FF3C0E C |  MDMDL_RUNANIMATION.STAY :   FF3BDC C |
- MDMDL_SETNEWCAMERA :        FF3B92 C |  MDPAL_BG :                  FF3DDA C |
- MDPAL_BGTITLE :             FF3DF0 C |  MDRAM_START :             FFFF8800 - |
+*MDMDL1_USERCONTROL :        FF3C96 C |  MDMDL1_USERCONTROL.BUSY :   FF3DA8 C |
+*MDMDL1_USERCONTROL.NEL2 :   FF3D98 C |  MDMDL1_USERCONTROL.NO_A :   FF3D16 C |
+ MDMDL1_USERCONTROL.NO_B :   FF3D36 C |  MDMDL1_USERCONTROL.NO_DW :  FF3CCE C |
+ MDMDL1_USERCONTROL.NO_LF :  FF3CE2 C |  MDMDL1_USERCONTROL.NO_RG :  FF3CF6 C |
+ MDMDL1_USERCONTROL.NO_UP :  FF3CBA C |  MDMDL1_USERCONTROL.NO_X :   FF3D50 C |
+ MDMDL1_USERCONTROL.NO_Y :   FF3D66 C |  MDMDL_CAMANIMATE :          FF3C24 C |
+ MDMDL_CAMANIMATE.NO_CAMANIM :                                       FF3C92 C |
+ MDMDL_CAMANIMATE.ON_FRAMES :                                        FF3C5A C |
+ MDMDL_RUNANIMATION :        FF3BD6 C |  MDMDL_RUNANIMATION.BUSY :   FF3C22 C |
+*MDMDL_RUNANIMATION.NEL2 :   FF3C12 C |  MDMDL_RUNANIMATION.STAY :   FF3BE0 C |
+ MDMDL_SETNEWCAMERA :        FF3B96 C |  MDPAL_BG :                  FF3DDE C |
+ MDPAL_BGTITLE :             FF3DF4 C |  MDRAM_START :             FFFF8800 - |
  MD_BANK_SRAM :              A130F1 - |  MD_ERRADDR :                   930 C |
  MD_ERRBUS :                    930 C |  MD_ERRCHK :                    930 C |
  MD_ERRILL :                    930 C |  MD_ERROREX :                   930 C |
  MD_ERRORTRAP :                 930 C |  MD_ERRPRIVL :                  930 C |
  MD_ERRTRAPV :                  930 C |  MD_ERRZDIV :                   930 C |
-*MD_GMMODE0 :                FF38A6 C |  MD_GMMODE0.LIST :           FF3918 C |
- MD_GMMODE0.LOOP :           FF38E2 C |  MD_GMMODE0.MODE0 :          FF3924 C |
- MD_GMMODE0.MODE0_LOOP :     FF39FA C |  MD_GMMODE0.MODE1 :          FF3A00 C |
- MD_GMMODE0.MODE1_LOOP :     FF3ACA C |  MD_GMMODE0.MODE2 :          FF3AD0 C |
- MD_GMMODE0.MODE2_LOOP :     FF3B8E C |  MD_LINE1010 :                  930 C |
+*MD_GMMODE0 :                FF38A6 C |  MD_GMMODE0.LIST :           FF3912 C |
+ MD_GMMODE0.LOOP :           FF38DC C |  MD_GMMODE0.MODE0 :          FF391E C |
+ MD_GMMODE0.MODE0_LOOP :     FF39F4 C |  MD_GMMODE0.MODE1 :          FF39FA C |
+ MD_GMMODE0.MODE1_LOOP :     FF3AC4 C |  MD_GMMODE0.MODE2 :          FF3ACA C |
+ MD_GMMODE0.MODE2_LOOP :     FF3B92 C |  MD_LINE1010 :                  930 C |
  MD_LINE1111 :                  930 C |  MD_MAIN :                   FF389A C |
  MD_TRACE :                     930 C |  MODE :                          18 - |
  MODE_INIT :                 FF386A C |  MODE_INIT.CLR :             FF3878 C |
@@ -12992,9 +13034,9 @@
  PUT_PIECE.DONTRESET_PZ :                                  FFFFFFFFC000066A C |
  PUT_PIECE.LEFTH : FFFFFFFFC00005D2 C |
  PUT_PIECE.TOP_NEG :                                       FFFFFFFFC0000654 C |
-*PWMCTL :                        31 - | *PWMINSWAV_PIANO :          2078930 C |
-*PWMINSWAV_PIANO_E :        207EB26 C | *PWMINSWAV_STRING :         207EB28 C |
-*PWMINSWAV_STRING_E :       208337E C |  PWMINTCLR :                     1C - |
+*PWMCTL :                        31 - | *PWMINSWAV_PIANO :          207A2E4 C |
+*PWMINSWAV_PIANO_E :        20804DA C | *PWMINSWAV_STRING :         20804DC C |
+*PWMINSWAV_STRING_E :       2084D32 C |  PWMINTCLR :                     1C - |
 *PWMIRQ_ON :                      1 - |  PWMVTBL :                     11FF C |
  RAM_BGCAMCURR :   FFFFFFFFFFFF8C2C C |  RAM_BGCAMERA :    FFFFFFFFFFFF8C2A C |
  RAM_CAMDATA :     FFFFFFFFFFFF8C18 C |  RAM_CAMFRAME :    FFFFFFFFFFFF8C1C C |
@@ -13004,14 +13046,14 @@
  RAM_CAM_ZPOS :    FFFFFFFFFFFF8C08 C |  RAM_CAM_ZROT :    FFFFFFFFFFFF8C14 C |
  RAM_FRAMECOUNT :  FFFFFFFFFFFF9816 C |  RAM_INITFLUG :    FFFFFFFFFFFF9822 C |
  RAM_INPUTDATA :   FFFFFFFFFFFF91DE C | *RAM_MARSFADE :    FFFFFFFFFFFF8A00 C |
-*RAM_MARSPAL :     FFFFFFFFFFFF8800 C |  RAM_MARS_GLOBAL :          6006BF4 C |
- RAM_MARS_MDTASKSFIFO_M :   60348BC C |  RAM_MARS_MDTASKSFIFO_S :   6034ABC C |
- RAM_MARS_OBJCAMERA :       6006C4C C |  RAM_MARS_OBJECTS :         6006C94 C |
- RAM_MARS_OBJLAYOUT :       6006C74 C |  RAM_MARS_PALETTE :         6034CBC C |
- RAM_MARS_PLGNNUM_0 :       6034EBC C |  RAM_MARS_PLGNNUM_1 :       6034EBE C |
- RAM_MARS_PLGN_ZLIST_0 :    6030D5C C |  RAM_MARS_PLGN_ZLIST_1 :    6032B0C C |
- RAM_MARS_POLYGONS_0 :      6007114 C |  RAM_MARS_POLYGONS_1 :      60140E4 C |
- RAM_MARS_VDPDRWLIST :      60210B4 C |  RAM_MARS_VDPDRWLIST_E :    6030D5C C |
+*RAM_MARSPAL :     FFFFFFFFFFFF8800 C |  RAM_MARS_GLOBAL :          6006BF0 C |
+ RAM_MARS_MDTASKSFIFO_M :   60348B8 C |  RAM_MARS_MDTASKSFIFO_S :   6034AB8 C |
+ RAM_MARS_OBJCAMERA :       6006C48 C |  RAM_MARS_OBJECTS :         6006C90 C |
+ RAM_MARS_OBJLAYOUT :       6006C70 C |  RAM_MARS_PALETTE :         6034CB8 C |
+ RAM_MARS_PLGNNUM_0 :       6034EB8 C |  RAM_MARS_PLGNNUM_1 :       6034EBA C |
+ RAM_MARS_PLGN_ZLIST_0 :    6030D58 C |  RAM_MARS_PLGN_ZLIST_1 :    6032B08 C |
+ RAM_MARS_POLYGONS_0 :      6007110 C |  RAM_MARS_POLYGONS_1 :      60140E0 C |
+ RAM_MARS_VDPDRWLIST :      60210B0 C |  RAM_MARS_VDPDRWLIST_E :    6030D58 C |
  RAM_MDGLOBAL :    FFFFFFFFFFFF9838 C |  RAM_MDLCURRMD :   FFFFFFFFFFFF8C28 C |
  RAM_MDMARSHINT :  FFFFFFFFFFFF982C C |  RAM_MDMARSTCNTM : FFFFFFFFFFFF9832 C |
  RAM_MDMARSTCNTS : FFFFFFFFFFFF9834 C |  RAM_MDMARSTSKM :  FFFFFFFFFFFF93F6 C |
@@ -13040,15 +13082,15 @@
  SH2_MASTER :               6000000 C |  SH2_M_ENTRY :              6000F54 C |
  SH2_M_ENTRY.WAIT_MD :      6000F84 C |  SH2_M_ENTRY.WAIT_SLAVE :   6000F8E C |
  SH2_M_HOTSTART :           6000F9A C |  SH2_M_HOTSTART.COPY :      6000FBA C |
- SH2_RAM :                  6006BF4 C |  SH2_SLAVE :                6000124 C |
+ SH2_RAM :                  6006BF0 C |  SH2_SLAVE :                6000124 C |
  SH2_S_ENTRY :              6001100 C |  SH2_S_ENTRY.WAIT_MD :      6001130 C |
  SH2_S_HOTSTART :           600113C C |  SH2_S_HOTSTART.COPY :      600115C C |
 *SHIFT :                          3 - |  SIN_TABLE :                6001BB0 C |
  SIZEOF_CAMERA :                 28 C |  SIZEOF_INPUT :                   6 C |
  SIZEOF_LAYOUT :                 20 C |  SIZEOF_MARSGBL :                2C C |
-*SIZEOF_MARSRAM :           6034EDC C | *SIZEOF_MARSRAM.HERE :      6034EDC C |
- SIZEOF_MARSSND :           6034EDC C |  SIZEOF_MARSSYS :           6006C4C C |
- SIZEOF_MARSVID :           6034EC0 C |  SIZEOF_MDGLBL :   FFFFFFFFFFFF8C2E C |
+*SIZEOF_MARSRAM :           6034ED8 C | *SIZEOF_MARSRAM.HERE :      6034ED8 C |
+ SIZEOF_MARSSND :           6034ED8 C |  SIZEOF_MARSSYS :           6006C48 C |
+ SIZEOF_MARSVID :           6034EBC C |  SIZEOF_MDGLBL :   FFFFFFFFFFFF8C2E C |
  SIZEOF_MDLOBJ :                 30 C | *SIZEOF_MDRAM :    FFFFFFFFFFFF8C2E C |
  SIZEOF_MDSND :    FFFFFFFFFFFF9044 C |  SIZEOF_MDSYS :    FFFFFFFFFFFF9838 C |
  SIZEOF_MDVID :    FFFFFFFFFFFF91DE C |  SIZEOF_PLYPZ :                  3C C |
@@ -13073,7 +13115,7 @@
  SOUND_INIT.COPY :           FF003C C |  SOUND_INIT.WAIT :           FF0010 C |
 *SOUND_REQUEST :             FF00B2 C |  SOUND_UPDATE :              FF005A C |
  STANDBY :                        2 - | *STRC_XPOS :                      0 C |
-*STRC_YPOS :                      2 C | *STR_STATUS :                FF3DA6 C |
+*STRC_YPOS :                      2 C | *STR_STATUS :                FF3DAA C |
 *SYSMARS_ID :                A130EC - |  SYSMARS_REG :               A15100 - |
  SYSMDMARS_INSTASK :         FF37E8 C |  SYSMDMARS_INSTASK.RAN_OUT : FF37F8 C |
  SYSMDMARS_TRANSFER :        FF37FA C |  SYSMDMARS_TRANSFER.EXIT :   FF3862 C |
@@ -13114,10 +13156,10 @@
  S_IRQ_VRES.SH_WAIT :       60005EC C |  S_IRQ_VRES.VRESLOOP :      600061A C |
  TAG_WIDTH :       FFFFFFFFC0000260 C |  TAG_YHGHT :       FFFFFFFFC0000264 C |
  TEST_LAYOUT :              201BFC0 C |  TEST_LAYOUT.BLOCKS :       201C7C4 C |
-*TEXTR_INTRO :              2074664 C |  TEXTR_MARSCITY :           2030E24 C |
- TEXTR_PROJNAME :           2070E24 C |  TH :                      20000000 - |
+*TEXTR_INTRO :              2076018 C |  TEXTR_MARSCITY :           20327D8 C |
+ TEXTR_PROJNAME :           20727D8 C |  TH :                      20000000 - |
  TICKCNT :                       1C C |  TICKFLAG :                      1A C |
-*TIME :                     3:42:47 - | *TIMERCTL :                      30 - |
+*TIME :                    21:27:38 - | *TIMERCTL :                      30 - |
 *TMR :                           2C - |  TRANSFERROM :                  BFB C |
  TRANSFERROM.DOUBLE :           C1C C |  TRANSFERROM.TRANSFER :         C45 C |
  TRANSFERROM.X68KLAST :         C88 C |  TRANSFERROM.X68KLOOP :         C74 C |
@@ -13216,10 +13258,10 @@
 *_TCSR :                          1 - | *_TIER :                          0 - |
  _TOCR :                          7 - |  _VDPREG :                 20004100 - |
 
-   1397 symbols
+   1407 symbols
     229 unused symbols
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 3 - 6/22/2021 3:42:48
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 3 - 6/25/2021 21:27:38
 
 
   defined macros:
@@ -13233,7 +13275,7 @@ STRUCT                                | ZSMPL
 
      10 macros
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 4 - 6/22/2021 3:42:48
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 4 - 6/25/2021 21:27:38
 
 
   defined functions:
@@ -13242,7 +13284,7 @@ STRUCT                                | ZSMPL
 NOTZ80                                | LOCATE                               
 MAPSIZE                               |
 
- AS V1.42 Beta [Bld 118] - source file mars.asm - page 5 - 6/22/2021 3:42:48
+ AS V1.42 Beta [Bld 118] - source file mars.asm - page 5 - 6/25/2021 21:27:38
 
 
   codepages:
@@ -13251,10 +13293,10 @@ MAPSIZE                               |
 STANDARD (0 changed characters)
 
 
-0.23 seconds assembly time
+0.26 seconds assembly time
 
-  11885 lines source file
-  12344 lines incl. macro expansions
+  11919 lines source file
+  12378 lines incl. macro expansions
       8 passes
       0 errors
       0 warnings
