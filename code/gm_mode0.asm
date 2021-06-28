@@ -64,7 +64,7 @@ MD_GmMode0:
 		bset	#bitDispEnbl,(RAM_VdpRegs+1).l		; Enable display
 		bsr	Video_Update
 
-; 		move.w	#2,(RAM_MdlCurrMd).w
+		move.w	#2,(RAM_MdlCurrMd).w
 		
 ; ====================================================================
 ; ------------------------------------------------------
@@ -276,8 +276,8 @@ MD_GmMode0:
 		move.l	#-$12000,(RAM_Cam_Ypos).l
 .mode2_loop:
 		moveq	#0,d7
-		bra	MdMdl_RunAnimation
-; 		bra	MdMdl1_Usercontrol
+; 		bra	MdMdl_RunAnimation
+		bra	MdMdl1_Usercontrol
 
 ; ====================================================================
 ; ------------------------------------------------------

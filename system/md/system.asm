@@ -302,7 +302,7 @@ System_VSync:
 		btst	#bitVint,d4
 		beq.s	System_VSync
 		bsr	System_Input
-		bsr	Sound_Update
+; 		bsr	Sound_Update
 		add.l	#1,(RAM_FrameCount).l
 .inside:	move.w	(vdp_ctrl),d4
 		btst	#bitVint,d4
