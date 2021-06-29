@@ -64,34 +64,38 @@ m_irq_custom:
 .wait_fb:	mov.w   @($A,r1),r0		; Framebuffer free?
 		tst     #2,r0
 		bf      .wait_fb
-; 		mov.w   @(6,r1),r0		; SVDP-fill address
-; 		add     #$5F,r0			; Preincrement
-; 		mov.w   r0,@(6,r1)
-; 		mov.w   #320/2,r0		; SVDP-fill size (320 pixels)
-; 		mov.w   r0,@(4,r1)
 
-		mov	@(marsGbl_Backdata,gbr),r0
-		mov	r0,r3
-		mov	#$A0,r2
-.testme:
-		mov.w   #0,r0				; SVDP-fill size (320 pixels)
-		mov.w   r0,@(4,r1)
-		mov.w	@r3,r0			; SVDP-fill pixel data and start filling
-		mov.w   r0,@(8,r1)		; After finishing, SVDP-address got updated
-		add	#2,r3
-.wme:		mov.w   @($A,r1),r0
-		tst     #2,r0
-		bf      .wme
-		dt	r2
-		bf	.testme
-		mov	r3,r0
-		mov	r0,@(marsGbl_Backdata,gbr)
+	; Clear only:
 		mov.w   @(6,r1),r0		; SVDP-fill address
-		add     #$60,r0			; Preincrement
+		add     #$5F,r0			; Preincrement
 		mov.w   r0,@(6,r1)
+		mov.w   #320/2,r0		; SVDP-fill size (320 pixels)
+		mov.w   r0,@(4,r1)
+		mov.w	#$0000,r0		; SVDP-fill pixel data and start filling
+		mov.w   r0,@(8,r1)		; After finishing, SVDP-address got updated
 
-; 		bra	*
-; 		nop
+	; Copy background
+; 		mov	@(marsGbl_Backdata,gbr),r0
+; 		mov	r0,r3
+; 		mov	#$A0/8,r2
+; .testme:
+; 	rept 8
+; 		mov.w   #0,r0			; SVDP-fill size (320 pixels)
+; 		mov.w   r0,@(4,r1)
+; 		mov.w	@r3,r0			; SVDP-fill pixel data and start filling
+; 		mov.w   r0,@(8,r1)		; After finishing, SVDP-address got updated
+; 		add	#2,r3
+; .wme:		mov.w   @($A,r1),r0
+; 		tst     #2,r0
+; 		bf      .wme
+; 	endm
+; 		dt	r2
+; 		bf	.testme
+; 		mov	r3,r0
+; 		mov	r0,@(marsGbl_Backdata,gbr)
+; 		mov.w   @(6,r1),r0		; SVDP-fill address
+; 		add     #$60,r0			; Preincrement
+; 		mov.w   r0,@(6,r1)
 
 		mov.l   #$FFFFFE80,r1
 		mov.w   #$A518,r0		; OFF

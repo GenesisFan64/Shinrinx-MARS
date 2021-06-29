@@ -24,7 +24,7 @@ var_MoveSpd	equ	$4000
 ; ------------------------------------------------------
 ; This mode's RAM
 ; ------------------------------------------------------
-
+		
 		struct RAM_ModeBuff
 RAM_MarsPal	ds.w 256
 RAM_MarsFade	ds.w 256
@@ -43,7 +43,7 @@ RAM_BgCamera	ds.w 1
 RAM_BgCamCurr	ds.w 1
 sizeof_mdglbl	ds.l 0
 		finish
-
+		
 ; ====================================================================
 ; ------------------------------------------------------
 ; Code start
@@ -63,7 +63,7 @@ thisCode_Top:
 		bset	#bitDispEnbl,(RAM_VdpRegs+1).l		; Enable display
 		bsr	Video_Update
 		move.w	#2,(RAM_MdlCurrMd).w
-
+		
 ; ====================================================================
 ; ------------------------------------------------------
 ; Loop
@@ -95,7 +95,7 @@ thisCode_Top:
 		bra.w	.mode0
 		bra.w	.mode1
 		bra.w	.mode2
-
+		
 ; --------------------------------------------------
 ; Mode 0
 ; --------------------------------------------------
@@ -527,7 +527,7 @@ MdMdl1_Usercontrol:
 ; ====================================================================
 ; ------------------------------------------------------
 ; DATA
-;
+; 
 ; Small stuff goes here
 ; ------------------------------------------------------
 
@@ -540,7 +540,7 @@ str_Status:
 		align 2
 MdPal_Bg:
 		binclude "data/md/bg/bg_pal.bin"
-		align 2
+		align 2		
 MdPal_BgTitle:
 		binclude "data/md/bg_title/bg_pal.bin"
 		align 2
