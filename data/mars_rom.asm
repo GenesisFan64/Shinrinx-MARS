@@ -29,6 +29,10 @@ Textr_intro:
 		binclude "data/mars/objects/mtrl/intro_art.bin"
 		align 4
 
+TESTMARS_BG:
+		binclude "data/mars/test_art.bin"
+		align 4
+
 ; MARSANI_INTRO_1:
 ; 		binclude "data/mars/objects/anim/logo_1_anim.bin"
 ; 		align 4

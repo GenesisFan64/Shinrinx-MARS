@@ -49,7 +49,7 @@ System_Init:
 ; d4-d6,a4-a5
 ; --------------------------------------------------------
 
-; TODO: check if it still required to turn OFF the Z80
+; TODO: check if it still requires to turn OFF the Z80
 ; while reading the controller
 
 System_Input:
@@ -180,12 +180,14 @@ System_Input:
 		move.b	#%01110000,(a4)		; TH=1,TR=1,TL=1
 		nop
 		nop
-		bsr.s	.get_id
+		bsr.s	.read
 		move.b	#%00110000,(a4)		; TH=0,TR=1,TL=1
 		nop
 		nop
 		add.w	d4,d4
-.get_id:
+
+
+.read:
 		move.b	(a4),d5
 		move.b	d5,d6
 		and.b	#$C,d6
@@ -199,20 +201,6 @@ System_Input:
 		addq.w	#1,d4
 .step_2:
 		rts
-		
-; 		moveq	#0,d0
-; 		bsr.s	System_ReadPad
-; 		lea	(RAM_Control+(16*4)),a5
-; 		moveq	#1,d0
-; 		bsr.s	System_ReadPad
-; 		
-; 		lea	($A10003).l,a6
-; 		lsl.w	#1,d0
-; 		add.w	d0,a6		; Add result to port
-; 		bsr.s	.srch_pad
-; 		move.b	d0,(a5)
-; 		move.w	#0,(z80_bus).l
-; 		rts
 
 ; --------------------------------------------------------
 ; System_Random
@@ -237,15 +225,15 @@ System_Random:
 		
 ; --------------------------------------------------------
 ; System_SetInts
-; 
+;
 ; Set new interrputs
-; 
+;
 ; d0 | LONG - VBlank
 ; d1 | LONG - HBlank
 ;
 ; Uses:
 ; d4
-; 
+;
 ; Notes:
 ; writing $00 or a negative number will skip change
 ; to the interrupt pointer
@@ -275,7 +263,7 @@ System_SetInts:
 ; a4,d4-d5
 ; --------------------------------------------------------
 
-; TODO: Check if RV bit is required here...
+; TODO: Check if RV bit is needed here...
 System_SramInit:
 		move.b	#1,(md_bank_sram).l
 		lea	($200001).l,a4
@@ -309,11 +297,32 @@ System_VSync:
 		bne.s	.inside
 		rts
 
+; --------------------------------------------------------
+; System_JumpRamCode
+;
+; Transfer user code to RAM and jump to it.
+;
+; Input:
+; d0 - Location of the RAM code
+; --------------------------------------------------------
+
+System_JumpRamCode:
+		or.l	#$880000,d0
+		move.l	d0,a0
+		lea	(RAMCODE_USER),a1
+		move.w	#$4000-1,d7
+.copyme2:
+		move.b	(a0)+,(a1)+
+		dbf	d7,.copyme2
+		jmp	(RAMCODE_USER).l
+
 ; ====================================================================
 ; --------------------------------------------------------
-; Routines to send task request from here to 32X
-; ARGUMENTS (d1-d7) MUST BE LONGWORDS (move.l) OR MOVEQ's
-; 
+; 32X Communication, using CMD interrupt on both SH2s
+;
+; ARGUMENTS (d0-d7) MUST BE LONGWORDS (move.l) OR MOVEQ's
+; d0 IS ALWAYS A JUMP POINTER IN SH2's AREA
+;
 ; Uses comm8,comm10,comm12, shared for both SH2s
 ; --------------------------------------------------------
 
@@ -425,9 +434,7 @@ sysMdMars_instask:
 ; a0 - Data to transfer
 ; a1 - Status byte from the target CPU
 ; d0 - Num of LONGS(4bytes) to transfer
-; d1 - Transfer type:
-; 	1-Task list
-; 	2-Sound
+; d1 - Transfer type ID
 ; d2 - CMD Interrupt bitset value
 ; 	($00-Master/$01-Slave)
 ; ------------------------------------------------
@@ -439,14 +446,6 @@ sysMdMars_Transfer:
 		and.w	#$80,d4
 		bne.s	sysMdMars_Transfer
 		lea	(sysmars_reg),a4
-; 		tst.w	d2			; CMD bit for Slave?
-; 		bne.s	.slv_safe
-; .w_z80:
-; 		nop
-; 		nop
-; 		move.b	comm4(a4),d4		; Z80 made it first?
-; 		bne.s	.w_z80
-; .slv_safe:
 		move.w	sr,d5
 		move.w	#$2700,sr		; Disable interrupts
 		lea	comm8(a4),a3		; comm transfer method	
@@ -483,12 +482,10 @@ sysMdMars_Transfer:
 .mid_write:
 		rts
 
-; ====================================================================
-; ----------------------------------------------------------------
-; Game modes
-; ----------------------------------------------------------------
-
+; --------------------------------------------------------
 ; Initialize current screen mode
+; --------------------------------------------------------
+
 Mode_Init:
 		bsr	Video_Clear
 		lea	(RAM_ModeBuff),a4

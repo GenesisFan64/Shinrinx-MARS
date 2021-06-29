@@ -59,17 +59,40 @@ m_irq_custom:
 
 ; .task_08:
 		mov	r2,@-r15
+		mov	r3,@-r15
 		mov	#_vdpreg,r1
 .wait_fb:	mov.w   @($A,r1),r0		; Framebuffer free?
 		tst     #2,r0
 		bf      .wait_fb
-		mov.w   @(6,r1),r0		; SVDP-fill address
-		add     #$5F,r0			; Preincrement
-		mov.w   r0,@(6,r1)
-		mov.w   #320/2,r0		; SVDP-fill size (320 pixels)
+; 		mov.w   @(6,r1),r0		; SVDP-fill address
+; 		add     #$5F,r0			; Preincrement
+; 		mov.w   r0,@(6,r1)
+; 		mov.w   #320/2,r0		; SVDP-fill size (320 pixels)
+; 		mov.w   r0,@(4,r1)
+
+		mov	@(marsGbl_Backdata,gbr),r0
+		mov	r0,r3
+		mov	#$A0,r2
+.testme:
+		mov.w   #0,r0				; SVDP-fill size (320 pixels)
 		mov.w   r0,@(4,r1)
-		mov     #0,r0			; SVDP-fill pixel data and start filling
+		mov.w	@r3,r0			; SVDP-fill pixel data and start filling
 		mov.w   r0,@(8,r1)		; After finishing, SVDP-address got updated
+		add	#2,r3
+.wme:		mov.w   @($A,r1),r0
+		tst     #2,r0
+		bf      .wme
+		dt	r2
+		bf	.testme
+		mov	r3,r0
+		mov	r0,@(marsGbl_Backdata,gbr)
+		mov.w   @(6,r1),r0		; SVDP-fill address
+		add     #$60,r0			; Preincrement
+		mov.w   r0,@(6,r1)
+
+; 		bra	*
+; 		nop
+
 		mov.l   #$FFFFFE80,r1
 		mov.w   #$A518,r0		; OFF
 		mov.w   r0,@r1
@@ -85,6 +108,7 @@ m_irq_custom:
 		mov	#1,r0			; If finished: set task $01
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
 .on_clr:
+		mov	@r15+,r3
 		mov	@r15+,r2
 		rts
 		nop
@@ -1118,7 +1142,7 @@ Cach_ClrLines	ds.l 1			; Current lines to clear
 CACHE_MASTER_E:
 		align 4
 	if MOMPASS=6
-		message "MASTER CACHE uses: from \{(CACHE_MASTER_E-CACHE_MASTER)}"
+		message "MASTER CACHE uses: \{(CACHE_MASTER_E-CACHE_MASTER)}"
 	endif
 
 ; ====================================================================
@@ -1145,5 +1169,5 @@ Cach_TestTimer	dc.l 0
 CACHE_SLAVE_E:
 		align 4
 	if MOMPASS=6
-		message "SLAVE CACHE uses: from \{(CACHE_SLAVE_E-CACHE_SLAVE)}"
+		message "SLAVE CACHE uses: \{(CACHE_SLAVE_E-CACHE_SLAVE)}"
 	endif

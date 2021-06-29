@@ -18,81 +18,104 @@
 		include	"system/head.asm"	; 32X Header and boot sequence
 
 ; ====================================================================
-; ----------------------------------------------------------------
-; 68K RAMCODE Section, MUST BE ON RAM
-; 
-; MAX size: $8000
-; ----------------------------------------------------------------
+; --------------------------------------------------------
+; All purpose 68k stored on RAM
+; --------------------------------------------------------
 
-Engine_Code:
+MdRamCode:
 		phase $FF0000
-; --------------------------------------------------------
-; Include system features
-; --------------------------------------------------------
-
+minfo_ram_s:
 		include	"system/md/sound.asm"
 		include	"system/md/video.asm"
 		include	"system/md/system.asm"
-		
-; --------------------------------------------------------
-; Initialize system
-; --------------------------------------------------------
-
-		align 2
-MD_Main:
-		bsr 	Sound_init
-		bsr 	Video_init
-		bsr	System_Init
-		include "code/gm_mode0.asm"
-		dephase
-Engine_Code_end:
-		align 2
 	if MOMPASS=6
-		message "MD RAM CODE uses: \{Engine_Code_end-Engine_Code}"
+.here:
+		message "MD TOP RAM-CODE uses: \{.here-minfo_ram_s}"
 	endif
+RAMCODE_USER:
+		dephase
+
+MdRamCode_end:
+		align 2
 
 ; ====================================================================
 ; ----------------------------------------------------------------
-; Z80 Code
+; Z80 code (read once)
 ; ----------------------------------------------------------------
 
 		align $80
 Z80_CODE:
 		include "system/md/z80.asm"
-
-; ====================================================================
-
 		cpu 68000
 		padding off
 		phase Z80_CODE+*
 Z80_CODE_END:
 		align 2
 
-		dephase					; Exit $880000 area
+; ====================================================================
+; ----------------------------------------------------------------
+; 68k code-banks for RAM
+;
+; 880000 area: 512KB max
+; ----------------------------------------------------------------
+
+Default_Boot:
+		phase RAMCODE_USER
+		include "code/default.asm"
+		dephase
 
 ; ====================================================================
 ; ----------------------------------------------------------------
-; SH2 CODE for 32X
+; 68k DATA BANKs (at $900000) 1MB max
+; ----------------------------------------------------------------
+
+	; First one is smaller than the rest...
+		phase $900000+*				; Only one currently
+		include "data/md_bank0.asm"
+		dephase
+		org $100000-4				; Fill this bank and
+		dc.b "BNK0"				; add a tag at the end
+
+; 		phase $900000+*
+; 		include "data/md_bank1.asm"
+; 		dephase
+; 		org $200000-4
+; 		dc.b "BNK1"
+
+; 		phase $900000+*
+; 		include "data/md_bank2.asm"
+; 		dephase
+; 		org $300000-4
+; 		dc.b "BNK2"
+
+; 		phase $900000+*
+; 		include "data/md_bank3.asm"
+; 		dephase
+; 		org $400000-4
+; 		dc.b "BNK3"
+
+; ====================================================================
+; ----------------------------------------------------------------
+; DMA transfer data, RV=1 only.
+; ----------------------------------------------------------------
+
+		align 4
+		include "data/md_dma.asm"
+
+; ====================================================================
+; ----------------------------------------------------------------
+; SH2 SECTION
 ; ----------------------------------------------------------------
 
 		align 4
 MARS_RAMDATA:
 		include "system/mars/code.asm"
-		ltorg
 		cpu 68000
 		padding off
 		dephase
 MARS_RAMDATA_E:
 		align 4
 
-; --------------------------------------------------------
-; DATA for DMA transfers, bank-free but
-; Requires RV=1 to enabled
-; --------------------------------------------------------
-
-		align 4
-		include "data/md_dma.asm"
-		
 ; --------------------------------------------------------
 ; MARS data for SH2's ROM view
 ; This section will be gone if RV=1
@@ -103,51 +126,10 @@ MARS_RAMDATA_E:
 		include "data/mars_rom.asm"
 		dephase
 
-; --------------------------------------------------------
-; MD DATA BANK 0
-; --------------------------------------------------------
-
-		phase $900000+*				; Only one currently
-		include "data/md_bank0.asm"
-		dephase
-		org $100000-4				; Add custom tag at the end.
-		dc.b "BNK0"
-
-; ; --------------------------------------------------------
-; ; MD DATA BANK 1
-; ; --------------------------------------------------------
-; 
-; 		phase $900000+*				; Only one currently
-; 		include "data/md_bank1.asm"
-; 		dephase
-; 		org $200000-4				; Add custom tag at the end.
-; 		dc.b "BNK1"
-
-; ; --------------------------------------------------------
-; ; MD DATA BANK 2
-; ; --------------------------------------------------------
-;
-; 		phase $900000+*				; Only one currently
-; 		include "data/md_bank2.asm"
-; 		dephase
-; 		org $300000-4				; Add custom tag at the end.
-; 		dc.b "BNK2"
-
-; ; --------------------------------------------------------
-; ; MD DATA BANK 3
-; ; --------------------------------------------------------
-;
-; 		phase $900000+*				; Only one currently
-; 		include "data/md_bank3.asm"
-; 		dephase
-; 		org $400000-4				; Add custom tag at the end.
-; 		dc.b "BNK3"
-
 ; ====================================================================
 ; ---------------------------------------------
 ; End
 ; ---------------------------------------------
 		
 ROM_END:
-; 		rompad (ROM_END&$FF0000)+$40000
 		align $8000

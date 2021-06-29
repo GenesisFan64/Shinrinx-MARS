@@ -10,11 +10,12 @@
 ; a0-a1,d0-d1
 ; --------------------------------------------------------
 
+; 		align $100				; (GENS emulator only)
 Sound_Init:
 		move.w	#$0100,(z80_bus).l		; Stop Z80
 		move.b	#1,(z80_reset).l		; Reset
 .wait:
-		btst	#0,(z80_bus).l			; Wait for it
+		btst	#0,(z80_bus).l
 		bne.s	.wait
 		lea	(z80_cpu).l,a0
 		move.w	#$1FFF,d0
@@ -48,59 +49,6 @@ Sound_Init:
 ; ----------------------------------------------------------------
 ; Subroutines
 ; ----------------------------------------------------------------
-
-; ; --------------------------------------------------------
-; ; Sound_SetPwm
-; ; 
-; ; Set new sound data to a single channel
-; ; 
-; ; Input:
-; ; d1 | Channel
-; ; d2 | Start address
-; ; d3 | End address
-; ; d4 | Loop address (-1, dont loop)
-; ; d5 | Pitch ($xxxxxx.xx)
-; ; d6 | Volume
-; ; d7 | Flags (Currently: %xxxxxxLR)
-; ; 
-; ; Uses:
-; ; d0,a6
-; ; --------------------------------------------------------
-; 
-; Sound_SetPwm:
-; ; 		stc	sr,r9
-; ; 		mov	#$F0,r0
-; ; 		ldc	r0,sr
-; 		lea	(RAM_Pwm_List),a6
-; ; 		mulu	#sizeof_pwm,d1
-; ; 		adda 	d1,a6
-; 		moveq 	#0,d0
-; 		move.l	d0,(mchnsnd_enbl,a6)
-; 		move.l 	d0,(mchnsnd_read,a6)
-; 		
-; 		move.l	d5,(mchnsnd_pitch,a6)
-; 		move.l	d6,(mchnsnd_vol,a6)
-; 		move.l	d7,(mchnsnd_flags,a6)
-; 
-; 		move.l 	d4,d0				; Set POINTS
-; 		cmp.l	#-1,d0
-; 		beq.s	.endmrk
-; 		lsl.l	#8,d0
-; .endmrk:
-; 		move.l	d0,(mchnsnd_loop,a6)
-; 		move.l 	d3,d0
-; 		lsl.l	#8,d0
-; 		move.l	d0,(mchnsnd_end,a6)
-; 		move.l 	d2,d0
-; 		lsl.l	#8,d0
-; 		move.l	d0,(mchnsnd_start,a6)
-; 		move.l 	d0,(mchnsnd_read,a6)
-; 		moveq 	#1,d0
-; 		move.l 	d0,(mchnsnd_enbl,a6)
-; ;  		ldc	r9,sr
-; 		rts
-; ; 		nop
-; ; 		align 4
 
 ; --------------------------------------------------------
 ; Sound_DMA_Pause
@@ -291,4 +239,3 @@ sndReq_sbyte:
 		andi.b	#$3F,d6
 		move.b	d6,(a5)				; update commZWrite
 		rts
-

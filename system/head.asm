@@ -266,19 +266,25 @@ MARS_Entry:
 		btst	#bitVint,d0
 		beq.s	.waitframe
 		move.l	#$80048144,(vdp_ctrl).l		; Keep display
-		lea	($FF0000),a0			; Clear RAM until $FFFF00
+		lea	($FF0000),a0			; Clear RAM until $FFF000
 		move.w	#($F000/4)-1,d0
 .clrram:
 		clr.l	(a0)+
 		dbf	d0,.clrram
 		movem.l	($FF0000),d0-a6			; Clear registers (using zeros from RAM)
-		lea	Engine_Code(pc),a0		; Now copy ALL our 68k code to RAM, to prevent
+
+	; Transfer RAM-Common code
+		lea	MdRamCode(pc),a0		; Now copy ALL our 68k code to RAM, to prevent
 		lea	($FF0000),a1			; BUS-fighthing the ROM area (speed-up purposes)
-		move.w	#((Engine_Code_end-Engine_Code))-1,d0
+		move.w	#((MdRamCode_end-MdRamCode))-1,d0
 .copyme:
 		move.b	(a0)+,(a1)+
 		dbf	d0,.copyme
-		jmp	(MD_Main).l			; MD_Main located in ram
+		jsr	(Sound_init).l
+		jsr	(Video_init).l
+		jsr	(System_Init).l
+		move.l	#Default_Boot,d0
+		jmp	(System_JumpRamCode).l
 
 ; ====================================================================
 ; ----------------------------------------------------------------

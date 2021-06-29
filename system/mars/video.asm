@@ -286,8 +286,10 @@ MarsVideo_SetWatchdog:
 		mov	r0,@r1
 		mov	#8,r0				; Set starting watchdog task to $08 (Clear framebuffer)
 		mov.w	r0,@(marsGbl_DrwTask,gbr)
+		mov	#TESTMARS_BG,r0
+		mov	r0,@(marsGbl_Backdata,gbr)
 
-	; critical part
+	; CRITICAL PART
 		mov	#_vdpreg,r1
 		mov.b	@(marsGbl_CurrFb,gbr),r0
 		mov	r0,r2
@@ -300,7 +302,7 @@ MarsVideo_SetWatchdog:
 .wait_fb:	mov.w	@($A,r1),r0			; Wait until framebuffer is unlocked
 		tst	#2,r0
 		bf	.wait_fb
-		mov.w	#$A1,r0				; Pre-start SVDP fill line at address $A1
+		mov.w	#$100,r0			; Pre-start SVDP fill line at address $A1
 		mov.w	r0,@(6,r1)			; $5F gets added on watchdog: $A1+$5F=$100
 		ldc	@r15+,sr			; Restore interrupts
 

@@ -10,12 +10,8 @@
 		cpu SH7600		; should be SH7095 but this works too.
 
 ; ====================================================================
-
-		include "system/mars/head.asm"
-
-; ====================================================================
 ; ----------------------------------------------------------------
-; MARS "Global" variables (for gbr on each SH2)
+; MARS GBR variables for both SH2
 ; ----------------------------------------------------------------
 
 			struct 0
@@ -23,8 +19,7 @@ marsGbl_PlyPzList_R	ds.l 1		; Current graphic piece to draw
 marsGbl_PlyPzList_W	ds.l 1		; Current graphic piece to write
 marsGbl_CurrZList	ds.l 1		; Current Zsort entry
 marsGbl_CurrFacePos	ds.l 1		; Current top face of the list while reading model data
-marsGbl_MdTaskList_Sw	ds.w 1		; Requests from Genesis FIFO reading point
-marsGbl_MdTaskList_Rq	ds.w 1		; and writing point
+marsGbl_Backdata	ds.l 1		; Background data pointer
 marsGbl_MdlFacesCntr	ds.w 1		; And the number of faces stored on that list
 marsGbl_PolyBuffNum	ds.w 1		; PolygonBuffer switch: READ/WRITE or WRITE/READ
 marsGbl_PzListCntr	ds.w 1		; Number of graphic pieces to draw
@@ -32,13 +27,200 @@ marsGbl_DrwTask		ds.w 1		; Current Drawing task for Watchdog
 marsGbl_DrwPause	ds.w 1		; Pause background drawing
 marsGbl_VIntFlag_M	ds.w 1		; Sets to 0 if VBlank finished on Master CPU
 marsGbl_VIntFlag_S	ds.w 1		; Same thing but for the Slave CPU
-marsGbl_DivStop_M	ds.w 1		; Flag to tell Watchdog we are in the middle of division
+marsGbl_DivStop_M	ds.w 1		; Flag to tell Watchdog we are in the middle of hardware division
 marsGbl_CurrFb		ds.w 1		; Current framebuffer number
 marsGbl_ZSortReq	ds.w 1		; Flag to request Zsort in Slave's watchdog
 marsGbl_PwmTrkUpd	ds.w 1		; Flag to update PWM tracks (from Z80 then PWM IRQ)
 marsGbl_PalDmaMidWr	ds.w 1		; Flag to tell we are in middle of transfering palette
 sizeof_MarsGbl		ds.l 0
 			finish
+
+; ====================================================================
+; ----------------------------------------------------------------
+; MASTER CPU HEADER (vbr)
+; ----------------------------------------------------------------
+
+		align 4
+SH2_Master:
+		dc.l SH2_M_Entry,CS3|$40000	; Cold PC,SP
+		dc.l SH2_M_Entry,CS3|$40000	; Manual PC,SP
+
+		dc.l SH2_Error			; Illegal instruction
+		dc.l 0				; reserved
+		dc.l SH2_Error			; Invalid slot instruction
+		dc.l $20100400			; reserved
+		dc.l $20100420			; reserved
+		dc.l SH2_Error			; CPU address error
+		dc.l SH2_Error			; DMA address error
+		dc.l SH2_Error			; NMI vector
+		dc.l SH2_Error			; User break vector
+
+		dc.l 0,0,0,0,0,0,0,0,0,0	; reserved
+		dc.l 0,0,0,0,0,0,0,0,0
+
+		dc.l SH2_Error,SH2_Error	; Trap vectors
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+
+ 		dc.l master_irq			; Level 1 IRQ
+		dc.l master_irq			; Level 2 & 3 IRQ's
+		dc.l master_irq			; Level 4 & 5 IRQ's
+		dc.l master_irq			; PWM interupt
+		dc.l master_irq			; Command interupt
+		dc.l master_irq			; H Blank interupt
+		dc.l master_irq			; V Blank interupt
+		dc.l master_irq			; Reset Button
+		dc.l master_irq			; Watchdog
+
+; ====================================================================
+; ----------------------------------------------------------------
+; SLAVE CPU HEADER (vbr)
+; ----------------------------------------------------------------
+
+		align 4
+SH2_Slave:
+		dc.l SH2_S_Entry,CS3|$3F000	; Cold PC,SP
+		dc.l SH2_S_Entry,CS3|$3F000	; Manual PC,SP
+
+		dc.l SH2_Error			; Illegal instruction
+		dc.l 0				; reserved
+		dc.l SH2_Error			; Invalid slot instruction
+		dc.l $20100400			; reserved
+		dc.l $20100420			; reserved
+		dc.l SH2_Error			; CPU address error
+		dc.l SH2_Error			; DMA address error
+		dc.l SH2_Error			; NMI vector
+		dc.l SH2_Error			; User break vector
+
+		dc.l 0,0,0,0,0,0,0,0,0,0	; reserved
+		dc.l 0,0,0,0,0,0,0,0,0
+
+		dc.l SH2_Error,SH2_Error	; Trap vectors
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+		dc.l SH2_Error,SH2_Error
+
+ 		dc.l slave_irq			; Level 1 IRQ
+		dc.l slave_irq			; Level 2 & 3 IRQ's
+		dc.l slave_irq			; Level 4 & 5 IRQ's
+		dc.l slave_irq			; PWM interupt
+		dc.l slave_irq			; Command interupt
+		dc.l slave_irq			; H Blank interupt
+		dc.l slave_irq			; V Blank interupt
+		dc.l slave_irq			; Reset Button
+		dc.l slave_irq			; Watchdog
+
+; ====================================================================
+; ----------------------------------------------------------------
+; irq
+;
+; r0-r1 are safe
+; ----------------------------------------------------------------
+
+		align 4
+master_irq:
+		mov.l	r0,@-r15
+		mov.l	r1,@-r15
+		sts.l	pr,@-r15
+
+		stc	sr,r0
+		shlr2	r0
+		and	#$3C,r0
+		mov	#int_m_list,r1
+		add	r1,r0
+		mov	@r0,r1
+		jsr	@r1
+		nop
+
+		lds.l	@r15+,pr
+		mov.l	@r15+,r1
+		mov.l	@r15+,r0
+		rte
+		nop
+		align 4
+		ltorg
+
+; ------------------------------------------------
+; irq list
+; ------------------------------------------------
+
+		align 4
+int_m_list:
+		dc.l m_irq_bad,m_irq_bad
+		dc.l m_irq_bad,m_irq_bad
+		dc.l m_irq_bad,m_irq_custom
+		dc.l m_irq_pwm,m_irq_pwm
+		dc.l m_irq_cmd,m_irq_cmd
+		dc.l m_irq_h,m_irq_h
+		dc.l m_irq_v,m_irq_v
+		dc.l m_irq_vres,m_irq_vres
+
+; ====================================================================
+; ----------------------------------------------------------------
+; irq
+;
+; r0-r1 are safe
+; ----------------------------------------------------------------
+
+slave_irq:
+		mov.l	r0,@-r15
+		mov.l	r1,@-r15
+		sts.l	pr,@-r15
+
+		stc	sr,r0
+		shlr2	r0
+		and	#$3C,r0
+		mov	#int_s_list,r1
+		add	r1,r0
+		mov	@r0,r1
+		jsr	@r1
+		nop
+
+		lds.l	@r15+,pr
+		mov.l	@r15+,r1
+		mov.l	@r15+,r0
+		rte
+		nop
+		align 4
+
+; ------------------------------------------------
+; irq list
+; ------------------------------------------------
+
+int_s_list:
+		dc.l s_irq_bad,s_irq_bad
+		dc.l s_irq_bad,s_irq_bad
+		dc.l s_irq_bad,s_irq_custom
+		dc.l s_irq_pwm,s_irq_pwm
+		dc.l s_irq_cmd,s_irq_cmd
+		dc.l s_irq_h,s_irq_h
+		dc.l s_irq_v,s_irq_v
+		dc.l s_irq_vres,s_irq_vres
 			
 ; ====================================================================
 ; ----------------------------------------------------------------
@@ -53,7 +235,7 @@ SH2_Error:
 
 ; ====================================================================		
 ; ----------------------------------------------------------------
-; MARS Interrupts for both CPUs
+; MARS Interrupts
 ; ----------------------------------------------------------------
 
 ; =================================================================
@@ -265,7 +447,6 @@ m_irq_v:
 	; Hardware BUG:
 	; Using DMA to transfer palette
 	; to _palette works on the first pass
-
 		mov	#_vdpreg,r1		; Wait for palette access
 .wait_fb:	mov.w	@(vdpsts,r1),r0		; Read status as WORD
 		tst	#2,r0			; Framebuffer busy? (wait for FEN=1)
@@ -333,7 +514,7 @@ m_irq_v:
 		
 ; =================================================================
 ; ------------------------------------------------
-; Master | VRES Interrupt (Pressed RESET on Genesis)
+; Master | VRES Interrupt (RESET on Genesis)
 ; ------------------------------------------------
 
 m_irq_vres:
@@ -402,7 +583,7 @@ m_irq_vres:
 ; ------------------------------------------------
 
 ; m_irq_custom:
-; see video.asm
+; MOVED: see cache.asm
 
 ; =================================================================
 ; ------------------------------------------------
@@ -658,7 +839,9 @@ SH2_M_Entry:
 ; ----------------------------------------------------------------
 ; Master main code
 ; 
-; This CPU is exclusively used for drawing polygons.
+; This CPU is exclusively used for visual tasks:
+; Polygons, Sprites, Backgrounds...
+;
 ; To interact with the models use the Slave CPU and request
 ; a drawing task there
 ; ----------------------------------------------------------------
@@ -676,8 +859,8 @@ SH2_M_HotStart:
 		mov.w	r0,@r1
 		mov	#_sysreg,r1
 		mov	#VIRQ_ON|CMDIRQ_ON,r0			; Enable usage of these interrupts
-    		mov.b	r0,@(intmask,r1)			; interrupts (Watchdog is external)
-		mov 	#CACHE_MASTER,r1			; Transfer fast-code to CACHE
+    		mov.b	r0,@(intmask,r1)			; (Watchdog is external)
+		mov 	#CACHE_MASTER,r1			; Transfer Master's fast-code to CACHE
 		mov 	#$C0000000,r2
 		mov 	#(CACHE_MASTER_E-CACHE_MASTER)/4,r3
 .copy:
@@ -686,17 +869,11 @@ SH2_M_HotStart:
 		add 	#4,r2
 		dt	r3
 		bf	.copy
-		
-; ------------------------------------------------
-
 		mov	#MarsVideo_Init,r0		; Init Video
 		jsr	@r0
 		nop
 ; 		bsr	MarsSound_Init			; Init Sound
 ; 		nop
-
-; ------------------------------------------------
-
 		mov.l	#$20,r0				; Interrupts ON
 		ldc	r0,sr
 
@@ -861,57 +1038,6 @@ master_loop:
 		align 4
 		ltorg
 
-; ; --------------------------------------------------------
-; ; Sort all faces in the current buffer
-; ; 
-; ; r14 - Polygon list
-; ; r13 - Number of polygons processed
-; ; --------------------------------------------------------
-; 
-; slv_sort_z:
-; 		mov	r14,r12
-; 		mov	#2,r11
-; 		mov.w	@r13,r0				; Check number of faces to sort
-; 		cmp/gt	r11,r0
-; 		bf	.z_copypos
-; 		mov	r0,r11
-; 
-; ; Bubble sorting
-; ; r14 - Output face points
-; ; r13 - Numof polygons result (set number to @r13)
-; ; r12 - base Zsort list (Zpos,Facedata)
-; ; r11 - faces used
-; 		mov	r11,r9
-; 		add	#-2,r9
-; .z_loop:
-; 		mov	r12,r10
-; 		mov	#1,r7
-; 		mov	r9,r8
-; .z_next:
-; 		mov	@r10,r0
-; 		mov	@(8,r10),r1
-; 		cmp/gt	r1,r0
-; 		bf	.z_keep
-; 		mov	r1,@r10
-; 		mov	r0,@(8,r10)
-; 		mov	@(4,r10),r0
-; 		mov	@($C,r10),r1
-; 		mov	r1,@(4,r10)
-; 		mov	r0,@($C,r10)
-; 		mov	#-1,r7
-; .z_keep:
-; 		dt	r8
-; 		bf/s	.z_next
-; 		add	#8,r10
-; 		cmp/pl	r7
-; 		bf	.z_loop
-; 
-; .z_copypos:
-; 		rts
-; 		nop
-; 		align 4
-; 		ltorg
-
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; Slave entry
@@ -973,10 +1099,10 @@ SH2_S_HotStart:
 		mov	#%00011001,r0			; Cache purge / Two-way mode / Cache ON
 		mov.w	r0,@r1
 		mov	#_sysreg,r1
-		mov	#CMDIRQ_ON,r0			; Enable these interrupts	
-    		mov.b	r0,@(intmask,r1)
-		mov 	#CACHE_SLAVE,r1			; Load 3D Routines on CACHE	
-		mov 	#$C0000000,r2			; Those run more faster here supposedly...
+		mov	#CMDIRQ_ON,r0			; Enable these interrupts
+    		mov.b	r0,@(intmask,r1)		; (Watchdog is external)
+		mov 	#CACHE_SLAVE,r1			; Transfer Slave's fast-code to CACHE
+		mov 	#$C0000000,r2
 		mov 	#(CACHE_SLAVE_E-CACHE_SLAVE)/4,r3
 .copy:
 		mov 	@r1+,r0
@@ -984,16 +1110,9 @@ SH2_S_HotStart:
 		add 	#4,r2
 		dt	r3
 		bf	.copy
-
-; ------------------------------------------------
-; REMINDER: 1 meter = $10000
-
-		mov	#MarsMdl_Init,r0
+		mov	#MarsMdl_Init,r0		; REMINDER: 1 meter = $10000
 		jsr	@r0
 		nop
-
-; ------------------------------------------------
-
 		mov.l	#$20,r0				; Interrupts ON
 		ldc	r0,sr
 		
@@ -1004,8 +1123,7 @@ SH2_S_HotStart:
 slave_loop:
 
 ; ------------------------------------------------
-; Process tasks other than visual or sound,
-; ex. object interaction or move the 3d camera
+; Process task requests from Genesis
 ; ------------------------------------------------
 
 		mov	#_sysreg+comm15,r1
@@ -1595,7 +1713,7 @@ sizeof_marsram	ds.l 0
 		message "MARS RAM from \{((SH2_RAM)&$FFFFFF)} to \{((.here)&$FFFFFF)}"
 	endif
 		finish
-		
+
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; MARS Sound RAM
@@ -1630,7 +1748,7 @@ RAM_Mars_PlgnNum_0	ds.w 1				; Number of polygons to read, both buffers
 RAM_Mars_PlgnNum_1	ds.w 1				;
 sizeof_marsvid		ds.l 0
 			finish
-			
+
 ; ====================================================================
 ; ----------------------------------------------------------------
 ; MARS System RAM

@@ -30,16 +30,6 @@ Video_Init:
 		add.w	#$100,d0
 		dbf	d1,.loop
 .exit:
-
-	; Transfer the DMA tasks to RAM
-	; TODO: change this later, we are on RAM already...
-; 		lea	Video_RamCode(pc),a0
-; 		lea	(RAM_ExRamSub).w,a1
-; 		move.w	#((Video_RamCode_e-Video_RamCode)/2)-1,d0
-; .copy:
-; 		move.w	(a0)+,d1
-; 		move.w	d1,(a1)+
-; 		dbf	d0,.copy
 		rts
 
 ; ====================================================================
@@ -620,9 +610,7 @@ Video_Copy:
 		btst	#bitDma,d4
 		bne.s	.dmaw
 		move.w	#$8F01,(a4)		; Increment $01
-
-	; SIZE
-		move.w	d1,d4
+		move.w	d1,d4			; SIZE
 		move.l	#$94009300,d5
 		lsr.w	#1,d4
 		move.b	d4,d5
@@ -631,9 +619,7 @@ Video_Copy:
 		move.b	d4,d5
 		swap	d5
 		move.l	d5,(a4)
-	
-	; SOURCE
-		move.l	#$96009500,d5
+		move.l	#$96009500,d5		; SOURCE
 		move.w	d0,d4
 		move.b	d4,d5
 		swap	d5
@@ -641,9 +627,7 @@ Video_Copy:
 		move.b	d4,d5
 		move.l	d5,(a4)
 		move.w	#$97C0,(a4)		; DMA Fill bit
-		
-	; DESTINATION
-		move.l	d2,d4
+		move.l	d2,d4			; DESTINATION
 ; 		lsl.w	#5,d4
 		move.w	d4,d5
 		andi.w	#$3FFF,d5
@@ -681,9 +665,6 @@ Video_Copy:
 ; 
 ; Uses:
 ; d4-d5,a4
-;
-; NOTES:
-; RV bit must be set before starting DMA
 ; --------------------------------------------------------
 
 Video_LoadArt:
